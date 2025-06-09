@@ -12,6 +12,7 @@ import LoadingSpinner from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Brain, Search } from "lucide-react";
 import { Link } from "wouter";
+import { PostCard } from "@/components/ui/post-card";
 
 export default function Home() {
   const { toast } = useToast();
@@ -50,6 +51,10 @@ export default function Home() {
   const { data: popularVideos, isLoading: videosLoading } = useQuery({
     queryKey: ["/api/videos/popular"],
     retry: false,
+  });
+
+  const { data: posts = [], isLoading: postsLoading } = useQuery({
+    queryKey: ["/api/posts"],
   });
 
   if (isLoading) {
@@ -207,6 +212,31 @@ export default function Home() {
               </div>
             </div>
           </section>
+
+          {/* Creator Posts Section */}
+          {posts.length > 0 && (
+            <section>
+              <h3 className="text-2xl font-bold text-white mb-6">📢 Annonces du Créateur</h3>
+              <div className="space-y-6">
+                {postsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <LoadingSpinner />
+                  </div>
+                ) : (
+                  posts.slice(0, 3).map((post: any) => (
+                    <PostCard key={post.id} post={post} />
+                  ))
+                )}
+              </div>
+              {posts.length > 3 && (
+                <div className="text-center mt-6">
+                  <Button variant="outline" className="electric-blue text-sm">
+                    Voir toutes les annonces
+                  </Button>
+                </div>
+              )}
+            </section>
+          )}
         </main>
 
         <BottomNavigation currentPath="/" />

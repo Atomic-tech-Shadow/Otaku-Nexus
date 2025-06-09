@@ -49,7 +49,7 @@ export default function Admin() {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [isEditPostOpen, setIsEditPostOpen] = useState(false);
 
-  // Redirect if not authenticated or not admin
+  // Redirect if not authenticated or not the specific admin user
   useEffect(() => {
     if (!isAuthenticated) {
       toast({
@@ -63,10 +63,12 @@ export default function Admin() {
       return;
     }
     
-    if (user && !user.isAdmin) {
+    // Vérifier si l'utilisateur est l'admin spécifique (remplacez par votre ID)
+    const ADMIN_USER_ID = "43652320";
+    if (user && user.id !== ADMIN_USER_ID) {
       toast({
         title: "Accès refusé",
-        description: "Vous n'avez pas les permissions d'administrateur.",
+        description: "Cette section est réservée au créateur de l'application.",
         variant: "destructive",
       });
       setTimeout(() => {
@@ -99,9 +101,10 @@ export default function Admin() {
   });
 
   // Fetch admin posts
+  const ADMIN_USER_ID = "43652320";
   const { data: posts = [], isLoading: postsLoading } = useQuery({
     queryKey: ["/api/admin/posts"],
-    enabled: isAuthenticated && user?.isAdmin,
+    enabled: isAuthenticated && user?.id === ADMIN_USER_ID,
   });
 
   // Fetch user stats
@@ -277,7 +280,8 @@ export default function Admin() {
     }
   };
 
-  if (!isAuthenticated || (user && !user.isAdmin)) {
+  const ADMIN_USER_ID = "43652320";
+  if (!isAuthenticated || (user && user.id !== ADMIN_USER_ID)) {
     return null;
   }
 

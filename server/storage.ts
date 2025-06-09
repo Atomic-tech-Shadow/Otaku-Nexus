@@ -40,25 +40,25 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserXP(userId: string, xpToAdd: number): Promise<User>;
-  
+
   // Anime operations
   getAnimes(limit?: number): Promise<Anime[]>;
   getAnimeByMalId(malId: number): Promise<Anime | undefined>;
   createAnime(anime: InsertAnime): Promise<Anime>;
   getTrendingAnimes(): Promise<Anime[]>;
   searchAnimes(query: string): Promise<Anime[]>;
-  
+
   // Anime favorites operations
   getUserFavorites(userId: string): Promise<AnimeFavorite[]>;
   addToFavorites(favorite: InsertAnimeFavorite): Promise<AnimeFavorite>;
   removeFromFavorites(userId: string, animeId: number): Promise<void>;
-  
+
   // Quiz operations
   getQuizzes(): Promise<Quiz[]>;
   getQuiz(id: number): Promise<Quiz | undefined>;
   createQuiz(quiz: InsertQuiz): Promise<Quiz>;
   getFeaturedQuiz(): Promise<Quiz | undefined>;
-  
+
   // Quiz results operations
   getUserQuizResults(userId: string): Promise<QuizResult[]>;
   createQuizResult(result: InsertQuizResult): Promise<QuizResult>;
@@ -68,16 +68,16 @@ export interface IStorage {
     totalXP: number;
     rank: number;
   }>;
-  
+
   // Video operations
   getVideos(limit?: number): Promise<Video[]>;
   getVideo(id: number): Promise<Video | undefined>;
   createVideo(video: InsertVideo): Promise<Video>;
   getPopularVideos(): Promise<Video[]>;
-  
+
   // Profile operations
   updateUserProfile(userId: string, profile: UpdateUserProfile): Promise<User>;
-  
+
   // Chat operations
   getChatRooms(userId?: string): Promise<ChatRoom[]>;
   getChatRoom(id: number): Promise<ChatRoom | undefined>;
@@ -86,7 +86,7 @@ export interface IStorage {
   sendChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   joinChatRoom(membership: InsertChatRoomMember): Promise<ChatRoomMember>;
   getUserChatRooms(userId: string): Promise<ChatRoom[]>;
-  
+
   // Admin operations
   getAdminPosts(published?: boolean): Promise<AdminPost[]>;
   getAdminPost(id: number): Promise<AdminPost | undefined>;
@@ -350,11 +350,28 @@ export class DatabaseStorage implements IStorage {
 
   // Admin operations
   async getAdminPosts(published?: boolean): Promise<AdminPost[]> {
-    const query = db.select().from(adminPosts).orderBy(desc(adminPosts.createdAt));
+    const query = db.select({
+      id: adminPosts.id,
+      title: adminPosts.title,
+      content: adminPosts.content,
+      type: adminPosts.type,
+      isPublished: adminPosts.isPublished,
+      authorId: adminPosts.authorId,
+      imageUrl: adminPosts.imageUrl,
+      createdAt: adminPosts.createdAt,
+      updatedAt: adminPosts.updatedAt,
+      authorName: users.firstName,
+      authorLastName: users.lastName,
+      authorProfileImageUrl: users.profileImageUrl,
+    })
+    .from(adminPosts)
+    .leftJoin(users, eq(adminPosts.authorId, users.id));
+
     if (published !== undefined) {
-      return await query.where(eq(adminPosts.isPublished, published));
+      query.where(eq(adminPosts.isPublished, published));
     }
-    return await query;
+
+    return await query.orderBy(desc(adminPosts.createdAt));
   }
 
   async getAdminPost(id: number): Promise<AdminPost | undefined> {

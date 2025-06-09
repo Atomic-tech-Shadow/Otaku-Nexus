@@ -1,12 +1,17 @@
 import { Home, Search, Brain, Play, User, MessageCircle } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
+import { useAuth } from './auth'; // Assuming you have an auth context
 
 interface BottomNavigationProps {
   currentPath: string;
 }
 
 export default function BottomNavigation({ currentPath }: BottomNavigationProps) {
+  const { user } = useAuth();
+  const ADMIN_USER_ID = "43652320";
+  const isAdmin = user?.id === ADMIN_USER_ID;
+
   const navItems = [
     { icon: Home, label: "Home", path: "/" },
     { icon: Search, label: "Anime", path: "/anime" },

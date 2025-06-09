@@ -383,12 +383,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin routes
+  // Admin routes - Accès restreint à l'utilisateur spécifique
   const isAdmin = async (req: any, res: any, next: any) => {
     try {
       const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      if (!user?.isAdmin) {
+      // Remplacez "43652320" par votre ID utilisateur spécifique
+      const ADMIN_USER_ID = "43652320";
+      
+      if (userId !== ADMIN_USER_ID) {
         return res.status(403).json({ message: "Admin access required" });
       }
       next();
