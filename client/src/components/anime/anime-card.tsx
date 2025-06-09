@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Star, Calendar, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
+import AnimeDetailModal from "./anime-detail-modal";
 
 interface AnimeCardProps {
   anime: {

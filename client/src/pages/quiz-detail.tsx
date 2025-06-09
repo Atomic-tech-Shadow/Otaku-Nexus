@@ -257,7 +257,7 @@ export default function QuizDetail() {
           <main className="px-4 pb-6">
             <div className="text-center mb-6">
               <h1 className="text-2xl font-bold mb-2 text-gradient">Quiz Complete!</h1>
-              <p className="text-gray-400 text-sm">{quiz.title}</p>
+              <p className="text-gray-400 text-sm">{(quiz as any)?.title}</p>
             </div>
 
             <Card className="bg-card-bg border-gray-800 mb-6">
@@ -287,16 +287,16 @@ export default function QuizDetail() {
                         <XCircle className="w-5 h-5 text-red-400 mt-1 flex-shrink-0" />
                       )}
                       <div className="flex-1">
-                        <p className="font-semibold text-sm mb-2">{question.question}</p>
+                        <p className="font-semibold text-sm mb-2">{question?.question || "Question not available"}</p>
                         <p className="text-xs text-gray-400 mb-2">
-                          Correct: {question.options[question.correctAnswer]}
+                          Correct: {question?.options?.[question.correctAnswer] || "N/A"}
                         </p>
-                        {selectedAnswers[index] !== question.correctAnswer && (
+                        {selectedAnswers[index] !== question?.correctAnswer && (
                           <p className="text-xs text-red-400 mb-2">
-                            Your answer: {question.options[selectedAnswers[index]] || "No answer"}
+                            Your answer: {question?.options?.[selectedAnswers[index]] || "No answer"}
                           </p>
                         )}
-                        <p className="text-xs text-gray-500">{question.explanation}</p>
+                        <p className="text-xs text-gray-500">{question?.explanation || ""}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -321,6 +321,19 @@ export default function QuizDetail() {
 
   // Quiz question screen
   const question = questions[currentQuestion];
+  
+  if (!question) {
+    return (
+      <div className="min-h-screen bg-dark-bg text-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-4">Question not found</h2>
+          <Link href="/quiz">
+            <Button>Back to Quizzes</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-dark-bg text-white pb-20">
