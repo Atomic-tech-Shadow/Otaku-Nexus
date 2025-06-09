@@ -26,6 +26,7 @@ const postSchema = z.object({
     required_error: "Le type est requis",
   }),
   isPublished: z.boolean().default(false),
+  adminOnly: z.boolean().default(false),
   imageUrl: z.string().url("URL d'image invalide").optional().or(z.literal("")),
 });
 
@@ -85,6 +86,7 @@ export default function Admin() {
       content: "",
       type: "announcement",
       isPublished: false,
+      adminOnly: false,
       imageUrl: "",
     },
   });
@@ -96,6 +98,7 @@ export default function Admin() {
       content: "",
       type: "announcement",
       isPublished: false,
+      adminOnly: false,
       imageUrl: "",
     },
   });
@@ -258,6 +261,7 @@ export default function Admin() {
     editForm.setValue("content", post.content);
     editForm.setValue("type", post.type as "announcement" | "event" | "update");
     editForm.setValue("isPublished", post.isPublished);
+    editForm.setValue("adminOnly", post.adminOnly || false);
     editForm.setValue("imageUrl", post.imageUrl || "");
     setIsEditPostOpen(true);
   };
@@ -400,6 +404,26 @@ export default function Admin() {
                               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                                 <div className="space-y-0.5">
                                   <FormLabel>Publier immédiatement</FormLabel>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={createForm.control}
+                            name="adminOnly"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                                <div className="space-y-0.5">
+                                  <FormLabel>Admin uniquement</FormLabel>
+                                  <p className="text-xs text-gray-400">
+                                    Visible seulement dans l'espace admin
+                                  </p>
                                 </div>
                                 <FormControl>
                                   <Switch
@@ -630,6 +654,26 @@ export default function Admin() {
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                         <div className="space-y-0.5">
                           <FormLabel>Publier</FormLabel>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={editForm.control}
+                    name="adminOnly"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                        <div className="space-y-0.5">
+                          <FormLabel>Admin uniquement</FormLabel>
+                          <p className="text-xs text-gray-400">
+                            Visible seulement dans l'espace admin
+                          </p>
                         </div>
                         <FormControl>
                           <Switch

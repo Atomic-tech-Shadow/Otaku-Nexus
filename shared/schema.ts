@@ -165,9 +165,10 @@ export const adminPosts = pgTable("admin_posts", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   content: text("content").notNull(),
-  type: text("type").notNull(), // announcement, event, update
+  type: text("type").notNull(), // 'announcement', 'event', 'update'
   isPublished: boolean("is_published").default(false),
-  authorId: varchar("author_id").notNull().references(() => users.id),
+  adminOnly: boolean("admin_only").default(false), // Only visible in admin panel
+  authorId: text("author_id").notNull(),
   imageUrl: text("image_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

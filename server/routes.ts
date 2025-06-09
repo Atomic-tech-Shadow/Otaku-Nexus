@@ -467,7 +467,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Public posts for non-admin users
   app.get('/api/posts', async (req, res) => {
     try {
-      const posts = await storage.getAdminPosts(true); // Only published posts
+      const posts = await storage.getPublicPosts(); // Only published, non-admin-only posts
       res.json(posts);
     } catch (error) {
       console.error("Error fetching posts:", error);
@@ -488,6 +488,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get messages error:", error);
       res.status(500).json({ message: "Failed to get messages" });
+    }
+  });
+
+  // Send chat message
+  app.post('/api/chat/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { content } = req.body;
+      
+      if (!content || !content.trim()) {
+        return res.status(400).json({ message: "Content is required" });
+      }
+
+      const messageData = {
+        content: content.trim(),
+        roomId: 1, // Default room
+        userId,
+      };
+      
+      const message = await storage.sendChatMessage(messageData);
+      res.json(message);
+    } catch (error) {
+      console.error("Error sending chat message:", error);
+      res.status(500).json({ message: "Failed to send message" });
     }
   });
 
