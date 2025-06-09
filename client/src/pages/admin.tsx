@@ -63,9 +63,9 @@ export default function Admin() {
       return;
     }
     
-    // Vérifier si l'utilisateur est l'admin spécifique (remplacez par votre ID)
-    const ADMIN_USER_ID = "43652320";
-    if (user && user.id !== ADMIN_USER_ID) {
+    // Vérifier si l'utilisateur est l'admin spécifique
+    const ADMIN_EMAIL = "sorokomarco@gmail.com";
+    if (user && user.email !== ADMIN_EMAIL) {
       toast({
         title: "Accès refusé",
         description: "Cette section est réservée au créateur de l'application.",
@@ -101,10 +101,10 @@ export default function Admin() {
   });
 
   // Fetch admin posts
-  const ADMIN_USER_ID = "43652320";
+  const ADMIN_EMAIL = "sorokomarco@gmail.com";
   const { data: posts = [], isLoading: postsLoading } = useQuery({
     queryKey: ["/api/admin/posts"],
-    enabled: isAuthenticated && user?.id === ADMIN_USER_ID,
+    enabled: isAuthenticated && user?.email === ADMIN_EMAIL,
   });
 
   // Fetch user stats
@@ -280,8 +280,8 @@ export default function Admin() {
     }
   };
 
-  // Vérification d'accès admin - seul votre ID peut accéder
-  if (!isAuthenticated || (user && user.id !== "43652320")) {
+  // Vérification d'accès admin - seul votre email peut accéder
+  if (!isAuthenticated || (user && user.email !== "sorokomarco@gmail.com")) {
     return null;
   }
 
