@@ -1,6 +1,7 @@
-import { Bell, Settings } from "lucide-react";
+import { Bell, Settings, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { Link } from "wouter";
 
 export default function AppHeader() {
   const { user } = useAuth();
@@ -45,6 +46,13 @@ export default function AppHeader() {
           </div>
         </div>
         <div className="flex items-center space-x-3">
+          {user?.isAdmin && (
+            <Link href="/admin">
+              <Button variant="ghost" size="sm" className="text-yellow-400 hover:text-yellow-300">
+                <Shield className="w-5 h-5" />
+              </Button>
+            </Link>
+          )}
           <Button variant="ghost" size="sm" className="relative">
             <Bell className="w-5 h-5 text-gray-300" />
             <span className="absolute -top-1 -right-1 w-3 h-3 bg-anime-red rounded-full text-xs"></span>

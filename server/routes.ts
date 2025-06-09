@@ -478,7 +478,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all chat messages
   app.get('/api/chat/messages', isAuthenticated, async (req: any, res) => {
     try {
-      const messages = await storage.getChatMessages();
+      const messages = await storage.getChatMessages(1);
       // Ensure unique IDs for React keys
       const messagesWithUniqueIds = messages.map((message: any, index: number) => ({
         ...message,
