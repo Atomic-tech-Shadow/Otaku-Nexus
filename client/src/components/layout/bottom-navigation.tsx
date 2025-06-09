@@ -1,7 +1,7 @@
 import { Home, Search, Brain, Play, User, MessageCircle } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
-import { useAuth } from './auth'; // Assuming you have an auth context
+import { useAuth } from '@/hooks/useAuth';
 
 interface BottomNavigationProps {
   currentPath: string;

@@ -383,6 +383,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint temporaire pour voir votre ID utilisateur
+  app.get('/api/debug/my-id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userInfo = req.user.claims;
+      res.json({ userId, userInfo });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get user ID" });
+    }
+  });
+
   // Admin routes - Accès restreint à l'utilisateur spécifique
   const isAdmin = async (req: any, res: any, next: any) => {
     try {
