@@ -5,8 +5,13 @@ import {
   quizzes,
   quizResults,
   videos,
+  chatRooms,
+  chatMessages,
+  chatRoomMembers,
+  adminPosts,
   type User,
   type UpsertUser,
+  type UpdateUserProfile,
   type Anime,
   type InsertAnime,
   type AnimeFavorite,
@@ -17,6 +22,14 @@ import {
   type InsertQuizResult,
   type Video,
   type InsertVideo,
+  type ChatRoom,
+  type InsertChatRoom,
+  type ChatMessage,
+  type InsertChatMessage,
+  type ChatRoomMember,
+  type InsertChatRoomMember,
+  type AdminPost,
+  type InsertAdminPost,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
@@ -61,6 +74,25 @@ export interface IStorage {
   getVideo(id: number): Promise<Video | undefined>;
   createVideo(video: InsertVideo): Promise<Video>;
   getPopularVideos(): Promise<Video[]>;
+  
+  // Profile operations
+  updateUserProfile(userId: string, profile: UpdateUserProfile): Promise<User>;
+  
+  // Chat operations
+  getChatRooms(userId?: string): Promise<ChatRoom[]>;
+  getChatRoom(id: number): Promise<ChatRoom | undefined>;
+  createChatRoom(room: InsertChatRoom): Promise<ChatRoom>;
+  getChatMessages(roomId: number, limit?: number): Promise<ChatMessage[]>;
+  sendChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  joinChatRoom(membership: InsertChatRoomMember): Promise<ChatRoomMember>;
+  getUserChatRooms(userId: string): Promise<ChatRoom[]>;
+  
+  // Admin operations
+  getAdminPosts(published?: boolean): Promise<AdminPost[]>;
+  getAdminPost(id: number): Promise<AdminPost | undefined>;
+  createAdminPost(post: InsertAdminPost): Promise<AdminPost>;
+  updateAdminPost(id: number, updates: Partial<InsertAdminPost>): Promise<AdminPost>;
+  deleteAdminPost(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {

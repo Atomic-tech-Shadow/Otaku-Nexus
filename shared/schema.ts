@@ -8,6 +8,7 @@ import {
   serial,
   integer,
   boolean,
+  unique,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -95,6 +96,45 @@ export const videos = pgTable("videos", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Chat system tables
+export const chatRooms = pgTable("chat_rooms", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  isPrivate: boolean("is_private").default(false),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  roomId: integer("room_id").notNull().references(() => chatRooms.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  message: text("message").notNull(),
+  messageType: text("message_type").default("text"), // text, image, anime_share
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const chatRoomMembers = pgTable("chat_room_members", {
+  id: serial("id").primaryKey(),
+  roomId: integer("room_id").notNull().references(() => chatRooms.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  joinedAt: timestamp("joined_at").defaultNow(),
+});
+
+// Admin posts/announcements
+export const adminPosts = pgTable("admin_posts", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  type: text("type").notNull(), // announcement, event, update
+  isPublished: boolean("is_published").default(false),
+  authorId: varchar("author_id").notNull().references(() => users.id),
+  imageUrl: text("image_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert and select schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -127,10 +167,39 @@ export const insertVideoSchema = createInsertSchema(videos).omit({
   createdAt: true,
 });
 
+export const insertChatRoomSchema = createInsertSchema(chatRooms).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertChatRoomMemberSchema = createInsertSchema(chatRoomMembers).omit({
+  id: true,
+  joinedAt: true,
+});
+
+export const insertAdminPostSchema = createInsertSchema(adminPosts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateUserProfileSchema = createInsertSchema(users).pick({
+  username: true,
+  bio: true,
+  favoriteQuote: true,
+  profileImageUrl: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
 export type Anime = typeof animes.$inferSelect;
 export type InsertAnime = z.infer<typeof insertAnimeSchema>;
 export type AnimeFavorite = typeof animeFavorites.$inferSelect;
@@ -141,3 +210,11 @@ export type QuizResult = typeof quizResults.$inferSelect;
 export type InsertQuizResult = z.infer<typeof insertQuizResultSchema>;
 export type Video = typeof videos.$inferSelect;
 export type InsertVideo = z.infer<typeof insertVideoSchema>;
+export type ChatRoom = typeof chatRooms.$inferSelect;
+export type InsertChatRoom = z.infer<typeof insertChatRoomSchema>;
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+export type ChatRoomMember = typeof chatRoomMembers.$inferSelect;
+export type InsertChatRoomMember = z.infer<typeof insertChatRoomMemberSchema>;
+export type AdminPost = typeof adminPosts.$inferSelect;
+export type InsertAdminPost = z.infer<typeof insertAdminPostSchema>;
