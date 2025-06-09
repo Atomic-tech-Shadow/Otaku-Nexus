@@ -2,7 +2,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import { useEffect } from "react";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import LoadingSpinner from "@/components/ui/loading-spinner";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

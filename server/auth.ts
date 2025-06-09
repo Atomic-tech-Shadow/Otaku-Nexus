@@ -15,13 +15,9 @@ import {
   type RegisterInput 
 } from "@shared/schema";
 
-if (!process.env.JWT_SECRET) {
-  throw new Error("Environment variable JWT_SECRET not provided");
-}
-
-if (!process.env.SESSION_SECRET) {
-  throw new Error("Environment variable SESSION_SECRET not provided");
-}
+// Use default values for development if not provided
+const JWT_SECRET = process.env.JWT_SECRET || "development-jwt-secret-change-in-production";
+const SESSION_SECRET = process.env.SESSION_SECRET || "development-session-secret-change-in-production";
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
@@ -33,7 +29,7 @@ export function getSession() {
     tableName: "sessions",
   });
   return session({
-    secret: process.env.SESSION_SECRET!,
+    secret: SESSION_SECRET,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
@@ -46,11 +42,11 @@ export function getSession() {
 }
 
 export function generateToken(payload: any): string {
-  return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '7d' });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
 export function verifyToken(token: string): any {
-  return jwt.verify(token, process.env.JWT_SECRET!);
+  return jwt.verify(token, JWT_SECRET);
 }
 
 export async function hashPassword(password: string): Promise<string> {
