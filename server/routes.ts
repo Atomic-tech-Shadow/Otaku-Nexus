@@ -83,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Anime favorites routes
   app.get('/api/favorites', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const favorites = await storage.getUserFavorites(userId);
       res.json(favorites);
     } catch (error) {
@@ -94,7 +94,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/favorites', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const favoriteData = insertAnimeFavoriteSchema.parse({
         ...req.body,
         userId,
@@ -109,7 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/favorites/:animeId', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const animeId = parseInt(req.params.animeId);
       await storage.removeFromFavorites(userId, animeId);
       res.json({ message: "Removed from favorites" });
@@ -168,7 +168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Quiz results routes
   app.get('/api/quiz-results', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const results = await storage.getUserQuizResults(userId);
       res.json(results);
     } catch (error) {
@@ -179,7 +179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/quiz-results', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const resultData = insertQuizResultSchema.parse({
         ...req.body,
         userId,
@@ -285,7 +285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Profile routes
   app.put('/api/profile', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const profileData = updateUserProfileSchema.parse(req.body);
       const updatedUser = await storage.updateUserProfile(userId, profileData);
       res.json(updatedUser);
@@ -298,7 +298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat routes
   app.get('/api/chat/rooms', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const rooms = await storage.getUserChatRooms(userId);
       res.json(rooms);
     } catch (error) {
@@ -319,7 +319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/chat/rooms', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const roomData = insertChatRoomSchema.parse({
         ...req.body,
         createdBy: userId,
@@ -428,7 +428,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/admin/posts', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const postData = insertAdminPostSchema.parse({
         ...req.body,
         authorId: userId,
