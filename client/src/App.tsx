@@ -9,6 +9,7 @@ import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Anime from "@/pages/anime";
 import Quiz from "@/pages/quiz";
+import QuizDetail from "@/pages/quiz-detail";
 import Videos from "@/pages/videos";
 import Profile from "@/pages/profile";
 
@@ -24,6 +25,7 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/anime" component={Anime} />
           <Route path="/quiz" component={Quiz} />
+          <Route path="/quiz/:id" component={QuizDetail} />
           <Route path="/videos" component={Videos} />
           <Route path="/profile" component={Profile} />
         </>

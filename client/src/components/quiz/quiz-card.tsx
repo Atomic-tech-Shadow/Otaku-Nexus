@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Brain, Trophy, Clock, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Link } from "wouter";
 
 interface QuizCardProps {
   quiz: {
@@ -50,9 +51,11 @@ export default function QuizCard({ quiz, featured = false }: QuizCardProps) {
                 <div className="text-xs opacity-75">Reward</div>
               </div>
             </div>
-            <Button className="bg-white text-otaku-purple px-4 py-2 rounded-lg font-semibold text-sm btn-hover">
-              Start Quiz
-            </Button>
+            <Link href={`/quiz/${quiz.id}`}>
+              <Button className="bg-white text-otaku-purple px-4 py-2 rounded-lg font-semibold text-sm btn-hover">
+                Start Quiz
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -90,13 +93,15 @@ export default function QuizCard({ quiz, featured = false }: QuizCardProps) {
               {quiz.xpReward || 10} XP
             </span>
           </div>
-          <Button 
-            size="sm" 
-            className="bg-electric-blue hover:bg-electric-blue/80 btn-hover"
-          >
-            <Brain className="w-3 h-3 mr-1" />
-            Start
-          </Button>
+          <Link href={`/quiz/${quiz.id}`}>
+            <Button 
+              size="sm" 
+              className="bg-electric-blue hover:bg-electric-blue/80 btn-hover"
+            >
+              <Brain className="w-3 h-3 mr-1" />
+              Start
+            </Button>
+          </Link>
         </div>
       </CardContent>
     </Card>
