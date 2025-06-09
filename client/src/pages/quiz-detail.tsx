@@ -122,8 +122,8 @@ export default function QuizDetail() {
     );
   }
 
-  const questions: Question[] = Array.isArray(quiz.questions) ? quiz.questions : [];
-  const progress = ((currentQuestion + 1) / questions.length) * 100;
+  const questions: Question[] = quiz && Array.isArray(quiz.questions) ? quiz.questions : [];
+  const progress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
 
   const handleStartQuiz = () => {
     setQuizStarted(true);
@@ -153,11 +153,11 @@ export default function QuizDetail() {
       return answer === questions[index]?.correctAnswer ? score + 1 : score;
     }, 0);
     
-    const xpEarned = Math.floor((correctAnswers / questions.length) * (quiz.xpReward || 10));
+    const xpEarned = Math.floor((correctAnswers / questions.length) * ((quiz as any)?.xpReward || 10));
     
     // Submit results
     submitResultMutation.mutate({
-      quizId: quiz.id,
+      quizId: (quiz as any)?.id,
       score: correctAnswers,
       totalQuestions: questions.length,
       xpEarned: xpEarned,
@@ -175,7 +175,7 @@ export default function QuizDetail() {
       return answer === questions[index]?.correctAnswer ? score + 1 : score;
     }, 0);
     const percentage = (correctAnswers / questions.length) * 100;
-    const xpEarned = Math.floor(percentage / 100 * (quiz.xpReward || 10));
+    const xpEarned = Math.floor(percentage / 100 * ((quiz as any)?.xpReward || 10));
     
     return { correctAnswers, percentage, xpEarned };
   };
@@ -199,8 +199,8 @@ export default function QuizDetail() {
                   Back to Quizzes
                 </Button>
               </Link>
-              <h1 className="text-2xl font-bold mb-2 text-gradient">{quiz.title}</h1>
-              <p className="text-gray-400 text-sm">{quiz.description}</p>
+              <h1 className="text-2xl font-bold mb-2 text-gradient">{(quiz as any)?.title}</h1>
+              <p className="text-gray-400 text-sm">{(quiz as any)?.description}</p>
             </div>
 
             <Card className="bg-card-bg border-gray-800 mb-6">
@@ -211,18 +211,18 @@ export default function QuizDetail() {
                     <div className="text-sm text-gray-400">Questions</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold hot-pink">+{quiz.xpReward || 10}</div>
+                    <div className="text-2xl font-bold hot-pink">+{(quiz as any)?.xpReward || 10}</div>
                     <div className="text-sm text-gray-400">XP Reward</div>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-center mb-6">
                   <Badge className={`text-lg px-4 py-2 ${
-                    quiz.difficulty === 'easy' ? 'bg-green-500/20 text-green-400' :
-                    quiz.difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                    (quiz as any)?.difficulty === 'easy' ? 'bg-green-500/20 text-green-400' :
+                    (quiz as any)?.difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
                     'bg-red-500/20 text-red-400'
                   }`}>
-                    {quiz.difficulty.toUpperCase()}
+                    {(quiz as any)?.difficulty?.toUpperCase() || 'MEDIUM'}
                   </Badge>
                 </div>
 
