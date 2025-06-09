@@ -104,9 +104,32 @@ export default function Profile() {
               <h2 className="text-xl font-bold mb-1">
                 {user?.firstName || user?.username || 'Anonymous Otaku'}
               </h2>
-              <p className="text-gray-400 text-sm mb-4">
+              <p className="text-gray-400 text-sm mb-2">
                 {user?.email || 'No email provided'}
               </p>
+              
+              {/* Bio */}
+              {user?.bio && (
+                <div className="bg-gray-800/50 rounded-lg p-3 mb-3 max-w-xs mx-auto">
+                  <p className="text-gray-300 text-sm italic">"{user.bio}"</p>
+                </div>
+              )}
+              
+              {/* Favorite Quote */}
+              {user?.favoriteQuote && (
+                <div className="bg-blue-900/30 rounded-lg p-3 mb-4 max-w-xs mx-auto">
+                  <p className="text-blue-200 text-sm">💭 {user.favoriteQuote}</p>
+                </div>
+              )}
+              
+              <div className="flex gap-2 justify-center mb-4">
+                <Link href="/edit-profile">
+                  <Button variant="outline" size="sm" className="border-blue-500 text-blue-400 hover:bg-blue-500/20">
+                    <Edit className="w-3 h-3 mr-1" />
+                    Edit Profile
+                  </Button>
+                </Link>
+              </div>
               
               {/* Level and XP */}
               <div className="mb-4">

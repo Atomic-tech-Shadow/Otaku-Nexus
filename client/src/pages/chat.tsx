@@ -1,37 +1,31 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { MessageCircle, Plus, Users, Send, Hash, MessageSquare } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { 
+  Send, 
+  Plus, 
+  Users, 
+  Settings, 
+  Search, 
+  Phone, 
+  Video, 
+  Info,
+  Smile,
+  Paperclip,
+  MessageCircle
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { isUnauthorizedError } from "@/lib/authUtils";
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-} from "@/components/ui/avatar"
-
-const createRoomSchema = z.object({
-  name: z.string().min(1, "Le nom est requis"),
-  description: z.string().optional(),
-  isPrivate: z.boolean().default(false),
-});
-
-const sendMessageSchema = z.object({
-  message: z.string().min(1, "Le message ne peut pas être vide"),
-  messageType: z.string().default("text"),
-});
+import AppHeader from "@/components/layout/app-header";
+import BottomNavigation from "@/components/layout/bottom-navigation";
 
 interface ChatRoom {
   id: number;
@@ -40,166 +34,92 @@ interface ChatRoom {
   isPrivate: boolean;
   createdBy: string;
   createdAt: string;
-  memberCount?: number;
 }
 
 interface ChatMessage {
   id: number;
   roomId: number;
   userId: string;
-  content: string;
+  message: string;
   messageType: string;
   createdAt: string;
-  user: {
-    firstName: string;
-    lastName: string;
-    profileImageUrl: string;
-  }
 }
-
-// Placeholder AppHeader component
-const AppHeader = () => (
-  <header className="bg-gradient-to-r from-purple-700 to-blue-700 text-white py-4 shadow-md">
-    <div className="container mx-auto px-4">
-      <h1 className="text-2xl font-bold">💬 Chat Otaku</h1>
-      <p className="text-sm">Discutez avec d'autres fans d'anime</p>
-    </div>
-  </header>
-);
-
-const formatMessageTime = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-};
 
 export default function Chat() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
-  const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
-  const [newMessage, setNewMessage] = useState('');
+  const [newMessage, setNewMessage] = useState("");
+  const [newRoomName, setNewRoomName] = useState("");
+  const [showCreateRoom, setShowCreateRoom] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Non autorisé",
-        description: "Vous devez être connecté. Redirection...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, toast]);
-
-  const createRoomForm = useForm<z.infer<typeof createRoomSchema>>({
-    resolver: zodResolver(createRoomSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      isPrivate: false,
-    },
-  });
-
-  const sendMessageForm = useForm<z.infer<typeof sendMessageSchema>>({
-    resolver: zodResolver(sendMessageSchema),
-    defaultValues: {
-      message: "",
-      messageType: "text",
-    },
-  });
-
-  // Fetch user's chat rooms
-  const { data: userRooms = [], isLoading: roomsLoading } = useQuery({
-    queryKey: ["/api/chat/rooms"],
-    enabled: isAuthenticated,
-  });
-
-  // Fetch public chat rooms
-  const { data: publicRooms = [] } = useQuery({
+  // Fetch chat rooms
+  const { data: chatRooms = [] } = useQuery({
     queryKey: ["/api/chat/rooms/public"],
+    enabled: isAuthenticated,
   });
 
   // Fetch messages for selected room
   const { data: messages = [] } = useQuery({
     queryKey: ["/api/chat/rooms", selectedRoom?.id, "messages"],
+    queryFn: () => selectedRoom ? apiRequest(`/api/chat/rooms/${selectedRoom.id}/messages`) : [],
     enabled: !!selectedRoom,
+    refetchInterval: 2000, // Refresh every 2 seconds
   });
 
-  const createRoomMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof createRoomSchema>) => {
-      return await apiRequest("/api/chat/rooms", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/chat/rooms"] });
-      setIsCreateRoomOpen(false);
-      createRoomForm.reset();
-      toast({
-        title: "Salon créé",
-        description: "Votre salon de discussion a été créé avec succès.",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Non autorisé",
-          description: "Vous êtes déconnecté. Reconnexion...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer le salon.",
-        variant: "destructive",
-      });
-    },
-  });
-
+  // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof sendMessageSchema>) => {
-      if (!selectedRoom) throw new Error("Aucun salon sélectionné");
+    mutationFn: async (messageData: { message: string }) => {
+      if (!selectedRoom) throw new Error("No room selected");
       return await apiRequest(`/api/chat/rooms/${selectedRoom.id}/messages`, {
         method: "POST",
-        body: JSON.stringify(data),
+        body: JSON.stringify(messageData),
       });
     },
     onSuccess: () => {
+      setNewMessage("");
       queryClient.invalidateQueries({ 
         queryKey: ["/api/chat/rooms", selectedRoom?.id, "messages"] 
       });
-      sendMessageForm.reset();
     },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Non autorisé",
-          description: "Vous êtes déconnecté. Reconnexion...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
+    onError: () => {
       toast({
         title: "Erreur",
-        description: "Impossible d'envoyer le message.",
+        description: "Impossible d'envoyer le message",
         variant: "destructive",
       });
     },
   });
 
+  // Create room mutation
+  const createRoomMutation = useMutation({
+    mutationFn: async (roomData: { name: string; description?: string; isPrivate: boolean }) => {
+      return await apiRequest("/api/chat/rooms", {
+        method: "POST",
+        body: JSON.stringify(roomData),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/chat/rooms/public"] });
+      setNewRoomName("");
+      setShowCreateRoom(false);
+      toast({
+        title: "Salon créé",
+        description: "Le salon de discussion a été créé avec succès",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Impossible de créer le salon",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Join room mutation
   const joinRoomMutation = useMutation({
     mutationFn: async (roomId: number) => {
       return await apiRequest(`/api/chat/rooms/${roomId}/join`, {
@@ -207,230 +127,291 @@ export default function Chat() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/chat/rooms"] });
       toast({
         title: "Rejoint",
-        description: "Vous avez rejoint le salon avec succès.",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Non autorisé",
-          description: "Vous êtes déconnecté. Reconnexion...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Erreur",
-        description: "Impossible de rejoindre le salon.",
-        variant: "destructive",
+        description: "Vous avez rejoint le salon",
       });
     },
   });
 
-  useEffect(() => {
-    // Scroll to bottom when messages change
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages]);
+  const handleSendMessage = () => {
+    if (!newMessage.trim() || !selectedRoom) return;
+    sendMessageMutation.mutate({ message: newMessage });
+  };
 
-  const rooms = [...userRooms, ...publicRooms];
-
-  const handleSendMessage = async (e: any) => {
-    e.preventDefault();
-    if (!newMessage.trim()) return;
-
-    // Optimistically update the message list
-    const tempMessage = {
-      id: Date.now(),
-      roomId: selectedRoom?.id,
-      userId: user?.id,
-      content: newMessage,
-      messageType: 'text',
-      createdAt: new Date().toISOString(),
-      user: {
-        firstName: user?.firstName || 'Me',
-        lastName: user?.lastName || '',
-        profileImageUrl: user?.image || '',
-      },
-    };
-
-    // Update local state immediately
-    const optimisticMessages = [...messages, tempMessage];
-    // messages.push(tempMessage)
-    // setMessages(optimisticMessages);
-    setNewMessage(''); // Clear the input field
-
-    try {
-      // Await the actual send message mutation
-      await sendMessageMutation.mutateAsync({ message: newMessage, messageType: 'text' });
-      // If successful, the query will invalidate and refetch
-    } catch (error) {
-      // If there's an error, revert the changes
-      toast({
-        title: "Erreur",
-        description: "Impossible d'envoyer le message.",
-        variant: "destructive",
-      });
-    } finally {
-      setNewMessage('');
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
     }
   };
 
+  const handleJoinRoom = (room: ChatRoom) => {
+    setSelectedRoom(room);
+    joinRoomMutation.mutate(room.id);
+  };
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  // Auto scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   if (!isAuthenticated) {
-    return null;
+    return (
+      <div className="min-h-screen bg-dark-bg flex items-center justify-center">
+        <Card className="bg-card-bg border-gray-800">
+          <CardContent className="p-6 text-center">
+            <p className="text-white mb-4">Vous devez être connecté pour accéder au chat</p>
+            <Button onClick={() => window.location.href = "/auth"}>
+              Se connecter
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
-    
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 pb-20">
       <AppHeader />
-
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
-          {/* Chat Rooms Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="h-full bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
-              <CardHeader className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-lg">
-                <CardTitle className="flex items-center gap-3">
-                  <div className="p-2 bg-white/20 rounded-lg">
-                    <MessageSquare className="h-5 w-5" />
-                  </div>
-                  <span className="font-bold">Salons</span>
-                </CardTitle>
-                <Button 
-                  onClick={() => setIsCreateRoomOpen(true)}
-                  className="w-full bg-white/20 hover:bg-white/30 border-white/30 text-white font-medium"
-                  variant="outline"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Créer un salon
-                </Button>
-              </CardHeader>
-              <CardContent className="p-0">
-                <ScrollArea className="h-[400px]">
-                  {rooms?.map((room) => (
-                    <div
-                      key={room.id}
-                      onClick={() => setSelectedRoom(room)}
-                      className={`p-4 border-b border-white/10 cursor-pointer transition-all duration-200 ${
-                        selectedRoom?.id === room.id 
-                          ? 'bg-gradient-to-r from-purple-500/30 to-blue-500/30 border-l-4 border-l-purple-400 shadow-lg' 
-                          : 'hover:bg-white/5 hover:transform hover:scale-[1.02]'
-                      }`}
-                    >
-                      <h3 className="font-semibold text-white text-sm">{room.name}</h3>
-                      <p className="text-xs text-gray-300 mt-1 line-clamp-2">{room.description}</p>
-                      <div className="flex items-center gap-2 mt-3">
-                        <div className="flex items-center gap-1 bg-white/10 rounded-full px-2 py-1">
-                          <Users className="h-3 w-3 text-purple-300" />
-                          <span className="text-xs text-purple-200 font-medium">{room.memberCount || 0}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </ScrollArea>
-              </CardContent>
-            </Card>
+      
+      <div className="flex h-[calc(100vh-140px)]">
+        {/* Sidebar - Chat List */}
+        <div className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+          {/* Header */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-3">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <MessageCircle className="h-6 w-6 text-blue-500" />
+                Messages
+              </h1>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCreateRoom(!showCreateRoom)}
+                className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Rechercher des conversations..."
+                className="pl-10 bg-gray-100 dark:bg-gray-700 border-none"
+              />
+            </div>
           </div>
 
-          {/* Chat Messages */}
-          <div className="lg:col-span-3">
-            {selectedRoom ? (
-              <Card className="h-full flex flex-col bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
-                <CardHeader className="flex-shrink-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-lg">
-                  <CardTitle className="flex items-center gap-3">
-                    <div className="p-2 bg-white/20 rounded-lg">
-                      <Hash className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h2 className="font-bold">{selectedRoom.name}</h2>
-                      <p className="text-sm text-blue-100 font-normal">{selectedRoom.description}</p>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
+          {/* Create Room Form */}
+          {showCreateRoom && (
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-b">
+              <Input
+                value={newRoomName}
+                onChange={(e) => setNewRoomName(e.target.value)}
+                placeholder="Nom du salon..."
+                className="mb-2"
+              />
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => createRoomMutation.mutate({
+                    name: newRoomName,
+                    description: `Salon créé par ${user?.firstName}`,
+                    isPrivate: false,
+                  })}
+                  disabled={!newRoomName.trim() || createRoomMutation.isPending}
+                  className="flex-1"
+                >
+                  Créer
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCreateRoom(false)}
+                >
+                  Annuler
+                </Button>
+              </div>
+            </div>
+          )}
 
-                <CardContent className="flex-1 flex flex-col p-0">
-                  {/* Messages */}
-                  <ScrollArea className="flex-1 p-6" ref={messagesEndRef}>
-                    <div className="space-y-6">
-                      {messages?.map((message) => (
-                        <div key={message.id} className="flex gap-4 group hover:bg-white/5 p-3 rounded-lg transition-all duration-200">
-                          <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-purple-400/50">
-                            <AvatarImage src={message.user?.profileImageUrl} />
-                            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-bold">
-                              {message.user?.firstName?.[0]}{message.user?.lastName?.[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-3 mb-2">
-                              <span className="font-bold text-white bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-                                {message.user?.firstName} {message.user?.lastName}
-                              </span>
-                              <span className="text-xs text-gray-400 bg-white/10 px-2 py-1 rounded-full">
-                                {formatMessageTime(message.createdAt)}
-                              </span>
-                            </div>
-                            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                              <p className="text-white break-words leading-relaxed">
-                                {message.content}
-                              </p>
-                            </div>
+          {/* Chat Rooms List */}
+          <ScrollArea className="flex-1">
+            <div className="p-2">
+              {chatRooms.map((room: ChatRoom) => (
+                <div
+                  key={room.id}
+                  onClick={() => handleJoinRoom(room)}
+                  className={`
+                    p-3 rounded-lg cursor-pointer transition-all duration-200 mb-1
+                    ${selectedRoom?.id === room.id 
+                      ? 'bg-blue-500 text-white' 
+                      : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
+                    }
+                  `}
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                        {room.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold text-sm truncate">{room.name}</p>
+                        <span className="text-xs opacity-75">
+                          {formatTime(room.createdAt)}
+                        </span>
+                      </div>
+                      <p className="text-xs opacity-75 truncate">
+                        {room.description || "Salon de discussion"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col bg-white dark:bg-gray-800">
+          {selectedRoom ? (
+            <>
+              {/* Chat Header */}
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                        {selectedRoom.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h2 className="font-semibold text-gray-900 dark:text-white">
+                        {selectedRoom.name}
+                      </h2>
+                      <p className="text-sm text-gray-500">
+                        {selectedRoom.description}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="sm" className="text-blue-500">
+                      <Phone className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-blue-500">
+                      <Video className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-blue-500">
+                      <Info className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Messages Area */}
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-4">
+                  {messages.map((message: ChatMessage) => {
+                    const isOwnMessage = message.userId === user?.id;
+                    return (
+                      <div
+                        key={message.id}
+                        className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div className={`flex items-end gap-2 max-w-xs lg:max-w-md ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
+                          {!isOwnMessage && (
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="bg-gray-300 text-gray-700 text-xs">
+                                {message.userId.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          )}
+                          <div
+                            className={`
+                              px-4 py-2 rounded-2xl relative
+                              ${isOwnMessage 
+                                ? 'bg-blue-500 text-white rounded-br-md' 
+                                : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-md'
+                              }
+                            `}
+                          >
+                            <p className="text-sm">{message.message}</p>
+                            <p className={`text-xs mt-1 ${isOwnMessage ? 'text-blue-100' : 'text-gray-500'}`}>
+                              {formatTime(message.createdAt)}
+                            </p>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-
-                  {/* Message Input */}
-                  <div className="border-t border-white/20 p-6 flex-shrink-0 bg-white/5">
-                    <form onSubmit={handleSendMessage} className="flex gap-3">
-                      <div className="flex-1 relative">
-                        <Input
-                          value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
-                          placeholder="Tapez votre message..."
-                          className="bg-white/10 border-white/30 text-white placeholder:text-gray-300 focus:ring-purple-400 focus:border-purple-400 rounded-xl py-3 px-4 pr-12"
-                        />
                       </div>
-                      <Button 
-                        type="submit" 
-                        disabled={!newMessage.trim()}
-                        className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold px-6 py-3 rounded-xl shadow-lg transform transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
-                      >
-                        <Send className="h-4 w-4" />
-                      </Button>
-                    </form>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
+
+              {/* Message Input */}
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" className="text-blue-500">
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                  <div className="flex-1 relative">
+                    <Input
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Tapez un message..."
+                      className="pr-20 bg-gray-100 dark:bg-gray-700 border-none rounded-full"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-500"
+                    >
+                      <Smile className="h-4 w-4" />
+                    </Button>
                   </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="h-full flex items-center justify-center bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
-                <CardContent className="text-center p-12">
-                  <div className="bg-gradient-to-br from-purple-500 to-blue-500 p-6 rounded-full mx-auto mb-6 w-24 h-24 flex items-center justify-center">
-                    <MessageSquare className="h-12 w-12 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-4 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-                    Sélectionnez un salon
-                  </h3>
-                  <p className="text-gray-300 text-lg leading-relaxed max-w-md mx-auto">
-                    Choisissez un salon de discussion pour commencer à chatter avec la communauté
-                  </p>
-                  <div className="mt-8 flex justify-center">
-                    <div className="bg-white/10 rounded-full px-6 py-2 border border-white/20">
-                      <span className="text-purple-300 text-sm font-medium">💬 Discussions en temps réel</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!newMessage.trim() || sendMessageMutation.isPending}
+                    size="sm"
+                    className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MessageCircle className="h-8 w-8 text-blue-500" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Sélectionnez une conversation
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400">
+                  Choisissez un salon dans la liste pour commencer à discuter
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      <BottomNavigation currentPath="/chat" />
     </div>
   );
 }
