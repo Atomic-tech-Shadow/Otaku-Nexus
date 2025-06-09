@@ -360,6 +360,28 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(chatRooms.createdAt));
   }
 
+  // Public posts operations
+  async getPublicPosts(): Promise<AdminPost[]> {
+    return await db.select({
+      id: adminPosts.id,
+      title: adminPosts.title,
+      content: adminPosts.content,
+      type: adminPosts.type,
+      isPublished: adminPosts.isPublished,
+      authorId: adminPosts.authorId,
+      imageUrl: adminPosts.imageUrl,
+      createdAt: adminPosts.createdAt,
+      updatedAt: adminPosts.updatedAt,
+      authorName: users.firstName,
+      authorLastName: users.lastName,
+      authorProfileImageUrl: users.profileImageUrl,
+    })
+    .from(adminPosts)
+    .leftJoin(users, eq(adminPosts.authorId, users.id))
+    .where(and(eq(adminPosts.isPublished, true), eq(adminPosts.adminOnly, false)))
+    .orderBy(desc(adminPosts.createdAt));
+  }
+
   // Admin operations
   async getAdminPosts(published?: boolean): Promise<AdminPost[]> {
     const query = db.select({
