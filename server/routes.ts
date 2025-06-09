@@ -1,7 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./auth";
 import {
   insertAnimeSchema,
   insertAnimeFavoriteSchema,
@@ -14,6 +13,7 @@ import {
   insertAdminPostSchema,
   updateUserProfileSchema,
 } from "@shared/schema";
+import { setupAuth, isAuthenticated } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -184,14 +184,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         userId,
       });
-      
+
       const result = await storage.createQuizResult(resultData);
-      
+
       // Update user XP
       if (resultData.xpEarned && resultData.xpEarned > 0) {
         await storage.updateUserXP(userId, resultData.xpEarned);
       }
-      
+
       res.json(result);
     } catch (error) {
       console.error("Error creating quiz result:", error);
@@ -387,16 +387,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin routes - Accès restreint à l'utilisateur spécifique
   const isAdmin = async (req: any, res: any, next: any) => {
     try {
-      const userId = req.user.claims.sub;
-      // Remplacez "43652320" par votre ID utilisateur spécifique
-      const ADMIN_USER_ID = "43652320";
-      
-      if (userId !== ADMIN_USER_ID) {
-        return res.status(403).json({ message: "Admin access required" });
+      const user = await storage.getUser(req.user.id);
+      const adminEmail = process.env.ADMIN_USER_ID || "sorokomarco@gmail.com";
+
+      // Vérifier si l'utilisateur est l'admin spécifique
+      if (user?.email !== adminEmail) {
+        return res.status(403).json({ message: "Accès refusé - Admin uniquement" });
       }
       next();
     } catch (error) {
-      res.status(500).json({ message: "Failed to verify admin status" });
+      console.error("Admin auth error:", error);
+      res.status(500).json({ message: "Erreur de vérification admin" });
     }
   };
 

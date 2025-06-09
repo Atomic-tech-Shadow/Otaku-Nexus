@@ -84,12 +84,15 @@ export async function setupAuth(app: Express) {
       const hashedPassword = await hashPassword(data.password);
       const userId = crypto.randomUUID();
       
+      const isAdmin = data.email === (process.env.ADMIN_USER_ID || "sorokomarco@gmail.com");
+      
       const user = await storage.createUser({
         id: userId,
         email: data.email,
         password: hashedPassword,
         firstName: data.firstName,
         lastName: data.lastName,
+        isAdmin: isAdmin,
       });
 
       // Generate auth token and set session
