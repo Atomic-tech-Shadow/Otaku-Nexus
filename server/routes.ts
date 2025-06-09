@@ -346,7 +346,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/chat/rooms/:id/messages', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const roomId = parseInt(req.params.id);
       const messageData = insertChatMessageSchema.parse({
         ...req.body,
@@ -363,7 +363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/chat/rooms/:id/join', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const roomId = parseInt(req.params.id);
       const membership = await storage.joinChatRoom({ roomId, userId });
       res.json(membership);
@@ -376,8 +376,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint temporaire pour voir votre ID utilisateur
   app.get('/api/debug/my-id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const userInfo = req.user.claims;
+      const userId = req.user.id;
+      const userInfo = req.user;
       res.json({ userId, userInfo });
     } catch (error) {
       res.status(500).json({ message: "Failed to get user ID" });
