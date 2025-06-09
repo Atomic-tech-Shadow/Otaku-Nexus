@@ -263,6 +263,122 @@ export class DatabaseStorage implements IStorage {
   async getPopularVideos(): Promise<Video[]> {
     return await db.select().from(videos).orderBy(desc(videos.views)).limit(10);
   }
+
+  // Profile operations
+  async updateUserProfile(userId: string, profile: UpdateUserProfile): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ ...profile, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
+  }
+
+  // Chat operations
+  async getChatRooms(userId?: string): Promise<ChatRoom[]> {
+    if (userId) {
+      return await db
+        .select({
+          id: chatRooms.id,
+          name: chatRooms.name,
+          description: chatRooms.description,
+          isPrivate: chatRooms.isPrivate,
+          createdBy: chatRooms.createdBy,
+          createdAt: chatRooms.createdAt,
+        })
+        .from(chatRooms)
+        .innerJoin(chatRoomMembers, eq(chatRoomMembers.roomId, chatRooms.id))
+        .where(eq(chatRoomMembers.userId, userId))
+        .orderBy(desc(chatRooms.createdAt));
+    }
+    return await db
+      .select()
+      .from(chatRooms)
+      .where(eq(chatRooms.isPrivate, false))
+      .orderBy(desc(chatRooms.createdAt));
+  }
+
+  async getChatRoom(id: number): Promise<ChatRoom | undefined> {
+    const [room] = await db.select().from(chatRooms).where(eq(chatRooms.id, id));
+    return room;
+  }
+
+  async createChatRoom(room: InsertChatRoom): Promise<ChatRoom> {
+    const [newRoom] = await db.insert(chatRooms).values(room).returning();
+    // Auto-join the creator
+    await db.insert(chatRoomMembers).values({
+      roomId: newRoom.id,
+      userId: room.createdBy,
+    });
+    return newRoom;
+  }
+
+  async getChatMessages(roomId: number, limit = 50): Promise<ChatMessage[]> {
+    return await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.roomId, roomId))
+      .orderBy(desc(chatMessages.createdAt))
+      .limit(limit);
+  }
+
+  async sendChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    const [newMessage] = await db.insert(chatMessages).values(message).returning();
+    return newMessage;
+  }
+
+  async joinChatRoom(membership: InsertChatRoomMember): Promise<ChatRoomMember> {
+    const [newMember] = await db.insert(chatRoomMembers).values(membership).returning();
+    return newMember;
+  }
+
+  async getUserChatRooms(userId: string): Promise<ChatRoom[]> {
+    return await db
+      .select({
+        id: chatRooms.id,
+        name: chatRooms.name,
+        description: chatRooms.description,
+        isPrivate: chatRooms.isPrivate,
+        createdBy: chatRooms.createdBy,
+        createdAt: chatRooms.createdAt,
+      })
+      .from(chatRooms)
+      .innerJoin(chatRoomMembers, eq(chatRoomMembers.roomId, chatRooms.id))
+      .where(eq(chatRoomMembers.userId, userId))
+      .orderBy(desc(chatRooms.createdAt));
+  }
+
+  // Admin operations
+  async getAdminPosts(published?: boolean): Promise<AdminPost[]> {
+    const query = db.select().from(adminPosts).orderBy(desc(adminPosts.createdAt));
+    if (published !== undefined) {
+      return await query.where(eq(adminPosts.isPublished, published));
+    }
+    return await query;
+  }
+
+  async getAdminPost(id: number): Promise<AdminPost | undefined> {
+    const [post] = await db.select().from(adminPosts).where(eq(adminPosts.id, id));
+    return post;
+  }
+
+  async createAdminPost(post: InsertAdminPost): Promise<AdminPost> {
+    const [newPost] = await db.insert(adminPosts).values(post).returning();
+    return newPost;
+  }
+
+  async updateAdminPost(id: number, updates: Partial<InsertAdminPost>): Promise<AdminPost> {
+    const [updatedPost] = await db
+      .update(adminPosts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(adminPosts.id, id))
+      .returning();
+    return updatedPost;
+  }
+
+  async deleteAdminPost(id: number): Promise<void> {
+    await db.delete(adminPosts).where(eq(adminPosts.id, id));
+  }
 }
 
 export const storage = new DatabaseStorage();

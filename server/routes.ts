@@ -8,6 +8,11 @@ import {
   insertQuizSchema,
   insertQuizResultSchema,
   insertVideoSchema,
+  insertChatRoomSchema,
+  insertChatMessageSchema,
+  insertChatRoomMemberSchema,
+  insertAdminPostSchema,
+  updateUserProfileSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -284,6 +289,185 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching top anime from Jikan API:", error);
       res.status(500).json({ message: "Failed to fetch top anime from external API" });
+    }
+  });
+
+  // Profile routes
+  app.put('/api/profile', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const profileData = updateUserProfileSchema.parse(req.body);
+      const updatedUser = await storage.updateUserProfile(userId, profileData);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  // Chat routes
+  app.get('/api/chat/rooms', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const rooms = await storage.getUserChatRooms(userId);
+      res.json(rooms);
+    } catch (error) {
+      console.error("Error fetching chat rooms:", error);
+      res.status(500).json({ message: "Failed to fetch chat rooms" });
+    }
+  });
+
+  app.get('/api/chat/rooms/public', async (req, res) => {
+    try {
+      const rooms = await storage.getChatRooms();
+      res.json(rooms);
+    } catch (error) {
+      console.error("Error fetching public chat rooms:", error);
+      res.status(500).json({ message: "Failed to fetch public chat rooms" });
+    }
+  });
+
+  app.post('/api/chat/rooms', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const roomData = insertChatRoomSchema.parse({
+        ...req.body,
+        createdBy: userId,
+      });
+      const room = await storage.createChatRoom(roomData);
+      res.json(room);
+    } catch (error) {
+      console.error("Error creating chat room:", error);
+      res.status(500).json({ message: "Failed to create chat room" });
+    }
+  });
+
+  app.get('/api/chat/rooms/:id/messages', isAuthenticated, async (req, res) => {
+    try {
+      const roomId = parseInt(req.params.id);
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const messages = await storage.getChatMessages(roomId, limit);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching chat messages:", error);
+      res.status(500).json({ message: "Failed to fetch chat messages" });
+    }
+  });
+
+  app.post('/api/chat/rooms/:id/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const roomId = parseInt(req.params.id);
+      const messageData = insertChatMessageSchema.parse({
+        ...req.body,
+        roomId,
+        userId,
+      });
+      const message = await storage.sendChatMessage(messageData);
+      res.json(message);
+    } catch (error) {
+      console.error("Error sending chat message:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  app.post('/api/chat/rooms/:id/join', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const roomId = parseInt(req.params.id);
+      const membership = await storage.joinChatRoom({ roomId, userId });
+      res.json(membership);
+    } catch (error) {
+      console.error("Error joining chat room:", error);
+      res.status(500).json({ message: "Failed to join chat room" });
+    }
+  });
+
+  // Admin routes
+  const isAdmin = async (req: any, res: any, next: any) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      next();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to verify admin status" });
+    }
+  };
+
+  app.get('/api/admin/posts', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const published = req.query.published ? req.query.published === 'true' : undefined;
+      const posts = await storage.getAdminPosts(published);
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching admin posts:", error);
+      res.status(500).json({ message: "Failed to fetch admin posts" });
+    }
+  });
+
+  app.get('/api/admin/posts/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const post = await storage.getAdminPost(id);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+      res.json(post);
+    } catch (error) {
+      console.error("Error fetching admin post:", error);
+      res.status(500).json({ message: "Failed to fetch admin post" });
+    }
+  });
+
+  app.post('/api/admin/posts', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const postData = insertAdminPostSchema.parse({
+        ...req.body,
+        authorId: userId,
+      });
+      const post = await storage.createAdminPost(postData);
+      res.json(post);
+    } catch (error) {
+      console.error("Error creating admin post:", error);
+      res.status(500).json({ message: "Failed to create admin post" });
+    }
+  });
+
+  app.put('/api/admin/posts/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const post = await storage.updateAdminPost(id, updates);
+      res.json(post);
+    } catch (error) {
+      console.error("Error updating admin post:", error);
+      res.status(500).json({ message: "Failed to update admin post" });
+    }
+  });
+
+  app.delete('/api/admin/posts/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteAdminPost(id);
+      res.json({ message: "Post deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting admin post:", error);
+      res.status(500).json({ message: "Failed to delete admin post" });
+    }
+  });
+
+  // Public posts for non-admin users
+  app.get('/api/posts', async (req, res) => {
+    try {
+      const posts = await storage.getAdminPosts(true); // Only published posts
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      res.status(500).json({ message: "Failed to fetch posts" });
     }
   });
 
