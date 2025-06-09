@@ -11,7 +11,7 @@ build = ["npm", "run", "build"]
 run = ["npm", "run", "start"]
 
 [workflows]
-runButton = "Start App"
+runButton = "Start App Fixed"
 
 [[workflows.workflow]]
 name = "Project"
@@ -33,6 +33,15 @@ waitForPort = 5000
 
 [[workflows.workflow]]
 name = "Start App"
+author = 43652320
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Start App Fixed"
 author = 43652320
 mode = "sequential"
 

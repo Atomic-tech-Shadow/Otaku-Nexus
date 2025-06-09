@@ -475,6 +475,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all chat messages
+  app.get('/api/chat/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const messages = await storage.getChatMessages();
+      // Ensure unique IDs for React keys
+      const messagesWithUniqueIds = messages.map((message: any, index: number) => ({
+        ...message,
+        id: `${message.id}-${index}-${Date.now()}`
+      }));
+      res.json(messagesWithUniqueIds);
+    } catch (error) {
+      console.error("Get messages error:", error);
+      res.status(500).json({ message: "Failed to get messages" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
