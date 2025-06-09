@@ -1,4 +1,4 @@
-import { Home, Search, Brain, Play, User } from "lucide-react";
+import { Home, Search, Brain, Play, User, MessageCircle } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 
@@ -11,7 +11,7 @@ export default function BottomNavigation({ currentPath }: BottomNavigationProps)
     { icon: Home, label: "Home", path: "/" },
     { icon: Search, label: "Anime", path: "/anime" },
     { icon: Brain, label: "Quiz", path: "/quiz" },
-    { icon: Play, label: "Videos", path: "/videos" },
+    { icon: MessageCircle, label: "Chat", path: "/chat" },
     { icon: User, label: "Profile", path: "/profile" },
   ];
 

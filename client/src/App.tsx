@@ -12,6 +12,9 @@ import Quiz from "@/pages/quiz";
 import QuizDetail from "@/pages/quiz-detail";
 import Videos from "@/pages/videos";
 import Profile from "@/pages/profile";
+import Chat from "@/pages/chat";
+import EditProfile from "@/pages/edit-profile";
+import Admin from "@/pages/admin";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -28,6 +31,9 @@ function Router() {
           <Route path="/quiz/:id" component={QuizDetail} />
           <Route path="/videos" component={Videos} />
           <Route path="/profile" component={Profile} />
+          <Route path="/chat" component={Chat} />
+          <Route path="/edit-profile" component={EditProfile} />
+          <Route path="/admin" component={Admin} />
         </>
       )}
       <Route component={NotFound} />

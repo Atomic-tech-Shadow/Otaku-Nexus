@@ -8,7 +8,8 @@ import BottomNavigation from "@/components/layout/bottom-navigation";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Trophy, Brain, Heart, Play, Star, Award } from "lucide-react";
+import { LogOut, Trophy, Brain, Heart, Play, Star, Award, Edit, Settings } from "lucide-react";
+import { Link } from "wouter";
 
 export default function Profile() {
   const { toast } = useToast();
