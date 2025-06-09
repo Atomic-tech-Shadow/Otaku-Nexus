@@ -280,8 +280,8 @@ export default function Admin() {
     }
   };
 
-  const ADMIN_USER_ID = "43652320";
-  if (!isAuthenticated || (user && user.id !== ADMIN_USER_ID)) {
+  // Vérification d'accès admin - seul votre ID peut accéder
+  if (!isAuthenticated || (user && user.id !== "43652320")) {
     return null;
   }
 

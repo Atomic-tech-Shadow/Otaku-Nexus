@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,10 +12,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { MessageCircle, Plus, Users, Send } from "lucide-react";
+import { MessageCircle, Plus, Users, Send, Hash, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "@/components/ui/avatar"
 
 const createRoomSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
@@ -35,16 +40,37 @@ interface ChatRoom {
   isPrivate: boolean;
   createdBy: string;
   createdAt: string;
+  memberCount?: number;
 }
 
 interface ChatMessage {
   id: number;
   roomId: number;
   userId: string;
-  message: string;
+  content: string;
   messageType: string;
   createdAt: string;
+  user: {
+    firstName: string;
+    lastName: string;
+    profileImageUrl: string;
+  }
 }
+
+// Placeholder AppHeader component
+const AppHeader = () => (
+  <header className="bg-gradient-to-r from-purple-700 to-blue-700 text-white py-4 shadow-md">
+    <div className="container mx-auto px-4">
+      <h1 className="text-2xl font-bold">💬 Chat Otaku</h1>
+      <p className="text-sm">Discutez avec d'autres fans d'anime</p>
+    </div>
+  </header>
+);
+
+const formatMessageTime = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+};
 
 export default function Chat() {
   const { user, isAuthenticated } = useAuth();
@@ -52,6 +78,8 @@ export default function Chat() {
   const queryClient = useQueryClient();
   const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
   const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
+  const [newMessage, setNewMessage] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -97,7 +125,7 @@ export default function Chat() {
   });
 
   // Fetch messages for selected room
-  const { data: messages = [], isLoading: messagesLoading } = useQuery({
+  const { data: messages = [] } = useQuery({
     queryKey: ["/api/chat/rooms", selectedRoom?.id, "messages"],
     enabled: !!selectedRoom,
   });
@@ -205,257 +233,201 @@ export default function Chat() {
     },
   });
 
+  useEffect(() => {
+    // Scroll to bottom when messages change
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages]);
+
+  const rooms = [...userRooms, ...publicRooms];
+
+  const handleSendMessage = async (e: any) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+
+    // Optimistically update the message list
+    const tempMessage = {
+      id: Date.now(),
+      roomId: selectedRoom?.id,
+      userId: user?.id,
+      content: newMessage,
+      messageType: 'text',
+      createdAt: new Date().toISOString(),
+      user: {
+        firstName: user?.firstName || 'Me',
+        lastName: user?.lastName || '',
+        profileImageUrl: user?.image || '',
+      },
+    };
+
+    // Update local state immediately
+    const optimisticMessages = [...messages, tempMessage];
+    // messages.push(tempMessage)
+    // setMessages(optimisticMessages);
+    setNewMessage(''); // Clear the input field
+
+    try {
+      // Await the actual send message mutation
+      await sendMessageMutation.mutateAsync({ message: newMessage, messageType: 'text' });
+      // If successful, the query will invalidate and refetch
+    } catch (error) {
+      // If there's an error, revert the changes
+      toast({
+        title: "Erreur",
+        description: "Impossible d'envoyer le message.",
+        variant: "destructive",
+      });
+    } finally {
+      setNewMessage('');
+    }
+  };
+
   if (!isAuthenticated) {
     return null;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
-      <div className="container mx-auto max-w-6xl">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">💬 Chat Otaku</h1>
-          <p className="text-blue-200">Discutez avec d'autres fans d'anime</p>
-        </div>
+    
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <AppHeader />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
-          {/* Sidebar - Chat Rooms */}
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
+          {/* Chat Rooms Sidebar */}
           <div className="lg:col-span-1">
-            <Card className="h-full bg-black/20 backdrop-blur-lg border-blue-500/30">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Salons
-                </CardTitle>
-                <Dialog open={isCreateRoomOpen} onOpenChange={setIsCreateRoomOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="bg-gray-900 text-white border-blue-500/30">
-                    <DialogHeader>
-                      <DialogTitle>Créer un salon</DialogTitle>
-                    </DialogHeader>
-                    <Form {...createRoomForm}>
-                      <form onSubmit={createRoomForm.handleSubmit((data) => createRoomMutation.mutate(data))}>
-                        <div className="space-y-4">
-                          <FormField
-                            control={createRoomForm.control}
-                            name="name"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Nom du salon</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Ex: Discussions Naruto" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={createRoomForm.control}
-                            name="description"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Description (optionnel)</FormLabel>
-                                <FormControl>
-                                  <Textarea placeholder="Description du salon..." {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <Button 
-                            type="submit" 
-                            className="w-full"
-                            disabled={createRoomMutation.isPending}
-                          >
-                            {createRoomMutation.isPending ? "Création..." : "Créer"}
-                          </Button>
-                        </div>
-                      </form>
-                    </Form>
-                  </DialogContent>
-                </Dialog>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[500px]">
-                  <div className="space-y-2">
-                    <div className="mb-4">
-                      <h4 className="text-sm font-medium text-blue-200 mb-2">Mes salons</h4>
-                      {roomsLoading ? (
-                        <div className="text-gray-400">Chargement...</div>
-                      ) : userRooms.length === 0 ? (
-                        <div className="text-gray-400 text-sm">Aucun salon rejoint</div>
-                      ) : (
-                        userRooms.map((room: ChatRoom) => (
-                          <Card
-                            key={room.id}
-                            className={`cursor-pointer transition-colors ${
-                              selectedRoom?.id === room.id
-                                ? "bg-blue-600/50 border-blue-400"
-                                : "bg-gray-800/50 hover:bg-gray-700/50 border-gray-600"
-                            }`}
-                            onClick={() => setSelectedRoom(room)}
-                          >
-                            <CardContent className="p-3">
-                              <div className="flex items-center justify-between">
-                                <h5 className="font-medium text-white text-sm">{room.name}</h5>
-                                {room.isPrivate && (
-                                  <Badge variant="secondary" className="text-xs">Privé</Badge>
-                                )}
-                              </div>
-                              {room.description && (
-                                <p className="text-xs text-gray-300 mt-1 truncate">
-                                  {room.description}
-                                </p>
-                              )}
-                            </CardContent>
-                          </Card>
-                        ))
-                      )}
-                    </div>
-
-                    <div>
-                      <h4 className="text-sm font-medium text-blue-200 mb-2">Salons publics</h4>
-                      {publicRooms.map((room: ChatRoom) => (
-                        <Card
-                          key={room.id}
-                          className={`cursor-pointer transition-colors ${
-                            selectedRoom?.id === room.id
-                              ? "bg-blue-600/50 border-blue-400"
-                              : "bg-gray-800/50 hover:bg-gray-700/50 border-gray-600"
-                          }`}
-                          onClick={() => setSelectedRoom(room)}
-                        >
-                          <CardContent className="p-3">
-                            <div className="flex items-center justify-between">
-                              <h5 className="font-medium text-white text-sm">{room.name}</h5>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-xs h-6"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  joinRoomMutation.mutate(room.id);
-                                }}
-                                disabled={joinRoomMutation.isPending}
-                              >
-                                Rejoindre
-                              </Button>
-                            </div>
-                            {room.description && (
-                              <p className="text-xs text-gray-300 mt-1 truncate">
-                                {room.description}
-                              </p>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
+            <Card className="h-full bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
+              <CardHeader className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-lg">
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    <MessageSquare className="h-5 w-5" />
                   </div>
+                  <span className="font-bold">Salons</span>
+                </CardTitle>
+                <Button 
+                  onClick={() => setIsCreateRoomOpen(true)}
+                  className="w-full bg-white/20 hover:bg-white/30 border-white/30 text-white font-medium"
+                  variant="outline"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Créer un salon
+                </Button>
+              </CardHeader>
+              <CardContent className="p-0">
+                <ScrollArea className="h-[400px]">
+                  {rooms?.map((room) => (
+                    <div
+                      key={room.id}
+                      onClick={() => setSelectedRoom(room)}
+                      className={`p-4 border-b border-white/10 cursor-pointer transition-all duration-200 ${
+                        selectedRoom?.id === room.id 
+                          ? 'bg-gradient-to-r from-purple-500/30 to-blue-500/30 border-l-4 border-l-purple-400 shadow-lg' 
+                          : 'hover:bg-white/5 hover:transform hover:scale-[1.02]'
+                      }`}
+                    >
+                      <h3 className="font-semibold text-white text-sm">{room.name}</h3>
+                      <p className="text-xs text-gray-300 mt-1 line-clamp-2">{room.description}</p>
+                      <div className="flex items-center gap-2 mt-3">
+                        <div className="flex items-center gap-1 bg-white/10 rounded-full px-2 py-1">
+                          <Users className="h-3 w-3 text-purple-300" />
+                          <span className="text-xs text-purple-200 font-medium">{room.memberCount || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </ScrollArea>
               </CardContent>
             </Card>
           </div>
 
-          {/* Main Chat Area */}
-          <div className="lg:col-span-2">
-            <Card className="h-full bg-black/20 backdrop-blur-lg border-blue-500/30">
-              {selectedRoom ? (
-                <>
-                  <CardHeader className="border-b border-blue-500/30">
-                    <CardTitle className="text-white flex items-center gap-2">
-                      <MessageCircle className="h-5 w-5" />
-                      {selectedRoom.name}
-                    </CardTitle>
-                    {selectedRoom.description && (
-                      <p className="text-blue-200 text-sm">{selectedRoom.description}</p>
-                    )}
-                  </CardHeader>
-                  <CardContent className="flex flex-col h-full p-0">
-                    {/* Messages */}
-                    <ScrollArea className="flex-1 p-4">
-                      {messagesLoading ? (
-                        <div className="text-gray-400">Chargement des messages...</div>
-                      ) : messages.length === 0 ? (
-                        <div className="text-gray-400 text-center mt-8">
-                          Aucun message dans ce salon. Soyez le premier à écrire !
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {messages.reverse().map((message: ChatMessage) => (
-                            <div
-                              key={message.id}
-                              className={`flex ${
-                                message.userId === user?.id ? "justify-end" : "justify-start"
-                              }`}
-                            >
-                              <div
-                                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                                  message.userId === user?.id
-                                    ? "bg-blue-600 text-white"
-                                    : "bg-gray-700 text-white"
-                                }`}
-                              >
-                                <p className="text-sm">{message.message}</p>
-                                <p className="text-xs opacity-75 mt-1">
-                                  {new Date(message.createdAt).toLocaleTimeString("fr-FR", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </ScrollArea>
-
-                    {/* Message Input */}
-                    <div className="border-t border-blue-500/30 p-4">
-                      <Form {...sendMessageForm}>
-                        <form 
-                          onSubmit={sendMessageForm.handleSubmit((data) => sendMessageMutation.mutate(data))}
-                          className="flex gap-2"
-                        >
-                          <FormField
-                            control={sendMessageForm.control}
-                            name="message"
-                            render={({ field }) => (
-                              <FormItem className="flex-1">
-                                <FormControl>
-                                  <Input
-                                    placeholder="Tapez votre message..."
-                                    className="bg-gray-800 border-gray-600 text-white"
-                                    {...field}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                          <Button
-                            type="submit"
-                            size="sm"
-                            disabled={sendMessageMutation.isPending}
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            <Send className="h-4 w-4" />
-                          </Button>
-                        </form>
-                      </Form>
+          {/* Chat Messages */}
+          <div className="lg:col-span-3">
+            {selectedRoom ? (
+              <Card className="h-full flex flex-col bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
+                <CardHeader className="flex-shrink-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-lg">
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-lg">
+                      <Hash className="h-5 w-5" />
                     </div>
-                  </CardContent>
-                </>
-              ) : (
-                <CardContent className="flex items-center justify-center h-full">
-                  <div className="text-center text-gray-400">
-                    <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Sélectionnez un salon pour commencer à discuter</p>
+                    <div>
+                      <h2 className="font-bold">{selectedRoom.name}</h2>
+                      <p className="text-sm text-blue-100 font-normal">{selectedRoom.description}</p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+
+                <CardContent className="flex-1 flex flex-col p-0">
+                  {/* Messages */}
+                  <ScrollArea className="flex-1 p-6" ref={messagesEndRef}>
+                    <div className="space-y-6">
+                      {messages?.map((message) => (
+                        <div key={message.id} className="flex gap-4 group hover:bg-white/5 p-3 rounded-lg transition-all duration-200">
+                          <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-purple-400/50">
+                            <AvatarImage src={message.user?.profileImageUrl} />
+                            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-bold">
+                              {message.user?.firstName?.[0]}{message.user?.lastName?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="font-bold text-white bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                                {message.user?.firstName} {message.user?.lastName}
+                              </span>
+                              <span className="text-xs text-gray-400 bg-white/10 px-2 py-1 rounded-full">
+                                {formatMessageTime(message.createdAt)}
+                              </span>
+                            </div>
+                            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                              <p className="text-white break-words leading-relaxed">
+                                {message.content}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+
+                  {/* Message Input */}
+                  <div className="border-t border-white/20 p-6 flex-shrink-0 bg-white/5">
+                    <form onSubmit={handleSendMessage} className="flex gap-3">
+                      <div className="flex-1 relative">
+                        <Input
+                          value={newMessage}
+                          onChange={(e) => setNewMessage(e.target.value)}
+                          placeholder="Tapez votre message..."
+                          className="bg-white/10 border-white/30 text-white placeholder:text-gray-300 focus:ring-purple-400 focus:border-purple-400 rounded-xl py-3 px-4 pr-12"
+                        />
+                      </div>
+                      <Button 
+                        type="submit" 
+                        disabled={!newMessage.trim()}
+                        className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold px-6 py-3 rounded-xl shadow-lg transform transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </form>
                   </div>
                 </CardContent>
-              )}
-            </Card>
+              </Card>
+            ) : (
+              <Card className="h-full flex items-center justify-center bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
+                <CardContent className="text-center p-12">
+                  <div className="bg-gradient-to-br from-purple-500 to-blue-500 p-6 rounded-full mx-auto mb-6 w-24 h-24 flex items-center justify-center">
+                    <MessageSquare className="h-12 w-12 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-4 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                    Sélectionnez un salon
+                  </h3>
+                  <p className="text-gray-300 text-lg leading-relaxed max-w-md mx-auto">
+                    Choisissez un salon de discussion pour commencer à chatter avec la communauté
+                  </p>
+                  <div className="mt-8 flex justify-center">
+                    <div className="bg-white/10 rounded-full px-6 py-2 border border-white/20">
+                      <span className="text-purple-300 text-sm font-medium">💬 Discussions en temps réel</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
