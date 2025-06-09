@@ -15,29 +15,63 @@ import Profile from "@/pages/profile";
 import Chat from "@/pages/chat";
 import EditProfile from "@/pages/edit-profile";
 import Admin from "@/pages/admin";
+import AuthPage from "@/pages/auth";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
   return (
     <Switch>
-      {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
-      ) : (
-        <>
-          <Route path="/" component={Home} />
-          <Route path="/anime" component={Anime} />
-          <Route path="/quiz" component={Quiz} />
-          <Route path="/quiz/:id" component={QuizDetail} />
-          <Route path="/videos" component={Videos} />
-          <Route path="/profile" component={Profile} />
-          <Route path="/chat" component={Chat} />
-          <Route path="/edit-profile" component={EditProfile} />
-          <Route path="/admin" component={Admin} />
-        </>
-      )}
-      <Route component={NotFound} />
-    </Switch>
+        <Route path="/auth" component={AuthPage} />
+        <Route path="/landing" component={Landing} />
+        <Route path="/">
+          <ProtectedRoute>
+            <Home />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/anime">
+          <ProtectedRoute>
+            <Anime />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/quiz">
+          <ProtectedRoute>
+            <Quiz />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/quiz/:id">
+          <ProtectedRoute>
+            <QuizDetail />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/videos">
+          <ProtectedRoute>
+            <Videos />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/profile">
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/edit-profile">
+          <ProtectedRoute>
+            <EditProfile />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/chat">
+          <ProtectedRoute>
+            <Chat />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin">
+          <ProtectedRoute>
+            <Admin />
+          </ProtectedRoute>
+        </Route>
+        <Route component={NotFound} />
+      </Switch>
   );
 }
 
