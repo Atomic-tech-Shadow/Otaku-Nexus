@@ -1,16 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import AppHeader from "@/components/layout/app-header";
-import BottomNavigation from "@/components/layout/bottom-navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Send, MessageCircle, Crown } from "lucide-react";
+import { ArrowLeft, Phone, Video, Settings, Send, Smile, ThumbsUp, Camera, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -125,9 +123,13 @@ export default function Chat() {
     });
   };
 
+  const goBack = () => {
+    window.history.back();
+  };
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-dark-bg flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <LoadingSpinner size="lg" />
       </div>
     );
@@ -138,156 +140,177 @@ export default function Chat() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg">
-      <AppHeader />
-      
-      <div className="px-4 pb-20">
-        <div className="flex items-center justify-between mb-6 mt-4">
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Header - Facebook Messenger style */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={goBack}
+            className="h-10 w-10 rounded-full hover:bg-gray-100"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </Button>
+          <Avatar className="h-10 w-10">
+            <AvatarFallback className="bg-blue-500 text-white font-medium">
+              OC
+            </AvatarFallback>
+          </Avatar>
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <MessageCircle className="w-6 h-6 text-electric-blue" />
-              Chat Global
-            </h1>
-            <p className="text-gray-400 text-sm">Discutez avec la communauté otaku</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-xs text-gray-400">
-              {messages.length} utilisateur{messages.length !== 1 ? 's' : ''} connecté{messages.length !== 1 ? 's' : ''}
-            </span>
+            <h2 className="font-semibold text-gray-900">Otaku Community</h2>
+            <p className="text-xs text-gray-500">Actif maintenant</p>
           </div>
         </div>
-
-        <div className="space-y-4">
-          {/* Messages Container */}
-          <Card className="bg-white/5 backdrop-blur-sm border-gray-700/50 h-[65vh] flex flex-col rounded-2xl overflow-hidden">
-            <CardHeader className="pb-3 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-b border-gray-700/50">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <MessageCircle className="w-5 h-5 text-electric-blue" />
-                Chat Communauté
-                <span className="text-sm text-gray-400 font-normal">
-                  • {messages.length} messages
-                </span>
-                <div className="ml-auto flex items-center gap-1">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-xs text-gray-400">En ligne</span>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 p-0 bg-gray-900/50">
-              <ScrollArea className="h-full" id="messages-container">
-                <div className="px-4 py-2">
-                  {messages.length === 0 ? (
-                    <div className="text-center py-12">
-                      <MessageCircle className="w-16 h-16 text-gray-500 mx-auto mb-4 opacity-50" />
-                      <p className="text-gray-400 text-lg">Commencer la conversation</p>
-                      <p className="text-gray-500 text-sm mt-1">Soyez le premier à dire bonjour !</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3 py-2">
-                      {messages.map((message: Message) => (
-                        <div
-                          key={message.id}
-                          className={cn(
-                            "flex gap-3 items-start group",
-                            message.userId === user?.id ? "flex-row-reverse" : "flex-row"
-                          )}
-                        >
-                          <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-gray-700/50">
-                            <AvatarFallback className="text-sm font-bold bg-gradient-to-br from-electric-blue to-hot-pink text-white">
-                              {message.userFirstName?.[0]?.toUpperCase() || "?"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className={cn(
-                            "flex flex-col max-w-[75%]",
-                            message.userId === user?.id ? "items-end" : "items-start"
-                          )}>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-sm text-gray-300">
-                                {message.userFirstName} {message.userLastName}
-                              </span>
-                              {message.isAdmin && (
-                                <Crown className="w-3.5 h-3.5 text-yellow-400" />
-                              )}
-                              <span className="text-xs text-gray-500">
-                                {formatTime(message.createdAt)}
-                              </span>
-                            </div>
-                            <div className={cn(
-                              "relative px-4 py-2.5 rounded-2xl shadow-lg max-w-full break-words",
-                              message.userId === user?.id
-                                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md"
-                                : "bg-gray-700/70 text-gray-100 rounded-bl-md"
-                            )}>
-                              <p className="text-sm leading-relaxed">{message.content}</p>
-                              {/* Message tail */}
-                              <div className={cn(
-                                "absolute top-0 w-3 h-3",
-                                message.userId === user?.id
-                                  ? "-right-1 bg-blue-600"
-                                  : "-left-1 bg-gray-700/70"
-                              )} style={{
-                                clipPath: message.userId === user?.id 
-                                  ? "polygon(0 0, 100% 100%, 0 100%)"
-                                  : "polygon(100% 0, 0 100%, 100% 100%)"
-                              }}></div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-
-          {/* Message Input */}
-          <Card className="bg-white/5 backdrop-blur-sm border-gray-700/50 rounded-2xl overflow-hidden">
-            <CardContent className="p-4">
-              <div className="flex gap-3 items-end">
-                <div className="flex-1 relative">
-                  <Input
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder={`Salut ${user?.firstName || 'Otaku'} ! Écris ton message...`}
-                    className="bg-gray-800/50 border-gray-600/50 rounded-full px-6 py-3 text-white placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200 resize-none"
-                    disabled={sendMessageMutation.isPending}
-                    maxLength={500}
-                  />
-                </div>
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!newMessage.trim() || sendMessageMutation.isPending}
-                  className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full w-12 h-12 p-0 shadow-lg transition-all duration-200 hover:scale-105"
-                >
-                  {sendMessageMutation.isPending ? (
-                    <LoadingSpinner size="sm" />
-                  ) : (
-                    <Send className="w-5 h-5" />
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Chat Rules */}
-          <Card className="bg-card-bg/50 border-gray-800">
-            <CardContent className="p-4">
-              <h3 className="font-semibold mb-2 text-sm">Règles du chat</h3>
-              <ul className="text-xs text-gray-400 space-y-1">
-                <li>• Respectez les autres membres de la communauté</li>
-                <li>• Pas de spam ou de contenu inapproprié</li>
-                <li>• Restez dans le thème anime/manga</li>
-                <li>• Amusez-vous bien !</li>
-              </ul>
-            </CardContent>
-          </Card>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 rounded-full hover:bg-gray-100"
+          >
+            <Phone className="w-5 h-5 text-blue-500" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 rounded-full hover:bg-gray-100"
+          >
+            <Video className="w-5 h-5 text-blue-500" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 rounded-full hover:bg-gray-100"
+          >
+            <Settings className="w-5 h-5 text-gray-600" />
+          </Button>
         </div>
       </div>
 
-      <BottomNavigation currentPath="/chat" />
+      {/* Messages Container */}
+      <div className="flex-1 flex flex-col">
+        <ScrollArea className="flex-1 px-4" id="messages-container">
+          <div className="py-4 space-y-1">
+            {messages.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <span className="text-2xl">💬</span>
+                </div>
+                <p className="text-gray-500 text-lg">Commencer la conversation</p>
+                <p className="text-gray-400 text-sm mt-1">Dites bonjour à la communauté !</p>
+              </div>
+            ) : (
+              messages.map((message: Message, index: number) => {
+                const isOwnMessage = message.userId === user?.id;
+                const showAvatar = !isOwnMessage && (index === 0 || messages[index - 1]?.userId !== message.userId);
+                const showTime = index === 0 || 
+                  new Date(message.createdAt).getTime() - new Date(messages[index - 1]?.createdAt).getTime() > 300000; // 5 minutes
+
+                return (
+                  <div key={message.id} className="space-y-1">
+                    {showTime && (
+                      <div className="text-center my-4">
+                        <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+                          {formatTime(message.createdAt)}
+                        </span>
+                      </div>
+                    )}
+                    <div className={cn(
+                      "flex items-end gap-2 max-w-[80%]",
+                      isOwnMessage ? "ml-auto flex-row-reverse" : "mr-auto"
+                    )}>
+                      {!isOwnMessage && (
+                        <Avatar className={cn("h-7 w-7", showAvatar ? "opacity-100" : "opacity-0")}>
+                          <AvatarFallback className="text-xs bg-gray-300 text-gray-700">
+                            {message.userFirstName?.[0]?.toUpperCase() || "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                      <div className={cn(
+                        "relative px-3 py-2 rounded-2xl max-w-full break-words text-sm",
+                        isOwnMessage
+                          ? "bg-blue-500 text-white rounded-br-md"
+                          : "bg-gray-200 text-gray-900 rounded-bl-md"
+                      )}>
+                        {!isOwnMessage && showAvatar && (
+                          <div className="text-xs font-medium text-gray-600 mb-1">
+                            {message.userFirstName}
+                          </div>
+                        )}
+                        <p>{message.content}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </ScrollArea>
+
+        {/* Message Input - Facebook Messenger style */}
+        <div className="border-t border-gray-200 bg-white px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-500"
+            >
+              <Camera className="w-5 h-5" />
+            </Button>
+            
+            <div className="flex-1 relative">
+              <Input
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Message"
+                className="bg-gray-100 border-0 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+                disabled={sendMessageMutation.isPending}
+                maxLength={500}
+              />
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-500"
+            >
+              <Mic className="w-5 h-5" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-500"
+            >
+              <Smile className="w-5 h-5" />
+            </Button>
+
+            {newMessage.trim() ? (
+              <Button
+                onClick={handleSendMessage}
+                disabled={sendMessageMutation.isPending}
+                size="icon"
+                className="h-9 w-9 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                {sendMessageMutation.isPending ? (
+                  <LoadingSpinner size="sm" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-500"
+              >
+                <ThumbsUp className="w-5 h-5" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
