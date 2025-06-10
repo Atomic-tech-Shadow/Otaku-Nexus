@@ -74,7 +74,7 @@ export default function Anime() {
 
   // Filter by genre
   const filteredAnimes = Array.isArray(animes) ? animes.filter(anime =>
-    selectedGenre === "" || anime.genre.toLowerCase().includes(selectedGenre.toLowerCase())
+    selectedGenre === "all" || selectedGenre === "" || anime.genre.toLowerCase().includes(selectedGenre.toLowerCase())
   ) : [];
 
   return (
@@ -131,7 +131,7 @@ export default function Anime() {
                     <SelectValue placeholder="Genre" />
                   </SelectTrigger>
                   <SelectContent className="bg-card-bg border-gray-700">
-                    <SelectItem value="">All Genres</SelectItem>
+                    <SelectItem value="all">All Genres</SelectItem>
                     <SelectItem value="Action">Action</SelectItem>
                     <SelectItem value="Adventure">Adventure</SelectItem>
                     <SelectItem value="Romance">Romance</SelectItem>
