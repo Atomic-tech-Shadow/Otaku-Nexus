@@ -113,12 +113,12 @@ export default function AnimeDetailModal({ anime, isOpen, onClose }: AnimeDetail
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md bg-card-bg text-white border-gray-800">
-        <DialogHeader>
+      <DialogContent className="max-w-md max-h-[90vh] bg-card-bg text-white border-gray-800 overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-lg font-bold electric-blue">{anime.title}</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto flex-1 pr-2">
           {/* Anime Image */}
           <div className="relative">
             <img 
@@ -182,46 +182,47 @@ export default function AnimeDetailModal({ anime, isOpen, onClose }: AnimeDetail
             )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex space-x-3 pt-4">
-            <Button 
-              onClick={handleFavoriteToggle}
-              disabled={addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
-              className={cn(
-                "flex-1",
-                isFavorited ? "bg-red-500 hover:bg-red-600" : "bg-electric-blue hover:bg-electric-blue/80"
-              )}
-            >
-              {isFavorited ? (
-                <>
-                  <Heart className="w-4 h-4 mr-2 fill-current" />
-                  Remove from Favorites
-                </>
-              ) : (
-                <>
-                  <Heart className="w-4 h-4 mr-2" />
-                  Add to Favorites
-                </>
-              )}
-            </Button>
-            <Button 
-              variant="outline" 
-              className="border-gray-600 text-gray-300 hover:bg-gray-800"
-              onClick={() => {
-                // Here you could implement watching functionality
-                toast({
-                  title: "Feature Coming Soon",
-                  description: "Anime streaming will be available soon!",
-                  variant: "default",
-                });
-              }}
-            >
-              <Play className="w-4 h-4 mr-2" />
-              Watch
-            </Button>
           </div>
+
+        {/* Action Buttons - Fixed at bottom */}
+        <div className="flex space-x-3 pt-4 flex-shrink-0 border-t border-gray-700">
+          <Button 
+            onClick={handleFavoriteToggle}
+            disabled={addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
+            className={cn(
+              "flex-1",
+              isFavorited ? "bg-red-500 hover:bg-red-600" : "bg-electric-blue hover:bg-electric-blue/80"
+            )}
+          >
+            {isFavorited ? (
+              <>
+                <Heart className="w-4 h-4 mr-2 fill-current" />
+                Remove from Favorites
+              </>
+            ) : (
+              <>
+                <Heart className="w-4 h-4 mr-2" />
+                Add to Favorites
+              </>
+            )}
+          </Button>
+          <Button 
+            variant="outline" 
+            className="border-gray-600 text-gray-300 hover:bg-gray-800"
+            onClick={() => {
+              // Here you could implement watching functionality
+              toast({
+                title: "Feature Coming Soon",
+                description: "Anime streaming will be available soon!",
+                variant: "default",
+              });
+            }}
+          >
+            <Play className="w-4 h-4 mr-2" />
+            Watch
+          </Button>
         </div>
-      </DialogContent>
+        </DialogContent>
     </Dialog>
   );
 }
