@@ -50,8 +50,19 @@ export default function Chat() {
     queryKey: ["/api/chat/messages"],
     queryFn: async () => {
       try {
-        const response = await apiRequest("/api/chat/messages");
-        return Array.isArray(response) ? response : [];
+        const response = await fetch("/api/chat/messages", {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error("Error fetching messages:", error);
         return [];
