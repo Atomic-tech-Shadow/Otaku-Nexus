@@ -37,6 +37,7 @@ interface AdminPost {
   content: string;
   type: string;
   isPublished: boolean;
+  adminOnly?: boolean;
   authorId: string;
   imageUrl?: string;
   createdAt: string;
@@ -121,8 +122,7 @@ export default function Admin() {
     mutationFn: async (data: z.infer<typeof postSchema>) => {
       return await apiRequest("/api/admin/posts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: data,
       });
     },
     onSuccess: () => {
@@ -158,8 +158,7 @@ export default function Admin() {
     mutationFn: async ({ id, data }: { id: number; data: z.infer<typeof postSchema> }) => {
       return await apiRequest(`/api/admin/posts/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: data,
       });
     },
     onSuccess: () => {
