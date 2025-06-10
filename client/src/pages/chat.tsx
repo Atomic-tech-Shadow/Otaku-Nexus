@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, Phone, Video, Settings, Send, Smile, ThumbsUp, Camera, Mic } from "lucide-react";
+import { ArrowLeft, Phone, Video, Settings, Send, Smile, ThumbsUp, Camera, Mic, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -28,46 +28,67 @@ export default function Chat() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [newMessage, setNewMessage] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Redirect to home if not authenticated
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
+        title: "Non autorisé",
+        description: "Vous êtes déconnecté. Reconnexion...",
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
+        window.location.href = "/";
+      }, 1500);
       return;
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: messages = [], refetch } = useQuery({
+  const { data: messages = [], refetch, error } = useQuery({
     queryKey: ["/api/chat/messages"],
-    queryFn: () => apiRequest("/api/chat/messages"),
-    enabled: !!user,
-    refetchInterval: 2000,
+    queryFn: async () => {
+      try {
+        const response = await apiRequest("/api/chat/messages");
+        return Array.isArray(response) ? response : [];
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+        return [];
+      }
+    },
+    enabled: !!user && isAuthenticated,
+    refetchInterval: 3000,
+    retry: 3,
+    retryDelay: 1000,
   });
 
   useEffect(() => {
-    if (user) {
-      refetch();
+    if (user && isAuthenticated) {
+      refetch().catch(console.error);
     }
-  }, [user, refetch]);
+  }, [user, refetch, isAuthenticated]);
 
   const sendMessageMutation = useMutation({
-    mutationFn: (content: string) =>
-      apiRequest("/api/chat/messages", {
+    mutationFn: async (content: string) => {
+      if (!content.trim()) {
+        throw new Error("Le message ne peut pas être vide");
+      }
+      return await apiRequest("/api/chat/messages", {
         method: "POST",
-        body: { content },
-      }),
+        body: { content: content.trim() },
+      });
+    },
     onSuccess: () => {
       setNewMessage("");
       queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
+      // Scroll to bottom after sending
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error("Send message error:", error);
       if (isUnauthorizedError(error)) {
         toast({
           title: "Non autorisé",
@@ -75,38 +96,34 @@ export default function Chat() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
+          window.location.href = "/";
+        }, 1500);
         return;
       }
       toast({
         title: "Erreur",
-        description: "Impossible d'envoyer le message.",
+        description: "Impossible d'envoyer le message. Veuillez réessayer.",
         variant: "destructive",
       });
     },
   });
 
-  const handleSendMessage = () => {
-    if (newMessage.trim() && !sendMessageMutation.isPending) {
-      sendMessageMutation.mutate(newMessage.trim());
-      // Auto-scroll to bottom after sending
-      setTimeout(() => {
-        const container = document.getElementById('messages-container');
-        if (container) {
-          container.scrollTop = container.scrollHeight;
-        }
-      }, 100);
-    }
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    const container = document.getElementById('messages-container');
-    if (container && messages.length > 0) {
-      container.scrollTop = container.scrollHeight;
+    if (messages.length > 0) {
+      scrollToBottom();
     }
   }, [messages]);
+
+  const handleSendMessage = () => {
+    if (newMessage.trim() && !sendMessageMutation.isPending) {
+      sendMessageMutation.mutate(newMessage.trim());
+    }
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -116,11 +133,15 @@ export default function Chat() {
   };
 
   const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "";
+    }
   };
 
   const goBack = () => {
@@ -136,13 +157,20 @@ export default function Chat() {
   }
 
   if (!isAuthenticated) {
-    return null;
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-4">Connexion requise</h2>
+          <p className="text-gray-600">Vous devez être connecté pour accéder au chat.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header - Facebook Messenger style */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
+      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -153,16 +181,16 @@ export default function Chat() {
             <ArrowLeft className="w-5 h-5 text-gray-600" />
           </Button>
           <Avatar className="h-10 w-10">
-            <AvatarFallback className="bg-blue-500 text-white font-medium">
+            <AvatarFallback className="bg-blue-500 text-white font-medium text-sm">
               OC
             </AvatarFallback>
           </Avatar>
-          <div>
-            <h2 className="font-semibold text-gray-900">Otaku Community</h2>
-            <p className="text-xs text-gray-500">Actif maintenant</p>
+          <div className="flex-1">
+            <h2 className="font-semibold text-gray-900 text-lg">Otaku Community</h2>
+            <p className="text-xs text-green-500 font-medium">● Actif maintenant</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
@@ -182,78 +210,124 @@ export default function Chat() {
             size="icon"
             className="h-10 w-10 rounded-full hover:bg-gray-100"
           >
-            <Settings className="w-5 h-5 text-gray-600" />
+            <MoreHorizontal className="w-5 h-5 text-gray-600" />
           </Button>
         </div>
       </div>
 
       {/* Messages Container */}
-      <div className="flex-1 flex flex-col">
-        <ScrollArea className="flex-1 px-4" id="messages-container">
-          <div className="py-4 space-y-1">
-            {messages.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                  <span className="text-2xl">💬</span>
+      <div className="flex-1 flex flex-col bg-gray-50">
+        <ScrollArea className="flex-1 px-4" ref={scrollAreaRef}>
+          <div className="py-4 space-y-2">
+            {error && (
+              <div className="text-center py-4">
+                <p className="text-red-500 text-sm">Erreur de chargement des messages</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => refetch()}
+                  className="mt-2"
+                >
+                  Réessayer
+                </Button>
+              </div>
+            )}
+            
+            {!error && messages.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="w-20 h-20 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <span className="text-3xl">👋</span>
                 </div>
-                <p className="text-gray-500 text-lg">Commencer la conversation</p>
+                <p className="text-gray-600 text-lg font-medium">Commencez la conversation</p>
                 <p className="text-gray-400 text-sm mt-1">Dites bonjour à la communauté !</p>
               </div>
             ) : (
               messages.map((message: Message, index: number) => {
                 const isOwnMessage = message.userId === user?.id;
-                const showAvatar = !isOwnMessage && (index === 0 || messages[index - 1]?.userId !== message.userId);
+                const prevMessage = messages[index - 1];
+                const nextMessage = messages[index + 1];
+                
+                const showAvatar = !isOwnMessage && (
+                  !nextMessage || 
+                  nextMessage.userId !== message.userId || 
+                  index === messages.length - 1
+                );
+                
+                const showName = !isOwnMessage && (
+                  !prevMessage || 
+                  prevMessage.userId !== message.userId || 
+                  index === 0
+                );
+                
                 const showTime = index === 0 || 
-                  new Date(message.createdAt).getTime() - new Date(messages[index - 1]?.createdAt).getTime() > 300000; // 5 minutes
+                  new Date(message.createdAt).getTime() - new Date(messages[index - 1]?.createdAt).getTime() > 300000;
+
+                const isConsecutive = prevMessage && 
+                  prevMessage.userId === message.userId && 
+                  new Date(message.createdAt).getTime() - new Date(prevMessage.createdAt).getTime() < 60000;
 
                 return (
-                  <div key={message.id} className="space-y-1">
+                  <div key={`${message.id}-${index}`} className="space-y-1">
                     {showTime && (
-                      <div className="text-center my-4">
-                        <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+                      <div className="text-center my-6">
+                        <span className="text-xs text-gray-400 bg-white px-3 py-1 rounded-full shadow-sm">
                           {formatTime(message.createdAt)}
                         </span>
                       </div>
                     )}
+                    
                     <div className={cn(
-                      "flex items-end gap-2 max-w-[80%]",
-                      isOwnMessage ? "ml-auto flex-row-reverse" : "mr-auto"
+                      "flex items-end gap-2 max-w-[75%]",
+                      isOwnMessage ? "ml-auto flex-row-reverse" : "mr-auto",
+                      isConsecutive && !isOwnMessage ? "ml-9" : ""
                     )}>
                       {!isOwnMessage && (
-                        <Avatar className={cn("h-7 w-7", showAvatar ? "opacity-100" : "opacity-0")}>
+                        <Avatar className={cn(
+                          "h-7 w-7 flex-shrink-0", 
+                          showAvatar ? "opacity-100" : "opacity-0"
+                        )}>
                           <AvatarFallback className="text-xs bg-gray-300 text-gray-700">
                             {message.userFirstName?.[0]?.toUpperCase() || "?"}
                           </AvatarFallback>
                         </Avatar>
                       )}
-                      <div className={cn(
-                        "relative px-3 py-2 rounded-2xl max-w-full break-words text-sm",
-                        isOwnMessage
-                          ? "bg-blue-500 text-white rounded-br-md"
-                          : "bg-gray-200 text-gray-900 rounded-bl-md"
-                      )}>
-                        {!isOwnMessage && showAvatar && (
-                          <div className="text-xs font-medium text-gray-600 mb-1">
+                      
+                      <div className="flex flex-col">
+                        {!isOwnMessage && showName && (
+                          <div className="text-xs font-medium text-gray-500 mb-1 px-3">
                             {message.userFirstName}
                           </div>
                         )}
-                        <p>{message.content}</p>
+                        
+                        <div className={cn(
+                          "relative px-4 py-2 rounded-2xl max-w-full break-words text-sm leading-relaxed",
+                          isOwnMessage
+                            ? "bg-blue-500 text-white"
+                            : "bg-white text-gray-900 border border-gray-200 shadow-sm",
+                          isOwnMessage && !isConsecutive ? "rounded-br-lg" : "",
+                          !isOwnMessage && !isConsecutive ? "rounded-bl-lg" : "",
+                          isConsecutive && isOwnMessage ? "rounded-br-2xl" : "",
+                          isConsecutive && !isOwnMessage ? "rounded-bl-2xl" : ""
+                        )}>
+                          <p className="whitespace-pre-wrap">{message.content}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 );
               })
             )}
+            <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
 
         {/* Message Input - Facebook Messenger style */}
-        <div className="border-t border-gray-200 bg-white px-4 py-3">
+        <div className="bg-white border-t border-gray-200 px-4 py-3">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-500"
+              className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-500 flex-shrink-0"
             >
               <Camera className="w-5 h-5" />
             </Button>
@@ -263,17 +337,17 @@ export default function Chat() {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Message"
-                className="bg-gray-100 border-0 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+                placeholder="Écrivez un message..."
+                className="bg-gray-100 border-0 rounded-full px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all resize-none"
                 disabled={sendMessageMutation.isPending}
-                maxLength={500}
+                maxLength={1000}
               />
             </div>
 
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-500"
+              className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-500 flex-shrink-0"
             >
               <Mic className="w-5 h-5" />
             </Button>
@@ -281,7 +355,7 @@ export default function Chat() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-500"
+              className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-500 flex-shrink-0"
             >
               <Smile className="w-5 h-5" />
             </Button>
@@ -291,7 +365,7 @@ export default function Chat() {
                 onClick={handleSendMessage}
                 disabled={sendMessageMutation.isPending}
                 size="icon"
-                className="h-9 w-9 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+                className="h-9 w-9 rounded-full bg-blue-500 hover:bg-blue-600 text-white flex-shrink-0"
               >
                 {sendMessageMutation.isPending ? (
                   <LoadingSpinner size="sm" />
@@ -303,7 +377,7 @@ export default function Chat() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-500"
+                className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-500 flex-shrink-0"
               >
                 <ThumbsUp className="w-5 h-5" />
               </Button>
