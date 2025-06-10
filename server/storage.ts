@@ -90,11 +90,12 @@ export interface IStorage {
   getUserChatRooms(userId: string): Promise<ChatRoom[]>;
 
   // Admin operations
-  getAdminPosts(published?: boolean): Promise<AdminPost[]>;
+  getAdminPosts(published?: boolean): Promise<any[]>;
   getAdminPost(id: number): Promise<AdminPost | undefined>;
   createAdminPost(post: InsertAdminPost): Promise<AdminPost>;
   updateAdminPost(id: number, updates: Partial<InsertAdminPost>): Promise<AdminPost>;
   deleteAdminPost(id: number): Promise<void>;
+  getPublicPosts(): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {

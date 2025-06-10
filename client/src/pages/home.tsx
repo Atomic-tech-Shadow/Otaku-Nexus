@@ -18,27 +18,14 @@ export default function Home() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading, user } = useAuth();
 
-  // Redirect to home if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
+  // This is handled by the ProtectedRoute component, no need for manual redirect
 
-  const { data: userStats, isLoading: statsLoading } = useQuery({
+  const { data: userStats = {}, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/user/stats"],
     retry: false,
   });
 
-  const { data: trendingAnimes, isLoading: animesLoading } = useQuery({
+  const { data: trendingAnimes = [], isLoading: animesLoading } = useQuery({
     queryKey: ["/api/anime/trending"],
     retry: false,
   });
@@ -48,7 +35,7 @@ export default function Home() {
     retry: false,
   });
 
-  const { data: popularVideos, isLoading: videosLoading } = useQuery({
+  const { data: popularVideos = [], isLoading: videosLoading } = useQuery({
     queryKey: ["/api/videos/popular"],
     retry: false,
   });
@@ -88,15 +75,15 @@ export default function Home() {
               <p className="text-gray-300 text-sm mb-4">Ready to explore the anime universe?</p>
               <div className="flex items-center space-x-4">
                 <div className="text-center">
-                  <div className="text-lg font-bold hot-pink">{userStats?.totalAnime || 0}</div>
+                  <div className="text-lg font-bold hot-pink">{(userStats as any)?.totalAnime || 0}</div>
                   <div className="text-xs text-gray-400">Anime</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold electric-blue">{userStats?.totalQuizzes || 0}</div>
+                  <div className="text-lg font-bold electric-blue">{(userStats as any)?.totalQuizzes || 0}</div>
                   <div className="text-xs text-gray-400">Quizzes</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold otaku-purple">{userStats?.totalXP || 0}</div>
+                  <div className="text-lg font-bold otaku-purple">{(userStats as any)?.totalXP || 0}</div>
                   <div className="text-xs text-gray-400">XP</div>
                 </div>
               </div>

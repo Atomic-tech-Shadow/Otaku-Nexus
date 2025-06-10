@@ -39,8 +39,20 @@ export const favoritesApi = {
 
 // User API functions
 export const userApi = {
-  getStats: () => fetch("/api/user/stats").then(res => res.json()),
-  getProfile: () => fetch("/api/auth/user").then(res => res.json()),
+  getStats: () => {
+    const token = localStorage.getItem("auth_token");
+    return fetch("/api/user/stats", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      credentials: "include",
+    }).then(res => res.json());
+  },
+  getProfile: () => {
+    const token = localStorage.getItem("auth_token");
+    return fetch("/api/auth/user", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      credentials: "include",
+    }).then(res => res.json());
+  },
 };
 
 // External APIs (for real-time data)
