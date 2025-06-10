@@ -10,53 +10,23 @@ import LoadingSpinner from "@/components/ui/loading-spinner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, TrendingUp } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Anime() {
   const { toast } = useToast();
-  const { isAuthenticated, isLoading } = useAuth();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"trending" | "search">("trending");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedGenre, setSelectedGenre] = useState("");
+  const [sortBy, setSortBy] = useState("popularity");
 
-  // Redirect to home if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
-
-  const { data: trendingAnimes, isLoading: trendingLoading } = useQuery({
-    queryKey: ["/api/anime/trending"],
+  const { data: animes = [], isLoading } = useQuery({
+    queryKey: ["/api/anime", { search: searchTerm, genre: selectedGenre, sort: sortBy }],
     retry: false,
   });
 
-  const { data: searchResults, isLoading: searchLoading } = useQuery({
-    queryKey: ["/api/external/anime/search", searchQuery],
-    enabled: searchQuery.length > 2,
-    retry: false,
-  });
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      setActiveTab("search");
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-dark-bg flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
+  const filteredAnimes = Array.isArray(animes) ? animes.filter(anime =>
+    anime.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    (selectedGenre === "" || anime.genre.includes(selectedGenre))
+  ) : [];
 
   return (
     <div className="min-h-screen bg-dark-bg text-white pb-20">
@@ -70,124 +40,80 @@ export default function Anime() {
       <div className="relative z-10">
         <AppHeader />
 
-        <main className="px-4 pb-6">
-          {/* Page Title */}
+        <main className="px-4 py-6">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold mb-2 text-gradient">Anime Explorer</h1>
-            <p className="text-gray-400 text-sm">Discover your next favorite anime series</p>
-          </div>
-
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="mb-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Search anime titles..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-card-bg border-gray-800 text-white placeholder-gray-400"
-              />
-              {searchQuery && (
-                <Button
-                  type="submit"
-                  size="sm"
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-electric-blue hover:bg-electric-blue/80"
-                >
-                  Search
-                </Button>
-              )}
+            <div className="glass-morphism rounded-2xl p-6 relative overflow-hidden mb-6">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-electric-blue to-transparent rounded-full opacity-30"></div>
+              <h1 className="text-2xl font-bold mb-2 electric-blue">Anime Explorer</h1>
+              <p className="text-gray-300 text-sm">Discover amazing anime series and add them to your watchlist</p>
             </div>
-          </form>
 
-          {/* Tabs */}
-          <div className="flex space-x-4 mb-6">
-            <Button
-              variant={activeTab === "trending" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setActiveTab("trending")}
-              className={activeTab === "trending" ? "bg-electric-blue" : ""}
-            >
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Trending
-            </Button>
-            <Button
-              variant={activeTab === "search" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setActiveTab("search")}
-              disabled={!searchQuery}
-              className={activeTab === "search" ? "bg-hot-pink" : ""}
-            >
-              <Search className="w-4 h-4 mr-2" />
-              Search Results
-            </Button>
+            {/* Search and Filters */}
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Search anime..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-card-bg border-gray-700 text-white"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Select value={selectedGenre} onValueChange={setSelectedGenre}>
+                  <SelectTrigger className="flex-1 bg-card-bg border-gray-700 text-white">
+                    <SelectValue placeholder="Genre" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card-bg border-gray-700">
+                    <SelectItem value="">All Genres</SelectItem>
+                    <SelectItem value="Action">Action</SelectItem>
+                    <SelectItem value="Adventure">Adventure</SelectItem>
+                    <SelectItem value="Romance">Romance</SelectItem>
+                    <SelectItem value="Comedy">Comedy</SelectItem>
+                    <SelectItem value="Drama">Drama</SelectItem>
+                    <SelectItem value="Fantasy">Fantasy</SelectItem>
+                    <SelectItem value="Sci-Fi">Sci-Fi</SelectItem>
+                    <SelectItem value="Thriller">Thriller</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="flex-1 bg-card-bg border-gray-700 text-white">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card-bg border-gray-700">
+                    <SelectItem value="popularity">Popularity</SelectItem>
+                    <SelectItem value="rating">Rating</SelectItem>
+                    <SelectItem value="year">Year</SelectItem>
+                    <SelectItem value="title">Title</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
 
-          {/* Content */}
-          {activeTab === "trending" && (
-            <section>
-              <h3 className="text-lg font-semibold mb-4">Trending Now</h3>
-              {trendingLoading ? (
-                <div className="grid grid-cols-2 gap-4">
-                  {[...Array(6)].map((_, i) => (
-                    <div key={i} className="bg-card-bg rounded-xl p-3 animate-pulse h-48"></div>
-                  ))}
-                </div>
-              ) : trendingAnimes && trendingAnimes.length > 0 ? (
-                <div className="grid grid-cols-2 gap-4">
-                  {trendingAnimes.map((anime: any) => (
-                    <AnimeCard key={anime.id} anime={anime} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-gray-400">No trending anime available at the moment.</p>
-                </div>
-              )}
-            </section>
+          {/* Anime Grid */}
+          {isLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="aspect-[3/4] bg-card-bg rounded-lg animate-pulse"></div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filteredAnimes.map((anime) => (
+                <AnimeCard key={anime.id} anime={anime} />
+              ))}
+            </div>
           )}
 
-          {activeTab === "search" && (
-            <section>
-              <h3 className="text-lg font-semibold mb-4">
-                Search Results for "{searchQuery}"
-              </h3>
-              {searchLoading ? (
-                <div className="grid grid-cols-2 gap-4">
-                  {[...Array(6)].map((_, i) => (
-                    <div key={i} className="bg-card-bg rounded-xl p-3 animate-pulse h-48"></div>
-                  ))}
-                </div>
-              ) : searchResults?.data && searchResults.data.length > 0 ? (
-                <div className="grid grid-cols-2 gap-4">
-                  {searchResults.data.map((anime: any) => (
-                    <AnimeCard 
-                      key={anime.mal_id} 
-                      anime={{
-                        id: anime.mal_id,
-                        malId: anime.mal_id,
-                        title: anime.title,
-                        imageUrl: anime.images?.jpg?.image_url,
-                        score: anime.score?.toString(),
-                        year: anime.year || anime.aired?.from ? new Date(anime.aired.from).getFullYear() : null,
-                        synopsis: anime.synopsis,
-                        episodes: anime.episodes,
-                        status: anime.status
-                      }} 
-                    />
-                  ))}
-                </div>
-              ) : searchResults && searchResults.data?.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-400">No anime found for "{searchQuery}".</p>
-                  <p className="text-gray-500 text-sm mt-2">Try a different search term.</p>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-gray-400">Enter a search term to find anime.</p>
-                </div>
-              )}
-            </section>
+          {!isLoading && filteredAnimes.length === 0 && (
+            <div className="text-center py-8">
+              <div className="glass-morphism rounded-2xl p-6">
+                <p className="text-gray-300">No anime found matching your criteria.</p>
+              </div>
+            </div>
           )}
         </main>
 

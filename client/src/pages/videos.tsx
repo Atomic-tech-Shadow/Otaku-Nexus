@@ -1,50 +1,35 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { isUnauthorizedError } from "@/lib/authUtils";
+import { Search } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import AppHeader from "@/components/layout/app-header";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import VideoCard from "@/components/video/video-card";
-import LoadingSpinner from "@/components/ui/loading-spinner";
-import { Play, TrendingUp, Clock } from "lucide-react";
 
 export default function Videos() {
   const { toast } = useToast();
-  const { isAuthenticated, isLoading } = useAuth();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
-  // Redirect to home if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
-
-  const { data: allVideos, isLoading: videosLoading } = useQuery({
+  const { data: videos = [], isLoading } = useQuery({
     queryKey: ["/api/videos"],
     retry: false,
   });
 
-  const { data: popularVideos, isLoading: popularLoading } = useQuery({
-    queryKey: ["/api/videos/popular"],
-    retry: false,
-  });
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-dark-bg flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
+  const filteredVideos = Array.isArray(videos) ? videos.filter(video => {
+    const searchMatch = video.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const categoryMatch = selectedCategory === "all" || video.category === selectedCategory;
+    return searchMatch && categoryMatch;
+  }) : [];
 
   return (
     <div className="min-h-screen bg-dark-bg text-white pb-20">
@@ -58,93 +43,78 @@ export default function Videos() {
       <div className="relative z-10">
         <AppHeader />
 
-        <main className="px-4 pb-6">
-          {/* Page Title */}
+        <main className="px-4 py-6">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold mb-2 text-gradient">Anime Videos</h1>
-            <p className="text-gray-400 text-sm">AMVs, openings, and anime content</p>
-          </div>
-
-          {/* Stats Cards */}
-          <section className="mb-6">
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-card-bg rounded-xl p-4 text-center">
-                <Play className="w-6 h-6 electric-blue mx-auto mb-2" />
-                <div className="text-lg font-bold">{allVideos?.length || 0}</div>
-                <div className="text-xs text-gray-400">Videos</div>
-              </div>
-              <div className="bg-card-bg rounded-xl p-4 text-center">
-                <TrendingUp className="w-6 h-6 hot-pink mx-auto mb-2" />
-                <div className="text-lg font-bold">{popularVideos?.length || 0}</div>
-                <div className="text-xs text-gray-400">Popular</div>
-              </div>
-              <div className="bg-card-bg rounded-xl p-4 text-center">
-                <Clock className="w-6 h-6 otaku-purple mx-auto mb-2" />
-                <div className="text-lg font-bold">
-                  {allVideos?.reduce((total: number, video: any) => {
-                    const duration = video.duration || "0:00";
-                    const minutes = duration.split(':').reduce((acc: number, time: string, i: number) => {
-                      return acc + parseInt(time) * Math.pow(60, duration.split(':').length - 1 - i);
-                    }, 0) / 60;
-                    return total + minutes;
-                  }, 0).toFixed(0) || 0}m
+            <div className="glass-morphism rounded-2xl p-6 relative overflow-hidden mb-6">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-otaku-purple to-transparent rounded-full opacity-30"></div>
+              <h1 className="text-2xl font-bold mb-2 otaku-purple">AMV Collection</h1>
+              <p className="text-gray-300 text-sm mb-4">Discover amazing anime music videos and content!</p>
+              <div className="flex items-center space-x-4">
+                <div className="text-center">
+                  <div className="text-lg font-bold electric-blue">🎵</div>
+                  <div className="text-xs text-gray-400">Music</div>
                 </div>
-                <div className="text-xs text-gray-400">Total</div>
+                <div className="text-center">
+                  <div className="text-lg font-bold hot-pink">🎬</div>
+                  <div className="text-xs text-gray-400">Videos</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold otaku-purple">✨</div>
+                  <div className="text-xs text-gray-400">Magic</div>
+                </div>
               </div>
             </div>
-          </section>
 
-          {/* Popular Videos */}
-          <section className="mb-6">
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
-              <TrendingUp className="w-5 h-5 hot-pink mr-2" />
-              Popular Videos
-            </h3>
-            {popularLoading ? (
-              <div className="space-y-3">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="bg-card-bg rounded-xl p-3 animate-pulse h-20"></div>
-                ))}
+            {/* Search and Filters */}
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Search videos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-card-bg border-gray-700 text-white"
+                />
               </div>
-            ) : popularVideos && popularVideos.length > 0 ? (
-              <div className="space-y-3">
-                {popularVideos.map((video: any) => (
-                  <VideoCard key={video.id} video={video} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-400">No popular videos available</p>
-              </div>
-            )}
-          </section>
 
-          {/* All Videos */}
-          <section className="mb-6">
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
-              <Play className="w-5 h-5 electric-blue mr-2" />
-              All Videos
-            </h3>
-            {videosLoading ? (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="bg-card-bg rounded-xl p-3 animate-pulse h-20"></div>
-                ))}
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="bg-card-bg border-gray-700 text-white">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent className="bg-card-bg border-gray-700">
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="amv">AMV</SelectItem>
+                  <SelectItem value="opening">Opening</SelectItem>
+                  <SelectItem value="ending">Ending</SelectItem>
+                  <SelectItem value="ost">OST</SelectItem>
+                  <SelectItem value="compilation">Compilation</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Video Grid */}
+          {isLoading ? (
+            <div className="space-y-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-20 bg-card-bg rounded-lg animate-pulse"></div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredVideos.map((video) => (
+                <VideoCard key={video.id} video={video} />
+              ))}
+            </div>
+          )}
+
+          {!isLoading && filteredVideos.length === 0 && (
+            <div className="text-center py-8">
+              <div className="glass-morphism rounded-2xl p-6">
+                <p className="text-gray-300">No videos found matching your criteria.</p>
               </div>
-            ) : allVideos && allVideos.length > 0 ? (
-              <div className="space-y-3">
-                {allVideos.map((video: any) => (
-                  <VideoCard key={video.id} video={video} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Play className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2 text-gray-400">No Videos Available</h3>
-                <p className="text-gray-500">Check back later for awesome anime content!</p>
-              </div>
-            )}
-          </section>
+            </div>
+          )}
         </main>
 
         <BottomNavigation currentPath="/videos" />
