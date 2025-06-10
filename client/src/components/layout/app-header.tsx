@@ -35,12 +35,10 @@ export default function AppHeader() {
               {user?.firstName || user?.username || 'Anonymous Otaku'}
               {user?.id === "71394585" && (
                 <div className="relative flex items-center justify-center w-4 h-4">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full shadow-lg"></div>
-                  <div className="relative flex items-center justify-center w-full h-full">
-                    <svg className="w-2.5 h-2.5 text-white drop-shadow-sm" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-                    </svg>
-                  </div>
+                  <svg className="w-4 h-4 text-blue-500 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    <path d="M9 12l2 2 4-4" stroke="white" strokeWidth="1.5" fill="none" opacity="0.9"/>
+                  </svg>
                 </div>
               )}
             </h2>
