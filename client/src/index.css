@@ -23,7 +23,7 @@
   --destructive-foreground: hsl(0, 0%, 98%);
   --ring: hsl(240, 4.9%, 83.9%);
   --radius: 0.5rem;
-  
+
   /* Otaku-specific colors */
   --electric-blue: hsl(195, 100%, 50%);
   --hot-pink: hsl(328, 100%, 54%);
@@ -134,20 +134,20 @@
 
 /* Animations */
 @keyframes float {
-  0%, 100% { 
-    transform: translateY(0px); 
+  0%, 100% {
+    transform: translateY(0px);
   }
-  50% { 
-    transform: translateY(-20px); 
+  50% {
+    transform: translateY(-20px);
   }
 }
 
 @keyframes glow {
-  from { 
-    box-shadow: 0 0 20px var(--electric-blue); 
+  from {
+    box-shadow: 0 0 20px var(--electric-blue);
   }
-  to { 
-    box-shadow: 0 0 30px var(--electric-blue), 0 0 40px var(--electric-blue); 
+  to {
+    box-shadow: 0 0 30px var(--electric-blue), 0 0 40px var(--electric-blue);
   }
 }
 
@@ -278,6 +278,7 @@
     transform: scale(1.05);
   }
   70% {
+    opacity: 1;
     transform: scale(0.9);
   }
   100% {
