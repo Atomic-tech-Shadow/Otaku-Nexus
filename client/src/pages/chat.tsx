@@ -92,8 +92,23 @@ export default function Chat() {
   const handleSendMessage = () => {
     if (newMessage.trim() && !sendMessageMutation.isPending) {
       sendMessageMutation.mutate(newMessage.trim());
+      // Auto-scroll to bottom after sending
+      setTimeout(() => {
+        const container = document.getElementById('messages-container');
+        if (container) {
+          container.scrollTop = container.scrollHeight;
+        }
+      }, 100);
     }
   };
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    const container = document.getElementById('messages-container');
+    if (container && messages.length > 0) {
+      container.scrollTop = container.scrollHeight;
+    }
+  }, [messages]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -127,13 +142,19 @@ export default function Chat() {
       <AppHeader />
       
       <div className="px-4 pb-20">
-        <div className="flex items-center mb-6 mt-4">
+        <div className="flex items-center justify-between mb-6 mt-4">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <MessageCircle className="w-6 h-6 text-electric-blue" />
               Chat Global
             </h1>
             <p className="text-gray-400 text-sm">Discutez avec la communauté otaku</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span className="text-xs text-gray-400">
+              {messages.length} utilisateur{messages.length !== 1 ? 's' : ''} connecté{messages.length !== 1 ? 's' : ''}
+            </span>
           </div>
         </div>
 
@@ -154,7 +175,7 @@ export default function Chat() {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 p-0 bg-gray-900/50">
-              <ScrollArea className="h-full">
+              <ScrollArea className="h-full" id="messages-container">
                 <div className="px-4 py-2">
                   {messages.length === 0 ? (
                     <div className="text-center py-12">
@@ -230,9 +251,10 @@ export default function Chat() {
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Écrivez un message..."
-                    className="bg-gray-800/50 border-gray-600/50 rounded-full px-6 py-3 text-white placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200"
+                    placeholder={`Salut ${user?.firstName || 'Otaku'} ! Écris ton message...`}
+                    className="bg-gray-800/50 border-gray-600/50 rounded-full px-6 py-3 text-white placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200 resize-none"
                     disabled={sendMessageMutation.isPending}
+                    maxLength={500}
                   />
                 </div>
                 <Button

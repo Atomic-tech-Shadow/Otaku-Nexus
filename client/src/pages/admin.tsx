@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Settings, Plus, Edit, Trash2, Eye, EyeOff, Users, MessageSquare, Video, BookOpen } from "lucide-react";
+import { Settings, Plus, Edit, Trash2, Eye, EyeOff, Users, MessageSquare, Video, BookOpen, ArrowLeft, Home } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -290,8 +290,41 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
-      <div className="container mx-auto max-w-7xl">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      {/* Navigation Header */}
+      <div className="sticky top-0 z-50 bg-black/20 backdrop-blur-lg border-b border-blue-500/30">
+        <div className="container mx-auto max-w-7xl px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.location.href = "/"}
+                className="text-white hover:bg-white/10"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Retour
+              </Button>
+              <div className="h-6 w-px bg-gray-400"></div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.location.href = "/"}
+                className="text-white hover:bg-white/10"
+              >
+                <Home className="h-4 w-4 mr-2" />
+                Accueil
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-sm text-green-400">Admin connecté</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto max-w-7xl p-4">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">⚙️ Administration</h1>
           <p className="text-blue-200">Gestion de la communauté Otaku</p>
@@ -570,8 +603,9 @@ export default function Admin() {
             </Card>
           </TabsContent>
         </Tabs>
+      </div>
 
-        {/* Edit Post Dialog */}
+      {/* Edit Post Dialog */}
         <Dialog open={isEditPostOpen} onOpenChange={setIsEditPostOpen}>
           <DialogContent className="bg-gray-900 text-white border-blue-500/30 max-w-2xl">
             <DialogHeader>
@@ -698,7 +732,6 @@ export default function Admin() {
             </Form>
           </DialogContent>
         </Dialog>
-      </div>
     </div>
   );
 }
