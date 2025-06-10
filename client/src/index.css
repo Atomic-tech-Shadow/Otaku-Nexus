@@ -323,3 +323,27 @@
 .custom-scroll::-webkit-scrollbar-thumb:hover {
   background: var(--hot-pink);
 }
+
+/* Dialog scroll improvements */
+[data-radix-dialog-content] {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground)) transparent;
+}
+
+[data-radix-dialog-content]::-webkit-scrollbar {
+  width: 8px;
+}
+
+[data-radix-dialog-content]::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+
+[data-radix-dialog-content]::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground));
+  border-radius: 4px;
+}
+
+[data-radix-dialog-content]::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--accent-primary));
+}

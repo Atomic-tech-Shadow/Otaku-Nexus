@@ -357,13 +357,13 @@ export default function Admin() {
                       Nouveau post
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-card-bg text-text-primary border-border max-w-2xl">
+                  <DialogContent className="bg-card-bg text-text-primary border-border max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Créer un nouveau post</DialogTitle>
                     </DialogHeader>
                     <Form {...createForm}>
-                      <form onSubmit={createForm.handleSubmit((data) => createPostMutation.mutate(data))}>
-                        <div className="space-y-4">
+                      <form onSubmit={createForm.handleSubmit((data) => createPostMutation.mutate(data))} className="space-y-4">
+                        <div className="space-y-4 pb-4">
                           <FormField
                             control={createForm.control}
                             name="title"
@@ -466,7 +466,19 @@ export default function Admin() {
                               </FormItem>
                             )}
                           />
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 pt-4">
+                            <Button 
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                setIsCreatePostOpen(false);
+                                createForm.reset();
+                              }}
+                              className="flex-1 border-border hover:bg-accent-hover/10"
+                              disabled={createPostMutation.isPending}
+                            >
+                              Annuler
+                            </Button>
                             <Button 
                               type="submit" 
                               className="flex-1 bg-accent-primary hover:bg-accent-hover text-white"
@@ -541,7 +553,11 @@ export default function Admin() {
                                 <Button
                                   size="sm"
                                   variant="destructive"
-                                  onClick={() => deletePostMutation.mutate(post.id)}
+                                  onClick={() => {
+                                    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce post ?")) {
+                                      deletePostMutation.mutate(post.id);
+                                    }
+                                  }}
                                   disabled={deletePostMutation.isPending}
                                 >
                                   <Trash2 className="h-3 w-3" />
@@ -608,15 +624,15 @@ export default function Admin() {
 
       {/* Edit Post Dialog */}
       <Dialog open={isEditPostOpen} onOpenChange={setIsEditPostOpen}>
-        <DialogContent className="bg-card-bg text-text-primary border-border max-w-2xl">
+        <DialogContent className="bg-card-bg text-text-primary border-border max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Modifier le post</DialogTitle>
           </DialogHeader>
           <Form {...editForm}>
             <form onSubmit={editForm.handleSubmit((data) => 
               selectedPost && updatePostMutation.mutate({ id: selectedPost.id, data })
-            )}>
-              <div className="space-y-4">
+            )} className="space-y-4">
+              <div className="space-y-4 pb-4">
                 <FormField
                   control={editForm.control}
                   name="title"
@@ -719,7 +735,20 @@ export default function Admin() {
                     </FormItem>
                   )}
                 />
-                <div className="flex gap-2">
+                <div className="flex gap-2 pt-4">
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditPostOpen(false);
+                      setSelectedPost(null);
+                      editForm.reset();
+                    }}
+                    className="flex-1 border-border hover:bg-accent-hover/10"
+                    disabled={updatePostMutation.isPending}
+                  >
+                    Annuler
+                  </Button>
                   <Button 
                     type="submit" 
                     className="flex-1 bg-accent-primary hover:bg-accent-hover text-white"
