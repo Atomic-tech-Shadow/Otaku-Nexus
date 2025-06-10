@@ -115,7 +115,7 @@ export default function EditProfile() {
 
   const handleFileUpload = async (file: File) => {
     if (!file) return;
-
+    
     // Validate file type
     if (!file.type.startsWith('image/')) {
       toast({
@@ -127,7 +127,8 @@ export default function EditProfile() {
     }
 
     // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
       toast({
         title: "Erreur",
         description: "L'image ne peut pas dépasser 5MB.",
@@ -137,25 +138,26 @@ export default function EditProfile() {
     }
 
     setUploading(true);
-
+    
     try {
-      // Convert file to base64 for preview
+      // Convert file to base64 for immediate preview and storage
       const reader = new FileReader();
       reader.onload = (e) => {
         const base64 = e.target?.result as string;
         setImagePreview(base64);
         form.setValue("profileImageUrl", base64);
+        
+        toast({
+          title: "Image uploadée",
+          description: "Votre image de profil a été uploadée avec succès.",
+        });
       };
       reader.readAsDataURL(file);
-
-      toast({
-        title: "Image téléchargée",
-        description: "Votre image a été téléchargée avec succès.",
-      });
     } catch (error) {
+      console.error('Upload error:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de télécharger l'image.",
+        title: "Erreur d'upload",
+        description: "Impossible d'uploader l'image. Veuillez réessayer.",
         variant: "destructive",
       });
     } finally {

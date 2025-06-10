@@ -226,7 +226,10 @@ export default function Admin() {
 
   const togglePublishMutation = useMutation({
     mutationFn: async ({ id, isPublished }: { id: number; isPublished: boolean }) => {
-      return await apiRequest("PUT", `/api/admin/posts/${id}`, { isPublished });
+      return await apiRequest(`/api/admin/posts/${id}`, {
+        method: "PUT",
+        body: { isPublished },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/posts"] });
