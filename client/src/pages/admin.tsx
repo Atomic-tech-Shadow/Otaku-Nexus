@@ -289,9 +289,17 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-app-bg text-text-primary">
+    <div className="min-h-screen bg-animated text-text-primary relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-10 left-10 w-32 h-32 bg-gradient-to-br from-electric-blue/20 to-hot-pink/20 rounded-full animate-float"></div>
+        <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-otaku-purple/20 to-anime-red/20 rounded-full animate-pulse-slow"></div>
+        <div className="absolute bottom-20 left-20 w-28 h-28 bg-gradient-to-br from-hot-pink/20 to-electric-blue/20 rounded-full animate-float" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-1/2 right-10 w-16 h-16 bg-gradient-to-br from-anime-red/20 to-otaku-purple/20 rounded-full animate-bounce-in" style={{ animationDelay: '1s' }}></div>
+      </div>
+
       {/* Navigation Header */}
-      <div className="sticky top-0 z-50 bg-card-bg/95 backdrop-blur-lg border-b border-border">
+      <div className="sticky top-0 z-50 bg-card-bg/95 backdrop-blur-lg border-b border-electric-blue/20 shadow-lg shadow-electric-blue/10">
         <div className="container mx-auto max-w-7xl px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -299,47 +307,67 @@ export default function Admin() {
                 variant="ghost"
                 size="sm"
                 onClick={() => window.location.href = "/"}
-                className="text-text-primary hover:bg-accent-hover/10 hover:text-accent-hover"
+                className="text-text-primary hover:bg-gradient-to-r hover:from-electric-blue/10 hover:to-hot-pink/10 hover:text-electric-blue transition-all duration-300 btn-hover"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Retour
               </Button>
-              <div className="h-6 w-px bg-border"></div>
+              <div className="h-6 w-px bg-gradient-to-b from-electric-blue to-hot-pink animate-pulse"></div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => window.location.href = "/"}
-                className="text-text-primary hover:bg-accent-hover/10 hover:text-accent-hover"
+                className="text-text-primary hover:bg-gradient-to-r hover:from-hot-pink/10 hover:to-otaku-purple/10 hover:text-hot-pink transition-all duration-300 btn-hover"
               >
                 <Home className="h-4 w-4 mr-2" />
                 Accueil
               </Button>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-accent-hover rounded-full animate-pulse"></div>
-              <span className="text-sm text-accent-hover">Admin connecté</span>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="w-3 h-3 bg-gradient-to-r from-electric-blue to-hot-pink rounded-full animate-pulse"></div>
+                <div className="absolute inset-0 w-3 h-3 bg-gradient-to-r from-electric-blue to-hot-pink rounded-full animate-ping opacity-75"></div>
+              </div>
+              <span className="text-sm bg-gradient-to-r from-electric-blue to-hot-pink bg-clip-text text-transparent font-semibold animate-shimmer">
+                Admin connecté
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto max-w-7xl p-4">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-text-primary mb-2">⚙️ Administration</h1>
-          <p className="text-text-secondary">Gestion de la communauté Otaku</p>
+      <div className="container mx-auto max-w-7xl p-4 relative z-10">
+        <div className="mb-8 text-center animate-slide-up">
+          <div className="relative inline-block">
+            <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-electric-blue via-hot-pink to-otaku-purple bg-clip-text text-transparent animate-shimmer">
+              ⚙️ Administration
+            </h1>
+            <div className="absolute inset-0 bg-gradient-to-r from-electric-blue via-hot-pink to-otaku-purple opacity-20 blur-xl animate-pulse"></div>
+          </div>
+          <p className="text-xl text-text-secondary mb-4 animate-glow">Gestion de la communauté Otaku</p>
+          <div className="w-32 h-1 bg-gradient-to-r from-electric-blue to-hot-pink mx-auto rounded-full animate-pulse"></div>
         </div>
 
         <Tabs defaultValue="posts" className="space-y-6">
-          <TabsList className="bg-card-bg border-border">
-            <TabsTrigger value="posts" className="flex items-center gap-2 data-[state=active]:bg-accent-primary data-[state=active]:text-white">
+          <TabsList className="bg-gradient-to-r from-card-bg/90 to-card-bg/70 border border-electric-blue/30 backdrop-blur-lg rounded-2xl p-2 shadow-xl shadow-electric-blue/10">
+            <TabsTrigger 
+              value="posts" 
+              className="flex items-center gap-2 rounded-xl transition-all duration-300 hover:bg-gradient-to-r hover:from-electric-blue/20 hover:to-hot-pink/20 data-[state=active]:bg-gradient-to-r data-[state=active]:from-electric-blue data-[state=active]:to-hot-pink data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-105"
+            >
               <MessageSquare className="h-4 w-4" />
               Posts
             </TabsTrigger>
-            <TabsTrigger value="stats" className="flex items-center gap-2 data-[state=active]:bg-accent-primary data-[state=active]:text-white">
+            <TabsTrigger 
+              value="stats" 
+              className="flex items-center gap-2 rounded-xl transition-all duration-300 hover:bg-gradient-to-r hover:from-hot-pink/20 hover:to-otaku-purple/20 data-[state=active]:bg-gradient-to-r data-[state=active]:from-hot-pink data-[state=active]:to-otaku-purple data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-105"
+            >
               <Users className="h-4 w-4" />
               Statistiques
             </TabsTrigger>
-            <TabsTrigger value="content" className="flex items-center gap-2 data-[state=active]:bg-accent-primary data-[state=active]:text-white">
+            <TabsTrigger 
+              value="content" 
+              className="flex items-center gap-2 rounded-xl transition-all duration-300 hover:bg-gradient-to-r hover:from-otaku-purple/20 hover:to-anime-red/20 data-[state=active]:bg-gradient-to-r data-[state=active]:from-otaku-purple data-[state=active]:to-anime-red data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-105"
+            >
               <Video className="h-4 w-4" />
               Contenu
             </TabsTrigger>
@@ -349,12 +377,15 @@ export default function Admin() {
             <div className="space-y-6">
               {/* Header with Create Button */}
               <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-text-primary">Gestion des posts</h2>
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-electric-blue to-hot-pink bg-clip-text text-transparent">
+                  Gestion des posts
+                </h2>
                 <Dialog open={isCreatePostOpen} onOpenChange={setIsCreatePostOpen}>
                   <DialogTrigger asChild>
-                    <Button className="bg-accent-primary hover:bg-accent-hover text-white">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nouveau post
+                    <Button className="relative bg-gradient-to-r from-electric-blue to-hot-pink hover:from-hot-pink hover:to-otaku-purple text-white rounded-xl px-6 py-3 shadow-lg shadow-electric-blue/30 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-hot-pink/40 btn-hover group overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <Plus className="h-5 w-5 mr-2 relative z-10" />
+                      <span className="relative z-10 font-semibold">Nouveau post</span>
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="bg-card-bg text-text-primary border-border max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -495,9 +526,12 @@ export default function Admin() {
               </div>
 
               {/* Posts List */}
-              <Card className="bg-card-bg border-border">
-                <CardHeader>
-                  <CardTitle className="text-text-primary">Posts existants</CardTitle>
+              <Card className="bg-gradient-to-br from-card-bg/90 to-card-bg/70 border border-electric-blue/20 backdrop-blur-lg rounded-2xl shadow-xl shadow-electric-blue/10 card-hover">
+                <CardHeader className="relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-hot-pink/20 to-transparent rounded-full"></div>
+                  <CardTitle className="text-2xl font-bold bg-gradient-to-r from-hot-pink to-otaku-purple bg-clip-text text-transparent relative z-10">
+                    Posts existants
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {postsLoading ? (
@@ -507,10 +541,15 @@ export default function Admin() {
                       Aucun post créé. Commencez par créer votre premier post !
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      {posts.map((post: AdminPost) => (
-                        <Card key={post.id} className="bg-app-bg border-border">
-                          <CardContent className="p-4">
+                    <div className="space-y-6">
+                      {posts.map((post: AdminPost, index) => (
+                        <Card 
+                          key={post.id} 
+                          className="bg-gradient-to-r from-app-bg/90 to-card-bg/50 border border-electric-blue/20 rounded-xl shadow-lg shadow-electric-blue/5 card-hover transition-all duration-300 hover:shadow-xl hover:shadow-hot-pink/20 hover:scale-[1.02] animate-slide-up group"
+                          style={{ animationDelay: `${index * 0.1}s` }}
+                        >
+                          <CardContent className="p-6 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-electric-blue/10 to-transparent rounded-full group-hover:scale-150 transition-transform duration-500"></div>
                             <div className="flex justify-between items-start mb-3">
                               <div className="flex items-center gap-2">
                                 <h3 className="text-text-primary font-semibold">{post.title}</h3>
@@ -529,7 +568,7 @@ export default function Admin() {
                                   </Badge>
                                 )}
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-3">
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -538,17 +577,17 @@ export default function Admin() {
                                     isPublished: !post.isPublished
                                   })}
                                   disabled={togglePublishMutation.isPending}
-                                  className="border-border hover:bg-accent-hover/10"
+                                  className="border-electric-blue/30 hover:bg-gradient-to-r hover:from-electric-blue/20 hover:to-hot-pink/20 hover:border-electric-blue/50 transition-all duration-300 hover:scale-110 relative z-10"
                                 >
-                                  {post.isPublished ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                                  {post.isPublished ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleEditPost(post)}
-                                  className="border-border hover:bg-accent-hover/10"
+                                  className="border-hot-pink/30 hover:bg-gradient-to-r hover:from-hot-pink/20 hover:to-otaku-purple/20 hover:border-hot-pink/50 transition-all duration-300 hover:scale-110 relative z-10"
                                 >
-                                  <Edit className="h-3 w-3" />
+                                  <Edit className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   size="sm"
@@ -559,8 +598,9 @@ export default function Admin() {
                                     }
                                   }}
                                   disabled={deletePostMutation.isPending}
+                                  className="bg-gradient-to-r from-anime-red to-red-600 hover:from-red-600 hover:to-anime-red shadow-lg shadow-anime-red/30 transition-all duration-300 hover:scale-110 relative z-10"
                                 >
-                                  <Trash2 className="h-3 w-3" />
+                                  <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
                             </div>
@@ -581,26 +621,32 @@ export default function Admin() {
           </TabsContent>
 
           <TabsContent value="stats">
-            <Card className="bg-card-bg border-border">
-              <CardHeader>
-                <CardTitle className="text-text-primary">Statistiques de la plateforme</CardTitle>
+            <Card className="bg-gradient-to-br from-card-bg/90 to-card-bg/70 border border-hot-pink/20 backdrop-blur-lg rounded-2xl shadow-xl shadow-hot-pink/10 card-hover">
+              <CardHeader className="relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-otaku-purple/20 to-transparent rounded-full"></div>
+                <CardTitle className="text-3xl font-bold bg-gradient-to-r from-otaku-purple to-anime-red bg-clip-text text-transparent relative z-10">
+                  Statistiques de la plateforme
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-accent-primary/10 rounded-lg p-4 border border-accent-primary/20">
-                    <h3 className="text-accent-primary font-semibold mb-2">Utilisateurs</h3>
-                    <p className="text-2xl font-bold text-text-primary">--</p>
-                    <p className="text-sm text-text-secondary">Total des inscrits</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  <div className="bg-gradient-to-br from-electric-blue/20 to-electric-blue/10 rounded-2xl p-6 border border-electric-blue/30 card-hover relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-electric-blue/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <h3 className="text-electric-blue font-bold mb-3 text-lg relative z-10">👥 Utilisateurs</h3>
+                    <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">∞</p>
+                    <p className="text-sm text-text-secondary relative z-10">Total des inscrits</p>
                   </div>
-                  <div className="bg-accent-hover/10 rounded-lg p-4 border border-accent-hover/20">
-                    <h3 className="text-accent-hover font-semibold mb-2">Quiz</h3>
-                    <p className="text-2xl font-bold text-text-primary">--</p>
-                    <p className="text-sm text-text-secondary">Quiz terminés</p>
+                  <div className="bg-gradient-to-br from-hot-pink/20 to-hot-pink/10 rounded-2xl p-6 border border-hot-pink/30 card-hover relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-hot-pink/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <h3 className="text-hot-pink font-bold mb-3 text-lg relative z-10">🧠 Quiz</h3>
+                    <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">∞</p>
+                    <p className="text-sm text-text-secondary relative z-10">Quiz terminés</p>
                   </div>
-                  <div className="bg-electric-blue/10 rounded-lg p-4 border border-electric-blue/20">
-                    <h3 className="electric-blue font-semibold mb-2">Anime</h3>
-                    <p className="text-2xl font-bold text-text-primary">--</p>
-                    <p className="text-sm text-text-secondary">Dans la base</p>
+                  <div className="bg-gradient-to-br from-otaku-purple/20 to-otaku-purple/10 rounded-2xl p-6 border border-otaku-purple/30 card-hover relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-otaku-purple/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <h3 className="text-otaku-purple font-bold mb-3 text-lg relative z-10">🎌 Anime</h3>
+                    <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">∞</p>
+                    <p className="text-sm text-text-secondary relative z-10">Dans la base</p>
                   </div>
                 </div>
               </CardContent>
