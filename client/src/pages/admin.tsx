@@ -107,7 +107,7 @@ export default function Admin() {
 
   // Fetch admin posts
   const ADMIN_EMAIL = "sorokomarco@gmail.com";
-  const { data: posts = [], isLoading: postsLoading } = useQuery({
+  const { data: posts = [], isLoading: postsLoading } = useQuery<AdminPost[]>({
     queryKey: ["/api/admin/posts"],
     enabled: isAuthenticated && user?.email === ADMIN_EMAIL,
   });
@@ -120,10 +120,7 @@ export default function Admin() {
 
   const createPostMutation = useMutation({
     mutationFn: async (data: z.infer<typeof postSchema>) => {
-      return await apiRequest("/api/admin/posts", {
-        method: "POST",
-        body: data,
-      });
+      return await apiRequest("POST", "/api/admin/posts", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/posts"] });
@@ -156,10 +153,7 @@ export default function Admin() {
 
   const updatePostMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: z.infer<typeof postSchema> }) => {
-      return await apiRequest(`/api/admin/posts/${id}`, {
-        method: "PUT",
-        body: data,
-      });
+      return await apiRequest("PUT", `/api/admin/posts/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/posts"] });
@@ -228,8 +222,7 @@ export default function Admin() {
     mutationFn: async ({ id, isPublished }: { id: number; isPublished: boolean }) => {
       return await apiRequest(`/api/admin/posts/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isPublished }),
+        body: { isPublished },
       });
     },
     onSuccess: () => {

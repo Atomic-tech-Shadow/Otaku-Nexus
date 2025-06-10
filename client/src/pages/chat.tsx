@@ -46,7 +46,7 @@ export default function Chat() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: messages = [], refetch, error } = useQuery({
+  const { data: messages = [], refetch, error } = useQuery<Message[]>({
     queryKey: ["/api/chat/messages"],
     enabled: !!user && isAuthenticated,
     refetchInterval: 3000,
