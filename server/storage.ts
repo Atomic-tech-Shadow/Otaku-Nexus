@@ -326,10 +326,19 @@ export class DatabaseStorage implements IStorage {
     return newRoom;
   }
 
-  async getChatMessages(roomId: number, limit = 50): Promise<ChatMessage[]> {
+  async getChatMessages(roomId: number, limit = 50): Promise<any[]> {
     return await db
-      .select()
+      .select({
+        id: chatMessages.id,
+        content: chatMessages.message,
+        userId: chatMessages.userId,
+        userFirstName: users.firstName,
+        userLastName: users.lastName,
+        isAdmin: users.isAdmin,
+        createdAt: chatMessages.createdAt,
+      })
       .from(chatMessages)
+      .leftJoin(users, eq(chatMessages.userId, users.id))
       .where(eq(chatMessages.roomId, roomId))
       .orderBy(desc(chatMessages.createdAt))
       .limit(limit);
