@@ -1,8 +1,6 @@
-import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { isUnauthorizedError } from "@/lib/authUtils";
 import AppHeader from "@/components/layout/app-header";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import AnimeCard from "@/components/anime/anime-card";
@@ -17,8 +15,6 @@ import { PostCard } from "@/components/ui/post-card";
 export default function Home() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading, user } = useAuth();
-
-  // This is handled by the ProtectedRoute component, no need for manual redirect
 
   const { data: userStats = {}, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/user/stats"],
@@ -92,24 +88,17 @@ export default function Home() {
 
           {/* Quick Actions */}
           <section className="mb-6">
-            <h3 className="text-lg font-semibold mb-3">Quick Actions</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <Link href="/quiz">
-                <Button className="gradient-border w-full h-auto p-0">
-                  <div className="gradient-border-inner p-4 text-center w-full">
-                    <Brain className="w-6 h-6 electric-blue mx-auto mb-2" />
-                    <div className="font-semibold text-sm">Take Quiz</div>
-                    <div className="text-xs text-gray-400">Test your knowledge</div>
-                  </div>
+            <div className="flex space-x-3">
+              <Link href="/anime" className="flex-1">
+                <Button className="w-full bg-gradient-to-r from-electric-blue to-hot-pink hover:from-electric-blue/80 hover:to-hot-pink/80 btn-hover">
+                  <Search className="w-4 h-4 mr-2" />
+                  Explore Anime
                 </Button>
               </Link>
-              <Link href="/anime">
-                <Button className="gradient-border w-full h-auto p-0">
-                  <div className="gradient-border-inner p-4 text-center w-full">
-                    <Search className="w-6 h-6 hot-pink mx-auto mb-2" />
-                    <div className="font-semibold text-sm">Find Anime</div>
-                    <div className="text-xs text-gray-400">Discover new series</div>
-                  </div>
+              <Link href="/quiz" className="flex-1">
+                <Button className="w-full bg-gradient-to-r from-otaku-purple to-anime-red hover:from-otaku-purple/80 hover:to-anime-red/80 btn-hover">
+                  <Brain className="w-4 h-4 mr-2" />
+                  Take Quiz
                 </Button>
               </Link>
             </div>
@@ -132,7 +121,7 @@ export default function Home() {
                     <div key={i} className="flex-shrink-0 w-32 h-32 bg-card-bg rounded-xl animate-pulse"></div>
                   ))}
                 </div>
-              ) : trendingAnimes && trendingAnimes.length > 0 ? (
+              ) : Array.isArray(trendingAnimes) && trendingAnimes.length > 0 ? (
                 trendingAnimes.map((anime: any) => (
                   <AnimeCard key={anime.id} anime={anime} compact />
                 ))
@@ -146,7 +135,7 @@ export default function Home() {
           {featuredQuiz && (
             <section className="mb-6">
               <h3 className="text-lg font-semibold mb-3">Featured Quiz</h3>
-              <QuizCard quiz={featuredQuiz} featured />
+              <QuizCard quiz={featuredQuiz as any} featured />
             </section>
           )}
 
@@ -163,12 +152,12 @@ export default function Home() {
             <div className="space-y-3">
               {videosLoading ? (
                 <div className="space-y-3">
-                  {[...Array(2)].map((_, i) => (
-                    <div key={i} className="bg-card-bg rounded-xl p-3 animate-pulse h-16"></div>
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-16 bg-card-bg rounded-xl animate-pulse"></div>
                   ))}
                 </div>
-              ) : popularVideos && popularVideos.length > 0 ? (
-                popularVideos.slice(0, 2).map((video: any) => (
+              ) : Array.isArray(popularVideos) && popularVideos.length > 0 ? (
+                popularVideos.slice(0, 3).map((video: any) => (
                   <VideoCard key={video.id} video={video} compact />
                 ))
               ) : (
@@ -177,51 +166,44 @@ export default function Home() {
             </div>
           </section>
 
-          {/* User Stats */}
+          {/* User Progress */}
           <section className="mb-6">
-            <h3 className="text-lg font-semibold mb-3">Your Progress</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-card-bg rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <Brain className="w-4 h-4 hot-pink" />
-                  <span className="text-xs text-gray-400">Total</span>
+            <div className="glass-morphism rounded-2xl p-6">
+              <h3 className="text-lg font-semibold mb-4">Your Progress</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span>Quizzes Completed</span>
+                    <span className="electric-blue">{(userStats as any)?.totalQuizzes || 0}</span>
+                  </div>
+                  <div className="w-full bg-dark-bg rounded-full h-2">
+                    <div className="bg-gradient-to-r from-electric-blue to-hot-pink h-2 rounded-full" style={{ width: '65%' }}></div>
+                  </div>
                 </div>
-                <div className="text-xl font-bold mb-1">{userStats?.totalQuizzes || 0}</div>
-                <div className="text-xs text-gray-400">Quizzes Completed</div>
-              </div>
-              <div className="bg-card-bg rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <Search className="w-4 h-4 electric-blue" />
-                  <span className="text-xs text-gray-400">Global</span>
+                <div>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span>Rank</span>
+                    <span className="hot-pink">#{(userStats as any)?.rank || 'Unranked'}</span>
+                  </div>
+                  <div className="w-full bg-dark-bg rounded-full h-2">
+                    <div className="bg-gradient-to-r from-hot-pink to-otaku-purple h-2 rounded-full" style={{ width: '45%' }}></div>
+                  </div>
                 </div>
-                <div className="text-xl font-bold mb-1">#{userStats?.rank || 1}</div>
-                <div className="text-xs text-gray-400">Rank</div>
               </div>
             </div>
           </section>
 
-          {/* Creator Posts Section */}
-          {posts.length > 0 && (
-            <section>
-              <h3 className="text-2xl font-bold text-white mb-6">📢 Annonces du Créateur</h3>
-              <div className="space-y-6">
-                {postsLoading ? (
-                  <div className="flex justify-center py-8">
-                    <LoadingSpinner />
-                  </div>
-                ) : (
-                  posts.slice(0, 3).map((post: any) => (
-                    <PostCard key={post.id} post={post} />
-                  ))
-                )}
+          {/* Latest Posts */}
+          {Array.isArray(posts) && posts.length > 0 && (
+            <section className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-semibold">Latest Updates</h3>
               </div>
-              {posts.length > 3 && (
-                <div className="text-center mt-6">
-                  <Button variant="outline" className="electric-blue text-sm">
-                    Voir toutes les annonces
-                  </Button>
-                </div>
-              )}
+              <div className="space-y-3">
+                {posts.slice(0, 2).map((post: any) => (
+                  <PostCard key={post.id} post={post} />
+                ))}
+              </div>
             </section>
           )}
         </main>
