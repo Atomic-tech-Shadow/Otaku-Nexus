@@ -35,9 +35,9 @@ export default function AppHeader() {
               {user?.firstName || user?.username || 'Anonymous Otaku'}
               {user?.id === "71394585" && (
                 <div className="relative flex items-center justify-center w-4 h-4">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="#1DA1F2" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 0l2.09 4.26L18 5.27l-3 2.92.71 4.14L12 10.77 8.29 12.33 9 8.19l-3-2.92 3.91-.61L12 0z"/>
-                    <path d="M10 13l-2-2 1.41-1.41L10 10.17l4.59-4.58L16 7l-6 6z" fill="#fff"/>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="12" fill="#1DA1F2"/>
+                    <path d="M9.75 15.25L7 12.5l1.5-1.5 1.25 1.25L14.5 7.5 16 9l-6.25 6.25z" fill="white"/>
                   </svg>
                 </div>
               )}
