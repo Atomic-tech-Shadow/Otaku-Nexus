@@ -361,13 +361,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Public posts operations
-  async getPublicPosts(): Promise<AdminPost[]> {
+  async getPublicPosts(): Promise<any[]> {
     return await db.select({
       id: adminPosts.id,
       title: adminPosts.title,
       content: adminPosts.content,
       type: adminPosts.type,
       isPublished: adminPosts.isPublished,
+      adminOnly: adminPosts.adminOnly,
       authorId: adminPosts.authorId,
       imageUrl: adminPosts.imageUrl,
       createdAt: adminPosts.createdAt,
@@ -383,13 +384,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Admin operations
-  async getAdminPosts(published?: boolean): Promise<AdminPost[]> {
+  async getAdminPosts(published?: boolean): Promise<any[]> {
     const query = db.select({
       id: adminPosts.id,
       title: adminPosts.title,
       content: adminPosts.content,
       type: adminPosts.type,
       isPublished: adminPosts.isPublished,
+      adminOnly: adminPosts.adminOnly,
       authorId: adminPosts.authorId,
       imageUrl: adminPosts.imageUrl,
       createdAt: adminPosts.createdAt,
