@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -290,9 +291,9 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen bg-app-bg text-text-primary">
       {/* Navigation Header */}
-      <div className="sticky top-0 z-50 bg-black/20 backdrop-blur-lg border-b border-blue-500/30">
+      <div className="sticky top-0 z-50 bg-card-bg/95 backdrop-blur-lg border-b border-border">
         <div className="container mx-auto max-w-7xl px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -300,25 +301,25 @@ export default function Admin() {
                 variant="ghost"
                 size="sm"
                 onClick={() => window.location.href = "/"}
-                className="text-white hover:bg-white/10"
+                className="text-text-primary hover:bg-accent-hover/10 hover:text-accent-hover"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Retour
               </Button>
-              <div className="h-6 w-px bg-gray-400"></div>
+              <div className="h-6 w-px bg-border"></div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => window.location.href = "/"}
-                className="text-white hover:bg-white/10"
+                className="text-text-primary hover:bg-accent-hover/10 hover:text-accent-hover"
               >
                 <Home className="h-4 w-4 mr-2" />
                 Accueil
               </Button>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="text-sm text-green-400">Admin connecté</span>
+              <div className="w-2 h-2 bg-accent-hover rounded-full animate-pulse"></div>
+              <span className="text-sm text-accent-hover">Admin connecté</span>
             </div>
           </div>
         </div>
@@ -326,21 +327,21 @@ export default function Admin() {
 
       <div className="container mx-auto max-w-7xl p-4">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">⚙️ Administration</h1>
-          <p className="text-blue-200">Gestion de la communauté Otaku</p>
+          <h1 className="text-4xl font-bold text-text-primary mb-2">⚙️ Administration</h1>
+          <p className="text-text-secondary">Gestion de la communauté Otaku</p>
         </div>
 
         <Tabs defaultValue="posts" className="space-y-6">
-          <TabsList className="bg-black/20 backdrop-blur-lg border-blue-500/30">
-            <TabsTrigger value="posts" className="flex items-center gap-2">
+          <TabsList className="bg-card-bg border-border">
+            <TabsTrigger value="posts" className="flex items-center gap-2 data-[state=active]:bg-accent-primary data-[state=active]:text-white">
               <MessageSquare className="h-4 w-4" />
               Posts
             </TabsTrigger>
-            <TabsTrigger value="stats" className="flex items-center gap-2">
+            <TabsTrigger value="stats" className="flex items-center gap-2 data-[state=active]:bg-accent-primary data-[state=active]:text-white">
               <Users className="h-4 w-4" />
               Statistiques
             </TabsTrigger>
-            <TabsTrigger value="content" className="flex items-center gap-2">
+            <TabsTrigger value="content" className="flex items-center gap-2 data-[state=active]:bg-accent-primary data-[state=active]:text-white">
               <Video className="h-4 w-4" />
               Contenu
             </TabsTrigger>
@@ -350,15 +351,15 @@ export default function Admin() {
             <div className="space-y-6">
               {/* Header with Create Button */}
               <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-white">Gestion des posts</h2>
+                <h2 className="text-2xl font-bold text-text-primary">Gestion des posts</h2>
                 <Dialog open={isCreatePostOpen} onOpenChange={setIsCreatePostOpen}>
                   <DialogTrigger asChild>
-                    <Button className="bg-blue-600 hover:bg-blue-700">
+                    <Button className="bg-accent-primary hover:bg-accent-hover text-white">
                       <Plus className="h-4 w-4 mr-2" />
                       Nouveau post
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-gray-900 text-white border-blue-500/30 max-w-2xl">
+                  <DialogContent className="bg-card-bg text-text-primary border-border max-w-2xl">
                     <DialogHeader>
                       <DialogTitle>Créer un nouveau post</DialogTitle>
                     </DialogHeader>
@@ -372,7 +373,7 @@ export default function Admin() {
                               <FormItem>
                                 <FormLabel>Titre</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="Titre du post" {...field} />
+                                  <Input placeholder="Titre du post" {...field} className="bg-app-bg border-border text-text-primary" />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -386,11 +387,11 @@ export default function Admin() {
                                 <FormLabel>Type</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                   <FormControl>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="bg-app-bg border-border text-text-primary">
                                       <SelectValue placeholder="Sélectionner un type" />
                                     </SelectTrigger>
                                   </FormControl>
-                                  <SelectContent>
+                                  <SelectContent className="bg-card-bg border-border">
                                     <SelectItem value="announcement">Annonce</SelectItem>
                                     <SelectItem value="event">Événement</SelectItem>
                                     <SelectItem value="update">Mise à jour</SelectItem>
@@ -407,7 +408,7 @@ export default function Admin() {
                               <FormItem>
                                 <FormLabel>URL de l'image (optionnel)</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="https://..." {...field} />
+                                  <Input placeholder="https://..." {...field} className="bg-app-bg border-border text-text-primary" />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -422,7 +423,7 @@ export default function Admin() {
                                 <FormControl>
                                   <Textarea 
                                     placeholder="Contenu du post..." 
-                                    className="min-h-[120px]"
+                                    className="min-h-[120px] bg-app-bg border-border text-text-primary"
                                     {...field} 
                                   />
                                 </FormControl>
@@ -434,7 +435,7 @@ export default function Admin() {
                             control={createForm.control}
                             name="isPublished"
                             render={({ field }) => (
-                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-3">
                                 <div className="space-y-0.5">
                                   <FormLabel>Publier immédiatement</FormLabel>
                                 </div>
@@ -451,10 +452,10 @@ export default function Admin() {
                             control={createForm.control}
                             name="adminOnly"
                             render={({ field }) => (
-                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-3">
                                 <div className="space-y-0.5">
                                   <FormLabel>Admin uniquement</FormLabel>
-                                  <p className="text-xs text-gray-400">
+                                  <p className="text-xs text-text-secondary">
                                     Visible seulement dans l'espace admin
                                   </p>
                                 </div>
@@ -470,7 +471,7 @@ export default function Admin() {
                           <div className="flex gap-2">
                             <Button 
                               type="submit" 
-                              className="flex-1"
+                              className="flex-1 bg-accent-primary hover:bg-accent-hover text-white"
                               disabled={createPostMutation.isPending}
                             >
                               {createPostMutation.isPending ? "Création..." : "Créer"}
@@ -484,35 +485,35 @@ export default function Admin() {
               </div>
 
               {/* Posts List */}
-              <Card className="bg-black/20 backdrop-blur-lg border-blue-500/30">
+              <Card className="bg-card-bg border-border">
                 <CardHeader>
-                  <CardTitle className="text-white">Posts existants</CardTitle>
+                  <CardTitle className="text-text-primary">Posts existants</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {postsLoading ? (
-                    <div className="text-gray-400">Chargement des posts...</div>
+                    <div className="text-text-secondary">Chargement des posts...</div>
                   ) : posts.length === 0 ? (
-                    <div className="text-gray-400 text-center py-8">
+                    <div className="text-text-secondary text-center py-8">
                       Aucun post créé. Commencez par créer votre premier post !
                     </div>
                   ) : (
                     <div className="space-y-4">
                       {posts.map((post: AdminPost) => (
-                        <Card key={post.id} className="bg-gray-800/50 border-gray-600">
+                        <Card key={post.id} className="bg-app-bg border-border">
                           <CardContent className="p-4">
                             <div className="flex justify-between items-start mb-3">
                               <div className="flex items-center gap-2">
-                                <h3 className="text-white font-semibold">{post.title}</h3>
+                                <h3 className="text-text-primary font-semibold">{post.title}</h3>
                                 <Badge variant={getTypeBadgeVariant(post.type)}>
                                   {getTypeLabel(post.type)}
                                 </Badge>
                                 {post.isPublished ? (
-                                  <Badge variant="outline" className="text-green-400 border-green-400">
+                                  <Badge variant="outline" className="text-accent-hover border-accent-hover">
                                     <Eye className="h-3 w-3 mr-1" />
                                     Publié
                                   </Badge>
                                 ) : (
-                                  <Badge variant="outline" className="text-gray-400 border-gray-400">
+                                  <Badge variant="outline" className="text-text-secondary border-text-secondary">
                                     <EyeOff className="h-3 w-3 mr-1" />
                                     Brouillon
                                   </Badge>
@@ -527,6 +528,7 @@ export default function Admin() {
                                     isPublished: !post.isPublished
                                   })}
                                   disabled={togglePublishMutation.isPending}
+                                  className="border-border hover:bg-accent-hover/10"
                                 >
                                   {post.isPublished ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                                 </Button>
@@ -534,6 +536,7 @@ export default function Admin() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleEditPost(post)}
+                                  className="border-border hover:bg-accent-hover/10"
                                 >
                                   <Edit className="h-3 w-3" />
                                 </Button>
@@ -547,10 +550,10 @@ export default function Admin() {
                                 </Button>
                               </div>
                             </div>
-                            <p className="text-gray-300 text-sm mb-2 line-clamp-2">
+                            <p className="text-text-secondary text-sm mb-2 line-clamp-2">
                               {post.content}
                             </p>
-                            <div className="text-xs text-gray-400">
+                            <div className="text-xs text-text-secondary">
                               Créé le {new Date(post.createdAt).toLocaleDateString("fr-FR")}
                             </div>
                           </CardContent>
@@ -564,26 +567,26 @@ export default function Admin() {
           </TabsContent>
 
           <TabsContent value="stats">
-            <Card className="bg-black/20 backdrop-blur-lg border-blue-500/30">
+            <Card className="bg-card-bg border-border">
               <CardHeader>
-                <CardTitle className="text-white">Statistiques de la plateforme</CardTitle>
+                <CardTitle className="text-text-primary">Statistiques de la plateforme</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-blue-900/30 rounded-lg p-4">
-                    <h3 className="text-blue-200 font-semibold mb-2">Utilisateurs</h3>
-                    <p className="text-2xl font-bold text-white">--</p>
-                    <p className="text-sm text-gray-400">Total des inscrits</p>
+                  <div className="bg-accent-primary/10 rounded-lg p-4 border border-accent-primary/20">
+                    <h3 className="text-accent-primary font-semibold mb-2">Utilisateurs</h3>
+                    <p className="text-2xl font-bold text-text-primary">--</p>
+                    <p className="text-sm text-text-secondary">Total des inscrits</p>
                   </div>
-                  <div className="bg-green-900/30 rounded-lg p-4">
-                    <h3 className="text-green-200 font-semibold mb-2">Quiz</h3>
-                    <p className="text-2xl font-bold text-white">--</p>
-                    <p className="text-sm text-gray-400">Quiz terminés</p>
+                  <div className="bg-accent-hover/10 rounded-lg p-4 border border-accent-hover/20">
+                    <h3 className="text-accent-hover font-semibold mb-2">Quiz</h3>
+                    <p className="text-2xl font-bold text-text-primary">--</p>
+                    <p className="text-sm text-text-secondary">Quiz terminés</p>
                   </div>
-                  <div className="bg-purple-900/30 rounded-lg p-4">
-                    <h3 className="text-purple-200 font-semibold mb-2">Anime</h3>
-                    <p className="text-2xl font-bold text-white">--</p>
-                    <p className="text-sm text-gray-400">Dans la base</p>
+                  <div className="bg-electric-blue/10 rounded-lg p-4 border border-electric-blue/20">
+                    <h3 className="electric-blue font-semibold mb-2">Anime</h3>
+                    <p className="text-2xl font-bold text-text-primary">--</p>
+                    <p className="text-sm text-text-secondary">Dans la base</p>
                   </div>
                 </div>
               </CardContent>
@@ -591,12 +594,12 @@ export default function Admin() {
           </TabsContent>
 
           <TabsContent value="content">
-            <Card className="bg-black/20 backdrop-blur-lg border-blue-500/30">
+            <Card className="bg-card-bg border-border">
               <CardHeader>
-                <CardTitle className="text-white">Gestion du contenu</CardTitle>
+                <CardTitle className="text-text-primary">Gestion du contenu</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-gray-400 text-center py-8">
+                <div className="text-text-secondary text-center py-8">
                   Section en cours de développement
                 </div>
               </CardContent>
@@ -606,132 +609,132 @@ export default function Admin() {
       </div>
 
       {/* Edit Post Dialog */}
-        <Dialog open={isEditPostOpen} onOpenChange={setIsEditPostOpen}>
-          <DialogContent className="bg-gray-900 text-white border-blue-500/30 max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Modifier le post</DialogTitle>
-            </DialogHeader>
-            <Form {...editForm}>
-              <form onSubmit={editForm.handleSubmit((data) => 
-                selectedPost && updatePostMutation.mutate({ id: selectedPost.id, data })
-              )}>
-                <div className="space-y-4">
-                  <FormField
-                    control={editForm.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Titre</FormLabel>
+      <Dialog open={isEditPostOpen} onOpenChange={setIsEditPostOpen}>
+        <DialogContent className="bg-card-bg text-text-primary border-border max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Modifier le post</DialogTitle>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit((data) => 
+              selectedPost && updatePostMutation.mutate({ id: selectedPost.id, data })
+            )}>
+              <div className="space-y-4">
+                <FormField
+                  control={editForm.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Titre</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Titre du post" {...field} className="bg-app-bg border-border text-text-primary" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Type</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <Input placeholder="Titre du post" {...field} />
+                          <SelectTrigger className="bg-app-bg border-border text-text-primary">
+                            <SelectValue placeholder="Sélectionner un type" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={editForm.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Type</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionner un type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="announcement">Annonce</SelectItem>
-                            <SelectItem value="event">Événement</SelectItem>
-                            <SelectItem value="update">Mise à jour</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={editForm.control}
-                    name="imageUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>URL de l'image (optionnel)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="https://..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={editForm.control}
-                    name="content"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contenu</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Contenu du post..." 
-                            className="min-h-[120px]"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={editForm.control}
-                    name="isPublished"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                        <div className="space-y-0.5">
-                          <FormLabel>Publier</FormLabel>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={editForm.control}
-                    name="adminOnly"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                        <div className="space-y-0.5">
-                          <FormLabel>Admin uniquement</FormLabel>
-                          <p className="text-xs text-gray-400">
-                            Visible seulement dans l'espace admin
-                          </p>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <div className="flex gap-2">
-                    <Button 
-                      type="submit" 
-                      className="flex-1"
-                      disabled={updatePostMutation.isPending}
-                    >
-                      {updatePostMutation.isPending ? "Modification..." : "Modifier"}
-                    </Button>
-                  </div>
+                        <SelectContent className="bg-card-bg border-border">
+                          <SelectItem value="announcement">Annonce</SelectItem>
+                          <SelectItem value="event">Événement</SelectItem>
+                          <SelectItem value="update">Mise à jour</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>URL de l'image (optionnel)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://..." {...field} className="bg-app-bg border-border text-text-primary" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="content"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contenu</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Contenu du post..." 
+                          className="min-h-[120px] bg-app-bg border-border text-text-primary"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="isPublished"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-3">
+                      <div className="space-y-0.5">
+                        <FormLabel>Publier</FormLabel>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="adminOnly"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-3">
+                      <div className="space-y-0.5">
+                        <FormLabel>Admin uniquement</FormLabel>
+                        <p className="text-xs text-text-secondary">
+                          Visible seulement dans l'espace admin
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <div className="flex gap-2">
+                  <Button 
+                    type="submit" 
+                    className="flex-1 bg-accent-primary hover:bg-accent-hover text-white"
+                    disabled={updatePostMutation.isPending}
+                  >
+                    {updatePostMutation.isPending ? "Modification..." : "Modifier"}
+                  </Button>
                 </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

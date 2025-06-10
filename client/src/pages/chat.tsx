@@ -150,7 +150,7 @@ export default function Chat() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-app-bg flex items-center justify-center">
         <LoadingSpinner size="lg" />
       </div>
     );
@@ -158,75 +158,75 @@ export default function Chat() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-app-bg flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold mb-4">Connexion requise</h2>
-          <p className="text-gray-600">Vous devez être connecté pour accéder au chat.</p>
+          <h2 className="text-xl font-semibold mb-4 text-text-primary">Connexion requise</h2>
+          <p className="text-text-secondary">Vous devez être connecté pour accéder au chat.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* Header - Facebook Messenger style */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm sticky top-0 z-10">
+    <div className="min-h-screen bg-app-bg flex flex-col">
+      {/* Header - Chat style avec le thème de l'app */}
+      <div className="bg-card-bg border-b border-border px-4 py-3 flex items-center justify-between shadow-sm sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={goBack}
-            className="h-10 w-10 rounded-full hover:bg-gray-100"
+            className="h-10 w-10 rounded-full hover:bg-accent-hover/10 text-text-primary"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-5 h-5" />
           </Button>
           <Avatar className="h-10 w-10">
-            <AvatarFallback className="bg-blue-500 text-white font-medium text-sm">
+            <AvatarFallback className="bg-accent-primary text-white font-medium text-sm">
               OC
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <h2 className="font-semibold text-gray-900 text-lg">Otaku Community</h2>
-            <p className="text-xs text-green-500 font-medium">● Actif maintenant</p>
+            <h2 className="font-semibold text-text-primary text-lg">Otaku Community</h2>
+            <p className="text-xs text-accent-hover font-medium">● Actif maintenant</p>
           </div>
         </div>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-full hover:bg-gray-100"
+            className="h-10 w-10 rounded-full hover:bg-accent-hover/10 text-accent-primary"
           >
-            <Phone className="w-5 h-5 text-blue-500" />
+            <Phone className="w-5 h-5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-full hover:bg-gray-100"
+            className="h-10 w-10 rounded-full hover:bg-accent-hover/10 text-accent-primary"
           >
-            <Video className="w-5 h-5 text-blue-500" />
+            <Video className="w-5 h-5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-full hover:bg-gray-100"
+            className="h-10 w-10 rounded-full hover:bg-accent-hover/10 text-text-secondary"
           >
-            <MoreHorizontal className="w-5 h-5 text-gray-600" />
+            <MoreHorizontal className="w-5 h-5" />
           </Button>
         </div>
       </div>
 
       {/* Messages Container */}
-      <div className="flex-1 flex flex-col bg-gray-50">
+      <div className="flex-1 flex flex-col bg-app-bg">
         <ScrollArea className="flex-1 px-4" ref={scrollAreaRef}>
           <div className="py-4 space-y-2">
             {error && (
               <div className="text-center py-4">
-                <p className="text-red-500 text-sm">Erreur de chargement des messages</p>
+                <p className="text-red-400 text-sm">Erreur de chargement des messages</p>
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={() => refetch()}
-                  className="mt-2"
+                  className="mt-2 border-border hover:bg-accent-hover/10"
                 >
                   Réessayer
                 </Button>
@@ -235,11 +235,11 @@ export default function Chat() {
             
             {!error && messages.length === 0 ? (
               <div className="text-center py-16">
-                <div className="w-20 h-20 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <div className="w-20 h-20 bg-accent-primary/10 rounded-full mx-auto mb-4 flex items-center justify-center border border-accent-primary/20">
                   <span className="text-3xl">👋</span>
                 </div>
-                <p className="text-gray-600 text-lg font-medium">Commencez la conversation</p>
-                <p className="text-gray-400 text-sm mt-1">Dites bonjour à la communauté !</p>
+                <p className="text-text-primary text-lg font-medium">Commencez la conversation</p>
+                <p className="text-text-secondary text-sm mt-1">Dites bonjour à la communauté !</p>
               </div>
             ) : (
               messages.map((message: Message, index: number) => {
@@ -270,7 +270,7 @@ export default function Chat() {
                   <div key={`${message.id}-${index}`} className="space-y-1">
                     {showTime && (
                       <div className="text-center my-6">
-                        <span className="text-xs text-gray-400 bg-white px-3 py-1 rounded-full shadow-sm">
+                        <span className="text-xs text-text-secondary bg-card-bg px-3 py-1 rounded-full shadow-sm border border-border">
                           {formatTime(message.createdAt)}
                         </span>
                       </div>
@@ -286,7 +286,7 @@ export default function Chat() {
                           "h-7 w-7 flex-shrink-0", 
                           showAvatar ? "opacity-100" : "opacity-0"
                         )}>
-                          <AvatarFallback className="text-xs bg-gray-300 text-gray-700">
+                          <AvatarFallback className="text-xs bg-card-bg text-text-primary border border-border">
                             {message.userFirstName?.[0]?.toUpperCase() || "?"}
                           </AvatarFallback>
                         </Avatar>
@@ -294,7 +294,7 @@ export default function Chat() {
                       
                       <div className="flex flex-col">
                         {!isOwnMessage && showName && (
-                          <div className="text-xs font-medium text-gray-500 mb-1 px-3">
+                          <div className="text-xs font-medium text-text-secondary mb-1 px-3">
                             {message.userFirstName}
                           </div>
                         )}
@@ -302,8 +302,8 @@ export default function Chat() {
                         <div className={cn(
                           "relative px-4 py-2 rounded-2xl max-w-full break-words text-sm leading-relaxed",
                           isOwnMessage
-                            ? "bg-blue-500 text-white"
-                            : "bg-white text-gray-900 border border-gray-200 shadow-sm",
+                            ? "bg-accent-primary text-white"
+                            : "bg-card-bg text-text-primary border border-border shadow-sm",
                           isOwnMessage && !isConsecutive ? "rounded-br-lg" : "",
                           !isOwnMessage && !isConsecutive ? "rounded-bl-lg" : "",
                           isConsecutive && isOwnMessage ? "rounded-br-2xl" : "",
@@ -321,13 +321,13 @@ export default function Chat() {
           </div>
         </ScrollArea>
 
-        {/* Message Input - Facebook Messenger style */}
-        <div className="bg-white border-t border-gray-200 px-4 py-3">
+        {/* Message Input */}
+        <div className="bg-card-bg border-t border-border px-4 py-3">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-500 flex-shrink-0"
+              className="h-9 w-9 rounded-full hover:bg-accent-hover/10 text-accent-primary flex-shrink-0"
             >
               <Camera className="w-5 h-5" />
             </Button>
@@ -338,7 +338,7 @@ export default function Chat() {
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Écrivez un message..."
-                className="bg-gray-100 border-0 rounded-full px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all resize-none"
+                className="bg-app-bg border-border rounded-full px-4 py-3 text-sm focus:ring-2 focus:ring-accent-primary focus:bg-card-bg transition-all resize-none text-text-primary placeholder-text-secondary"
                 disabled={sendMessageMutation.isPending}
                 maxLength={1000}
               />
@@ -347,7 +347,7 @@ export default function Chat() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-500 flex-shrink-0"
+              className="h-9 w-9 rounded-full hover:bg-accent-hover/10 text-accent-primary flex-shrink-0"
             >
               <Mic className="w-5 h-5" />
             </Button>
@@ -355,7 +355,7 @@ export default function Chat() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-500 flex-shrink-0"
+              className="h-9 w-9 rounded-full hover:bg-accent-hover/10 text-accent-primary flex-shrink-0"
             >
               <Smile className="w-5 h-5" />
             </Button>
@@ -365,7 +365,7 @@ export default function Chat() {
                 onClick={handleSendMessage}
                 disabled={sendMessageMutation.isPending}
                 size="icon"
-                className="h-9 w-9 rounded-full bg-blue-500 hover:bg-blue-600 text-white flex-shrink-0"
+                className="h-9 w-9 rounded-full bg-accent-primary hover:bg-accent-hover text-white flex-shrink-0"
               >
                 {sendMessageMutation.isPending ? (
                   <LoadingSpinner size="sm" />
@@ -377,7 +377,7 @@ export default function Chat() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-500 flex-shrink-0"
+                className="h-9 w-9 rounded-full hover:bg-accent-hover/10 text-accent-primary flex-shrink-0"
               >
                 <ThumbsUp className="w-5 h-5" />
               </Button>
