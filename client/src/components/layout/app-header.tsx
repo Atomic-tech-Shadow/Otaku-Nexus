@@ -35,9 +35,9 @@ export default function AppHeader() {
               {user?.firstName || user?.username || 'Anonymous Otaku'}
               {user?.id === "71394585" && (
                 <div className="relative flex items-center justify-center w-4 h-4">
-                  <svg className="w-4 h-4 text-blue-500 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    <path d="M9 12l2 2 4-4" stroke="white" strokeWidth="1.5" fill="none" opacity="0.9"/>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="#1DA1F2" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 0l2.09 4.26L18 5.27l-3 2.92.71 4.14L12 10.77 8.29 12.33 9 8.19l-3-2.92 3.91-.61L12 0z"/>
+                    <path d="M10 13l-2-2 1.41-1.41L10 10.17l4.59-4.58L16 7l-6 6z" fill="#fff"/>
                   </svg>
                 </div>
               )}
