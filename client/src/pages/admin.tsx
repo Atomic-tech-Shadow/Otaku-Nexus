@@ -365,8 +365,15 @@ export default function Admin() {
               Statistiques
             </TabsTrigger>
             <TabsTrigger 
-              value="content" 
+              value="quizzes" 
               className="flex items-center gap-2 rounded-xl transition-all duration-300 hover:bg-gradient-to-r hover:from-otaku-purple/20 hover:to-anime-red/20 data-[state=active]:bg-gradient-to-r data-[state=active]:from-otaku-purple data-[state=active]:to-anime-red data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-105"
+            >
+              <BookOpen className="h-4 w-4" />
+              Quiz
+            </TabsTrigger>
+            <TabsTrigger 
+              value="content" 
+              className="flex items-center gap-2 rounded-xl transition-all duration-300 hover:bg-gradient-to-r hover:from-anime-red/20 hover:to-electric-blue/20 data-[state=active]:bg-gradient-to-r data-[state=active]:from-anime-red data-[state=active]:to-electric-blue data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:scale-105"
             >
               <Video className="h-4 w-4" />
               Contenu
@@ -651,6 +658,78 @@ export default function Admin() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="quizzes">
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-otaku-purple to-anime-red bg-clip-text text-transparent">
+                  Gestion des Quiz
+                </h2>
+                <Button className="relative bg-gradient-to-r from-otaku-purple to-anime-red hover:from-anime-red hover:to-otaku-purple text-white rounded-xl px-6 py-3 shadow-lg shadow-otaku-purple/30 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-anime-red/40 btn-hover group overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <Plus className="h-5 w-5 mr-2 relative z-10" />
+                  <span className="relative z-10 font-semibold">Nouveau Quiz</span>
+                </Button>
+              </div>
+
+              <Card className="bg-gradient-to-br from-card-bg/90 to-card-bg/70 border border-otaku-purple/20 backdrop-blur-lg rounded-2xl shadow-xl shadow-otaku-purple/10 card-hover">
+                <CardHeader className="relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-anime-red/20 to-transparent rounded-full"></div>
+                  <CardTitle className="text-2xl font-bold bg-gradient-to-r from-anime-red to-electric-blue bg-clip-text text-transparent relative z-10">
+                    Guide de création de quiz
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-gradient-to-r from-otaku-purple/20 to-anime-red/10 rounded-2xl p-6 border border-otaku-purple/30">
+                    <h3 className="text-xl font-bold text-otaku-purple mb-4">📝 Comment créer un quiz</h3>
+                    <div className="space-y-4 text-text-secondary">
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 bg-gradient-to-r from-electric-blue to-hot-pink rounded-full flex items-center justify-center text-xs font-bold text-white">1</div>
+                        <div>
+                          <p className="font-semibold text-text-primary">Utilisez l'API directement</p>
+                          <p className="text-sm">Envoyez une requête POST à <code className="bg-app-bg px-2 py-1 rounded text-electric-blue">/api/quizzes</code></p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 bg-gradient-to-r from-hot-pink to-otaku-purple rounded-full flex items-center justify-center text-xs font-bold text-white">2</div>
+                        <div>
+                          <p className="font-semibold text-text-primary">Modifiez le seed.ts</p>
+                          <p className="text-sm">Ajoutez vos quiz dans <code className="bg-app-bg px-2 py-1 rounded text-hot-pink">server/seed.ts</code> et redémarrez</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 bg-gradient-to-r from-otaku-purple to-anime-red rounded-full flex items-center justify-center text-xs font-bold text-white">3</div>
+                        <div>
+                          <p className="font-semibold text-text-primary">Interface admin (bientôt)</p>
+                          <p className="text-sm">Une interface complète sera ajoutée prochainement</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 bg-gradient-to-r from-electric-blue/20 to-hot-pink/10 rounded-2xl p-6 border border-electric-blue/30">
+                    <h4 className="text-lg font-bold text-electric-blue mb-3">🎯 Format d'un quiz</h4>
+                    <pre className="bg-app-bg rounded-lg p-4 text-sm overflow-x-auto">
+<code className="text-text-secondary">{`{
+  "title": "Mon Quiz Anime",
+  "description": "Testez vos connaissances !",
+  "difficulty": "medium", // easy, medium, hard
+  "xpReward": 20,
+  "questions": [
+    {
+      "question": "Qui est le protagoniste de Naruto ?",
+      "options": ["Sasuke", "Naruto", "Sakura", "Kakashi"],
+      "correctAnswer": 1,
+      "explanation": "Naruto Uzumaki est le héros principal."
+    }
+  ]
+}`}</code>
+                    </pre>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="content">
