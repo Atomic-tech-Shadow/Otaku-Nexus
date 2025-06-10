@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Save, User, Image } from "lucide-react";
+import { ArrowLeft, Save, User, Image, Camera, Upload } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { Link, useLocation } from "wouter";
@@ -32,6 +32,8 @@ export default function EditProfile() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [imagePreview, setImagePreview] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -111,6 +113,63 @@ export default function EditProfile() {
     form.setValue("profileImageUrl", url);
   };
 
+  const handleFileUpload = async (file: File) => {
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner un fichier image valide.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Erreur",
+        description: "L'image ne peut pas dépasser 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      // Convert file to base64 for preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string;
+        setImagePreview(base64);
+        form.setValue("profileImageUrl", base64);
+      };
+      reader.readAsDataURL(file);
+
+      toast({
+        title: "Image téléchargée",
+        description: "Votre image a été téléchargée avec succès.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de télécharger l'image.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      handleFileUpload(file);
+    }
+  };
+
   const onSubmit = (data: z.infer<typeof profileSchema>) => {
     updateProfileMutation.mutate(data);
   };
@@ -155,15 +214,31 @@ export default function EditProfile() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center space-x-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage 
-                    src={imagePreview || user?.profileImageUrl} 
-                    alt="Profile" 
-                  />
-                  <AvatarFallback className="text-xl bg-electric-blue">
-                    {(form.watch("firstName") || user?.firstName || "U").charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage 
+                      src={imagePreview || user?.profileImageUrl} 
+                      alt="Profile" 
+                    />
+                    <AvatarFallback className="text-xl bg-electric-blue">
+                      {(form.watch("firstName") || user?.firstName || "U").charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0 border-2 border-gray-700 bg-card-bg hover:bg-secondary-bg"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    {uploading ? (
+                      <LoadingSpinner size="sm" />
+                    ) : (
+                      <Camera className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
                 <div>
                   <h3 className="font-semibold text-lg">
                     {form.watch("firstName") || user?.firstName} {form.watch("lastName") || user?.lastName}
@@ -226,19 +301,59 @@ export default function EditProfile() {
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
                           <Image className="h-4 w-4" />
-                          URL de l'image de profil
+                          Image de profil
                         </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="https://example.com/image.jpg"
-                            {...field}
-                            className="bg-secondary-bg border-gray-700"
-                            onChange={(e) => {
-                              field.onChange(e);
-                              handleImageUrlChange(e.target.value);
-                            }}
-                          />
-                        </FormControl>
+                        <div className="space-y-4">
+                          {/* File Upload Button */}
+                          <div className="flex gap-3">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={uploading}
+                              className="flex-1 border-gray-700"
+                            >
+                              {uploading ? (
+                                <LoadingSpinner size="sm" />
+                              ) : (
+                                <>
+                                  <Upload className="w-4 h-4 mr-2" />
+                                  Télécharger une image
+                                </>
+                              )}
+                            </Button>
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept="image/*"
+                              onChange={handleFileSelect}
+                              className="hidden"
+                              capture="environment"
+                            />
+                          </div>
+                          
+                          {/* URL Input as alternative */}
+                          <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                              <span className="w-full border-t border-gray-700" />
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                              <span className="bg-card-bg px-2 text-gray-400">ou</span>
+                            </div>
+                          </div>
+                          
+                          <FormControl>
+                            <Input
+                              placeholder="https://example.com/image.jpg"
+                              {...field}
+                              className="bg-secondary-bg border-gray-700"
+                              onChange={(e) => {
+                                field.onChange(e);
+                                handleImageUrlChange(e.target.value);
+                              }}
+                            />
+                          </FormControl>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
