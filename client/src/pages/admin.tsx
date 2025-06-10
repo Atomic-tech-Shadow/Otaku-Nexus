@@ -120,7 +120,10 @@ export default function Admin() {
 
   const createPostMutation = useMutation({
     mutationFn: async (data: z.infer<typeof postSchema>) => {
-      return await apiRequest("POST", "/api/admin/posts", data);
+      return await apiRequest("/api/admin/posts", {
+        method: "POST",
+        body: data,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/posts"] });
@@ -153,7 +156,10 @@ export default function Admin() {
 
   const updatePostMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: z.infer<typeof postSchema> }) => {
-      return await apiRequest("PUT", `/api/admin/posts/${id}`, data);
+      return await apiRequest(`/api/admin/posts/${id}`, {
+        method: "PUT",
+        body: data,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/posts"] });
@@ -220,10 +226,7 @@ export default function Admin() {
 
   const togglePublishMutation = useMutation({
     mutationFn: async ({ id, isPublished }: { id: number; isPublished: boolean }) => {
-      return await apiRequest(`/api/admin/posts/${id}`, {
-        method: "PUT",
-        body: { isPublished },
-      });
+      return await apiRequest("PUT", `/api/admin/posts/${id}`, { isPublished });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/posts"] });

@@ -65,10 +65,7 @@ export default function Chat() {
       if (!content.trim()) {
         throw new Error("Le message ne peut pas être vide");
       }
-      return await apiRequest("/api/chat/messages", {
-        method: "POST",
-        body: { content: content.trim() },
-      });
+      return await apiRequest("POST", "/api/chat/messages", { content: content.trim() });
     },
     onSuccess: () => {
       setNewMessage("");
