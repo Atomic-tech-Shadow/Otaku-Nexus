@@ -181,82 +181,95 @@ export default function Chat() {
   }
 
   return (
-    <div className="min-h-screen bg-app-bg flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex flex-col relative overflow-hidden">
       <ConnectionStatus />
-      {/* Header - Style Facebook Messenger */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm sticky top-0 z-10">
-        <div className="flex items-center gap-3">
+      
+      {/* Modern Background Effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5"></div>
+        <div className="absolute top-20 left-20 w-64 h-64 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-48 h-48 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+      </div>
+
+      {/* Modern Glassmorphism Header */}
+      <div className="backdrop-blur-xl bg-white/10 border-b border-white/20 px-6 py-4 flex items-center justify-between shadow-2xl sticky top-0 z-10">
+        <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={goBack}
-            className="h-10 w-10 rounded-full hover:bg-gray-100 text-gray-600"
+            className="h-10 w-10 rounded-xl hover:bg-white/20 text-white/90 hover:text-white transition-all duration-300"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="relative">
-            <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
-              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-medium text-sm">
-                🌸
-              </AvatarFallback>
-            </Avatar>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
+              <span className="text-xl">💬</span>
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full animate-pulse"></div>
           </div>
           <div className="flex-1">
-            <h2 className="font-semibold text-gray-900 text-lg">🌸 Chat Global Otaku</h2>
-            <p className="text-xs text-green-600 font-medium">● Chat de groupe global • {messages.filter((m, i, arr) => arr.findIndex(msg => msg.userId === m.userId) === i).length} membres</p>
+            <h2 className="font-bold text-white text-xl">Chat Global Otaku</h2>
+            <p className="text-sm text-white/70 flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              {messages.filter((m, i, arr) => arr.findIndex(msg => msg.userId === m.userId) === i).length} membres connectés
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-full hover:bg-gray-100 text-blue-600"
+            className="h-10 w-10 rounded-xl hover:bg-white/20 text-white/70 hover:text-white transition-all duration-300"
           >
             <Phone className="w-5 h-5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-full hover:bg-gray-100 text-blue-600"
+            className="h-10 w-10 rounded-xl hover:bg-white/20 text-white/70 hover:text-white transition-all duration-300"
           >
             <Video className="w-5 h-5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-full hover:bg-gray-100 text-gray-600"
+            className="h-10 w-10 rounded-xl hover:bg-white/20 text-white/70 hover:text-white transition-all duration-300"
           >
-            <MoreHorizontal className="w-5 h-5" />
+            <Settings className="w-5 h-5" />
           </Button>
         </div>
       </div>
 
-      {/* Messages Container - Style Facebook */}
-      <div className="flex-1 flex flex-col bg-gray-50">
-        <ScrollArea className="flex-1 px-4" ref={scrollAreaRef}>
-          <div className="py-4 space-y-3">
+      {/* Modern Messages Container */}
+      <div className="flex-1 flex flex-col relative z-10">
+        <ScrollArea className="flex-1 px-6" ref={scrollAreaRef}>
+          <div className="py-6 space-y-4">
             {error && (
-              <div className="text-center py-4">
-                <p className="text-red-400 text-sm">Erreur de chargement des messages</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => refetch()}
-                  className="mt-2 border-border hover:bg-accent-hover/10"
-                >
-                  Réessayer
-                </Button>
+              <div className="text-center py-8">
+                <div className="backdrop-blur-xl bg-red-500/10 border border-red-500/30 rounded-2xl p-6 max-w-sm mx-auto">
+                  <p className="text-red-300 text-sm mb-3">Erreur de chargement des messages</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => refetch()}
+                    className="border-red-500/50 text-red-300 hover:bg-red-500/20"
+                  >
+                    Réessayer
+                  </Button>
+                </div>
               </div>
             )}
             
             {!error && messages.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="w-20 h-20 bg-blue-50 rounded-full mx-auto mb-4 flex items-center justify-center border border-blue-200">
-                  <span className="text-3xl">👋</span>
+              <div className="text-center py-20">
+                <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 max-w-sm mx-auto">
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                    <span className="text-2xl">💬</span>
+                  </div>
+                  <p className="text-white text-lg font-semibold mb-2">Commencez la conversation</p>
+                  <p className="text-white/60 text-sm">Dites bonjour à la communauté otaku !</p>
                 </div>
-                <p className="text-gray-900 text-lg font-medium">Commencez la conversation</p>
-                <p className="text-gray-600 text-sm mt-1">Dites bonjour à la communauté otaku !</p>
               </div>
             ) : (
               messages.map((message: Message, index: number) => {
@@ -286,58 +299,68 @@ export default function Chat() {
                 return (
                   <div key={`${message.id}-${index}`} className="space-y-1">
                     {showTime && (
-                      <div className="text-center my-6">
-                        <span className="text-xs text-gray-500 bg-white px-3 py-1 rounded-full shadow-sm border border-gray-200">
-                          {formatTime(message.createdAt)}
-                        </span>
+                      <div className="text-center my-8">
+                        <div className="inline-flex items-center px-4 py-2 rounded-full backdrop-blur-xl bg-white/10 border border-white/20">
+                          <span className="text-xs text-white/70 font-medium">
+                            {formatTime(message.createdAt)}
+                          </span>
+                        </div>
                       </div>
                     )}
                     
                     <div className={cn(
-                      "flex items-end gap-2 max-w-[75%]",
+                      "flex items-end gap-3 max-w-[85%]",
                       isOwnMessage ? "ml-auto flex-row-reverse" : "mr-auto",
-                      isConsecutive && !isOwnMessage ? "ml-9" : ""
+                      isConsecutive && !isOwnMessage ? "ml-11" : ""
                     )}>
                       {!isOwnMessage && (
-                        <Avatar className={cn(
-                          "h-8 w-8 flex-shrink-0 border-2 border-white shadow-sm", 
+                        <div className={cn(
+                          "flex-shrink-0", 
                           showAvatar ? "opacity-100" : "opacity-0"
                         )}>
-                          <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-500 text-white border-0 font-medium">
-                            {message.userFirstName?.[0]?.toUpperCase() || "?"}
-                          </AvatarFallback>
-                        </Avatar>
+                          <div className="w-8 h-8 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center shadow-lg border-2 border-white/20">
+                            <span className="text-xs font-bold text-white">
+                              {message.userFirstName?.[0]?.toUpperCase() || "?"}
+                            </span>
+                          </div>
+                        </div>
                       )}
                       
-                      <div className="flex flex-col max-w-[70%]">
+                      <div className="flex flex-col max-w-[80%]">
                         {!isOwnMessage && showName && (
-                          <div className="text-xs font-medium text-gray-600 mb-1 px-3">
-                            {message.userFirstName}
+                          <div className="flex items-center gap-2 mb-2 px-4">
+                            <span className="text-sm font-semibold text-white/90">
+                              {message.userFirstName}
+                            </span>
                             {message.isAdmin && (
-                              <span className="ml-1 text-blue-600">✓</span>
+                              <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30">
+                                <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-400 to-purple-400"></div>
+                                <span className="text-xs text-blue-300 font-medium">Admin</span>
+                              </div>
                             )}
                           </div>
                         )}
                         
                         <div className={cn(
-                          "relative px-4 py-3 rounded-3xl max-w-full break-words text-sm leading-relaxed shadow-sm",
+                          "relative px-5 py-3 rounded-2xl max-w-full break-words text-sm leading-relaxed shadow-xl backdrop-blur-xl",
                           isOwnMessage
-                            ? "bg-blue-600 text-white"
-                            : "bg-white text-gray-900 border border-gray-200",
-                          isOwnMessage && !isConsecutive ? "rounded-br-lg" : "",
-                          !isOwnMessage && !isConsecutive ? "rounded-bl-lg" : "",
-                          isConsecutive && isOwnMessage ? "rounded-br-3xl" : "",
-                          isConsecutive && !isOwnMessage ? "rounded-bl-3xl" : ""
+                            ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white border border-blue-400/30"
+                            : "bg-white/10 text-white border border-white/20",
+                          isOwnMessage && !isConsecutive ? "rounded-br-md" : "",
+                          !isOwnMessage && !isConsecutive ? "rounded-bl-md" : ""
                         )}>
                           <p className="whitespace-pre-wrap">{message.content}</p>
-                        </div>
-                        
-                        {/* Réactions (pour l'instant en placeholder) */}
-                        <div className="flex items-center gap-1 mt-1 px-2">
-                          <span className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer">👍</span>
-                          <span className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer">❤️</span>
-                          <span className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer">😂</span>
-                          <span className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer">😮</span>
+                          
+                          {/* Message timestamp */}
+                          <div className={cn(
+                            "text-xs mt-2 opacity-70",
+                            isOwnMessage ? "text-white/70" : "text-white/50"
+                          )}>
+                            {new Date(message.createdAt).toLocaleTimeString('fr-FR', { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </div>
                         </div>
                       </div>
                     </div>
