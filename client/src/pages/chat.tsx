@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import AppHeader from "@/components/layout/app-header";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import { Link } from "wouter";
+import { TwitterVerificationBadge } from "@/components/ui/verification-badges";
 
 interface Message {
   id: string;
@@ -166,7 +167,7 @@ export default function Chat() {
                       <div className="text-xs text-gray-400 mb-1 flex items-center gap-1">
                         <span>{message.userFirstName || message.username || 'Anonyme'}</span>
                         {message.isAdmin && (
-                          <span className="text-blue-400">★</span>
+                          <TwitterVerificationBadge size="sm" className="ml-1" />
                         )}
                       </div>
                     )}
