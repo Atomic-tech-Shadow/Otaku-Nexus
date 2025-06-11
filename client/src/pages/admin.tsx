@@ -835,6 +835,7 @@ export default function Admin() {
                     <p className="text-sm text-text-secondary relative z-10">Messages envoyés</p>
                   </div>
                 </div>
+              </div>
             </div>
           </TabsContent>
 
@@ -849,14 +850,13 @@ export default function Admin() {
                     onClick={async () => {
                       if (confirm('Êtes-vous sûr de vouloir supprimer TOUS les quiz ? Cette action est irréversible.')) {
                         try {
-                          const response = await fetch('/api/quizzes/all', { method: 'DELETE' });
-                          if (response.ok) {
-                            toast({ title: "Succès", description: "Tous les quiz ont été supprimés" });
-                          } else {
-                            toast({ title: "Erreur", description: "Impossible de supprimer les quiz", variant: "destructive" });
-                          }
+                          const response = await apiRequest('/api/quizzes/all', { method: 'DELETE' });
+                          toast({ title: "Succès", description: "Tous les quiz ont été supprimés" });
+                          // Refresh the page to see changes
+                          window.location.reload();
                         } catch (error) {
-                          toast({ title: "Erreur", description: "Erreur réseau", variant: "destructive" });
+                          console.error('Delete error:', error);
+                          toast({ title: "Erreur", description: "Impossible de supprimer les quiz", variant: "destructive" });
                         }
                       }
                     }}

@@ -61,9 +61,13 @@ export default function QuizDetail() {
 
   const submitResultMutation = useMutation({
     mutationFn: async (result: any) => {
+      console.log("Submitting quiz result:", result);
       return await apiRequest("/api/quiz-results", {
         method: "POST",
-        body: result,
+        body: JSON.stringify(result),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     },
     onSuccess: () => {
@@ -158,6 +162,24 @@ export default function QuizDetail() {
     }, 0);
     
     const xpEarned = Math.floor((correctAnswers / questions.length) * ((quiz as any)?.xpReward || 10));
+    
+    // Ensure quizId is valid before submitting
+    if (!quizId) {
+      console.error("Quiz ID is missing!");
+      toast({
+        title: "Erreur",
+        description: "ID du quiz manquant",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    console.log("Quiz submission data:", {
+      quizId,
+      score: correctAnswers,
+      totalQuestions: questions.length,
+      xpEarned,
+    });
     
     // Submit results
     submitResultMutation.mutate({
