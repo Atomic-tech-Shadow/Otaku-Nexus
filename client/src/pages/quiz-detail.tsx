@@ -130,7 +130,26 @@ export default function QuizDetail() {
   const questions: Question[] = quiz && (quiz as any).questions && Array.isArray((quiz as any).questions) ? (quiz as any).questions : [];
   const progress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
 
+  // Debug log for questions
+  useEffect(() => {
+    console.log("Quiz data loaded:", quiz);
+    console.log("Questions:", questions);
+    console.log("Questions length:", questions.length);
+    console.log("Quiz started:", quizStarted);
+    console.log("Show results:", showResults);
+  }, [quiz, questions, quizStarted, showResults]);
+
   const handleStartQuiz = () => {
+    console.log("Starting quiz with", questions.length, "questions");
+    if (questions.length === 0) {
+      console.error("No questions available for quiz!");
+      toast({
+        title: "Erreur",
+        description: "Aucune question disponible pour ce quiz",
+        variant: "destructive",
+      });
+      return;
+    }
     setQuizStarted(true);
     setTimeLeft(questions.length * 60); // 1 minute per question
   };
@@ -150,6 +169,11 @@ export default function QuizDetail() {
   };
 
   const handleQuizComplete = () => {
+    console.log("Quiz completion triggered");
+    console.log("Current question:", currentQuestion);
+    console.log("Questions length:", questions.length);
+    console.log("Selected answers:", selectedAnswers);
+    
     setQuizCompleted(true);
     setShowResults(true);
     
