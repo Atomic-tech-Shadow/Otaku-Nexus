@@ -318,15 +318,9 @@ export class DatabaseStorage implements IStorage {
 
   // Profile operations
   async updateUserProfile(userId: string, profile: UpdateUserProfile): Promise<User> {
-    // Clean up empty profile image URLs
-    const cleanProfile = { ...profile };
-    if (cleanProfile.profileImageUrl === '') {
-      cleanProfile.profileImageUrl = null;
-    }
-    
     const [updatedUser] = await db
       .update(users)
-      .set({ ...cleanProfile, updatedAt: new Date() })
+      .set({ ...profile, updatedAt: new Date() })
       .where(eq(users.id, userId))
       .returning();
     return updatedUser;

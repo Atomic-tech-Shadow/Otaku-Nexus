@@ -99,26 +99,19 @@ export default function Profile() {
           <section className="mb-6">
             <div className="glass-morphism rounded-2xl p-6 text-center">
               <div className="w-20 h-20 rounded-full border-4 border-electric-blue mx-auto mb-4 overflow-hidden">
-                {user?.profileImageUrl && user.profileImageUrl.trim() !== '' ? (
+                {user?.profileImageUrl ? (
                   <img 
                     src={user.profileImageUrl} 
                     alt="Profile" 
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      // Si l'image ne charge pas, afficher le fallback
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.nextElementSibling?.setAttribute('style', 'display: flex');
-                    }}
                   />
-                ) : null}
-                <div 
-                  className="w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink flex items-center justify-center"
-                  style={{ display: user?.profileImageUrl && user.profileImageUrl.trim() !== '' ? 'none' : 'flex' }}
-                >
-                  <span className="text-2xl font-bold text-white">
-                    {(user?.firstName || user?.username || 'O').charAt(0).toUpperCase()}
-                  </span>
-                </div>
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink flex items-center justify-center">
+                    <span className="text-2xl font-bold text-white">
+                      {(user?.firstName || user?.username || 'O').charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
               </div>
               <h2 className="text-xl font-bold mb-1 flex items-center justify-center gap-2">
                 {user?.firstName || user?.username || 'Anonymous Otaku'}
