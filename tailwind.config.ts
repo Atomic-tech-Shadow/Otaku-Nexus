@@ -61,6 +61,14 @@ export default {
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
         },
+        // Otaku-specific colors
+        "electric-blue": "var(--electric-blue)",
+        "hot-pink": "var(--hot-pink)",
+        "otaku-purple": "var(--otaku-purple)",
+        "anime-red": "var(--anime-red)",
+        "dark-bg": "var(--dark-bg)",
+        "card-bg": "var(--card-bg)",
+        "secondary-bg": "var(--secondary-bg)",
       },
       keyframes: {
         "accordion-down": {
