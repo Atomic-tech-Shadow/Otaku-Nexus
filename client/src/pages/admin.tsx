@@ -361,13 +361,13 @@ export default function Admin() {
   });
 
   // Fetch platform stats
-  const { data: platformStats } = useQuery({
+  const { data: platformStats, refetch: refetchStats } = useQuery({
     queryKey: ['/api/admin/platform-stats'],
     enabled: isAuthenticated,
   });
 
   // Fetch posts
-  const { data: posts = [], isLoading: postsLoading } = useQuery({
+  const { data: posts = [], isLoading: postsLoading } = useQuery<AdminPost[]>({
     queryKey: ['/api/admin/posts'],
     enabled: isAuthenticated,
   });
@@ -845,7 +845,7 @@ export default function Admin() {
                   <div className="absolute inset-0 bg-gradient-to-br from-electric-blue/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   <h3 className="text-electric-blue font-bold mb-3 text-lg relative z-10">👥 Utilisateurs</h3>
                   <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">
-                    {platformStats?.totalUsers || "0"}
+                    {(platformStats as any)?.totalUsers || "0"}
                   </p>
                   <p className="text-sm text-text-secondary relative z-10">Total des inscrits</p>
                 </div>
@@ -853,7 +853,7 @@ export default function Admin() {
                   <div className="absolute inset-0 bg-gradient-to-br from-hot-pink/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   <h3 className="text-hot-pink font-bold mb-3 text-lg relative z-10">🧠 Quiz</h3>
                   <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">
-                    {platformStats?.totalQuizzes || "0"}
+                    {(platformStats as any)?.totalQuizzes || "0"}
                   </p>
                   <p className="text-sm text-text-secondary relative z-10">Quiz créés</p>
                 </div>
@@ -892,8 +892,8 @@ export default function Admin() {
                           const response = await apiRequest('/api/admin/quizzes/bulk', { 
                             method: 'POST',
                             body: JSON.stringify({ quizzes: frenchAnimeQuizzes })
-                          });
-                          toast({ title: "Succès", description: `${response.quizzes.length} quiz français créés avec succès !` });
+                          }) as any;
+                          toast({ title: "Succès", description: `${response.quizzes?.length || frenchAnimeQuizzes.length} quiz français créés avec succès !` });
                           // Refresh stats
                           refetchStats();
                         } catch (error) {
