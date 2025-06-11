@@ -31,6 +31,10 @@ export default function AuthPage() {
   const loginMutation = useMutation({
     mutationFn: async (data: typeof loginData) => {
       const response = await apiRequest("POST", "/api/auth/login", data);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Email ou mot de passe incorrect" }));
+        throw new Error(errorData.message || "Email ou mot de passe incorrect");
+      }
       return response.json();
     },
     onSuccess: (data) => {
@@ -42,6 +46,7 @@ export default function AuthPage() {
       setLocation("/");
     },
     onError: (error: any) => {
+      console.error("Login error:", error);
       toast({
         title: "Erreur de connexion",
         description: error.message || "Email ou mot de passe incorrect",
@@ -53,6 +58,10 @@ export default function AuthPage() {
   const registerMutation = useMutation({
     mutationFn: async (data: typeof registerData) => {
       const response = await apiRequest("POST", "/api/auth/register", data);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Une erreur est survenue" }));
+        throw new Error(errorData.message || "Une erreur est survenue lors de l'inscription");
+      }
       return response.json();
     },
     onSuccess: (data) => {
@@ -64,9 +73,10 @@ export default function AuthPage() {
       setLocation("/");
     },
     onError: (error: any) => {
+      console.error("Registration error:", error);
       toast({
         title: "Erreur d'inscription",
-        description: error.message || "Une erreur est survenue",
+        description: error.message || "Une erreur est survenue lors de l'inscription",
         variant: "destructive",
       });
     },
@@ -74,11 +84,60 @@ export default function AuthPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation basique
+    if (!loginData.email || !loginData.password) {
+      toast({
+        title: "Erreur de validation",
+        description: "Email et mot de passe sont requis",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!loginData.email.includes('@')) {
+      toast({
+        title: "Erreur de validation",
+        description: "Veuillez entrer une adresse email valide",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     loginMutation.mutate(loginData);
   };
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation basique
+    if (!registerData.email || !registerData.password || !registerData.firstName || !registerData.lastName) {
+      toast({
+        title: "Erreur de validation",
+        description: "Tous les champs sont requis",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (registerData.password.length < 6) {
+      toast({
+        title: "Erreur de validation",
+        description: "Le mot de passe doit contenir au moins 6 caractères",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!registerData.email.includes('@')) {
+      toast({
+        title: "Erreur de validation",
+        description: "Veuillez entrer une adresse email valide",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     registerMutation.mutate(registerData);
   };
 
