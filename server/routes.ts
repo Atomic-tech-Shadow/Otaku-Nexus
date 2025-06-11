@@ -821,6 +821,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin bulk quiz creation
+  app.post('/api/admin/quizzes/bulk', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const quizzes = req.body.quizzes;
+      if (!Array.isArray(quizzes)) {
+        return res.status(400).json({ message: "Expected array of quizzes" });
+      }
+
+      const createdQuizzes = [];
+      for (const quizData of quizzes) {
+        const quiz = await storage.createQuiz({
+          title: quizData.title,
+          description: quizData.description,
+          difficulty: quizData.difficulty,
+          questions: quizData.questions,
+          xpReward: quizData.xpReward
+        });
+        createdQuizzes.push(quiz);
+      }
+
+      res.json({
+        message: `Successfully created ${createdQuizzes.length} quizzes`,
+        quizzes: createdQuizzes
+      });
+    } catch (error) {
+      console.error("Error creating bulk quizzes:", error);
+      res.status(500).json({ message: "Failed to create bulk quizzes" });
+    }
+  });
+
   // Get all chat messages
   app.get('/api/chat/messages', isAuthenticated, async (req: any, res) => {
     try {
