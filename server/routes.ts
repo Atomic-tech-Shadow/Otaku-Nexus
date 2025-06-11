@@ -636,10 +636,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const profileData = updateUserProfileSchema.parse(req.body);
+      
+      // Validate image size if profileImageUrl is provided
+      if (profileData.profileImageUrl) {
+        const imageData = profileData.profileImageUrl;
+        // Check if it's a base64 image and estimate size
+        if (imageData.startsWith('data:image/')) {
+          const base64Data = imageData.split(',')[1];
+          const sizeInBytes = (base64Data.length * 3) / 4;
+          const sizeInMB = sizeInBytes / (1024 * 1024);
+          
+          if (sizeInMB > 5) { // Limit to 5MB
+            return res.status(413).json({ 
+              message: "L'image est trop volumineuse. Veuillez utiliser une image de moins de 5MB." 
+            });
+          }
+        }
+      }
+      
       const updatedUser = await storage.updateUserProfile(userId, profileData);
       res.json(updatedUser);
     } catch (error) {
       console.error("Error updating user profile:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ 
+          message: "Données de profil invalides", 
+          errors: error.errors 
+        });
+      }
       res.status(500).json({ message: "Failed to update profile" });
     }
   });

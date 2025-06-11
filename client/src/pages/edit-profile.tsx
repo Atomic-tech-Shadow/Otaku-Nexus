@@ -85,31 +85,30 @@ export default function EditProfile() {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
-      
+
       // Forcer la mise à jour immédiate du cache utilisateur
       queryClient.setQueryData(["/api/auth/user"], updatedUser);
-      
+
       toast({
         title: "Profil mis à jour",
         description: "Vos informations ont été sauvegardées avec succès.",
       });
       setLocation("/profile");
     },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Non autorisé",
-          description: "Vous êtes déconnecté. Reconnexion...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
+    onError: (error: any) => {
+      console.error("Profile update error:", error);
+
+      let errorMessage = "Impossible de mettre à jour le profil";
+
+      if (error.status === 413) {
+        errorMessage = "L'image est trop volumineuse. Veuillez utiliser une image de moins de 5MB.";
+      } else if (error.message?.includes("trop volumineuse")) {
+        errorMessage = "L'image est trop volumineuse. Veuillez utiliser une image de moins de 5MB.";
       }
+
       toast({
         title: "Erreur",
-        description: "Impossible de mettre à jour le profil.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -125,19 +124,19 @@ export default function EditProfile() {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const img = new Image();
-      
+
       img.onload = () => {
         // Calculate new dimensions
         const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
         canvas.width = img.width * ratio;
         canvas.height = img.height * ratio;
-        
+
         // Draw and compress
         ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
         const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
         resolve(compressedDataUrl);
       };
-      
+
       img.onerror = reject;
       img.src = URL.createObjectURL(file);
     });
@@ -145,7 +144,7 @@ export default function EditProfile() {
 
   const handleFileUpload = async (file: File) => {
     if (!file) return;
-    
+
     // Validate file type
     if (!file.type.startsWith('image/')) {
       toast({
@@ -157,14 +156,14 @@ export default function EditProfile() {
     }
 
     setUploading(true);
-    
+
     try {
       // Compress image to reduce size
       const compressedImage = await compressImage(file, 300, 0.8);
-      
+
       setImagePreview(compressedImage);
       form.setValue("profileImageUrl", compressedImage);
-      
+
       toast({
         title: "Image uploadée",
         description: "Votre image de profil a été compressée et uploadée avec succès.",
