@@ -47,19 +47,19 @@ export default function Videos() {
           <div className="mb-6">
             <div className="glass-morphism rounded-2xl p-6 relative overflow-hidden mb-6">
               <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-otaku-purple to-transparent rounded-full opacity-30"></div>
-              <h1 className="text-2xl font-bold mb-2 otaku-purple">AMV Collection</h1>
+              <h1 className="text-2xl font-bold mb-2 text-otaku-purple">AMV Collection</h1>
               <p className="text-gray-300 text-sm mb-4">Discover amazing anime music videos and content!</p>
               <div className="flex items-center space-x-4">
                 <div className="text-center">
-                  <div className="text-lg font-bold electric-blue">🎵</div>
+                  <div className="text-lg font-bold text-electric-blue">🎵</div>
                   <div className="text-xs text-gray-400">Music</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold hot-pink">🎬</div>
+                  <div className="text-lg font-bold text-hot-pink">🎬</div>
                   <div className="text-xs text-gray-400">Videos</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold otaku-purple">✨</div>
+                  <div className="text-lg font-bold text-otaku-purple">✨</div>
                   <div className="text-xs text-gray-400">Magic</div>
                 </div>
               </div>

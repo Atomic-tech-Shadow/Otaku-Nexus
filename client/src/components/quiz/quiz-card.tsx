@@ -15,6 +15,7 @@ interface QuizCardProps {
     xpReward?: number;
     createdAt?: string;
   };
+  featured?: boolean;
 }
 
 const difficultyColors = {

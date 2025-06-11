@@ -73,20 +73,20 @@ export default function Home() {
             <div className="glass-morphism rounded-2xl p-6 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-hot-pink to-transparent rounded-full opacity-30"></div>
               <h1 className="text-2xl font-bold mb-2">
-                Welcome back, <span className="electric-blue">{user?.firstName || user?.username || 'Otaku'}</span>!
+                Welcome back, <span className="text-electric-blue">{user?.firstName || user?.username || 'Otaku'}</span>!
               </h1>
               <p className="text-gray-300 text-sm mb-4">Ready to explore the anime universe?</p>
               <div className="flex items-center space-x-4">
                 <div className="text-center">
-                  <div className="text-lg font-bold hot-pink">{(userStats as any)?.totalAnime || 0}</div>
+                  <div className="text-lg font-bold text-hot-pink">{(userStats as any)?.totalAnime || 0}</div>
                   <div className="text-xs text-gray-400">Anime</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold electric-blue">{(userStats as any)?.totalQuizzes || 0}</div>
+                  <div className="text-lg font-bold text-electric-blue">{(userStats as any)?.totalQuizzes || 0}</div>
                   <div className="text-xs text-gray-400">Quizzes</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold otaku-purple">{(userStats as any)?.totalXP || 0}</div>
+                  <div className="text-lg font-bold text-otaku-purple">{(userStats as any)?.totalXP || 0}</div>
                   <div className="text-xs text-gray-400">XP</div>
                 </div>
               </div>
