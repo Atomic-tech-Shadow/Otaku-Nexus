@@ -1,5 +1,6 @@
 import { db } from "./db";
 import { animes, quizzes, videos } from "@shared/schema";
+import { mangaQuizzes } from "./quiz-data.js";
 
 async function seedDatabase() {
   console.log("🌱 Seeding database with sample data...");
@@ -186,29 +187,7 @@ async function seedDatabase() {
         }
       ]
     },
-  ],
-  // Ajoutez vos nouveaux quiz ici
-  {
-    title: "Quiz Personnalisé",
-    description: "Un quiz créé par vous !",
-    difficulty: "medium",
-    xpReward: 25,
-    questions: [
-      {
-        question: "Quel anime préférez-vous ?",
-        options: ["One Piece", "Naruto", "Dragon Ball", "Attack on Titan"],
-        correctAnswer: 0,
-        explanation: "Toutes les réponses sont bonnes, c'est une question de goût !"
-      },
-      {
-        question: "Combien d'épisodes a One Piece ?",
-        options: ["500+", "800+", "1000+", "1100+"],
-        correctAnswer: 3,
-        explanation: "One Piece a dépassé les 1100 épisodes !"
-      },
-    ]
-  }
-];
+  ];
 
   // Sample video data
   const sampleVideos = [
