@@ -99,6 +99,7 @@ export interface IStorage {
   
   // Utility operations
   ensureDefaultChatRoom(): Promise<void>;
+  ensureAdminUser(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -446,20 +447,50 @@ export class DatabaseStorage implements IStorage {
     await db.delete(adminPosts).where(eq(adminPosts.id, id));
   }
 
+  // Ensure admin user exists
+  async ensureAdminUser(): Promise<void> {
+    try {
+      const adminUser = await db.select().from(users).where(eq(users.isAdmin, true)).limit(1);
+      
+      if (adminUser.length === 0) {
+        // Check if there's a user that should be admin
+        const adminEmail = process.env.ADMIN_USER_ID || "sorokomarco@gmail.com";
+        const potentialAdmin = await db.select().from(users).where(eq(users.email, adminEmail)).limit(1);
+        
+        if (potentialAdmin.length > 0) {
+          // Make this user admin
+          await db.update(users)
+            .set({ isAdmin: true })
+            .where(eq(users.id, potentialAdmin[0].id));
+        }
+      }
+    } catch (error) {
+      console.error("Error ensuring admin user:", error);
+    }
+  }
+
   // Ensure default chat room exists
   async ensureDefaultChatRoom(): Promise<void> {
     try {
       const existingRoom = await db.select().from(chatRooms).where(eq(chatRooms.id, 1)).limit(1);
       
       if (existingRoom.length === 0) {
-        // Create default room
-        await db.insert(chatRooms).values({
-          id: 1,
-          name: "Otaku Community",
-          description: "Chat général de la communauté",
-          isPrivate: false,
-          createdBy: "system"
-        }).onConflictDoNothing();
+        // Get the first admin user to be the creator, or create with a real user
+        const adminUser = await db.select().from(users).where(eq(users.isAdmin, true)).limit(1);
+        
+        if (adminUser.length > 0) {
+          // Create default room with admin as creator
+          await db.insert(chatRooms).values({
+            id: 1,
+            name: "🌸 Otaku Community",
+            description: "Chat général de la communauté otaku - Partagez vos discussions, recommandations et découvertes !",
+            isPrivate: false,
+            createdBy: adminUser[0].id
+          }).onConflictDoNothing();
+        } else {
+          // If no admin exists, wait for a user to be created
+          console.log("No admin user found, waiting for user creation to setup default chat room");
+        }
       }
     } catch (error) {
       console.error("Error ensuring default chat room:", error);

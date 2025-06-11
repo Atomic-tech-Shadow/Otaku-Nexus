@@ -749,6 +749,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all chat messages
   app.get('/api/chat/messages', isAuthenticated, async (req: any, res) => {
     try {
+      // Create admin user if none exists
+      await storage.ensureAdminUser();
       // Ensure default room exists
       await storage.ensureDefaultChatRoom();
       

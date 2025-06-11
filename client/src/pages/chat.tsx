@@ -161,56 +161,59 @@ export default function Chat() {
 
   return (
     <div className="min-h-screen bg-app-bg flex flex-col">
-      {/* Header - Chat style avec le thème de l'app */}
-      <div className="bg-card-bg border-b border-border px-4 py-3 flex items-center justify-between shadow-sm sticky top-0 z-10">
+      {/* Header - Style Facebook Messenger */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={goBack}
-            className="h-10 w-10 rounded-full hover:bg-accent-hover/10 text-text-primary"
+            className="h-10 w-10 rounded-full hover:bg-gray-100 text-gray-600"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <Avatar className="h-10 w-10">
-            <AvatarFallback className="bg-accent-primary text-white font-medium text-sm">
-              OC
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative">
+            <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
+              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-medium text-sm">
+                🌸
+              </AvatarFallback>
+            </Avatar>
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+          </div>
           <div className="flex-1">
-            <h2 className="font-semibold text-text-primary text-lg">Otaku Community</h2>
-            <p className="text-xs text-accent-hover font-medium">● Actif maintenant</p>
+            <h2 className="font-semibold text-gray-900 text-lg">🌸 Otaku Community</h2>
+            <p className="text-xs text-green-600 font-medium">● {messages.length} membres actifs</p>
           </div>
         </div>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-full hover:bg-accent-hover/10 text-accent-primary"
+            className="h-10 w-10 rounded-full hover:bg-gray-100 text-blue-600"
           >
             <Phone className="w-5 h-5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-full hover:bg-accent-hover/10 text-accent-primary"
+            className="h-10 w-10 rounded-full hover:bg-gray-100 text-blue-600"
           >
             <Video className="w-5 h-5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-full hover:bg-accent-hover/10 text-text-secondary"
+            className="h-10 w-10 rounded-full hover:bg-gray-100 text-gray-600"
           >
             <MoreHorizontal className="w-5 h-5" />
           </Button>
         </div>
       </div>
 
-      {/* Messages Container */}
-      <div className="flex-1 flex flex-col bg-app-bg">
+      {/* Messages Container - Style Facebook */}
+      <div className="flex-1 flex flex-col bg-gray-50">
         <ScrollArea className="flex-1 px-4" ref={scrollAreaRef}>
-          <div className="py-4 space-y-2">
+          <div className="py-4 space-y-3">
             {error && (
               <div className="text-center py-4">
                 <p className="text-red-400 text-sm">Erreur de chargement des messages</p>
@@ -227,11 +230,11 @@ export default function Chat() {
             
             {!error && messages.length === 0 ? (
               <div className="text-center py-16">
-                <div className="w-20 h-20 bg-accent-primary/10 rounded-full mx-auto mb-4 flex items-center justify-center border border-accent-primary/20">
+                <div className="w-20 h-20 bg-blue-50 rounded-full mx-auto mb-4 flex items-center justify-center border border-blue-200">
                   <span className="text-3xl">👋</span>
                 </div>
-                <p className="text-text-primary text-lg font-medium">Commencez la conversation</p>
-                <p className="text-text-secondary text-sm mt-1">Dites bonjour à la communauté !</p>
+                <p className="text-gray-900 text-lg font-medium">Commencez la conversation</p>
+                <p className="text-gray-600 text-sm mt-1">Dites bonjour à la communauté otaku !</p>
               </div>
             ) : (
               messages.map((message: Message, index: number) => {
@@ -262,7 +265,7 @@ export default function Chat() {
                   <div key={`${message.id}-${index}`} className="space-y-1">
                     {showTime && (
                       <div className="text-center my-6">
-                        <span className="text-xs text-text-secondary bg-card-bg px-3 py-1 rounded-full shadow-sm border border-border">
+                        <span className="text-xs text-gray-500 bg-white px-3 py-1 rounded-full shadow-sm border border-gray-200">
                           {formatTime(message.createdAt)}
                         </span>
                       </div>
@@ -275,33 +278,44 @@ export default function Chat() {
                     )}>
                       {!isOwnMessage && (
                         <Avatar className={cn(
-                          "h-7 w-7 flex-shrink-0", 
+                          "h-8 w-8 flex-shrink-0 border-2 border-white shadow-sm", 
                           showAvatar ? "opacity-100" : "opacity-0"
                         )}>
-                          <AvatarFallback className="text-xs bg-card-bg text-text-primary border border-border">
+                          <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-500 text-white border-0 font-medium">
                             {message.userFirstName?.[0]?.toUpperCase() || "?"}
                           </AvatarFallback>
                         </Avatar>
                       )}
                       
-                      <div className="flex flex-col">
+                      <div className="flex flex-col max-w-[70%]">
                         {!isOwnMessage && showName && (
-                          <div className="text-xs font-medium text-text-secondary mb-1 px-3">
+                          <div className="text-xs font-medium text-gray-600 mb-1 px-3">
                             {message.userFirstName}
+                            {message.isAdmin && (
+                              <span className="ml-1 text-blue-600">✓</span>
+                            )}
                           </div>
                         )}
                         
                         <div className={cn(
-                          "relative px-4 py-2 rounded-2xl max-w-full break-words text-sm leading-relaxed",
+                          "relative px-4 py-3 rounded-3xl max-w-full break-words text-sm leading-relaxed shadow-sm",
                           isOwnMessage
-                            ? "bg-accent-primary text-white"
-                            : "bg-card-bg text-text-primary border border-border shadow-sm",
+                            ? "bg-blue-600 text-white"
+                            : "bg-white text-gray-900 border border-gray-200",
                           isOwnMessage && !isConsecutive ? "rounded-br-lg" : "",
                           !isOwnMessage && !isConsecutive ? "rounded-bl-lg" : "",
-                          isConsecutive && isOwnMessage ? "rounded-br-2xl" : "",
-                          isConsecutive && !isOwnMessage ? "rounded-bl-2xl" : ""
+                          isConsecutive && isOwnMessage ? "rounded-br-3xl" : "",
+                          isConsecutive && !isOwnMessage ? "rounded-bl-3xl" : ""
                         )}>
                           <p className="whitespace-pre-wrap">{message.content}</p>
+                        </div>
+                        
+                        {/* Réactions (pour l'instant en placeholder) */}
+                        <div className="flex items-center gap-1 mt-1 px-2">
+                          <span className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer">👍</span>
+                          <span className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer">❤️</span>
+                          <span className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer">😂</span>
+                          <span className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer">😮</span>
                         </div>
                       </div>
                     </div>
@@ -313,13 +327,13 @@ export default function Chat() {
           </div>
         </ScrollArea>
 
-        {/* Message Input */}
-        <div className="bg-card-bg border-t border-border px-4 py-3">
+        {/* Message Input - Style Facebook */}
+        <div className="bg-white border-t border-gray-200 px-4 py-3 shadow-sm">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full hover:bg-accent-hover/10 text-accent-primary flex-shrink-0"
+              className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-600 flex-shrink-0"
             >
               <Camera className="w-5 h-5" />
             </Button>
@@ -330,7 +344,7 @@ export default function Chat() {
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Écrivez un message..."
-                className="bg-app-bg border-border rounded-full px-4 py-3 text-sm focus:ring-2 focus:ring-accent-primary focus:bg-card-bg transition-all resize-none text-text-primary placeholder-text-secondary"
+                className="bg-gray-100 border-0 rounded-full px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all resize-none text-gray-900 placeholder-gray-500"
                 disabled={sendMessageMutation.isPending}
                 maxLength={1000}
               />
@@ -339,7 +353,7 @@ export default function Chat() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full hover:bg-accent-hover/10 text-accent-primary flex-shrink-0"
+              className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-600 flex-shrink-0"
             >
               <Mic className="w-5 h-5" />
             </Button>
@@ -347,7 +361,7 @@ export default function Chat() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full hover:bg-accent-hover/10 text-accent-primary flex-shrink-0"
+              className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-600 flex-shrink-0"
             >
               <Smile className="w-5 h-5" />
             </Button>
@@ -357,7 +371,7 @@ export default function Chat() {
                 onClick={handleSendMessage}
                 disabled={sendMessageMutation.isPending}
                 size="icon"
-                className="h-9 w-9 rounded-full bg-accent-primary hover:bg-accent-hover text-white flex-shrink-0"
+                className="h-9 w-9 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0 shadow-sm"
               >
                 {sendMessageMutation.isPending ? (
                   <LoadingSpinner size="sm" />
@@ -369,11 +383,16 @@ export default function Chat() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 rounded-full hover:bg-accent-hover/10 text-accent-primary flex-shrink-0"
+                className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-600 flex-shrink-0"
               >
                 <ThumbsUp className="w-5 h-5" />
               </Button>
             )}
+          </div>
+          
+          {/* Indicateur de frappe */}
+          <div className="text-xs text-gray-500 mt-2 px-2">
+            <span className="animate-pulse">💭 Communauté otaku active</span>
           </div>
         </div>
       </div>
