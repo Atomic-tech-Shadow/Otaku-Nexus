@@ -119,25 +119,52 @@ export default function EditProfile() {
     form.setValue("profileImageUrl", url);
   };
 
-  const compressImage = (file: File, maxWidth: number = 300, quality: number = 0.8): Promise<string> => {
+  const compressImage = (file: File, maxWidth: number = 800, quality: number = 0.9): Promise<string> => {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      const img = new Image();
+      const img = document.createElement('img');
 
       img.onload = () => {
-        // Calculate new dimensions
-        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
-        canvas.width = img.width * ratio;
-        canvas.height = img.height * ratio;
+        // Calculate new dimensions while maintaining aspect ratio
+        let { width, height } = img;
+        
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxWidth) {
+            width = (width * maxWidth) / height;
+            height = maxWidth;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // Enable image smoothing for better quality
+        ctx!.imageSmoothingEnabled = true;
+        ctx!.imageSmoothingQuality = 'high';
 
         // Draw and compress
-        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Use original format if possible, fallback to JPEG
+        const outputFormat = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        const compressedDataUrl = canvas.toDataURL(outputFormat, quality);
+        
+        // Clean up
+        URL.revokeObjectURL(img.src);
         resolve(compressedDataUrl);
       };
 
-      img.onerror = reject;
+      img.onerror = () => {
+        URL.revokeObjectURL(img.src);
+        reject(new Error('Failed to load image'));
+      };
+      
       img.src = URL.createObjectURL(file);
     });
   };
@@ -145,11 +172,22 @@ export default function EditProfile() {
   const handleFileUpload = async (file: File) => {
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
+    // Validate file type - Accept all common image formats
+    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/svg+xml'];
+    if (!validImageTypes.includes(file.type) && !file.type.startsWith('image/')) {
       toast({
-        title: "Erreur",
-        description: "Veuillez sélectionner un fichier image valide.",
+        title: "Format non supporté",
+        description: "Formats acceptés: JPG, PNG, GIF, WebP, BMP, SVG",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Fichier trop volumineux",
+        description: "La taille maximale est de 10MB. Veuillez choisir un fichier plus petit.",
         variant: "destructive",
       });
       return;
@@ -158,21 +196,57 @@ export default function EditProfile() {
     setUploading(true);
 
     try {
-      // Compress image to reduce size
-      const compressedImage = await compressImage(file, 300, 0.8);
+      // For SVG files, convert to data URL directly
+      if (file.type === 'image/svg+xml') {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target?.result as string;
+          setImagePreview(dataUrl);
+          form.setValue("profileImageUrl", dataUrl);
+          toast({
+            title: "Image SVG uploadée",
+            description: "Votre image de profil SVG a été uploadée avec succès.",
+          });
+          setUploading(false);
+        };
+        reader.onerror = () => {
+          toast({
+            title: "Erreur de lecture",
+            description: "Impossible de lire le fichier SVG.",
+            variant: "destructive",
+          });
+          setUploading(false);
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
 
-      setImagePreview(compressedImage);
-      form.setValue("profileImageUrl", compressedImage);
+      // For other image types, compress if needed
+      let processedImage: string;
+      if (file.size > 1024 * 1024) { // If larger than 1MB, compress
+        processedImage = await compressImage(file, 800, 0.9); // Higher quality for larger images
+      } else {
+        // For smaller files, just convert to data URL
+        const reader = new FileReader();
+        processedImage = await new Promise((resolve, reject) => {
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      setImagePreview(processedImage);
+      form.setValue("profileImageUrl", processedImage);
 
       toast({
         title: "Image uploadée",
-        description: "Votre image de profil a été compressée et uploadée avec succès.",
+        description: `Votre image de profil (${(file.size / 1024 / 1024).toFixed(2)}MB) a été uploadée avec succès.`,
       });
     } catch (error) {
       console.error('Upload error:', error);
       toast({
         title: "Erreur d'upload",
-        description: "Impossible d'uploader l'image. Veuillez réessayer.",
+        description: "Impossible d'uploader l'image. Veuillez réessayer avec un autre fichier.",
         variant: "destructive",
       });
     } finally {
