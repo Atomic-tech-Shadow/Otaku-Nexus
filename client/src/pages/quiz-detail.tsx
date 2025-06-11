@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -113,7 +113,7 @@ export default function QuizDetail() {
   }, [timeLeft, quizStarted, quizCompleted]);
 
   // Parse questions from quiz data - moved after all hooks
-  const questions: Question[] = React.useMemo(() => {
+  const questions: Question[] = useMemo(() => {
     if (!quiz) return [];
 
     // Handle quiz data structure
