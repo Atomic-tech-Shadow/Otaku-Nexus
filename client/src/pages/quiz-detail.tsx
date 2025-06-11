@@ -112,15 +112,6 @@ export default function QuizDetail() {
     }
   }, [timeLeft, quizStarted, quizCompleted]);
 
-  // Debug log for questions
-  useEffect(() => {
-    console.log("Quiz data loaded:", quiz);
-    console.log("Questions:", (quiz as any)?.questions);
-    console.log("Questions length:", questions.length);
-    console.log("Quiz started:", quizStarted);
-    console.log("Show results:", showResults);
-  }, [quiz, questions, quizStarted, showResults]);
-
   // Parse questions from quiz data - moved after all hooks
   const questions: Question[] = React.useMemo(() => {
     if (!quiz) return [];
@@ -166,7 +157,16 @@ export default function QuizDetail() {
     console.log("No valid questions found, quiz structure:", quiz);
     return [];
   }, [quiz]);
+  
   const progress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
+  
+  // Debug log for questions
+  useEffect(() => {
+    console.log("Quiz data loaded:", quiz);
+    console.log("Questions length:", questions.length);
+    console.log("Quiz started:", quizStarted);
+    console.log("Show results:", showResults);
+  }, [quiz, questions, quizStarted, showResults]);
 
   const handleStartQuiz = () => {
     if (!questions || questions.length === 0) {
@@ -299,10 +299,14 @@ export default function QuizDetail() {
             </div>
 
             <QuizInstructions 
-              onStart={handleStartQuiz}
+              quiz={{
+                title: (quiz as any)?.title || '',
+                description: (quiz as any)?.description,
+                difficulty: (quiz as any)?.difficulty || 'medium',
+                xpReward: (quiz as any)?.xpReward || 10
+              }}
               questionCount={questions.length}
-              xpReward={(quiz as any)?.xpReward || 10}
-              difficulty={(quiz as any)?.difficulty || 'medium'}
+              onStart={handleStartQuiz}
             />
           </main>
           <BottomNavigation currentPath="/quiz" />

@@ -1,136 +1,125 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Brain, Clock, Trophy, Target, Star, Zap } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Clock, Trophy, Target, CheckCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface QuizInstructionsProps {
-  onStart: () => void;
+  quiz: {
+    title: string;
+    description?: string;
+    difficulty: string;
+    xpReward?: number;
+  };
   questionCount: number;
-  xpReward: number;
-  difficulty: string;
+  onStart: () => void;
+  isLoading?: boolean;
 }
 
-export default function QuizInstructions({ onStart, questionCount, xpReward, difficulty }: QuizInstructionsProps) {
+const difficultyColors = {
+  easy: "bg-green-500/20 text-green-300 border-green-500/30",
+  medium: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
+  hard: "bg-red-500/20 text-red-300 border-red-500/30",
+};
+
+export default function QuizInstructions({ quiz, questionCount, onStart, isLoading }: QuizInstructionsProps) {
+  const estimatedTime = Math.ceil(questionCount * 1); // 1 minute per question
+
   return (
-    <div className="space-y-6">
-      <Card className="bg-gradient-to-r from-electric-blue/20 to-hot-pink/20 border-electric-blue/50">
-        <CardContent className="p-6">
-          <div className="text-center mb-6">
-            <Brain className="w-12 h-12 electric-blue mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">Comment jouer au Quiz</h2>
-            <p className="text-sm text-gray-300">Suivez ces étapes simples pour commencer</p>
+    <div className="max-w-2xl mx-auto space-y-6">
+      {/* Quiz Header */}
+      <Card className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-slate-700/50 backdrop-blur-sm">
+        <CardHeader className="text-center pb-4">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-electric-blue to-otaku-purple flex items-center justify-center">
+              <Target className="w-6 h-6 text-white" />
+            </div>
+            <Badge 
+              className={cn(
+                difficultyColors[quiz.difficulty as keyof typeof difficultyColors] || difficultyColors.medium
+              )}
+            >
+              {quiz.difficulty}
+            </Badge>
+          </div>
+          <CardTitle className="text-2xl font-bold text-white mb-2">
+            {quiz.title}
+          </CardTitle>
+          {quiz.description && (
+            <p className="text-gray-400 text-base">
+              {quiz.description}
+            </p>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Quiz Stats */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center p-4 rounded-lg bg-slate-800/50 border border-slate-700/50">
+              <div className="flex items-center justify-center mb-2">
+                <Target className="w-5 h-5 text-electric-blue" />
+              </div>
+              <div className="text-2xl font-bold text-white">{questionCount}</div>
+              <div className="text-sm text-gray-400">Questions</div>
+            </div>
+            <div className="text-center p-4 rounded-lg bg-slate-800/50 border border-slate-700/50">
+              <div className="flex items-center justify-center mb-2">
+                <Clock className="w-5 h-5 text-electric-blue" />
+              </div>
+              <div className="text-2xl font-bold text-white">{estimatedTime}</div>
+              <div className="text-sm text-gray-400">Minutes</div>
+            </div>
+            <div className="text-center p-4 rounded-lg bg-slate-800/50 border border-slate-700/50">
+              <div className="flex items-center justify-center mb-2">
+                <Trophy className="w-5 h-5 text-electric-blue" />
+              </div>
+              <div className="text-2xl font-bold text-white">{quiz.xpReward || 10}</div>
+              <div className="text-sm text-gray-400">XP Max</div>
+            </div>
           </div>
 
+          {/* Instructions */}
           <div className="space-y-4">
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-electric-blue rounded-full flex items-center justify-center text-xs font-bold text-black">
-                1
-              </div>
-              <div>
-                <h3 className="font-semibold text-sm mb-1">Cliquez sur "Commencer le Quiz"</h3>
-                <p className="text-xs text-gray-400">Le timer démarre dès que vous commencez</p>
-              </div>
-            </div>
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-electric-blue" />
+              Instructions
+            </h3>
+            <ul className="space-y-3 text-gray-300">
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-electric-blue/20 text-electric-blue flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">1</div>
+                <span>Vous avez <strong>{estimatedTime} minutes</strong> pour répondre à toutes les questions</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-electric-blue/20 text-electric-blue flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">2</div>
+                <span>Chaque question a <strong>une seule bonne réponse</strong></span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-electric-blue/20 text-electric-blue flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">3</div>
+                <span>Vous pouvez naviguer entre les questions et modifier vos réponses</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-electric-blue/20 text-electric-blue flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">4</div>
+                <span>Plus vous répondez correctement, plus vous gagnez d'XP</span>
+              </li>
+            </ul>
+          </div>
 
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-hot-pink rounded-full flex items-center justify-center text-xs font-bold text-black">
-                2
-              </div>
-              <div>
-                <h3 className="font-semibold text-sm mb-1">Lisez attentivement chaque question</h3>
-                <p className="text-xs text-gray-400">Vous avez {questionCount} questions à répondre</p>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-otaku-purple rounded-full flex items-center justify-center text-xs font-bold text-black">
-                3
-              </div>
-              <div>
-                <h3 className="font-semibold text-sm mb-1">Sélectionnez votre réponse</h3>
-                <p className="text-xs text-gray-400">Cliquez sur l'option que vous pensez correcte</p>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-anime-red rounded-full flex items-center justify-center text-xs font-bold text-black">
-                4
-              </div>
-              <div>
-                <h3 className="font-semibold text-sm mb-1">Passez à la question suivante</h3>
-                <p className="text-xs text-gray-400">Cliquez sur "Suivant" pour continuer</p>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-xs font-bold text-black">
-                5
-              </div>
-              <div>
-                <h3 className="font-semibold text-sm mb-1">Voir vos résultats</h3>
-                <p className="text-xs text-gray-400">Découvrez votre score et gagnez de l'XP</p>
-              </div>
-            </div>
+          {/* Start Button */}
+          <div className="pt-4 border-t border-slate-700/50">
+            <Button 
+              onClick={onStart}
+              disabled={isLoading || questionCount === 0}
+              className="w-full h-12 bg-gradient-to-r from-electric-blue to-otaku-purple hover:from-electric-blue/80 hover:to-otaku-purple/80 text-white font-semibold text-lg border-0"
+            >
+              {isLoading ? "Chargement..." : "Commencer le Quiz"}
+            </Button>
+            {questionCount === 0 && (
+              <p className="text-center text-red-400 text-sm mt-2">
+                Aucune question disponible pour ce quiz
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
-
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="bg-card-bg border-gray-800">
-          <CardContent className="p-4 text-center">
-            <Target className="w-8 h-8 electric-blue mx-auto mb-2" />
-            <div className="text-lg font-bold">{questionCount}</div>
-            <div className="text-xs text-gray-400">Questions</div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card-bg border-gray-800">
-          <CardContent className="p-4 text-center">
-            <Trophy className="w-8 h-8 hot-pink mx-auto mb-2" />
-            <div className="text-lg font-bold">+{xpReward}</div>
-            <div className="text-xs text-gray-400">XP Maximum</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="bg-card-bg border-gray-800">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-2">
-              <Star className="w-5 h-5 otaku-purple" />
-              <span className="font-semibold text-sm">Niveau de Difficulté</span>
-            </div>
-            <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-              difficulty === 'easy' ? 'bg-green-500/20 text-green-400' :
-              difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-              'bg-red-500/20 text-red-400'
-            }`}>
-              {difficulty?.toUpperCase() || 'MEDIUM'}
-            </div>
-          </div>
-
-          <div className="space-y-2 text-xs text-gray-400">
-            <div className="flex items-center space-x-2">
-              <Clock className="w-4 h-4" />
-              <span>Temps limité : 1 minute par question</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Zap className="w-4 h-4" />
-              <span>Bonus XP : Plus vous répondez vite, plus vous gagnez</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Brain className="w-4 h-4" />
-              <span>Pas de seconde chance : Réfléchissez bien avant de répondre</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Button 
-        onClick={onStart}
-        className="w-full bg-gradient-to-r from-electric-blue to-hot-pink hover:from-electric-blue/80 hover:to-hot-pink/80 text-lg py-3 font-bold"
-      >
-        🚀 Commencer le Quiz
-      </Button>
     </div>
   );
 }

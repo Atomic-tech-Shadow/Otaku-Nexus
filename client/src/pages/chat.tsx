@@ -181,62 +181,80 @@ export default function Chat() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col relative overflow-hidden">
       <ConnectionStatus />
 
-      {/* Modern Background Effects */}
+      {/* Modern Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5"></div>
-        <div className="absolute top-20 left-20 w-64 h-64 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-48 h-48 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-electric-blue/5 via-otaku-purple/5 to-anime-red/5"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-electric-blue/8 to-otaku-purple/8 rounded-full blur-3xl animate-pulse opacity-60"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-otaku-purple/8 to-anime-red/8 rounded-full blur-3xl animate-pulse opacity-60" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-3/4 left-1/2 w-64 h-64 bg-gradient-to-r from-anime-red/6 to-hot-pink/6 rounded-full blur-3xl animate-pulse opacity-40" style={{ animationDelay: '4s' }}></div>
+        
+        {/* Floating particles */}
+        <div className="absolute top-20 left-20 w-3 h-3 bg-electric-blue/30 rounded-full animate-bounce" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-40 right-32 w-2 h-2 bg-otaku-purple/40 rounded-full animate-bounce" style={{ animationDelay: '3s' }}></div>
+        <div className="absolute bottom-32 left-16 w-4 h-4 bg-anime-red/25 rounded-full animate-bounce" style={{ animationDelay: '5s' }}></div>
       </div>
 
-      {/* Modern Glassmorphism Header */}
-      <div className="backdrop-blur-xl bg-white/10 border-b border-white/20 px-6 py-4 flex items-center justify-between shadow-2xl sticky top-0 z-50">
-        <div className="flex items-center gap-4">
+      {/* Ultra Modern Glass Header */}
+      <div className="backdrop-blur-2xl bg-gradient-to-r from-white/10 via-white/5 to-white/10 border-b border-white/10 px-6 py-4 flex items-center justify-between shadow-2xl sticky top-0 z-50 relative">
+        {/* Animated border gradient */}
+        <div className="absolute inset-0 bg-gradient-to-r from-electric-blue/20 via-transparent to-otaku-purple/20 opacity-50"></div>
+        
+        <div className="flex items-center gap-4 relative z-10">
           <Button
             variant="ghost"
             size="icon"
             onClick={goBack}
-            className="h-10 w-10 rounded-xl hover:bg-white/20 text-white/90 hover:text-white transition-all duration-300"
+            className="h-11 w-11 rounded-2xl hover:bg-gradient-to-r hover:from-electric-blue/20 hover:to-otaku-purple/20 text-white/90 hover:text-white transition-all duration-500 border border-white/10 hover:border-electric-blue/30"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="relative">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
-              <span className="text-xl">💬</span>
+          
+          <div className="relative group">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-electric-blue via-otaku-purple to-anime-red flex items-center justify-center shadow-2xl transform group-hover:scale-105 transition-all duration-300">
+              <MessageCircle className="w-7 h-7 text-white" />
             </div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full animate-pulse"></div>
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-green-400 to-emerald-400 border-3 border-white/20 rounded-full animate-pulse shadow-lg"></div>
+            {/* Pulse ring */}
+            <div className="absolute inset-0 rounded-2xl border-2 border-electric-blue/30 animate-ping"></div>
           </div>
+          
           <div className="flex-1">
-            <h2 className="font-bold text-white text-xl">Chat Global Otaku</h2>
-            <p className="text-sm text-white/70 flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              {messages.filter((m, i, arr) => arr.findIndex(msg => msg.userId === m.userId) === i).length} membres connectés
+            <h2 className="font-bold text-white text-xl bg-gradient-to-r from-white via-electric-blue to-white bg-clip-text">
+              Chat Global Otaku
+            </h2>
+            <p className="text-sm text-white/80 flex items-center gap-2 font-medium">
+              <div className="w-2.5 h-2.5 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse shadow-lg"></div>
+              <span className="bg-gradient-to-r from-green-300 to-emerald-300 bg-clip-text text-transparent">
+                {messages.filter((m, i, arr) => arr.findIndex(msg => msg.userId === m.userId) === i).length} otakus en ligne
+              </span>
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        
+        <div className="flex items-center gap-3 relative z-10">
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-xl hover:bg-white/20 text-white/70 hover:text-white transition-all duration-300"
+            className="h-11 w-11 rounded-2xl hover:bg-gradient-to-r hover:from-electric-blue/20 hover:to-otaku-purple/20 text-white/70 hover:text-white transition-all duration-500 border border-white/10 hover:border-electric-blue/30"
           >
             <Phone className="w-5 h-5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-xl hover:bg-white/20 text-white/70 hover:text-white transition-all duration-300"
+            className="h-11 w-11 rounded-2xl hover:bg-gradient-to-r hover:from-electric-blue/20 hover:to-otaku-purple/20 text-white/70 hover:text-white transition-all duration-500 border border-white/10 hover:border-electric-blue/30"
           >
             <Video className="w-5 h-5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-xl hover:bg-white/20 text-white/70 hover:text-white transition-all duration-300"
+            className="h-11 w-11 rounded-2xl hover:bg-gradient-to-r hover:from-electric-blue/20 hover:to-otaku-purple/20 text-white/70 hover:text-white transition-all duration-500 border border-white/10 hover:border-electric-blue/30"
           >
-            <Settings className="w-5 h-5" />
+            <MoreHorizontal className="w-5 h-5" />
           </Button>
         </div>
       </div>
@@ -347,20 +365,26 @@ export default function Chat() {
                         )}
 
                         <div className={cn(
-                          "relative px-5 py-3 rounded-2xl max-w-full break-words text-sm leading-relaxed shadow-xl backdrop-blur-xl",
+                          "relative px-6 py-4 rounded-3xl max-w-full break-words text-sm leading-relaxed shadow-2xl backdrop-blur-2xl transform hover:scale-[1.02] transition-all duration-300 group",
                           isOwnMessage
-                            ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white border border-blue-400/30"
-                            : "bg-white/10 text-white border border-white/20",
-                          isOwnMessage && !isConsecutive ? "rounded-br-md" : "",
-                          !isOwnMessage && !isConsecutive ? "rounded-bl-md" : ""
+                            ? "bg-gradient-to-br from-electric-blue via-otaku-purple to-anime-red text-white border border-electric-blue/40 shadow-electric-blue/20"
+                            : "bg-gradient-to-br from-white/15 to-white/5 text-white border border-white/20 hover:border-white/30",
+                          isOwnMessage && !isConsecutive ? "rounded-br-lg" : "",
+                          !isOwnMessage && !isConsecutive ? "rounded-bl-lg" : ""
                         )}>
-                          <p className="whitespace-pre-wrap">{message.content}</p>
+                          {/* Message glow effect */}
+                          {isOwnMessage && (
+                            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-electric-blue/20 to-otaku-purple/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"></div>
+                          )}
+                          
+                          <p className="whitespace-pre-wrap font-medium">{message.content}</p>
 
-                          {/* Message timestamp */}
+                          {/* Enhanced timestamp */}
                           <div className={cn(
-                            "text-xs mt-2 opacity-70",
-                            isOwnMessage ? "text-white/70" : "text-white/50"
+                            "text-xs mt-3 opacity-60 group-hover:opacity-80 transition-opacity duration-300 flex items-center gap-2",
+                            isOwnMessage ? "text-white/80" : "text-white/60"
                           )}>
+                            <div className="w-1 h-1 rounded-full bg-current opacity-50"></div>
                             {new Date(message.createdAt).toLocaleTimeString('fr-FR', { 
                               hour: '2-digit', 
                               minute: '2-digit' 
