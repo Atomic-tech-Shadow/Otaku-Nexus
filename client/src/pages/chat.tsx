@@ -50,8 +50,8 @@ export default function Chat() {
   const { data: messages = [], refetch, error } = useQuery<Message[]>({
     queryKey: ["/api/chat/messages"],
     enabled: !!user && isAuthenticated,
-    refetchInterval: 1000, // Polling plus fréquent pour simuler le temps réel
-    staleTime: 5 * 1000, // 5 seconds
+    refetchInterval: 3000, // Polling optimisé - 3 secondes
+    staleTime: 2 * 1000, // 2 seconds
     retry: 3,
     retryDelay: 300,
   });
@@ -227,7 +227,7 @@ export default function Chat() {
             </h2>
             <p className="text-sm text-white/80 flex items-center gap-2 font-medium">
               <div className="w-2.5 h-2.5 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse shadow-lg"></div>
-              <span className="bg-gradient-to-r from-green-300 to-emerald-300 bg-clip-text text-transparent">
+              <span className="text-green-300">
                 {messages.filter((m, i, arr) => arr.findIndex(msg => msg.userId === m.userId) === i).length} otakus en ligne
               </span>
             </p>
@@ -281,11 +281,11 @@ export default function Chat() {
 
             {!error && messages.length === 0 ? (
               <div className="text-center py-20">
-                <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 max-w-sm mx-auto">
-                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                    <span className="text-2xl">💬</span>
+                <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-3xl p-8 max-w-sm mx-auto shadow-2xl">
+                  <div className="w-16 h-16 bg-gradient-to-r from-electric-blue to-otaku-purple rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <MessageCircle className="w-8 h-8 text-white" />
                   </div>
-                  <p className="text-white text-lg font-semibold mb-2">Commencez la conversation</p>
+                  <h3 className="text-white text-lg font-semibold mb-2">Commencez la conversation</h3>
                   <p className="text-white/60 text-sm">Dites bonjour à la communauté otaku !</p>
                 </div>
               </div>
@@ -312,14 +312,14 @@ export default function Chat() {
 
                 const isConsecutive = prevMessage && 
                   prevMessage.userId === message.userId && 
-                  new Date(message.createdAt).getTime() - new Date(prevMessage.createdAt).getTime() < 60000;
+                  new Date(message.createdAt).getTime() - new Date(prevMessage.createdAt).getTime() < 300000; // 5 minutes
 
                 return (
                   <div key={`${message.id}-${index}`} className="space-y-1">
                     {showTime && (
-                      <div className="text-center my-8">
-                        <div className="inline-flex items-center px-4 py-2 rounded-full backdrop-blur-xl bg-white/10 border border-white/20">
-                          <span className="text-xs text-white/70 font-medium">
+                      <div className="text-center my-6">
+                        <div className="inline-flex items-center px-3 py-1.5 rounded-full backdrop-blur-xl bg-gradient-to-r from-white/10 to-white/5 border border-white/10 shadow-lg">
+                          <span className="text-xs text-white/80 font-medium">
                             {formatTime(message.createdAt)}
                           </span>
                         </div>
@@ -336,14 +336,14 @@ export default function Chat() {
                           "flex-shrink-0", 
                           showAvatar ? "opacity-100" : "opacity-0"
                         )}>
-                          <Avatar className="w-8 h-8 border-2 border-white/20 shadow-lg">
+                          <Avatar className="w-10 h-10 border-2 border-white/20 shadow-lg ring-2 ring-electric-blue/20">
                             <AvatarImage 
                               src={message.userProfileImageUrl} 
-                              alt={message.userFirstName}
+                              alt={`${message.userFirstName} ${message.userLastName}`}
                               className="object-cover"
                             />
-                            <AvatarFallback className="text-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold">
-                              {message.userFirstName?.[0]?.toUpperCase() || "?"}
+                            <AvatarFallback className="text-sm bg-gradient-to-r from-electric-blue to-otaku-purple text-white font-bold">
+                              {(message.userFirstName?.[0] || '') + (message.userLastName?.[0] || '')}
                             </AvatarFallback>
                           </Avatar>
                         </div>
@@ -351,15 +351,15 @@ export default function Chat() {
 
                       <div className="flex flex-col max-w-[80%]">
                         {!isOwnMessage && showName && (
-                          <div className="flex items-center gap-2 mb-2 px-4">
-                            <span className="text-sm font-semibold text-white/90">
-                              {message.userFirstName}
+                          <div className="flex items-center gap-2 mb-3 ml-1">
+                            <span className="text-sm font-semibold text-white bg-gradient-to-r from-white to-electric-blue bg-clip-text">
+                              {message.userFirstName} {message.userLastName}
                             </span>
                             {message.isAdmin && (
-                              <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30">
-                                <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-400 to-purple-400"></div>
-                                <span className="text-xs text-blue-300 font-medium">Admin</span>
-                              </div>
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-electric-blue/20 to-otaku-purple/20 border border-electric-blue/40 shadow-lg">
+                                <span className="w-2 h-2 rounded-full bg-gradient-to-r from-electric-blue to-otaku-purple animate-pulse"></span>
+                                <span className="text-xs text-electric-blue font-bold tracking-wide">ADMIN</span>
+                              </span>
                             )}
                           </div>
                         )}
@@ -377,18 +377,20 @@ export default function Chat() {
                             <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-electric-blue/20 to-otaku-purple/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"></div>
                           )}
                           
-                          <p className="whitespace-pre-wrap font-medium">{message.content}</p>
+                          <div className="whitespace-pre-wrap font-medium text-base leading-relaxed">{message.content}</div>
 
                           {/* Enhanced timestamp */}
                           <div className={cn(
                             "text-xs mt-3 opacity-60 group-hover:opacity-80 transition-opacity duration-300 flex items-center gap-2",
-                            isOwnMessage ? "text-white/80" : "text-white/60"
+                            isOwnMessage ? "text-white/80 justify-end" : "text-white/60"
                           )}>
-                            <div className="w-1 h-1 rounded-full bg-current opacity-50"></div>
-                            {new Date(message.createdAt).toLocaleTimeString('fr-FR', { 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
-                            })}
+                            <span className="w-1 h-1 rounded-full bg-current opacity-50"></span>
+                            <span>
+                              {new Date(message.createdAt).toLocaleTimeString('fr-FR', { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </span>
                           </div>
                         </div>
                       </div>
