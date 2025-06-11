@@ -320,10 +320,10 @@ export default function EditProfile() {
                   <div className="relative">
                     <Avatar className="h-16 w-16">
                       <AvatarImage
-                        src={imagePreview || user?.profileImageUrl}
+                        src={imagePreview || (user?.profileImageUrl && user.profileImageUrl.trim() !== '' ? user.profileImageUrl : '')}
                         alt="Profile"
                       />
-                      <AvatarFallback className="text-xl bg-electric-blue">
+                      <AvatarFallback className="text-xl bg-gradient-to-r from-electric-blue to-hot-pink text-white">
                         {(form.watch("firstName") || user?.firstName || "U").charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
