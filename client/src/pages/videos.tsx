@@ -170,27 +170,178 @@ export default function Videos() {
             </div>
           </div>
 
-          {/* Video Grid */}
-          {isLoading ? (
-            <div className="space-y-4">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-20 bg-card-bg rounded-lg animate-pulse"></div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredVideos.map((video) => (
-                <VideoCard key={video.id} video={video} />
-              ))}
-            </div>
+          {/* Content based on active tab */}
+          {activeTab === "local" && (
+            <>
+              {isLoading ? (
+                <div className="space-y-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="h-20 bg-card-bg rounded-lg animate-pulse"></div>
+                  ))}
+                </div>
+              ) : filteredVideos.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredVideos.map((video, index) => (
+                    <VideoCard key={video.id || index} video={video} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">🎬</div>
+                  <h3 className="text-lg font-semibold mb-2">Aucune vidéo trouvée</h3>
+                  <p className="text-gray-400">Essayez d'ajuster votre recherche ou vos filtres</p>
+                </div>
+              )}
+            </>
           )}
 
-          {!isLoading && filteredVideos.length === 0 && (
-            <div className="text-center py-8">
-              <div className="glass-morphism rounded-2xl p-6">
-                <p className="text-gray-300">No videos found matching your criteria.</p>
-              </div>
-            </div>
+          {activeTab === "youtube" && (
+            <>
+              {youtubeLoading ? (
+                <div className="space-y-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="h-20 bg-card-bg rounded-lg animate-pulse"></div>
+                  ))}
+                </div>
+              ) : searchTerm.length < 3 ? (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">🔍</div>
+                  <h3 className="text-lg font-semibold mb-2">Rechercher sur YouTube</h3>
+                  <p className="text-gray-400">Tapez au moins 3 caractères pour rechercher des vidéos d'anime</p>
+                </div>
+              ) : youtubeVideos.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {youtubeVideos.map((video: any, index: number) => (
+                    <Card key={video.id || index} className="bg-card-bg border-border hover:border-accent-primary/50 transition-all duration-300 cursor-pointer group overflow-hidden">
+                      <div className="relative aspect-video bg-gradient-to-br from-accent-primary/20 to-hot-pink/20">
+                        {video.thumbnailUrl ? (
+                          <img
+                            src={video.thumbnailUrl}
+                            alt={video.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Youtube className="w-12 h-12 text-accent-primary/60" />
+                          </div>
+                        )}
+                        
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                          <Button
+                            size="icon"
+                            className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 border-2 border-white/50"
+                            onClick={() => window.open(video.videoUrl, '_blank')}
+                          >
+                            <Play className="w-8 h-8 text-white fill-white" />
+                          </Button>
+                        </div>
+
+                        <Badge className="absolute top-2 left-2 bg-red-600/90 text-white border-0">
+                          <Youtube className="w-3 h-3 mr-1" />
+                          YouTube
+                        </Badge>
+                      </div>
+
+                      <CardContent className="p-4">
+                        <h3 className="font-semibold text-text-primary line-clamp-2 mb-2 group-hover:text-accent-primary transition-colors">
+                          {video.title}
+                        </h3>
+                        
+                        {video.description && (
+                          <p className="text-sm text-text-secondary line-clamp-2 mb-3">
+                            {video.description.substring(0, 100)}...
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">😅</div>
+                  <h3 className="text-lg font-semibold mb-2">Aucun résultat</h3>
+                  <p className="text-gray-400">Aucun résultat trouvé pour cette recherche</p>
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === "music" && (
+            <>
+              {musicLoading ? (
+                <div className="space-y-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="h-20 bg-card-bg rounded-lg animate-pulse"></div>
+                  ))}
+                </div>
+              ) : musicSearch.length < 3 ? (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">🎵</div>
+                  <h3 className="text-lg font-semibold mb-2">Rechercher des Openings</h3>
+                  <p className="text-gray-400">Tapez le nom d'un anime pour trouver ses openings</p>
+                </div>
+              ) : animeOpenings.length > 0 ? (
+                <div className="space-y-4">
+                  {animeOpenings.map((opening: any, index: number) => (
+                    <Card key={opening.id || index} className="bg-card-bg border-border hover:border-accent-primary/50 transition-all duration-300">
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-4">
+                          <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-accent-primary/20 to-hot-pink/20">
+                            {opening.thumbnailUrl ? (
+                              <img
+                                src={opening.thumbnailUrl}
+                                alt={opening.title}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Music className="w-6 h-6 text-accent-primary/60" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-text-primary truncate">
+                              {opening.title}
+                            </h3>
+                            <p className="text-sm text-text-secondary truncate">
+                              {opening.artist}
+                            </p>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <Badge variant="secondary" className="text-xs">
+                                {opening.anime}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                Opening
+                              </Badge>
+                            </div>
+                          </div>
+                          
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="text-accent-primary hover:bg-accent-primary/10"
+                            onClick={() => handlePlayMusic(opening.id, opening.audioUrl)}
+                          >
+                            {currentPlaying === opening.id && isPlaying ? (
+                              <Pause className="w-5 h-5" />
+                            ) : (
+                              <Play className="w-5 h-5" />
+                            )}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">🎼</div>
+                  <h3 className="text-lg font-semibold mb-2">Aucun opening trouvé</h3>
+                  <p className="text-gray-400">Aucun résultat pour cet anime</p>
+                </div>
+              )}
+            </>
           )}
         </main>
 
