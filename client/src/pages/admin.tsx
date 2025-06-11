@@ -18,6 +18,7 @@ import { Settings, Plus, Edit, Trash2, Eye, EyeOff, Users, MessageSquare, Video,
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import AppHeader from "@/components/layout/app-header";
 
 const postSchema = z.object({
   title: z.string().min(1, "Le titre est requis"),
