@@ -64,10 +64,7 @@ export default function QuizDetail() {
       console.log("Submitting quiz result:", result);
       return await apiRequest("/api/quiz-results", {
         method: "POST",
-        body: JSON.stringify(result),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        body: result,
       });
     },
     onSuccess: () => {

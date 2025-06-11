@@ -836,7 +836,7 @@ export default function Admin() {
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
           </TabsContent>
 
           <TabsContent value="quizzes">
