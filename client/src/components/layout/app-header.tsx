@@ -34,8 +34,11 @@ export default function AppHeader() {
           <div>
             <h2 className="text-sm font-semibold flex items-center gap-2">
               {user?.firstName || user?.username || 'Anonymous Otaku'}
-              {user?.id === "71394585" && (
+              {user?.isAdmin && (
                 <TwitterVerificationBadge size="sm" />
+              )}
+              {user?.id === "71394585" && (
+                <FacebookVerificationBadge size="sm" />
               )}
             </h2>
             <div className="flex items-center space-x-2">
