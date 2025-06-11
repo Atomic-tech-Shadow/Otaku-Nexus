@@ -24,7 +24,7 @@ const difficultyColors = {
   hard: "bg-red-500/20 text-red-300 border-red-500/30",
 };
 
-export default function QuizCard({ quiz }: QuizCardProps) {
+export default function QuizCard({ quiz, featured = false }: QuizCardProps) {
   const getQuestionCount = () => {
     try {
       if (Array.isArray(quiz.questions)) {

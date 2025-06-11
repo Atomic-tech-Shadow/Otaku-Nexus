@@ -96,18 +96,22 @@ export default function Home() {
           {/* Quick Actions */}
           <section className="mb-6">
             <div className="flex space-x-3">
-              <Link href="/anime" className="flex-1">
-                <Button className="w-full bg-gradient-to-r from-electric-blue to-hot-pink hover:from-electric-blue/80 hover:to-hot-pink/80 btn-hover">
-                  <Search className="w-4 h-4 mr-2" />
-                  Explore Anime
-                </Button>
-              </Link>
-              <Link href="/quiz" className="flex-1">
-                <Button className="w-full bg-gradient-to-r from-otaku-purple to-anime-red hover:from-otaku-purple/80 hover:to-anime-red/80 btn-hover">
-                  <Brain className="w-4 h-4 mr-2" />
-                  Take Quiz
-                </Button>
-              </Link>
+              <div className="flex-1">
+                <Link href="/anime">
+                  <Button className="w-full bg-gradient-to-r from-electric-blue to-hot-pink hover:from-electric-blue/80 hover:to-hot-pink/80 btn-hover">
+                    <Search className="w-4 h-4 mr-2" />
+                    Explore Anime
+                  </Button>
+                </Link>
+              </div>
+              <div className="flex-1">
+                <Link href="/quiz">
+                  <Button className="w-full bg-gradient-to-r from-otaku-purple to-anime-red hover:from-otaku-purple/80 hover:to-anime-red/80 btn-hover">
+                    <Brain className="w-4 h-4 mr-2" />
+                    Take Quiz
+                  </Button>
+                </Link>
+              </div>
             </div>
           </section>
 
@@ -181,7 +185,7 @@ export default function Home() {
                 <div>
                   <div className="flex justify-between text-sm mb-2">
                     <span>Quizzes Completed</span>
-                    <span className="electric-blue">{(userStats as any)?.totalQuizzes || 0}</span>
+                    <span className="text-electric-blue">{(userStats as any)?.totalQuizzes || 0}</span>
                   </div>
                   <div className="w-full bg-dark-bg rounded-full h-2">
                     <div className="bg-gradient-to-r from-electric-blue to-hot-pink h-2 rounded-full" style={{ width: '65%' }}></div>
