@@ -44,6 +44,21 @@ export default function QuizDetail() {
     retry: false,
   });
 
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      toast({
+        title: "Unauthorized",
+        description: "You are logged out. Logging in again...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+      return;
+    }
+  }, [isAuthenticated, isLoading, toast]);
+
   const submitResultMutation = useMutation({
     mutationFn: async (result: any) => {
       console.log("Submitting quiz result:", result);
@@ -80,21 +95,6 @@ export default function QuizDetail() {
       });
     },
   });
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
 
   // Timer effect - only runs when quiz is actually started
   useEffect(() => {
