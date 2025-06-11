@@ -33,8 +33,10 @@ export default function Chat() {
 
   const { data: messages = [], isLoading, refetch } = useQuery({
     queryKey: ["/api/chat/messages"],
-    refetchInterval: 4000,
+    refetchInterval: 2000, // Plus fréquent pour de meilleurs updates
     retry: 2,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   const sendMessageMutation = useMutation({
@@ -48,9 +50,11 @@ export default function Chat() {
       if (!response.ok) throw new Error("Failed to send message");
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       setNewMessage("");
-      queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
+      // Invalidate et refetch immédiatement
+      await queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
+      await refetch();
     },
     onError: () => {
       toast({
@@ -78,10 +82,18 @@ export default function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const processedMessages = Array.isArray(messages) ? messages.map((msg: any) => ({
-    ...msg,
-    isOwn: msg.userId === user?.id
-  })) : [];
+  const processedMessages = Array.isArray(messages) ? messages
+    .map((msg: any, index: number) => ({
+      ...msg,
+      id: `${msg.id}-${msg.createdAt || msg.timestamp}-${index}`, // ID unique
+      isOwn: msg.userId === user?.id
+    }))
+    .sort((a: any, b: any) => {
+      // Tri par date de création pour afficher les plus récents en bas
+      const dateA = new Date(a.createdAt || a.timestamp).getTime();
+      const dateB = new Date(b.createdAt || b.timestamp).getTime();
+      return dateA - dateB;
+    }) : [];
 
   return (
     <div className="min-h-screen bg-dark-bg text-white flex flex-col">

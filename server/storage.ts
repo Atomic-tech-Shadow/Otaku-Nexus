@@ -380,11 +380,11 @@ export class DatabaseStorage implements IStorage {
       .from(chatMessages)
       .leftJoin(users, eq(chatMessages.userId, users.id))
       .where(eq(chatMessages.roomId, roomId))
-      .orderBy(desc(chatMessages.createdAt))
+      .orderBy(chatMessages.createdAt) // Ordre chronologique direct
       .limit(limit);
 
-    // Retourner dans l'ordre chronologique avec les données formatées
-    return results.reverse().map(result => ({
+    // Retourner les messages dans l'ordre chronologique
+    return results.map(result => ({
       ...result,
       timestamp: result.createdAt, // Assurer la compatibilité
       username: result.userFirstName || 'Utilisateur' // Fallback pour le nom
