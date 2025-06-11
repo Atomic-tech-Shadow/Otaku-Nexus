@@ -31,21 +31,26 @@ export default function Profile() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: userStats } = useQuery({
+  const { data: userStats = { totalQuizzes: 0, totalAnime: 0, totalXP: 0, rank: 0 } } = useQuery<{
+    totalQuizzes: number;
+    totalAnime: number;
+    totalXP: number;
+    rank: number;
+  }>({
     queryKey: ["/api/user/stats"],
     enabled: !!isAuthenticated,
     staleTime: 5 * 60 * 1000,
     retry: 2,
   });
 
-  const { data: favorites } = useQuery({
+  const { data: favorites = [] } = useQuery<any[]>({
     queryKey: ["/api/favorites"],
     enabled: !!isAuthenticated,
     staleTime: 10 * 60 * 1000,
     retry: 2,
   });
 
-  const { data: quizResults } = useQuery({
+  const { data: quizResults = [] } = useQuery<any[]>({
     queryKey: ["/api/quiz-results"],
     enabled: !!isAuthenticated,
     staleTime: 5 * 60 * 1000,
@@ -71,11 +76,11 @@ export default function Profile() {
 
   // Calculate achievements
   const achievements = [];
-  if (userStats?.totalQuizzes >= 1) achievements.push({ name: "First Quiz", icon: Brain, color: "electric-blue" });
-  if (userStats?.totalQuizzes >= 10) achievements.push({ name: "Quiz Master", icon: Trophy, color: "hot-pink" });
-  if (userStats?.totalAnime >= 5) achievements.push({ name: "Anime Lover", icon: Heart, color: "anime-red" });
-  if (userStats?.totalXP >= 100) achievements.push({ name: "XP Hunter", icon: Star, color: "otaku-purple" });
-  if (userStats?.rank <= 100) achievements.push({ name: "Top 100", icon: Award, color: "hot-pink" });
+  if (userStats.totalQuizzes >= 1) achievements.push({ name: "First Quiz", icon: Brain, color: "electric-blue" });
+  if (userStats.totalQuizzes >= 10) achievements.push({ name: "Quiz Master", icon: Trophy, color: "hot-pink" });
+  if (userStats.totalAnime >= 5) achievements.push({ name: "Anime Lover", icon: Heart, color: "anime-red" });
+  if (userStats.totalXP >= 100) achievements.push({ name: "XP Hunter", icon: Star, color: "otaku-purple" });
+  if (userStats.rank <= 100) achievements.push({ name: "Top 100", icon: Award, color: "hot-pink" });
 
   return (
     <div className="min-h-screen bg-dark-bg text-white pb-20">
@@ -179,22 +184,22 @@ export default function Profile() {
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-card-bg rounded-xl p-4 text-center">
                 <Brain className="w-8 h-8 electric-blue mx-auto mb-2" />
-                <div className="text-2xl font-bold">{userStats?.totalQuizzes || 0}</div>
+                <div className="text-2xl font-bold">{userStats.totalQuizzes}</div>
                 <div className="text-sm text-gray-400">Quizzes Completed</div>
               </div>
               <div className="bg-card-bg rounded-xl p-4 text-center">
                 <Heart className="w-8 h-8 hot-pink mx-auto mb-2" />
-                <div className="text-2xl font-bold">{userStats?.totalAnime || 0}</div>
+                <div className="text-2xl font-bold">{userStats.totalAnime}</div>
                 <div className="text-sm text-gray-400">Favorite Anime</div>
               </div>
               <div className="bg-card-bg rounded-xl p-4 text-center">
                 <Trophy className="w-8 h-8 otaku-purple mx-auto mb-2" />
-                <div className="text-2xl font-bold">#{userStats?.rank || 1}</div>
+                <div className="text-2xl font-bold">#{userStats.rank}</div>
                 <div className="text-sm text-gray-400">Global Rank</div>
               </div>
               <div className="bg-card-bg rounded-xl p-4 text-center">
                 <Star className="w-8 h-8 anime-red mx-auto mb-2" />
-                <div className="text-2xl font-bold">{userStats?.totalXP || 0}</div>
+                <div className="text-2xl font-bold">{userStats.totalXP}</div>
                 <div className="text-sm text-gray-400">Total XP</div>
               </div>
             </div>
