@@ -321,6 +321,77 @@ const frenchAnimeQuizzes = [
   }
 ];
 
+// QuizList component for the admin panel
+const QuizListComponent = () => {
+  const { data: quizzes = [], isLoading } = useQuery<any[]>({
+    queryKey: ['/api/quizzes'],
+    enabled: true,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-6">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-electric-blue mx-auto"></div>
+        <p className="text-text-secondary mt-2">Chargement des quiz...</p>
+      </div>
+    );
+  }
+
+  if (!Array.isArray(quizzes) || quizzes.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-16 h-16 bg-gradient-to-r from-otaku-purple/20 to-anime-red/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <BookOpen className="h-8 w-8 text-otaku-purple" />
+        </div>
+        <h4 className="text-lg font-semibold text-text-primary mb-2">Aucun quiz trouvé</h4>
+        <p className="text-text-secondary">Utilisez le bouton "Créer Collection Quiz FR" pour ajouter des quiz.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-text-secondary mb-4">
+        {quizzes.length} quiz{quizzes.length > 1 ? 's' : ''} disponible{quizzes.length > 1 ? 's' : ''}
+      </p>
+      <div className="grid gap-4">
+        {quizzes.map((quiz: any) => (
+          <div 
+            key={quiz.id} 
+            className="bg-gradient-to-r from-card-bg to-secondary-bg rounded-xl p-4 border border-gray-800 hover:border-electric-blue/50 transition-all duration-300"
+          >
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <h5 className="font-semibold text-text-primary mb-1">{quiz.title}</h5>
+                <p className="text-text-secondary text-sm mb-2">{quiz.description}</p>
+                <div className="flex gap-2">
+                  <Badge 
+                    className={`text-xs ${
+                      quiz.difficulty === 'easy' ? 'bg-green-500/20 text-green-300' :
+                      quiz.difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
+                      'bg-red-500/20 text-red-300'
+                    }`}
+                  >
+                    {quiz.difficulty === 'easy' ? 'Facile' : 
+                     quiz.difficulty === 'medium' ? 'Moyen' : 'Difficile'}
+                  </Badge>
+                  <Badge className="bg-electric-blue/20 text-electric-blue text-xs">
+                    {quiz.xpReward} XP
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    {Array.isArray(quiz.questions) ? quiz.questions.length : 
+                     typeof quiz.questions === 'string' ? JSON.parse(quiz.questions).length : 0} questions
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Admin() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -723,7 +794,7 @@ export default function Admin() {
                     </div>
                     <p className="text-white/70">Chargement des publications...</p>
                   </div>
-                ) : posts.length === 0 ? (
+                ) : (posts as AdminPost[]).length === 0 ? (
                   <div className="text-center py-16">
                     <div className="w-20 h-20 rounded-3xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-6">
                       <MessageSquare className="h-10 w-10 text-white/50" />
@@ -740,7 +811,7 @@ export default function Admin() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {posts.map((post: AdminPost, index) => (
+                    {(posts as AdminPost[]).map((post: AdminPost, index: number) => (
                       <div 
                         key={post.id} 
                         className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300 group"
@@ -934,6 +1005,19 @@ export default function Admin() {
                   </Button>
                 </div>
               </div>
+
+              {/* Quiz List */}
+              <Card className="bg-gradient-to-br from-card-bg/90 to-card-bg/70 border border-otaku-purple/20 backdrop-blur-lg rounded-2xl shadow-xl shadow-otaku-purple/10 card-hover">
+                <CardHeader className="relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-anime-red/20 to-transparent rounded-full"></div>
+                  <CardTitle className="text-2xl font-bold bg-gradient-to-r from-anime-red to-electric-blue bg-clip-text text-transparent relative z-10">
+                    Quiz Existants
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <QuizListComponent />
+                </CardContent>
+              </Card>
 
               <Card className="bg-gradient-to-br from-card-bg/90 to-card-bg/70 border border-otaku-purple/20 backdrop-blur-lg rounded-2xl shadow-xl shadow-otaku-purple/10 card-hover">
                 <CardHeader className="relative overflow-hidden">
