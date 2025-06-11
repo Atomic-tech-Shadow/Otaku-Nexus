@@ -18,26 +18,33 @@ export default function Home() {
 
   const { data: userStats = {}, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/user/stats"],
-    retry: false,
+    enabled: !!isAuthenticated,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
   });
 
   const { data: trendingAnimes = [], isLoading: animesLoading } = useQuery({
     queryKey: ["/api/anime/trending"],
-    retry: false,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    retry: 2,
   });
 
   const { data: featuredQuiz, isLoading: quizLoading } = useQuery({
     queryKey: ["/api/quizzes/featured"],
-    retry: false,
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    retry: 2,
   });
 
   const { data: popularVideos = [], isLoading: videosLoading } = useQuery({
     queryKey: ["/api/videos/popular"],
-    retry: false,
+    staleTime: 15 * 60 * 1000, // 15 minutes
+    retry: 2,
   });
 
   const { data: posts = [], isLoading: postsLoading } = useQuery({
     queryKey: ["/api/posts"],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
   });
 
   if (isLoading) {

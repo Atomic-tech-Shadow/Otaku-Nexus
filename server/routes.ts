@@ -129,7 +129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Skip if already exists
               }
             }
-            animes = savedAnimes.length > 0 ? savedAnimes : jikanAnimes.map(anime => ({
+            animes = savedAnimes.length > 0 ? savedAnimes : jikanAnimes.map((anime: any) => ({
               id: anime.mal_id,
               malId: anime.mal_id,
               title: anime.title,
@@ -640,7 +640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const messageData = {
-        content: content.trim(),
+        message: content.trim(),
         roomId: 1, // Default room
         userId,
       };
