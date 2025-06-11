@@ -63,7 +63,7 @@ export default function QuizDetail() {
     mutationFn: async (result: any) => {
       return await apiRequest("/api/quiz-results", {
         method: "POST",
-        body: JSON.stringify(result),
+        body: result,
       });
     },
     onSuccess: () => {
