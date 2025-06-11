@@ -100,6 +100,13 @@ export interface IStorage {
   // Utility operations
   ensureDefaultChatRoom(): Promise<void>;
   ensureAdminUser(): Promise<void>;
+  getPlatformStats(): Promise<{
+    totalUsers: number;
+    totalQuizzes: number;
+    totalAnime: number;
+    totalMessages: number;
+    totalPosts: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -352,7 +359,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async sendChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
-    const [newMessage] = await db.insert(chatMessages).values(message).returning();
+    // Adapter les données pour la base de données
+    const messageData = {
+      roomId: message.roomId,
+      userId: message.userId,
+      message: message.message || message.content, // Support des deux formats
+    };
+    
+    const [newMessage] = await db.insert(chatMessages).values(messageData).returning();
     return newMessage;
   }
 
@@ -497,6 +511,54 @@ export class DatabaseStorage implements IStorage {
       }
     } catch (error) {
       console.error("Error ensuring default chat room:", error);
+    }
+  }
+
+  // Get platform statistics for admin dashboard
+  async getPlatformStats(): Promise<{
+    totalUsers: number;
+    totalQuizzes: number;
+    totalAnime: number;
+    totalMessages: number;
+    totalPosts: number;
+  }> {
+    try {
+      const [usersCount] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(users);
+
+      const [quizzesCount] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(quizzes);
+
+      const [animeCount] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(animes);
+
+      const [messagesCount] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(chatMessages);
+
+      const [postsCount] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(adminPosts);
+
+      return {
+        totalUsers: usersCount?.count || 0,
+        totalQuizzes: quizzesCount?.count || 0,
+        totalAnime: animeCount?.count || 0,
+        totalMessages: messagesCount?.count || 0,
+        totalPosts: postsCount?.count || 0,
+      };
+    } catch (error) {
+      console.error("Error fetching platform stats:", error);
+      return {
+        totalUsers: 0,
+        totalQuizzes: 0,
+        totalAnime: 0,
+        totalMessages: 0,
+        totalPosts: 0,
+      };
     }
   }
 }

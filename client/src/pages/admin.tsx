@@ -117,7 +117,24 @@ export default function Admin() {
   // Fetch user stats
   const { data: userStats } = useQuery({
     queryKey: ["/api/user/stats"],
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && user?.email === ADMIN_EMAIL,
+    staleTime: 30 * 1000,
+  });
+
+  // Fetch global platform stats
+  const { data: platformStats } = useQuery({
+    queryKey: ["/api/admin/platform-stats"],
+    enabled: isAuthenticated && user?.email === ADMIN_EMAIL,
+    queryFn: async () => {
+      // Pour l'instant, retourner des stats statiques
+      // TODO: Implémenter les vraies stats dans le backend
+      return {
+        totalUsers: "∞",
+        totalQuizzes: "∞",
+        totalAnime: "∞",
+        totalMessages: "∞"
+      };
+    },
   });
 
   const createPostMutation = useMutation({
@@ -644,24 +661,38 @@ export default function Admin() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="bg-gradient-to-br from-electric-blue/20 to-electric-blue/10 rounded-2xl p-6 border border-electric-blue/30 card-hover relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-br from-electric-blue/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <h3 className="text-electric-blue font-bold mb-3 text-lg relative z-10">👥 Utilisateurs</h3>
-                    <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">∞</p>
+                    <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">
+                      {platformStats?.totalUsers || userStats?.totalUsers || "0"}
+                    </p>
                     <p className="text-sm text-text-secondary relative z-10">Total des inscrits</p>
                   </div>
                   <div className="bg-gradient-to-br from-hot-pink/20 to-hot-pink/10 rounded-2xl p-6 border border-hot-pink/30 card-hover relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-br from-hot-pink/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <h3 className="text-hot-pink font-bold mb-3 text-lg relative z-10">🧠 Quiz</h3>
-                    <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">∞</p>
-                    <p className="text-sm text-text-secondary relative z-10">Quiz terminés</p>
+                    <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">
+                      {platformStats?.totalQuizzes || "0"}
+                    </p>
+                    <p className="text-sm text-text-secondary relative z-10">Quiz créés</p>
                   </div>
                   <div className="bg-gradient-to-br from-otaku-purple/20 to-otaku-purple/10 rounded-2xl p-6 border border-otaku-purple/30 card-hover relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-br from-otaku-purple/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <h3 className="text-otaku-purple font-bold mb-3 text-lg relative z-10">🎌 Anime</h3>
-                    <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">∞</p>
+                    <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">
+                      {platformStats?.totalAnime || "0"}
+                    </p>
                     <p className="text-sm text-text-secondary relative z-10">Dans la base</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-anime-red/20 to-anime-red/10 rounded-2xl p-6 border border-anime-red/30 card-hover relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-anime-red/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <h3 className="text-anime-red font-bold mb-3 text-lg relative z-10">💬 Messages</h3>
+                    <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">
+                      {platformStats?.totalMessages || "0"}
+                    </p>
+                    <p className="text-sm text-text-secondary relative z-10">Messages envoyés</p>
                   </div>
                 </div>
               </CardContent>

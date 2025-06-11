@@ -746,6 +746,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin platform statistics
+  app.get('/api/admin/platform-stats', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getPlatformStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching platform stats:", error);
+      res.status(500).json({ message: "Failed to fetch platform stats" });
+    }
+  });
+
   // Get all chat messages
   app.get('/api/chat/messages', isAuthenticated, async (req: any, res) => {
     try {
@@ -776,13 +787,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/chat/messages', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const { content } = req.body;
+      const { content, message: messageText } = req.body;
       
-      if (!content || !content.trim()) {
+      // Support both 'content' and 'message' fields
+      const messageContent = content || messageText;
+      
+      if (!messageContent || !messageContent.trim()) {
         return res.status(400).json({ message: "Le contenu du message est requis" });
       }
 
-      if (content.trim().length > 1000) {
+      if (messageContent.trim().length > 1000) {
         return res.status(400).json({ message: "Le message est trop long (max 1000 caractères)" });
       }
 
@@ -790,24 +804,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.ensureDefaultChatRoom();
 
       const messageData = {
-        message: content.trim(),
+        message: messageContent.trim(),
         roomId: 1, // Default room
         userId,
       };
       
-      const message = await storage.sendChatMessage(messageData);
+      const newMessage = await storage.sendChatMessage(messageData);
+      
+      // Get user info for the response
+      const user = await storage.getUser(userId);
       
       // Return enriched message data
       const enrichedMessage = {
-        ...message,
-        id: `${message.id}-${Date.now()}`,
+        ...newMessage,
+        id: `${newMessage.id}-${Date.now()}`,
+        userId: userId,
+        userFirstName: user?.firstName || 'Utilisateur',
+        userLastName: user?.lastName || '',
+        isAdmin: user?.isAdmin || false,
+        content: messageContent.trim(),
         createdAt: new Date().toISOString(),
       };
       
       res.json(enrichedMessage);
     } catch (error) {
       console.error("Error sending chat message:", error);
-      res.status(500).json({ message: "Échec de l'envoi du message" });
+      res.status(500).json({ message: "Échec de l'envoi du message", error: error.message });
     }
   });
 
