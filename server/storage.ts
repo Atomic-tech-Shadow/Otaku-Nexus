@@ -96,7 +96,7 @@ export interface IStorage {
   updateAdminPost(id: number, updates: Partial<InsertAdminPost>): Promise<AdminPost>;
   deleteAdminPost(id: number): Promise<void>;
   getPublicPosts(): Promise<any[]>;
-  
+
   // Utility operations
   ensureDefaultChatRoom(): Promise<void>;
   ensureAdminUser(): Promise<void>;
@@ -330,8 +330,8 @@ export class DatabaseStorage implements IStorage {
     return newRoom;
   }
 
-  async getChatMessages(roomId: number, limit = 50): Promise<any[]> {
-    return await db
+  async getChatMessages(roomId: number, limit: number = 100): Promise<any[]> {
+    const results = await db
       .select({
         id: chatMessages.id,
         content: chatMessages.message,
@@ -346,6 +346,9 @@ export class DatabaseStorage implements IStorage {
       .where(eq(chatMessages.roomId, roomId))
       .orderBy(desc(chatMessages.createdAt))
       .limit(limit);
+
+    // Retourner dans l'ordre chronologique (plus ancien en premier)
+    return results.reverse();
   }
 
   async sendChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
@@ -451,12 +454,12 @@ export class DatabaseStorage implements IStorage {
   async ensureAdminUser(): Promise<void> {
     try {
       const adminUser = await db.select().from(users).where(eq(users.isAdmin, true)).limit(1);
-      
+
       if (adminUser.length === 0) {
         // Check if there's a user that should be admin
         const adminEmail = process.env.ADMIN_USER_ID || "sorokomarco@gmail.com";
         const potentialAdmin = await db.select().from(users).where(eq(users.email, adminEmail)).limit(1);
-        
+
         if (potentialAdmin.length > 0) {
           // Make this user admin
           await db.update(users)
@@ -473,11 +476,11 @@ export class DatabaseStorage implements IStorage {
   async ensureDefaultChatRoom(): Promise<void> {
     try {
       const existingRoom = await db.select().from(chatRooms).where(eq(chatRooms.id, 1)).limit(1);
-      
+
       if (existingRoom.length === 0) {
         // Get the first admin user to be the creator, or create with a real user
         const adminUser = await db.select().from(users).where(eq(users.isAdmin, true)).limit(1);
-        
+
         if (adminUser.length > 0) {
           // Create default room with admin as creator
           await db.insert(chatRooms).values({

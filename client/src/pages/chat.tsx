@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ArrowLeft, Phone, Video, Settings, Send, Smile, ThumbsUp, Camera, Mic, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/loading-spinner";
+import ConnectionStatus from "@/components/ui/connection-status";
 import { isUnauthorizedError } from "@/lib/authUtils";
 
 interface Message {
@@ -49,10 +50,10 @@ export default function Chat() {
   const { data: messages = [], refetch, error } = useQuery<Message[]>({
     queryKey: ["/api/chat/messages"],
     enabled: !!user && isAuthenticated,
-    refetchInterval: 2000,
-    staleTime: 30 * 1000, // 30 seconds
-    retry: 2,
-    retryDelay: 500,
+    refetchInterval: 1000, // Polling plus fréquent pour simuler le temps réel
+    staleTime: 5 * 1000, // 5 seconds
+    retry: 3,
+    retryDelay: 300,
   });
 
   useEffect(() => {
@@ -71,8 +72,17 @@ export default function Chat() {
         body: { content: content.trim() },
       });
     },
-    onSuccess: () => {
+    onSuccess: (newMessage) => {
       setNewMessage("");
+      // Mise à jour optimiste locale
+      queryClient.setQueryData(["/api/chat/messages"], (oldMessages: Message[] = []) => {
+        const messageExists = oldMessages.some(msg => msg.id === newMessage.id);
+        if (!messageExists) {
+          return [...oldMessages, newMessage];
+        }
+        return oldMessages;
+      });
+      // Refetch pour synchroniser avec le serveur
       queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
       // Scroll to bottom after sending
       setTimeout(() => {
@@ -127,9 +137,20 @@ export default function Chat() {
   const formatTime = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return date.toLocaleTimeString("fr-FR", {
-        hour: "2-digit",
-        minute: "2-digit",
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return "Maintenant";
+      if (diffMins < 60) return `${diffMins}m`;
+      if (diffHours < 24) return `${diffHours}h`;
+      if (diffDays < 7) return `${diffDays}j`;
+      
+      return date.toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
       });
     } catch {
       return "";
@@ -161,6 +182,7 @@ export default function Chat() {
 
   return (
     <div className="min-h-screen bg-app-bg flex flex-col">
+      <ConnectionStatus />
       {/* Header - Style Facebook Messenger */}
       <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm sticky top-0 z-10">
         <div className="flex items-center gap-3">
@@ -181,8 +203,8 @@ export default function Chat() {
             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
           </div>
           <div className="flex-1">
-            <h2 className="font-semibold text-gray-900 text-lg">🌸 Otaku Community</h2>
-            <p className="text-xs text-green-600 font-medium">● {messages.length} membres actifs</p>
+            <h2 className="font-semibold text-gray-900 text-lg">🌸 Chat Global Otaku</h2>
+            <p className="text-xs text-green-600 font-medium">● Chat de groupe global • {messages.filter((m, i, arr) => arr.findIndex(msg => msg.userId === m.userId) === i).length} membres</p>
           </div>
         </div>
         <div className="flex items-center gap-1">
@@ -390,9 +412,10 @@ export default function Chat() {
             )}
           </div>
           
-          {/* Indicateur de frappe */}
-          <div className="text-xs text-gray-500 mt-2 px-2">
-            <span className="animate-pulse">💭 Communauté otaku active</span>
+          {/* Indicateur d'activité */}
+          <div className="text-xs text-gray-500 mt-2 px-2 flex items-center justify-between">
+            <span className="animate-pulse">🌸 Chat global en temps réel</span>
+            <span className="text-green-500">● En ligne</span>
           </div>
         </div>
       </div>

@@ -754,13 +754,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Ensure default room exists
       await storage.ensureDefaultChatRoom();
       
-      const messages = await storage.getChatMessages(1);
-      // Ensure unique IDs for React keys
-      const messagesWithUniqueIds = messages.map((message: any, index: number) => ({
-        ...message,
-        id: `${message.id}-${index}-${Date.now()}`
-      }));
-      res.json(messagesWithUniqueIds);
+      const limit = parseInt(req.query.limit as string) || 100;
+      const messages = await storage.getChatMessages(1, limit);
+      
+      // Ensure unique IDs and sort by creation time
+      const sortedMessages = messages
+        .map((message: any, index: number) => ({
+          ...message,
+          id: `${message.id}-${index}`,
+        }))
+        .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      
+      res.json(sortedMessages);
     } catch (error) {
       console.error("Get messages error:", error);
       res.status(500).json({ message: "Failed to get messages" });
@@ -774,7 +779,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { content } = req.body;
       
       if (!content || !content.trim()) {
-        return res.status(400).json({ message: "Content is required" });
+        return res.status(400).json({ message: "Le contenu du message est requis" });
+      }
+
+      if (content.trim().length > 1000) {
+        return res.status(400).json({ message: "Le message est trop long (max 1000 caractères)" });
       }
 
       // Ensure default room exists
@@ -787,10 +796,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const message = await storage.sendChatMessage(messageData);
-      res.json(message);
+      
+      // Return enriched message data
+      const enrichedMessage = {
+        ...message,
+        id: `${message.id}-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+      };
+      
+      res.json(enrichedMessage);
     } catch (error) {
       console.error("Error sending chat message:", error);
-      res.status(500).json({ message: "Failed to send message" });
+      res.status(500).json({ message: "Échec de l'envoi du message" });
     }
   });
 
