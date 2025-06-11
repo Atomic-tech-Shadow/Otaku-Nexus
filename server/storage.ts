@@ -96,6 +96,9 @@ export interface IStorage {
   updateAdminPost(id: number, updates: Partial<InsertAdminPost>): Promise<AdminPost>;
   deleteAdminPost(id: number): Promise<void>;
   getPublicPosts(): Promise<any[]>;
+  
+  // Utility operations
+  ensureDefaultChatRoom(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -441,6 +444,26 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAdminPost(id: number): Promise<void> {
     await db.delete(adminPosts).where(eq(adminPosts.id, id));
+  }
+
+  // Ensure default chat room exists
+  async ensureDefaultChatRoom(): Promise<void> {
+    try {
+      const existingRoom = await db.select().from(chatRooms).where(eq(chatRooms.id, 1)).limit(1);
+      
+      if (existingRoom.length === 0) {
+        // Create default room
+        await db.insert(chatRooms).values({
+          id: 1,
+          name: "Otaku Community",
+          description: "Chat général de la communauté",
+          isPrivate: false,
+          createdBy: "system"
+        }).onConflictDoNothing();
+      }
+    } catch (error) {
+      console.error("Error ensuring default chat room:", error);
+    }
   }
 }
 

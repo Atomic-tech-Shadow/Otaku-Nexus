@@ -749,6 +749,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all chat messages
   app.get('/api/chat/messages', isAuthenticated, async (req: any, res) => {
     try {
+      // Ensure default room exists
+      await storage.ensureDefaultChatRoom();
+      
       const messages = await storage.getChatMessages(1);
       // Ensure unique IDs for React keys
       const messagesWithUniqueIds = messages.map((message: any, index: number) => ({
@@ -771,6 +774,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!content || !content.trim()) {
         return res.status(400).json({ message: "Content is required" });
       }
+
+      // Ensure default room exists
+      await storage.ensureDefaultChatRoom();
 
       const messageData = {
         message: content.trim(),
