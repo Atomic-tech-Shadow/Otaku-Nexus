@@ -474,116 +474,151 @@ export default function Admin() {
                       Nouvelle Publication
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-card-bg text-text-primary border-border max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Créer un nouveau post</DialogTitle>
+                  <DialogContent className="backdrop-blur-xl bg-slate-900/95 border border-white/20 max-w-3xl max-h-[90vh] overflow-y-auto text-white shadow-2xl">
+                    <DialogHeader className="pb-6">
+                      <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                        Créer une Nouvelle Publication
+                      </DialogTitle>
+                      <p className="text-white/60 mt-2">Partagez du contenu avec votre communauté Otaku</p>
                     </DialogHeader>
                     <Form {...createForm}>
-                      <form onSubmit={createForm.handleSubmit((data) => createPostMutation.mutate(data))} className="space-y-4">
-                        <div className="space-y-4 pb-4">
+                      <form onSubmit={createForm.handleSubmit((data) => createPostMutation.mutate(data))} className="space-y-6">
+                        <div className="space-y-6">
                           <FormField
                             control={createForm.control}
                             name="title"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Titre</FormLabel>
+                                <FormLabel className="text-white font-semibold">Titre de la Publication</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="Titre du post" {...field} className="bg-app-bg border-border text-text-primary" />
+                                  <Input 
+                                    placeholder="Donnez un titre accrocheur..." 
+                                    {...field} 
+                                    className="backdrop-blur-xl bg-white/10 border border-white/20 text-white placeholder-white/50 rounded-xl py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
-                          <FormField
-                            control={createForm.control}
-                            name="type"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                              control={createForm.control}
+                              name="type"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-white font-semibold">Type de Contenu</FormLabel>
+                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger className="backdrop-blur-xl bg-white/10 border border-white/20 text-white rounded-xl py-3">
+                                        <SelectValue placeholder="Sélectionner un type" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent className="backdrop-blur-xl bg-slate-900/95 border border-white/20 text-white">
+                                      <SelectItem value="announcement" className="hover:bg-white/10">
+                                        📢 Annonce
+                                      </SelectItem>
+                                      <SelectItem value="event" className="hover:bg-white/10">
+                                        🎉 Événement
+                                      </SelectItem>
+                                      <SelectItem value="update" className="hover:bg-white/10">
+                                        🔄 Mise à jour
+                                      </SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={createForm.control}
+                              name="imageUrl"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-white font-semibold">Image (optionnel)</FormLabel>
                                   <FormControl>
-                                    <SelectTrigger className="bg-app-bg border-border text-text-primary">
-                                      <SelectValue placeholder="Sélectionner un type" />
-                                    </SelectTrigger>
+                                    <Input 
+                                      placeholder="https://exemple.com/image.jpg" 
+                                      {...field} 
+                                      className="backdrop-blur-xl bg-white/10 border border-white/20 text-white placeholder-white/50 rounded-xl py-3 focus:ring-2 focus:ring-blue-500" 
+                                    />
                                   </FormControl>
-                                  <SelectContent className="bg-card-bg border-border">
-                                    <SelectItem value="announcement">Annonce</SelectItem>
-                                    <SelectItem value="event">Événement</SelectItem>
-                                    <SelectItem value="update">Mise à jour</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={createForm.control}
-                            name="imageUrl"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>URL de l'image (optionnel)</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="https://..." {...field} className="bg-app-bg border-border text-text-primary" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          
                           <FormField
                             control={createForm.control}
                             name="content"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Contenu</FormLabel>
+                                <FormLabel className="text-white font-semibold">Contenu de la Publication</FormLabel>
                                 <FormControl>
                                   <Textarea 
-                                    placeholder="Contenu du post..." 
-                                    className="min-h-[120px] bg-app-bg border-border text-text-primary"
+                                    placeholder="Rédigez votre contenu ici... Partagez vos pensées, actualités ou informations avec la communauté." 
+                                    className="min-h-[150px] backdrop-blur-xl bg-white/10 border border-white/20 text-white placeholder-white/50 rounded-xl p-4 focus:ring-2 focus:ring-blue-500 resize-none"
                                     {...field} 
                                   />
                                 </FormControl>
+                                <div className="text-xs text-white/50 mt-1">
+                                  {field.value?.length || 0} / 2000 caractères
+                                </div>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
-                          <FormField
-                            control={createForm.control}
-                            name="isPublished"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-3">
-                                <div className="space-y-0.5">
-                                  <FormLabel>Publier immédiatement</FormLabel>
-                                </div>
-                                <FormControl>
-                                  <Switch
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={createForm.control}
-                            name="adminOnly"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-3">
-                                <div className="space-y-0.5">
-                                  <FormLabel>Admin uniquement</FormLabel>
-                                  <p className="text-xs text-text-secondary">
-                                    Visible seulement dans l'espace admin
-                                  </p>
-                                </div>
-                                <FormControl>
-                                  <Switch
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                          <div className="flex gap-2 pt-4">
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                              control={createForm.control}
+                              name="isPublished"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between backdrop-blur-xl bg-white/5 rounded-xl border border-white/20 p-4">
+                                  <div className="space-y-0.5">
+                                    <FormLabel className="text-white font-semibold">Publication Immédiate</FormLabel>
+                                    <p className="text-xs text-white/60">
+                                      Publier dès maintenant
+                                    </p>
+                                  </div>
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                      className="data-[state=checked]:bg-blue-500"
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={createForm.control}
+                              name="adminOnly"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between backdrop-blur-xl bg-white/5 rounded-xl border border-white/20 p-4">
+                                  <div className="space-y-0.5">
+                                    <FormLabel className="text-white font-semibold">Admin Uniquement</FormLabel>
+                                    <p className="text-xs text-white/60">
+                                      Visible seulement pour les admins
+                                    </p>
+                                  </div>
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                      className="data-[state=checked]:bg-purple-500"
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          
+                          <div className="flex gap-4 pt-6">
                             <Button 
                               type="button"
                               variant="outline"
@@ -591,14 +626,14 @@ export default function Admin() {
                                 setIsCreatePostOpen(false);
                                 createForm.reset();
                               }}
-                              className="flex-1 border-border hover:bg-accent-hover/10"
+                              className="flex-1 backdrop-blur-xl bg-white/10 border border-white/20 text-white hover:bg-white/20 rounded-xl py-3"
                               disabled={createPostMutation.isPending}
                             >
                               Annuler
                             </Button>
                             <Button 
                               type="submit" 
-                              className="flex-1 bg-accent-primary hover:bg-accent-hover text-white"
+                              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-xl py-3 shadow-lg transition-all duration-300 hover:scale-105"
                               disabled={createPostMutation.isPending}
                             >
                               {createPostMutation.isPending ? "Création..." : "Créer"}
@@ -611,112 +646,155 @@ export default function Admin() {
                 </Dialog>
               </div>
 
-              {/* Posts List */}
-              <Card className="bg-gradient-to-br from-card-bg/90 to-card-bg/70 border border-electric-blue/20 backdrop-blur-lg rounded-2xl shadow-xl shadow-electric-blue/10 card-hover">
-                <CardHeader className="relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-hot-pink/20 to-transparent rounded-full"></div>
-                  <CardTitle className="text-2xl font-bold bg-gradient-to-r from-hot-pink to-otaku-purple bg-clip-text text-transparent relative z-10">
-                    Posts existants
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {postsLoading ? (
-                    <div className="text-text-secondary">Chargement des posts...</div>
-                  ) : posts.length === 0 ? (
-                    <div className="text-text-secondary text-center py-8">
-                      Aucun post créé. Commencez par créer votre premier post !
+              {/* Modern Posts List */}
+              <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 shadow-2xl">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                    <MessageSquare className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white">Publications Existantes</h3>
+                    <p className="text-white/60">Gérez vos publications et leur visibilité</p>
+                  </div>
+                </div>
+
+                {postsLoading ? (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4">
+                      <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                     </div>
-                  ) : (
-                    <div className="space-y-6">
-                      {posts.map((post: AdminPost, index) => (
-                        <Card 
-                          key={post.id} 
-                          className="bg-gradient-to-r from-app-bg/90 to-card-bg/50 border border-electric-blue/20 rounded-xl shadow-lg shadow-electric-blue/5 card-hover transition-all duration-300 hover:shadow-xl hover:shadow-hot-pink/20 hover:scale-[1.02] animate-slide-up group"
-                          style={{ animationDelay: `${index * 0.1}s` }}
-                        >
-                          <CardContent className="p-6 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-electric-blue/10 to-transparent rounded-full group-hover:scale-150 transition-transform duration-500"></div>
-                            <div className="flex justify-between items-start mb-3">
+                    <p className="text-white/70">Chargement des publications...</p>
+                  </div>
+                ) : posts.length === 0 ? (
+                  <div className="text-center py-16">
+                    <div className="w-20 h-20 rounded-3xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-6">
+                      <MessageSquare className="h-10 w-10 text-white/50" />
+                    </div>
+                    <h4 className="text-xl font-semibold text-white mb-2">Aucune Publication</h4>
+                    <p className="text-white/60 mb-6">Commencez par créer votre première publication pour engager votre communauté</p>
+                    <Button 
+                      onClick={() => setIsCreatePostOpen(true)}
+                      className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-xl px-6 py-3"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Créer ma première publication
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {posts.map((post: AdminPost, index) => (
+                      <div 
+                        key={post.id} 
+                        className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300 group"
+                      >
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h4 className="text-lg font-semibold text-white group-hover:text-blue-300 transition-colors">
+                                {post.title}
+                              </h4>
                               <div className="flex items-center gap-2">
-                                <h3 className="text-text-primary font-semibold">{post.title}</h3>
-                                <Badge variant={getTypeBadgeVariant(post.type)}>
-                                  {getTypeLabel(post.type)}
-                                </Badge>
-                                {post.isPublished ? (
-                                  <Badge variant="outline" className="text-accent-hover border-accent-hover">
-                                    <Eye className="h-3 w-3 mr-1" />
-                                    Publié
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-text-secondary border-text-secondary">
-                                    <EyeOff className="h-3 w-3 mr-1" />
-                                    Brouillon
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => togglePublishMutation.mutate({
-                                    id: post.id,
-                                    isPublished: !post.isPublished
-                                  })}
-                                  disabled={togglePublishMutation.isPending}
-                                  className="border-electric-blue/30 hover:bg-gradient-to-r hover:from-electric-blue/20 hover:to-hot-pink/20 hover:border-electric-blue/50 transition-all duration-300 hover:scale-110 relative z-10"
-                                >
-                                  {post.isPublished ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleEditPost(post)}
-                                  className="border-hot-pink/30 hover:bg-gradient-to-r hover:from-hot-pink/20 hover:to-otaku-purple/20 hover:border-hot-pink/50 transition-all duration-300 hover:scale-110 relative z-10"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => {
-                                    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce post ?")) {
-                                      deletePostMutation.mutate(post.id);
-                                    }
-                                  }}
-                                  disabled={deletePostMutation.isPending}
-                                  className="bg-gradient-to-r from-anime-red to-red-600 hover:from-red-600 hover:to-anime-red shadow-lg shadow-anime-red/30 transition-all duration-300 hover:scale-110 relative z-10"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                  post.type === 'announcement' ? 'bg-blue-500/20 text-blue-300' :
+                                  post.type === 'event' ? 'bg-purple-500/20 text-purple-300' :
+                                  'bg-green-500/20 text-green-300'
+                                }`}>
+                                  {post.type === 'announcement' ? '📢 Annonce' :
+                                   post.type === 'event' ? '🎉 Événement' :
+                                   '🔄 Mise à jour'}
+                                </span>
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
+                                  post.isPublished ? 'bg-green-500/20 text-green-300' : 'bg-yellow-500/20 text-yellow-300'
+                                }`}>
+                                  {post.isPublished ? (
+                                    <>
+                                      <Eye className="h-3 w-3" />
+                                      Publié
+                                    </>
+                                  ) : (
+                                    <>
+                                      <EyeOff className="h-3 w-3" />
+                                      Brouillon
+                                    </>
+                                  )}
+                                </span>
                               </div>
                             </div>
-                            <p className="text-text-secondary text-sm mb-2 line-clamp-2">
+                            <p className="text-white/70 text-sm mb-3 line-clamp-2">
                               {post.content}
                             </p>
-                            <div className="text-xs text-text-secondary">
-                              Créé le {new Date(post.createdAt).toLocaleDateString("fr-FR")}
+                            <div className="text-xs text-white/50">
+                              Créé le {new Date(post.createdAt).toLocaleDateString("fr-FR", {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 ml-4">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => togglePublishMutation.mutate({
+                                id: post.id,
+                                isPublished: !post.isPublished
+                              })}
+                              disabled={togglePublishMutation.isPending}
+                              className="backdrop-blur-xl bg-white/10 border border-white/20 text-white hover:bg-white/20 rounded-xl"
+                              title={post.isPublished ? "Masquer" : "Publier"}
+                            >
+                              {post.isPublished ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditPost(post)}
+                              className="backdrop-blur-xl bg-blue-500/20 border border-blue-500/30 text-blue-300 hover:bg-blue-500/30 rounded-xl"
+                              title="Modifier"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                if (window.confirm("Êtes-vous sûr de vouloir supprimer cette publication ?")) {
+                                  deletePostMutation.mutate(post.id);
+                                }
+                              }}
+                              disabled={deletePostMutation.isPending}
+                              className="backdrop-blur-xl bg-red-500/20 border border-red-500/30 text-red-300 hover:bg-red-500/30 rounded-xl"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </TabsContent>
 
           <TabsContent value="stats">
-            <Card className="bg-gradient-to-br from-card-bg/90 to-card-bg/70 border border-hot-pink/20 backdrop-blur-lg rounded-2xl shadow-xl shadow-hot-pink/10 card-hover">
-              <CardHeader className="relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-otaku-purple/20 to-transparent rounded-full"></div>
-                <CardTitle className="text-3xl font-bold bg-gradient-to-r from-otaku-purple to-anime-red bg-clip-text text-transparent relative z-10">
-                  Statistiques de la plateforme
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="bg-gradient-to-br from-electric-blue/20 to-electric-blue/10 rounded-2xl p-6 border border-electric-blue/30 card-hover relative overflow-hidden group">
+            <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 shadow-2xl">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white">Statistiques de la Plateforme</h3>
+                  <p className="text-white/60">Aperçu complet de votre communauté Otaku</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="backdrop-blur-xl bg-blue-500/20 border border-blue-500/30 rounded-2xl p-6 hover:bg-blue-500/30 transition-all duration-300 group">
                     <div className="absolute inset-0 bg-gradient-to-br from-electric-blue/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <h3 className="text-electric-blue font-bold mb-3 text-lg relative z-10">👥 Utilisateurs</h3>
                     <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">
@@ -749,8 +827,7 @@ export default function Admin() {
                     <p className="text-sm text-text-secondary relative z-10">Messages envoyés</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="quizzes">
