@@ -336,15 +336,15 @@ export default function QuizDetail() {
 
             <Card className="bg-card-bg border-gray-800 mb-6">
               <CardContent className="p-6 text-center">
-                <Trophy className="w-16 h-16 hot-pink mx-auto mb-4" />
-                <div className="text-4xl font-bold mb-2 electric-blue">
+                <Trophy className="w-16 h-16 text-hot-pink mx-auto mb-4" />
+                <div className="text-4xl font-bold mb-2 text-electric-blue">
                   {results.correctAnswers}/{questions.length}
                 </div>
                 <div className="text-lg mb-4">
                   {results.percentage.toFixed(1)}% Correct
                 </div>
                 <div className="text-sm text-gray-400 mb-4">
-                  You earned <span className="otaku-purple font-bold">+{results.xpEarned} XP</span>
+                  You earned <span className="text-otaku-purple font-bold">+{results.xpEarned} XP</span>
                 </div>
                 <Progress value={results.percentage} className="mb-4" />
               </CardContent>

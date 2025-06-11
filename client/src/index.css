@@ -97,6 +97,18 @@
   color: var(--otaku-purple);
 }
 
+.text-electric-blue {
+  color: var(--electric-blue);
+}
+
+.text-hot-pink {
+  color: var(--hot-pink);
+}
+
+.text-otaku-purple {
+  color: var(--otaku-purple);
+}
+
 .bg-otaku-purple {
   background-color: var(--otaku-purple);
 }

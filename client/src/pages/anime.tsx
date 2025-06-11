@@ -93,7 +93,7 @@ export default function Anime() {
           <div className="mb-6">
             <div className="glass-morphism rounded-2xl p-6 relative overflow-hidden mb-6">
               <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-electric-blue to-transparent rounded-full opacity-30"></div>
-              <h1 className="text-2xl font-bold mb-2 electric-blue">Anime Explorer</h1>
+              <h1 className="text-2xl font-bold mb-2 text-electric-blue">Anime Explorer</h1>
               <p className="text-gray-300 text-sm">
                 {searchMode === "search" ? 
                   `Searching MyAnimeList for "${searchTerm}"...` : 
