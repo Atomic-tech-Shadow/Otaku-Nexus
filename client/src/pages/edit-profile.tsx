@@ -313,30 +313,63 @@ export default function EditProfile() {
                           </FormLabel>
                           <div className="space-y-4">
                             {/* File Upload Button */}
-                            <div className="flex gap-3">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={uploading}
-                                className="flex-1 border-gray-700 text-white hover:bg-white/10"
-                              >
-                                {uploading ? (
-                                  <LoadingSpinner size="sm" />
-                                ) : (
-                                  <>
-                                    <Upload className="w-4 h-4 mr-2" />
-                                    Télécharger une image
-                                  </>
-                                )}
-                              </Button>
+                            <div className="space-y-3">
+                              <div className="flex gap-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => {
+                                    const input = document.createElement('input');
+                                    input.type = 'file';
+                                    input.accept = 'image/*';
+                                    input.onchange = (e) => {
+                                      const file = (e.target as HTMLInputElement).files?.[0];
+                                      if (file) {
+                                        handleFileUpload(file);
+                                      }
+                                    };
+                                    input.click();
+                                  }}
+                                  disabled={uploading}
+                                  className="flex-1 border-gray-700 text-white hover:bg-white/10"
+                                >
+                                  {uploading ? (
+                                    <LoadingSpinner size="sm" />
+                                  ) : (
+                                    <>
+                                      <Upload className="w-4 h-4 mr-2" />
+                                      Choisir une image
+                                    </>
+                                  )}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => {
+                                    const input = document.createElement('input');
+                                    input.type = 'file';
+                                    input.accept = 'image/*';
+                                    input.capture = 'environment';
+                                    input.onchange = (e) => {
+                                      const file = (e.target as HTMLInputElement).files?.[0];
+                                      if (file) {
+                                        handleFileUpload(file);
+                                      }
+                                    };
+                                    input.click();
+                                  }}
+                                  disabled={uploading}
+                                  className="border-gray-700 text-white hover:bg-white/10"
+                                >
+                                  <Camera className="w-4 h-4" />
+                                </Button>
+                              </div>
                               <input
                                 ref={fileInputRef}
                                 type="file"
                                 accept="image/*"
                                 onChange={handleFileSelect}
                                 className="hidden"
-                                capture="environment"
                               />
                             </div>
 
