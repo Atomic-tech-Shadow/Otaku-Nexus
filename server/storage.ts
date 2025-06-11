@@ -362,8 +362,12 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(chatMessages.createdAt))
       .limit(limit);
 
-    // Retourner dans l'ordre chronologique (plus ancien en premier)
-    return results.reverse();
+    // Retourner dans l'ordre chronologique avec les données formatées
+    return results.reverse().map(result => ({
+      ...result,
+      timestamp: result.createdAt, // Assurer la compatibilité
+      username: result.userFirstName || 'Utilisateur' // Fallback pour le nom
+    }));
   }
 
   async sendChatMessage(message: InsertChatMessage): Promise<ChatMessage> {

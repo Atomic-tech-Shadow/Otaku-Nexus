@@ -86,8 +86,14 @@ export default function EditProfile() {
       queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
 
-      // Forcer la mise à jour immédiate du cache utilisateur
-      queryClient.setQueryData(["/api/auth/user"], updatedUser);
+      // Forcer la mise à jour immédiate du cache utilisateur avec les nouvelles données
+      queryClient.setQueryData(["/api/auth/user"], {
+        ...updatedUser,
+        profileImageUrl: updatedUser.profileImageUrl || imagePreview
+      });
+
+      // Mettre à jour aussi l'aperçu local
+      setImagePreview(updatedUser.profileImageUrl || "");
 
       toast({
         title: "Profil mis à jour",

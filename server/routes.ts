@@ -270,45 +270,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/quizzes/featured', async (req, res) => {
     try {
-      let quiz = await storage.getFeaturedQuiz();
+      // Always get the most recent quiz
+      const quizzes = await storage.getQuizzes();
+      let quiz = quizzes[0]; // Get the latest quiz
       
-      // If no quiz exists, generate one from anime data
-      if (!quiz) {
+      // If no quiz exists or we want a new one for today, generate one from anime data
+      if (!quiz || (quiz && new Date(quiz.createdAt).toDateString() !== new Date().toDateString())) {
         const animes = await storage.getAnimes(20);
         if (animes.length > 0) {
-          const selectedAnimes = animes.slice(0, 5);
-          const questions = selectedAnimes.map((anime, index) => ({
-            question: `Quel est le score de "${anime.title}" ?`,
-            options: [
-              anime.score || "8.5",
-              (parseFloat(anime.score || "8.5") + 0.5).toString(),
-              (parseFloat(anime.score || "8.5") - 0.5).toString(),
-              (parseFloat(anime.score || "8.5") + 1).toString()
-            ].sort(() => Math.random() - 0.5),
-            correctAnswer: 0,
-            explanation: `${anime.title} a un score de ${anime.score || "N/A"} sur MyAnimeList.`
-          }));
+          const selectedAnimes = animes.sort(() => Math.random() - 0.5).slice(0, 6);
+          const questions = [];
           
-          // Add more question types
-          if (selectedAnimes.length > 1) {
-            questions.push({
-              question: `Combien d'épisodes compte "${selectedAnimes[1].title}" ?`,
-              options: [
-                selectedAnimes[1].episodes?.toString() || "12",
-                "24", "13", "26"
-              ].sort(() => Math.random() - 0.5),
-              correctAnswer: 0,
-              explanation: `${selectedAnimes[1].title} compte ${selectedAnimes[1].episodes || "un nombre inconnu d'"} épisodes.`
-            });
+          // Generate varied question types
+          const questionTypes = ['score', 'episodes', 'year', 'title'];
+          
+          for (let i = 0; i < Math.min(5, selectedAnimes.length); i++) {
+            const anime = selectedAnimes[i];
+            const questionType = questionTypes[i % questionTypes.length];
+            
+            switch (questionType) {
+              case 'score':
+                if (anime.score) {
+                  questions.push({
+                    question: `Quel est le score de "${anime.title}" sur MyAnimeList ?`,
+                    options: [
+                      anime.score,
+                      (parseFloat(anime.score) + 0.5).toFixed(1),
+                      (parseFloat(anime.score) - 0.5).toFixed(1),
+                      (parseFloat(anime.score) + 1).toFixed(1)
+                    ].sort(() => Math.random() - 0.5),
+                    correctAnswer: 0,
+                    explanation: `${anime.title} a un score de ${anime.score} sur MyAnimeList.`
+                  });
+                }
+                break;
+              case 'episodes':
+                if (anime.episodes) {
+                  questions.push({
+                    question: `Combien d'épisodes compte "${anime.title}" ?`,
+                    options: [
+                      anime.episodes.toString(),
+                      (anime.episodes + 12).toString(),
+                      (anime.episodes - 1).toString(),
+                      "24"
+                    ].sort(() => Math.random() - 0.5),
+                    correctAnswer: 0,
+                    explanation: `${anime.title} compte ${anime.episodes} épisodes.`
+                  });
+                }
+                break;
+              case 'year':
+                if (anime.year) {
+                  questions.push({
+                    question: `En quelle année "${anime.title}" est-il sorti ?`,
+                    options: [
+                      anime.year.toString(),
+                      (anime.year + 1).toString(),
+                      (anime.year - 1).toString(),
+                      (anime.year + 2).toString()
+                    ].sort(() => Math.random() - 0.5),
+                    correctAnswer: 0,
+                    explanation: `${anime.title} est sorti en ${anime.year}.`
+                  });
+                }
+                break;
+              case 'title':
+                const otherAnimes = selectedAnimes.filter(a => a.id !== anime.id).slice(0, 3);
+                if (otherAnimes.length >= 3) {
+                  questions.push({
+                    question: `Lequel de ces animes a le synopsis suivant : "${anime.synopsis?.substring(0, 100)}..." ?`,
+                    options: [
+                      anime.title,
+                      ...otherAnimes.map(a => a.title)
+                    ].sort(() => Math.random() - 0.5),
+                    correctAnswer: 0,
+                    explanation: `Ce synopsis correspond à ${anime.title}.`
+                  });
+                }
+                break;
+            }
           }
           
-          quiz = await storage.createQuiz({
-            title: "Quiz Anime du Jour",
-            description: "Testez vos connaissances sur les animes populaires !",
-            difficulty: "medium",
-            questions: questions,
-            xpReward: 25
-          });
+          if (questions.length >= 3) {
+            const timestamp = new Date().getTime();
+            quiz = await storage.createQuiz({
+              title: `Quiz Anime du Jour - ${new Date().toLocaleDateString('fr-FR')}`,
+              description: "Testez vos connaissances sur les animes populaires !",
+              difficulty: "medium",
+              questions: questions.slice(0, 5),
+              xpReward: 25
+            });
+          }
         }
       }
       

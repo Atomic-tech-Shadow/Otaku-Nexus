@@ -14,7 +14,12 @@ interface Message {
   content: string;
   userId: string;
   username?: string;
+  userFirstName?: string;
+  userLastName?: string;
+  userProfileImageUrl?: string;
+  isAdmin?: boolean;
   timestamp: string;
+  createdAt?: string;
   isOwn?: boolean;
 }
 
@@ -132,14 +137,24 @@ export default function Chat() {
               <span>Aucun message pour le moment</span>
             </div>
           ) : (
-            processedMessages.map((message: Message) => (
+            processedMessages.map((message: any) => (
               <div key={message.id} className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}>
                 <div className={`flex gap-3 max-w-xs lg:max-w-md ${message.isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
                   {!message.isOwn && (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-electric-blue to-hot-pink flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-white">
-                        {(message.username || 'A').charAt(0).toUpperCase()}
-                      </span>
+                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                      {message.userProfileImageUrl ? (
+                        <img 
+                          src={message.userProfileImageUrl} 
+                          alt="Profile" 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink flex items-center justify-center">
+                          <span className="text-xs font-bold text-white">
+                            {(message.userFirstName || message.username || 'A').charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                   <div className={`px-4 py-2 rounded-2xl ${
@@ -148,13 +163,16 @@ export default function Chat() {
                       : 'bg-gray-700 text-white'
                   }`}>
                     {!message.isOwn && (
-                      <div className="text-xs text-gray-400 mb-1">
-                        {message.username || 'Anonyme'}
+                      <div className="text-xs text-gray-400 mb-1 flex items-center gap-1">
+                        <span>{message.userFirstName || message.username || 'Anonyme'}</span>
+                        {message.isAdmin && (
+                          <span className="text-blue-400">★</span>
+                        )}
                       </div>
                     )}
                     <div className="text-sm">{message.content}</div>
                     <div className={`text-xs mt-1 ${message.isOwn ? 'text-gray-200' : 'text-gray-400'}`}>
-                      {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(message.createdAt || message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                 </div>
