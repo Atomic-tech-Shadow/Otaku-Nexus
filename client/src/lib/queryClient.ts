@@ -7,29 +7,31 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(
-  url: string,
-  options?: {
-    method?: string;
-    body?: unknown;
-  }
-): Promise<Response> {
-  const { method = "GET", body } = options || {};
+export async function apiRequest(method: string, url: string, data?: any) {
   const token = localStorage.getItem("auth_token");
-  const headers: Record<string, string> = {
-    ...(body ? { "Content-Type": "application/json" } : {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+
+  const config: RequestInit = {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
   };
 
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: "include",
+  if (data) {
+    config.body = JSON.stringify(data);
+  }
+
+  const response = await fetch(url, config);
+
+  // Log pour débogage
+  console.log(`API ${method} ${url}:`, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: Object.fromEntries(response.headers.entries())
   });
 
-  await throwIfResNotOk(res);
-  return res;
+  return response;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

@@ -30,12 +30,39 @@ export default function AuthPage() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: typeof loginData) => {
+      console.log("Sending login data:", data);
       const response = await apiRequest("POST", "/api/auth/login", data);
+      
+      console.log("Login response status:", response.status);
+      console.log("Login response headers:", Object.fromEntries(response.headers.entries()));
+      
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: "Email ou mot de passe incorrect" }));
+        let errorData;
+        const contentType = response.headers.get("content-type");
+        
+        if (contentType && contentType.includes("application/json")) {
+          try {
+            errorData = await response.json();
+          } catch (parseError) {
+            console.error("Failed to parse error JSON:", parseError);
+            errorData = { message: "Erreur de parsing de la réponse du serveur" };
+          }
+        } else {
+          // La réponse n'est pas du JSON, probablement du HTML
+          const textResponse = await response.text();
+          console.error("Non-JSON error response:", textResponse);
+          errorData = { message: `Erreur serveur (${response.status}): ${response.statusText}` };
+        }
+        
         throw new Error(errorData.message || "Email ou mot de passe incorrect");
       }
-      return response.json();
+      
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        return response.json();
+      } else {
+        throw new Error("La réponse du serveur n'est pas au format JSON");
+      }
     },
     onSuccess: (data) => {
       localStorage.setItem("auth_token", data.token);
@@ -67,12 +94,39 @@ export default function AuthPage() {
 
   const registerMutation = useMutation({
     mutationFn: async (data: typeof registerData) => {
+      console.log("Sending registration data:", data);
       const response = await apiRequest("POST", "/api/auth/register", data);
+      
+      console.log("Registration response status:", response.status);
+      console.log("Registration response headers:", Object.fromEntries(response.headers.entries()));
+      
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: "Une erreur est survenue" }));
+        let errorData;
+        const contentType = response.headers.get("content-type");
+        
+        if (contentType && contentType.includes("application/json")) {
+          try {
+            errorData = await response.json();
+          } catch (parseError) {
+            console.error("Failed to parse error JSON:", parseError);
+            errorData = { message: "Erreur de parsing de la réponse du serveur" };
+          }
+        } else {
+          // La réponse n'est pas du JSON, probablement du HTML
+          const textResponse = await response.text();
+          console.error("Non-JSON error response:", textResponse);
+          errorData = { message: `Erreur serveur (${response.status}): ${response.statusText}` };
+        }
+        
         throw new Error(errorData.message || "Une erreur est survenue lors de l'inscription");
       }
-      return response.json();
+      
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        return response.json();
+      } else {
+        throw new Error("La réponse du serveur n'est pas au format JSON");
+      }
     },
     onSuccess: (data) => {
       localStorage.setItem("auth_token", data.token);
