@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -48,38 +47,9 @@ export default function Admin() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedPost, setSelectedPost] = useState<AdminPost | null>(null);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [isEditPostOpen, setIsEditPostOpen] = useState(false);
-
-  // Redirect if not authenticated or not the specific admin user
-  useEffect(() => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Non autorisé",
-        description: "Vous devez être connecté. Redirection...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-    
-    // Vérifier si l'utilisateur est l'admin spécifique
-    const ADMIN_EMAIL = "sorokomarco@gmail.com";
-    if (user && user.email !== ADMIN_EMAIL) {
-      toast({
-        title: "Accès refusé",
-        description: "Cette section est réservée au créateur de l'application.",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 2000);
-      return;
-    }
-  }, [isAuthenticated, user, toast]);
+  const [editingPost, setEditingPost] = useState<AdminPost | null>(null);
 
   const createForm = useForm<z.infer<typeof postSchema>>({
     resolver: zodResolver(postSchema),
@@ -105,363 +75,174 @@ export default function Admin() {
     },
   });
 
-  // Fetch admin posts
-  const ADMIN_EMAIL = "sorokomarco@gmail.com";
-  const { data: posts = [], isLoading: postsLoading, refetch: refetchPosts } = useQuery<AdminPost[]>({
-    queryKey: ["/api/admin/posts"],
-    enabled: isAuthenticated && user?.email === ADMIN_EMAIL,
-    staleTime: 30 * 1000,
-    refetchOnWindowFocus: true,
-  });
-
   // Fetch user stats
   const { data: userStats } = useQuery({
-    queryKey: ["/api/user/stats"],
-    enabled: isAuthenticated && user?.email === ADMIN_EMAIL,
-    staleTime: 30 * 1000,
+    queryKey: ['/api/user/stats'],
+    enabled: isAuthenticated,
   });
 
-  // Fetch global platform stats
-  const { data: platformStats = {
-    totalUsers: "∞",
-    totalQuizzes: "∞", 
-    totalAnime: "∞",
-    totalMessages: "∞"
-  } } = useQuery({
-    queryKey: ["/api/admin/platform-stats"],
-    enabled: isAuthenticated && user?.email === ADMIN_EMAIL,
-    queryFn: async () => {
-      return {
-        totalUsers: "∞",
-        totalQuizzes: "∞",
-        totalAnime: "∞",
-        totalMessages: "∞"
-      };
-    },
+  // Fetch platform stats
+  const { data: platformStats } = useQuery({
+    queryKey: ['/api/admin/platform-stats'],
+    enabled: isAuthenticated,
+  });
+
+  // Fetch posts
+  const { data: posts = [], isLoading: postsLoading } = useQuery({
+    queryKey: ['/api/admin/posts'],
+    enabled: isAuthenticated,
   });
 
   const createPostMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof postSchema>) => {
-      return await apiRequest("/api/admin/posts", {
-        method: "POST",
-        body: data,
-      });
-    },
-    onSuccess: (newPost) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/posts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+    mutationFn: (data: z.infer<typeof postSchema>) =>
+      apiRequest('/api/admin/posts', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    onSuccess: () => {
+      toast({ title: "Succès", description: "Publication créée avec succès" });
       setIsCreatePostOpen(false);
       createForm.reset();
-      refetchPosts();
-      toast({
-        title: "✅ Publication réussie",
-        description: "Le contenu a été publié avec succès.",
-      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/posts'] });
     },
     onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Non autorisé",
-          description: "Session expirée. Reconnexion...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer le post.",
-        variant: "destructive",
-      });
+      console.error('Create post error:', error);
+      toast({ title: "Erreur", description: "Impossible de créer la publication", variant: "destructive" });
     },
   });
 
   const updatePostMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: z.infer<typeof postSchema> }) => {
-      return await apiRequest(`/api/admin/posts/${id}`, {
-        method: "PUT",
-        body: data,
-      });
-    },
-    onSuccess: (updatedPost) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/posts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+    mutationFn: ({ id, ...data }: { id: number } & Partial<z.infer<typeof postSchema>>) =>
+      apiRequest(`/api/admin/posts/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    onSuccess: () => {
+      toast({ title: "Succès", description: "Publication modifiée avec succès" });
       setIsEditPostOpen(false);
-      setSelectedPost(null);
+      setEditingPost(null);
       editForm.reset();
-      refetchPosts();
-      toast({
-        title: "✅ Modification réussie",
-        description: "Le contenu a été modifié avec succès.",
-      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/posts'] });
     },
     onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Non autorisé",
-          description: "Session expirée. Reconnexion...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le post.",
-        variant: "destructive",
-      });
+      console.error('Update post error:', error);
+      toast({ title: "Erreur", description: "Impossible de modifier la publication", variant: "destructive" });
     },
   });
 
   const deletePostMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return await apiRequest(`/api/admin/posts/${id}`, {
-        method: "DELETE",
-      });
-    },
+    mutationFn: (postId: number) =>
+      apiRequest(`/api/admin/posts/${postId}`, { method: 'DELETE' }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/posts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
-      refetchPosts();
-      toast({
-        title: "🗑️ Suppression réussie",
-        description: "Le contenu a été supprimé définitivement.",
-      });
+      toast({ title: "Succès", description: "Publication supprimée avec succès" });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/posts'] });
     },
     onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Non autorisé",
-          description: "Session expirée. Reconnexion...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le post.",
-        variant: "destructive",
-      });
+      console.error('Delete post error:', error);
+      toast({ title: "Erreur", description: "Impossible de supprimer la publication", variant: "destructive" });
     },
   });
 
   const togglePublishMutation = useMutation({
-    mutationFn: async ({ id, isPublished }: { id: number; isPublished: boolean }) => {
-      return await apiRequest(`/api/admin/posts/${id}`, {
-        method: "PUT",
-        body: { isPublished },
-      });
-    },
+    mutationFn: ({ id, isPublished }: { id: number; isPublished: boolean }) =>
+      apiRequest(`/api/admin/posts/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ isPublished }),
+        headers: { 'Content-Type': 'application/json' },
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/posts"] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/posts'] });
     },
     onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Non autorisé",
-          description: "Session expirée. Reconnexion...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Erreur",
-        description: "Impossible de modifier la publication.",
-        variant: "destructive",
-      });
+      console.error('Toggle publish error:', error);
+      toast({ title: "Erreur", description: "Impossible de changer le statut de publication", variant: "destructive" });
     },
   });
 
   const handleEditPost = (post: AdminPost) => {
-    setSelectedPost(post);
-    editForm.setValue("title", post.title);
-    editForm.setValue("content", post.content);
-    editForm.setValue("type", post.type as "announcement" | "event" | "update");
-    editForm.setValue("isPublished", post.isPublished);
-    editForm.setValue("adminOnly", post.adminOnly || false);
-    editForm.setValue("imageUrl", post.imageUrl || "");
+    setEditingPost(post);
+    editForm.reset({
+      title: post.title,
+      content: post.content,
+      type: post.type as "announcement" | "event" | "update",
+      isPublished: post.isPublished,
+      adminOnly: post.adminOnly || false,
+      imageUrl: post.imageUrl || "",
+    });
     setIsEditPostOpen(true);
   };
 
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case "announcement": return "Annonce";
-      case "event": return "Événement";
-      case "update": return "Mise à jour";
-      default: return type;
-    }
-  };
-
-  const getTypeBadgeVariant = (type: string) => {
-    switch (type) {
-      case "announcement": return "default";
-      case "event": return "secondary";
-      case "update": return "outline";
-      default: return "default";
-    }
-  };
-
-  // Vérification d'accès admin - seul votre email peut accéder
-  if (!isAuthenticated || (user && user.email !== "sorokomarco@gmail.com")) {
-    return null;
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-app-bg via-app-bg to-electric-blue/5 flex items-center justify-center">
+        <Card className="w-full max-w-md bg-card-bg border-border">
+          <CardContent className="p-6 text-center">
+            <h2 className="text-xl font-bold text-text-primary mb-2">Accès Refusé</h2>
+            <p className="text-text-secondary mb-4">Vous devez être connecté pour accéder à cette page.</p>
+            <Button onClick={() => window.location.href = '/auth'} className="w-full">
+              Se connecter
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white relative overflow-hidden">
-      {/* Modern Animated Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5"></div>
-        <div className="absolute top-20 left-20 w-96 h-96 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-80 h-80 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-indigo-500/5 to-purple-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s' }}></div>
-      </div>
-
-      {/* Glassmorphism Header */}
-      <div className="sticky top-0 z-50 backdrop-blur-xl bg-white/10 border-b border-white/20 shadow-2xl">
-        <div className="container mx-auto max-w-7xl px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => window.location.href = "/"}
-                className="text-white/90 hover:bg-white/20 hover:text-white transition-all duration-300 rounded-xl backdrop-blur-sm"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Retour
-              </Button>
-              <div className="h-8 w-px bg-gradient-to-b from-blue-400 to-purple-400 opacity-50"></div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
-                  <Settings className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h2 className="font-semibold text-white">Panneau Admin</h2>
-                  <p className="text-xs text-white/60">Contrôle total</p>
-                </div>
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-app-bg via-app-bg to-electric-blue/5 text-text-primary">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-r from-electric-blue to-hot-pink flex items-center justify-center shadow-lg">
+              <Settings className="h-7 w-7 text-white" />
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-green-100">En ligne</span>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
-                <span className="text-sm font-bold text-white">A</span>
-              </div>
+            <div>
+              <h1 className="text-4xl font-black bg-gradient-to-r from-electric-blue via-hot-pink to-otaku-purple bg-clip-text text-transparent">
+                Administration
+              </h1>
+              <p className="text-text-secondary mt-1">Panneau de contrôle de la plateforme</p>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto max-w-7xl p-6 relative z-10">
-        {/* Hero Section */}
-        <div className="mb-12 text-center">
-          <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 mb-6">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
-              <Settings className="h-3 w-3 text-white" />
-            </div>
-            <span className="text-sm font-medium text-blue-100">Espace Administrateur</span>
-          </div>
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Tableau de Bord Admin
-          </h1>
-          <p className="text-xl text-white/70 mb-8">Gérez votre plateforme Otaku avec style et efficacité</p>
           
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 border border-white/20">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-white">{platformStats?.totalUsers || "∞"}</p>
-                  <p className="text-sm text-white/60">Utilisateurs</p>
-                </div>
-              </div>
-            </div>
-            <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 border border-white/20">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-                  <MessageSquare className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-white">{posts.length}</p>
-                  <p className="text-sm text-white/60">Publications</p>
-                </div>
-              </div>
-            </div>
-            <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 border border-white/20">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center">
-                  <BookOpen className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-white">{platformStats?.totalQuizzes || "∞"}</p>
-                  <p className="text-sm text-white/60">Quiz</p>
-                </div>
-              </div>
-            </div>
-            <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 border border-white/20">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center">
-                  <Video className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-white">{platformStats?.totalAnime || "∞"}</p>
-                  <p className="text-sm text-white/60">Anime</p>
-                </div>
-              </div>
-            </div>
+          <div className="flex gap-3">
+            <Button 
+              onClick={() => window.location.href = '/'} 
+              variant="outline" 
+              className="border-border bg-card-bg text-text-primary hover:bg-card-bg/80"
+            >
+              <Home className="h-4 w-4 mr-2" />
+              Accueil
+            </Button>
           </div>
         </div>
 
+        {/* Admin Tabs */}
         <Tabs defaultValue="posts" className="space-y-8">
-          <TabsList className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-3 shadow-2xl grid w-full grid-cols-4 h-auto">
-            <TabsTrigger 
-              value="posts" 
-              className="flex flex-col items-center gap-2 px-6 py-4 rounded-2xl transition-all duration-300 text-white/70 hover:text-white hover:bg-white/10 data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:scale-105 border-0"
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <MessageSquare className="h-5 w-5" />
+          <TabsList className="grid w-full grid-cols-4 bg-card-bg border border-border rounded-2xl p-2">
+            <TabsTrigger value="posts" className="flex items-center gap-2 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-electric-blue data-[state=active]:to-hot-pink data-[state=active]:text-white">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-electric-blue/20 to-hot-pink/20">
+                <MessageSquare className="h-4 w-4" />
               </div>
               <span className="text-sm font-medium">Publications</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="stats" 
-              className="flex flex-col items-center gap-2 px-6 py-4 rounded-2xl transition-all duration-300 text-white/70 hover:text-white hover:bg-white/10 data-[state=active]:bg-gradient-to-br data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:scale-105 border-0"
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Users className="h-5 w-5" />
+            <TabsTrigger value="stats" className="flex items-center gap-2 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-otaku-purple data-[state=active]:to-anime-red data-[state=active]:text-white">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-otaku-purple/20 to-anime-red/20">
+                <Users className="h-4 w-4" />
               </div>
               <span className="text-sm font-medium">Statistiques</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="quizzes" 
-              className="flex flex-col items-center gap-2 px-6 py-4 rounded-2xl transition-all duration-300 text-white/70 hover:text-white hover:bg-white/10 data-[state=active]:bg-gradient-to-br data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:scale-105 border-0"
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <BookOpen className="h-5 w-5" />
+            <TabsTrigger value="quizzes" className="flex items-center gap-2 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-hot-pink data-[state=active]:to-otaku-purple data-[state=active]:text-white">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-hot-pink/20 to-otaku-purple/20">
+                <BookOpen className="h-4 w-4" />
               </div>
               <span className="text-sm font-medium">Quiz</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="content" 
-              className="flex flex-col items-center gap-2 px-6 py-4 rounded-2xl transition-all duration-300 text-white/70 hover:text-white hover:bg-white/10 data-[state=active]:bg-gradient-to-br data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:scale-105 border-0"
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Video className="h-5 w-5" />
+            <TabsTrigger value="content" className="flex items-center gap-2 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-anime-red data-[state=active]:to-electric-blue data-[state=active]:text-white">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-anime-red/20 to-electric-blue/20">
+                <Video className="h-4 w-4" />
               </div>
               <span className="text-sm font-medium">Contenu</span>
             </TabsTrigger>
@@ -483,74 +264,26 @@ export default function Admin() {
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="backdrop-blur-xl bg-slate-900/95 border border-white/20 max-w-3xl max-h-[90vh] overflow-y-auto text-white shadow-2xl">
-                    <DialogHeader className="pb-6">
+                    <DialogHeader className="border-b border-white/10 pb-6">
                       <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                         Créer une Nouvelle Publication
                       </DialogTitle>
-                      <p className="text-white/60 mt-2">Partagez du contenu avec votre communauté Otaku</p>
                     </DialogHeader>
                     <Form {...createForm}>
-                      <form onSubmit={createForm.handleSubmit((data) => createPostMutation.mutate(data))} className="space-y-6">
-                        <div className="space-y-6">
-                          <FormField
-                            control={createForm.control}
-                            name="title"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-white font-semibold">Titre de la Publication</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    placeholder="Donnez un titre accrocheur..." 
-                                    {...field} 
-                                    className="backdrop-blur-xl bg-white/10 border border-white/20 text-white placeholder-white/50 rounded-xl py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <form onSubmit={createForm.handleSubmit((data) => createPostMutation.mutate(data))} className="space-y-6 pt-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="md:col-span-2">
                             <FormField
                               control={createForm.control}
-                              name="type"
+                              name="title"
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel className="text-white font-semibold">Type de Contenu</FormLabel>
-                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                      <SelectTrigger className="backdrop-blur-xl bg-white/10 border border-white/20 text-white rounded-xl py-3">
-                                        <SelectValue placeholder="Sélectionner un type" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent className="backdrop-blur-xl bg-slate-900/95 border border-white/20 text-white">
-                                      <SelectItem value="announcement" className="hover:bg-white/10">
-                                        📢 Annonce
-                                      </SelectItem>
-                                      <SelectItem value="event" className="hover:bg-white/10">
-                                        🎉 Événement
-                                      </SelectItem>
-                                      <SelectItem value="update" className="hover:bg-white/10">
-                                        🔄 Mise à jour
-                                      </SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <FormField
-                              control={createForm.control}
-                              name="imageUrl"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="text-white font-semibold">Image (optionnel)</FormLabel>
+                                  <FormLabel className="text-white font-semibold">Titre de la Publication</FormLabel>
                                   <FormControl>
-                                    <Input 
-                                      placeholder="https://exemple.com/image.jpg" 
-                                      {...field} 
-                                      className="backdrop-blur-xl bg-white/10 border border-white/20 text-white placeholder-white/50 rounded-xl py-3 focus:ring-2 focus:ring-blue-500" 
+                                    <Input
+                                      placeholder="Ex: Nouvelle mise à jour majeure..."
+                                      {...field}
+                                      className="backdrop-blur-xl bg-white/10 border border-white/20 text-white placeholder:text-white/50 rounded-xl"
                                     />
                                   </FormControl>
                                   <FormMessage />
@@ -561,92 +294,130 @@ export default function Admin() {
                           
                           <FormField
                             control={createForm.control}
-                            name="content"
+                            name="type"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-white font-semibold">Contenu de la Publication</FormLabel>
+                                <FormLabel className="text-white font-semibold">Type de Publication</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger className="backdrop-blur-xl bg-white/10 border border-white/20 text-white rounded-xl">
+                                      <SelectValue placeholder="Sélectionner un type" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent className="bg-slate-800 border-white/20">
+                                    <SelectItem value="announcement">Annonce</SelectItem>
+                                    <SelectItem value="event">Événement</SelectItem>
+                                    <SelectItem value="update">Mise à jour</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={createForm.control}
+                            name="imageUrl"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-white font-semibold">URL de l'Image (Optionnel)</FormLabel>
                                 <FormControl>
-                                  <Textarea 
-                                    placeholder="Rédigez votre contenu ici... Partagez vos pensées, actualités ou informations avec la communauté." 
-                                    className="min-h-[150px] backdrop-blur-xl bg-white/10 border border-white/20 text-white placeholder-white/50 rounded-xl p-4 focus:ring-2 focus:ring-blue-500 resize-none"
-                                    {...field} 
+                                  <Input
+                                    placeholder="https://example.com/image.jpg"
+                                    {...field}
+                                    className="backdrop-blur-xl bg-white/10 border border-white/20 text-white placeholder:text-white/50 rounded-xl"
                                   />
                                 </FormControl>
-                                <div className="text-xs text-white/50 mt-1">
-                                  {field.value?.length || 0} / 2000 caractères
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        <FormField
+                          control={createForm.control}
+                          name="content"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-white font-semibold">Contenu de la Publication</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Rédigez le contenu de votre publication..."
+                                  className="backdrop-blur-xl bg-white/10 border border-white/20 text-white placeholder:text-white/50 rounded-xl min-h-[120px] resize-none"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={createForm.control}
+                            name="isPublished"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between backdrop-blur-xl bg-white/5 rounded-xl border border-white/20 p-4">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-white font-semibold">Publication Immédiate</FormLabel>
+                                  <p className="text-xs text-white/60">
+                                    Publier dès maintenant
+                                  </p>
                                 </div>
-                                <FormMessage />
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    className="data-[state=checked]:bg-blue-500"
+                                  />
+                                </FormControl>
                               </FormItem>
                             )}
                           />
                           
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField
-                              control={createForm.control}
-                              name="isPublished"
-                              render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between backdrop-blur-xl bg-white/5 rounded-xl border border-white/20 p-4">
-                                  <div className="space-y-0.5">
-                                    <FormLabel className="text-white font-semibold">Publication Immédiate</FormLabel>
-                                    <p className="text-xs text-white/60">
-                                      Publier dès maintenant
-                                    </p>
-                                  </div>
-                                  <FormControl>
-                                    <Switch
-                                      checked={field.value}
-                                      onCheckedChange={field.onChange}
-                                      className="data-[state=checked]:bg-blue-500"
-                                    />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <FormField
-                              control={createForm.control}
-                              name="adminOnly"
-                              render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between backdrop-blur-xl bg-white/5 rounded-xl border border-white/20 p-4">
-                                  <div className="space-y-0.5">
-                                    <FormLabel className="text-white font-semibold">Admin Uniquement</FormLabel>
-                                    <p className="text-xs text-white/60">
-                                      Visible seulement pour les admins
-                                    </p>
-                                  </div>
-                                  <FormControl>
-                                    <Switch
-                                      checked={field.value}
-                                      onCheckedChange={field.onChange}
-                                      className="data-[state=checked]:bg-purple-500"
-                                    />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                          
-                          <div className="flex gap-4 pt-6">
-                            <Button 
-                              type="button"
-                              variant="outline"
-                              onClick={() => {
-                                setIsCreatePostOpen(false);
-                                createForm.reset();
-                              }}
-                              className="flex-1 backdrop-blur-xl bg-white/10 border border-white/20 text-white hover:bg-white/20 rounded-xl py-3"
-                              disabled={createPostMutation.isPending}
-                            >
-                              Annuler
-                            </Button>
-                            <Button 
-                              type="submit" 
-                              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-xl py-3 shadow-lg transition-all duration-300 hover:scale-105"
-                              disabled={createPostMutation.isPending}
-                            >
-                              {createPostMutation.isPending ? "Création..." : "Créer"}
-                            </Button>
-                          </div>
+                          <FormField
+                            control={createForm.control}
+                            name="adminOnly"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between backdrop-blur-xl bg-white/5 rounded-xl border border-white/20 p-4">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-white font-semibold">Admin Uniquement</FormLabel>
+                                  <p className="text-xs text-white/60">
+                                    Visible seulement pour les admins
+                                  </p>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    className="data-[state=checked]:bg-purple-500"
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        <div className="flex gap-4 pt-6">
+                          <Button 
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setIsCreatePostOpen(false);
+                              createForm.reset();
+                            }}
+                            className="flex-1 backdrop-blur-xl bg-white/10 border border-white/20 text-white hover:bg-white/20 rounded-xl py-3"
+                            disabled={createPostMutation.isPending}
+                          >
+                            Annuler
+                          </Button>
+                          <Button 
+                            type="submit" 
+                            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-xl py-3 shadow-lg transition-all duration-300 hover:scale-105"
+                            disabled={createPostMutation.isPending}
+                          >
+                            {createPostMutation.isPending ? "Création..." : "Créer"}
+                          </Button>
                         </div>
                       </form>
                     </Form>
@@ -701,48 +472,37 @@ export default function Admin() {
                               <h4 className="text-lg font-semibold text-white group-hover:text-blue-300 transition-colors">
                                 {post.title}
                               </h4>
-                              <div className="flex items-center gap-2">
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                  post.type === 'announcement' ? 'bg-blue-500/20 text-blue-300' :
-                                  post.type === 'event' ? 'bg-purple-500/20 text-purple-300' :
-                                  'bg-green-500/20 text-green-300'
-                                }`}>
-                                  {post.type === 'announcement' ? '📢 Annonce' :
-                                   post.type === 'event' ? '🎉 Événement' :
-                                   '🔄 Mise à jour'}
-                                </span>
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
-                                  post.isPublished ? 'bg-green-500/20 text-green-300' : 'bg-yellow-500/20 text-yellow-300'
-                                }`}>
-                                  {post.isPublished ? (
-                                    <>
-                                      <Eye className="h-3 w-3" />
-                                      Publié
-                                    </>
-                                  ) : (
-                                    <>
-                                      <EyeOff className="h-3 w-3" />
-                                      Brouillon
-                                    </>
-                                  )}
-                                </span>
-                              </div>
+                              <Badge 
+                                variant={post.type === 'announcement' ? 'default' : post.type === 'event' ? 'secondary' : 'outline'}
+                                className="text-xs"
+                              >
+                                {post.type === 'announcement' && '📢 Annonce'}
+                                {post.type === 'event' && '🎉 Événement'}
+                                {post.type === 'update' && '🔄 Mise à jour'}
+                              </Badge>
+                              {post.isPublished ? (
+                                <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                                  ✅ Publié
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="border-yellow-500/30 text-yellow-300">
+                                  ⏳ Brouillon
+                                </Badge>
+                              )}
+                              {post.adminOnly && (
+                                <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+                                  👨‍💼 Admin
+                                </Badge>
+                              )}
                             </div>
-                            <p className="text-white/70 text-sm mb-3 line-clamp-2">
+                            <p className="text-white/70 text-sm line-clamp-2 mb-3">
                               {post.content}
                             </p>
-                            <div className="text-xs text-white/50">
-                              Créé le {new Date(post.createdAt).toLocaleDateString("fr-FR", {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </div>
+                            <p className="text-white/50 text-xs">
+                              Créé le {new Date(post.createdAt).toLocaleDateString('fr-FR')}
+                            </p>
                           </div>
-                          
-                          <div className="flex items-center gap-2 ml-4">
+                          <div className="flex gap-2 ml-4">
                             <Button
                               size="sm"
                               variant="outline"
@@ -803,38 +563,38 @@ export default function Admin() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="backdrop-blur-xl bg-blue-500/20 border border-blue-500/30 rounded-2xl p-6 hover:bg-blue-500/30 transition-all duration-300 group relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-electric-blue/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <h3 className="text-electric-blue font-bold mb-3 text-lg relative z-10">👥 Utilisateurs</h3>
-                    <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">
-                      {platformStats?.totalUsers || userStats?.totalUsers || "0"}
-                    </p>
-                    <p className="text-sm text-text-secondary relative z-10">Total des inscrits</p>
-                  </div>
-                  <div className="bg-gradient-to-br from-hot-pink/20 to-hot-pink/10 rounded-2xl p-6 border border-hot-pink/30 card-hover relative overflow-hidden group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-hot-pink/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <h3 className="text-hot-pink font-bold mb-3 text-lg relative z-10">🧠 Quiz</h3>
-                    <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">
-                      {platformStats?.totalQuizzes || "0"}
-                    </p>
-                    <p className="text-sm text-text-secondary relative z-10">Quiz créés</p>
-                  </div>
-                  <div className="bg-gradient-to-br from-otaku-purple/20 to-otaku-purple/10 rounded-2xl p-6 border border-otaku-purple/30 card-hover relative overflow-hidden group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-otaku-purple/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <h3 className="text-otaku-purple font-bold mb-3 text-lg relative z-10">🎌 Anime</h3>
-                    <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">
-                      {platformStats?.totalAnime || "0"}
-                    </p>
-                    <p className="text-sm text-text-secondary relative z-10">Dans la base</p>
-                  </div>
-                  <div className="bg-gradient-to-br from-anime-red/20 to-anime-red/10 rounded-2xl p-6 border border-anime-red/30 card-hover relative overflow-hidden group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-anime-red/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <h3 className="text-anime-red font-bold mb-3 text-lg relative z-10">💬 Messages</h3>
-                    <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">
-                      {platformStats?.totalMessages || "0"}
-                    </p>
-                    <p className="text-sm text-text-secondary relative z-10">Messages envoyés</p>
-                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-electric-blue/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <h3 className="text-electric-blue font-bold mb-3 text-lg relative z-10">👥 Utilisateurs</h3>
+                  <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">
+                    {platformStats?.totalUsers || "0"}
+                  </p>
+                  <p className="text-sm text-text-secondary relative z-10">Total des inscrits</p>
                 </div>
+                <div className="bg-gradient-to-br from-hot-pink/20 to-hot-pink/10 rounded-2xl p-6 border border-hot-pink/30 card-hover relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-hot-pink/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <h3 className="text-hot-pink font-bold mb-3 text-lg relative z-10">🧠 Quiz</h3>
+                  <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">
+                    {platformStats?.totalQuizzes || "0"}
+                  </p>
+                  <p className="text-sm text-text-secondary relative z-10">Quiz créés</p>
+                </div>
+                <div className="bg-gradient-to-br from-otaku-purple/20 to-otaku-purple/10 rounded-2xl p-6 border border-otaku-purple/30 card-hover relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-otaku-purple/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <h3 className="text-otaku-purple font-bold mb-3 text-lg relative z-10">🎌 Anime</h3>
+                  <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">
+                    {platformStats?.totalAnime || "0"}
+                  </p>
+                  <p className="text-sm text-text-secondary relative z-10">Dans la base</p>
+                </div>
+                <div className="bg-gradient-to-br from-anime-red/20 to-anime-red/10 rounded-2xl p-6 border border-anime-red/30 card-hover relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-anime-red/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <h3 className="text-anime-red font-bold mb-3 text-lg relative z-10">💬 Messages</h3>
+                  <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">
+                    {platformStats?.totalMessages || "0"}
+                  </p>
+                  <p className="text-sm text-text-secondary relative z-10">Messages envoyés</p>
+                </div>
+              </div>
             </Card>
           </TabsContent>
 
@@ -851,7 +611,6 @@ export default function Admin() {
                         try {
                           const response = await apiRequest('/api/quizzes/all', { method: 'DELETE' });
                           toast({ title: "Succès", description: "Tous les quiz ont été supprimés" });
-                          // Refresh the page to see changes
                           window.location.reload();
                         } catch (error) {
                           console.error('Delete error:', error);
@@ -867,8 +626,9 @@ export default function Admin() {
                   <Button className="relative bg-gradient-to-r from-otaku-purple to-anime-red hover:from-anime-red hover:to-otaku-purple text-white rounded-xl px-6 py-3 shadow-lg shadow-otaku-purple/30 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-anime-red/40 btn-hover group overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <Plus className="h-5 w-5 mr-2 relative z-10" />
-                  <span className="relative z-10 font-semibold">Nouveau Quiz</span>
-                </Button>
+                    <span className="relative z-10 font-semibold">Nouveau Quiz</span>
+                  </Button>
+                </div>
               </div>
 
               <Card className="bg-gradient-to-br from-card-bg/90 to-card-bg/70 border border-otaku-purple/20 backdrop-blur-lg rounded-2xl shadow-xl shadow-otaku-purple/10 card-hover">
@@ -949,13 +709,15 @@ export default function Admin() {
       <Dialog open={isEditPostOpen} onOpenChange={setIsEditPostOpen}>
         <DialogContent className="bg-card-bg text-text-primary border-border max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Modifier le post</DialogTitle>
+            <DialogTitle>Modifier la Publication</DialogTitle>
           </DialogHeader>
           <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit((data) => 
-              selectedPost && updatePostMutation.mutate({ id: selectedPost.id, data })
-            )} className="space-y-4">
-              <div className="space-y-4 pb-4">
+            <form onSubmit={editForm.handleSubmit((data) => {
+              if (editingPost) {
+                updatePostMutation.mutate({ id: editingPost.id, ...data });
+              }
+            })} className="space-y-4">
+              <div className="grid grid-cols-1 gap-4">
                 <FormField
                   control={editForm.control}
                   name="title"
@@ -963,25 +725,26 @@ export default function Admin() {
                     <FormItem>
                       <FormLabel>Titre</FormLabel>
                       <FormControl>
-                        <Input placeholder="Titre du post" {...field} className="bg-app-bg border-border text-text-primary" />
+                        <Input {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                
                 <FormField
                   control={editForm.control}
                   name="type"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Type</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger className="bg-app-bg border-border text-text-primary">
-                            <SelectValue placeholder="Sélectionner un type" />
+                          <SelectTrigger>
+                            <SelectValue />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="bg-card-bg border-border">
+                        <SelectContent>
                           <SelectItem value="announcement">Annonce</SelectItem>
                           <SelectItem value="event">Événement</SelectItem>
                           <SelectItem value="update">Mise à jour</SelectItem>
@@ -991,19 +754,21 @@ export default function Admin() {
                     </FormItem>
                   )}
                 />
+                
                 <FormField
                   control={editForm.control}
                   name="imageUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>URL de l'image (optionnel)</FormLabel>
+                      <FormLabel>URL de l'Image</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://..." {...field} className="bg-app-bg border-border text-text-primary" />
+                        <Input {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                
                 <FormField
                   control={editForm.control}
                   name="content"
@@ -1011,72 +776,64 @@ export default function Admin() {
                     <FormItem>
                       <FormLabel>Contenu</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="Contenu du post..." 
-                          className="min-h-[120px] bg-app-bg border-border text-text-primary"
-                          {...field} 
-                        />
+                        <Textarea {...field} className="min-h-[100px]" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={editForm.control}
-                  name="isPublished"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-3">
-                      <div className="space-y-0.5">
-                        <FormLabel>Publier</FormLabel>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={editForm.control}
-                  name="adminOnly"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-3">
-                      <div className="space-y-0.5">
-                        <FormLabel>Admin uniquement</FormLabel>
-                        <p className="text-xs text-text-secondary">
-                          Visible seulement dans l'espace admin
-                        </p>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <div className="flex gap-2 pt-4">
-                  <Button 
+                
+                <div className="flex gap-4">
+                  <FormField
+                    control={editForm.control}
+                    name="isPublished"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Publié</FormLabel>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={editForm.control}
+                    name="adminOnly"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Admin uniquement</FormLabel>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="flex gap-2 justify-end">
+                  <Button
                     type="button"
                     variant="outline"
                     onClick={() => {
                       setIsEditPostOpen(false);
-                      setSelectedPost(null);
+                      setEditingPost(null);
                       editForm.reset();
                     }}
-                    className="flex-1 border-border hover:bg-accent-hover/10"
-                    disabled={updatePostMutation.isPending}
                   >
                     Annuler
                   </Button>
-                  <Button 
-                    type="submit" 
-                    className="flex-1 bg-accent-primary hover:bg-accent-hover text-white"
-                    disabled={updatePostMutation.isPending}
-                  >
+                  <Button type="submit" disabled={updatePostMutation.isPending}>
                     {updatePostMutation.isPending ? "Modification..." : "Modifier"}
                   </Button>
                 </div>
