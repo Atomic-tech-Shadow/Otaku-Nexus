@@ -107,9 +107,11 @@ export default function Admin() {
 
   // Fetch admin posts
   const ADMIN_EMAIL = "sorokomarco@gmail.com";
-  const { data: posts = [], isLoading: postsLoading } = useQuery<AdminPost[]>({
+  const { data: posts = [], isLoading: postsLoading, refetch: refetchPosts } = useQuery<AdminPost[]>({
     queryKey: ["/api/admin/posts"],
     enabled: isAuthenticated && user?.email === ADMIN_EMAIL,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
   });
 
   // Fetch user stats
@@ -125,13 +127,15 @@ export default function Admin() {
         body: data,
       });
     },
-    onSuccess: () => {
+    onSuccess: (newPost) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/posts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
       setIsCreatePostOpen(false);
       createForm.reset();
+      refetchPosts();
       toast({
-        title: "Post créé",
-        description: "Le post a été créé avec succès.",
+        title: "✅ Publication réussie",
+        description: "Le contenu a été publié avec succès.",
       });
     },
     onError: (error) => {
@@ -161,14 +165,16 @@ export default function Admin() {
         body: data,
       });
     },
-    onSuccess: () => {
+    onSuccess: (updatedPost) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/posts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
       setIsEditPostOpen(false);
       setSelectedPost(null);
       editForm.reset();
+      refetchPosts();
       toast({
-        title: "Post mis à jour",
-        description: "Le post a été modifié avec succès.",
+        title: "✅ Modification réussie",
+        description: "Le contenu a été modifié avec succès.",
       });
     },
     onError: (error) => {
@@ -199,9 +205,11 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/posts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      refetchPosts();
       toast({
-        title: "Post supprimé",
-        description: "Le post a été supprimé avec succès.",
+        title: "🗑️ Suppression réussie",
+        description: "Le contenu a été supprimé définitivement.",
       });
     },
     onError: (error) => {
