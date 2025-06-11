@@ -239,27 +239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Quiz routes
   app.get('/api/quizzes', async (req, res) => {
     try {
-      let quizzes = await storage.getQuizzes();
-      
-      // Si aucun quiz n'existe, générer des quiz de base
-      if (quizzes.length === 0) {
-        console.log("Aucun quiz trouvé, génération de quiz de base...");
-        
-        // Importer et créer des quiz de base
-        const { mangaQuizzes } = require('./quiz-data');
-        
-        for (const quizData of mangaQuizzes.slice(0, 5)) {
-          try {
-            await storage.createQuiz(quizData);
-          } catch (err) {
-            console.log("Erreur lors de la création du quiz:", err);
-          }
-        }
-        
-        // Récupérer les quiz après création
-        quizzes = await storage.getQuizzes();
-      }
-      
+      const quizzes = await storage.getQuizzes();
       console.log(`Retour de ${quizzes.length} quiz`);
       res.json(quizzes);
     } catch (error) {
@@ -270,101 +250,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/quizzes/featured', async (req, res) => {
     try {
-      // Always get the most recent quiz
+      // Get the most recent non-auto-generated quiz
       const quizzes = await storage.getQuizzes();
-      let quiz = quizzes[0]; // Get the latest quiz
+      const featuredQuiz = quizzes.find(q => !q.title.includes('Quiz Anime du Jour'));
       
-      // If no quiz exists or we want a new one for today, generate one from anime data
-      if (!quiz || (quiz && new Date(quiz.createdAt).toDateString() !== new Date().toDateString())) {
-        const animes = await storage.getAnimes(20);
-        if (animes.length > 0) {
-          const selectedAnimes = animes.sort(() => Math.random() - 0.5).slice(0, 6);
-          const questions = [];
-          
-          // Generate varied question types
-          const questionTypes = ['score', 'episodes', 'year', 'title'];
-          
-          for (let i = 0; i < Math.min(5, selectedAnimes.length); i++) {
-            const anime = selectedAnimes[i];
-            const questionType = questionTypes[i % questionTypes.length];
-            
-            switch (questionType) {
-              case 'score':
-                if (anime.score) {
-                  questions.push({
-                    question: `Quel est le score de "${anime.title}" sur MyAnimeList ?`,
-                    options: [
-                      anime.score,
-                      (parseFloat(anime.score) + 0.5).toFixed(1),
-                      (parseFloat(anime.score) - 0.5).toFixed(1),
-                      (parseFloat(anime.score) + 1).toFixed(1)
-                    ].sort(() => Math.random() - 0.5),
-                    correctAnswer: 0,
-                    explanation: `${anime.title} a un score de ${anime.score} sur MyAnimeList.`
-                  });
-                }
-                break;
-              case 'episodes':
-                if (anime.episodes) {
-                  questions.push({
-                    question: `Combien d'épisodes compte "${anime.title}" ?`,
-                    options: [
-                      anime.episodes.toString(),
-                      (anime.episodes + 12).toString(),
-                      (anime.episodes - 1).toString(),
-                      "24"
-                    ].sort(() => Math.random() - 0.5),
-                    correctAnswer: 0,
-                    explanation: `${anime.title} compte ${anime.episodes} épisodes.`
-                  });
-                }
-                break;
-              case 'year':
-                if (anime.year) {
-                  questions.push({
-                    question: `En quelle année "${anime.title}" est-il sorti ?`,
-                    options: [
-                      anime.year.toString(),
-                      (anime.year + 1).toString(),
-                      (anime.year - 1).toString(),
-                      (anime.year + 2).toString()
-                    ].sort(() => Math.random() - 0.5),
-                    correctAnswer: 0,
-                    explanation: `${anime.title} est sorti en ${anime.year}.`
-                  });
-                }
-                break;
-              case 'title':
-                const otherAnimes = selectedAnimes.filter(a => a.id !== anime.id).slice(0, 3);
-                if (otherAnimes.length >= 3) {
-                  questions.push({
-                    question: `Lequel de ces animes a le synopsis suivant : "${anime.synopsis?.substring(0, 100)}..." ?`,
-                    options: [
-                      anime.title,
-                      ...otherAnimes.map(a => a.title)
-                    ].sort(() => Math.random() - 0.5),
-                    correctAnswer: 0,
-                    explanation: `Ce synopsis correspond à ${anime.title}.`
-                  });
-                }
-                break;
-            }
-          }
-          
-          if (questions.length >= 3) {
-            const timestamp = new Date().getTime();
-            quiz = await storage.createQuiz({
-              title: `Quiz Anime du Jour - ${new Date().toLocaleDateString('fr-FR')}`,
-              description: "Testez vos connaissances sur les animes populaires !",
-              difficulty: "medium",
-              questions: questions.slice(0, 5),
-              xpReward: 25
-            });
-          }
-        }
+      if (featuredQuiz) {
+        res.json(featuredQuiz);
+      } else if (quizzes.length > 0) {
+        res.json(quizzes[0]);
+      } else {
+        res.json(null);
       }
-      
-      res.json(quiz);
     } catch (error) {
       console.error("Error fetching featured quiz:", error);
       res.status(500).json({ message: "Failed to fetch featured quiz" });
@@ -401,6 +297,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting all quizzes:", error);
       res.status(500).json({ message: "Failed to delete quizzes" });
+    }
+  });
+
+  // Clean duplicate quizzes (admin only)
+  app.delete('/api/quizzes/duplicates', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      const adminEmail = process.env.ADMIN_USER_ID || "sorokomarco@gmail.com";
+
+      // Vérifier si l'utilisateur est l'admin spécifique
+      if (user?.email !== adminEmail) {
+        return res.status(403).json({ message: "Accès refusé - Admin uniquement" });
+      }
+
+      await storage.cleanupDuplicateQuizzes();
+      res.json({ message: "Quiz dupliqués supprimés avec succès" });
+    } catch (error) {
+      console.error("Error cleaning duplicate quizzes:", error);
+      res.status(500).json({ message: "Failed to clean duplicate quizzes" });
     }
   });
 

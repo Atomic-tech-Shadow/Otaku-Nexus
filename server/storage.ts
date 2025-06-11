@@ -221,6 +221,27 @@ export class DatabaseStorage implements IStorage {
     await db.delete(quizzes);
   }
 
+  async cleanupDuplicateQuizzes(): Promise<void> {
+    // Delete auto-generated quiz duplicates, keeping only unique titles
+    const allQuizzes = await db.select().from(quizzes).orderBy(desc(quizzes.createdAt));
+    const seenTitles = new Set();
+    const toDelete = [];
+
+    for (const quiz of allQuizzes) {
+      if (seenTitles.has(quiz.title) || quiz.title.includes('Quiz Anime du Jour')) {
+        toDelete.push(quiz.id);
+      } else {
+        seenTitles.add(quiz.title);
+      }
+    }
+
+    // Delete quiz results for duplicates first
+    if (toDelete.length > 0) {
+      await db.delete(quizResults).where(sql`quiz_id IN (${toDelete.join(',')})`);
+      await db.delete(quizzes).where(sql`id IN (${toDelete.join(',')})`);
+    }
+  }
+
   async getFeaturedQuiz(): Promise<Quiz | undefined> {
     const [quiz] = await db
       .select()
