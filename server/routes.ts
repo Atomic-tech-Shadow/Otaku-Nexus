@@ -47,7 +47,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/anime/trending', async (req, res) => {
     try {
-      const animes = await storage.getTrendingAnimes();
+      // First try to get from database
+      let animes = await storage.getTrendingAnimes();
+      
+      // If no data in database, fetch from Jikan API
+      if (animes.length === 0) {
+        try {
+          const response = await fetch('https://api.jikan.moe/v4/top/anime?limit=10');
+          if (response.ok) {
+            const data = await response.json();
+            const jikanAnimes = data.data;
+            
+            // Save to database and return
+            const savedAnimes = [];
+            for (const anime of jikanAnimes) {
+              try {
+                const savedAnime = await storage.createAnime({
+                  malId: anime.mal_id,
+                  title: anime.title,
+                  synopsis: anime.synopsis,
+                  imageUrl: anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url,
+                  score: anime.score?.toString(),
+                  year: anime.year,
+                  status: anime.status,
+                  episodes: anime.episodes
+                });
+                savedAnimes.push(savedAnime);
+              } catch (err) {
+                // Skip if already exists
+                console.log(`Anime ${anime.title} already exists or error:`, err);
+              }
+            }
+            animes = savedAnimes.length > 0 ? savedAnimes : await storage.getTrendingAnimes();
+          }
+        } catch (apiError) {
+          console.error("Error fetching from Jikan API:", apiError);
+        }
+      }
+      
       res.json(animes);
     } catch (error) {
       console.error("Error fetching trending animes:", error);
@@ -61,7 +98,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!query) {
         return res.status(400).json({ message: "Query parameter 'q' is required" });
       }
-      const animes = await storage.searchAnimes(query);
+      
+      // First search local database
+      let animes = await storage.searchAnimes(query);
+      
+      // If no local results, search Jikan API
+      if (animes.length === 0) {
+        try {
+          const response = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=10`);
+          if (response.ok) {
+            const data = await response.json();
+            const jikanAnimes = data.data;
+            
+            // Save to database
+            const savedAnimes = [];
+            for (const anime of jikanAnimes) {
+              try {
+                const savedAnime = await storage.createAnime({
+                  malId: anime.mal_id,
+                  title: anime.title,
+                  synopsis: anime.synopsis,
+                  imageUrl: anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url,
+                  score: anime.score?.toString(),
+                  year: anime.year,
+                  status: anime.status,
+                  episodes: anime.episodes
+                });
+                savedAnimes.push(savedAnime);
+              } catch (err) {
+                // Skip if already exists
+              }
+            }
+            animes = savedAnimes.length > 0 ? savedAnimes : jikanAnimes.map(anime => ({
+              id: anime.mal_id,
+              malId: anime.mal_id,
+              title: anime.title,
+              synopsis: anime.synopsis,
+              imageUrl: anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url,
+              score: anime.score?.toString(),
+              year: anime.year,
+              status: anime.status,
+              episodes: anime.episodes
+            }));
+          }
+        } catch (apiError) {
+          console.error("Error fetching from Jikan API:", apiError);
+        }
+      }
+      
       res.json(animes);
     } catch (error) {
       console.error("Error searching animes:", error);
@@ -132,7 +216,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/quizzes/featured', async (req, res) => {
     try {
-      const quiz = await storage.getFeaturedQuiz();
+      let quiz = await storage.getFeaturedQuiz();
+      
+      // If no quiz exists, generate one from anime data
+      if (!quiz) {
+        const animes = await storage.getAnimes(20);
+        if (animes.length > 0) {
+          const selectedAnimes = animes.slice(0, 5);
+          const questions = selectedAnimes.map((anime, index) => ({
+            question: `Quel est le score de "${anime.title}" ?`,
+            options: [
+              anime.score || "8.5",
+              (parseFloat(anime.score || "8.5") + 0.5).toString(),
+              (parseFloat(anime.score || "8.5") - 0.5).toString(),
+              (parseFloat(anime.score || "8.5") + 1).toString()
+            ].sort(() => Math.random() - 0.5),
+            correctAnswer: 0,
+            explanation: `${anime.title} a un score de ${anime.score || "N/A"} sur MyAnimeList.`
+          }));
+          
+          // Add more question types
+          if (selectedAnimes.length > 1) {
+            questions.push({
+              question: `Combien d'épisodes compte "${selectedAnimes[1].title}" ?`,
+              options: [
+                selectedAnimes[1].episodes?.toString() || "12",
+                "24", "13", "26"
+              ].sort(() => Math.random() - 0.5),
+              correctAnswer: 0,
+              explanation: `${selectedAnimes[1].title} compte ${selectedAnimes[1].episodes || "un nombre inconnu d'"} épisodes.`
+            });
+          }
+          
+          quiz = await storage.createQuiz({
+            title: "Quiz Anime du Jour",
+            description: "Testez vos connaissances sur les animes populaires !",
+            difficulty: "medium",
+            questions: questions,
+            xpReward: 25
+          });
+        }
+      }
+      
       res.json(quiz);
     } catch (error) {
       console.error("Error fetching featured quiz:", error);

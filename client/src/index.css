@@ -32,6 +32,14 @@
   --dark-bg: hsl(0, 0%, 6%);
   --card-bg: hsl(0, 0%, 10%);
   --secondary-bg: hsl(0, 0%, 15%);
+  
+  /* App-specific theme colors */
+  --app-bg: hsl(0, 0%, 6%);
+  --text-primary: hsl(0, 0%, 98%);
+  --text-secondary: hsl(240, 5%, 64.9%);
+  --accent-primary: hsl(195, 100%, 50%);
+  --accent-hover: hsl(328, 100%, 54%);
+  --border: hsl(240, 3.7%, 15.9%);
 }
 
 .light {
@@ -111,6 +119,39 @@
 
 .bg-secondary-bg {
   background-color: var(--secondary-bg);
+}
+
+/* App-specific utility classes */
+.bg-app-bg {
+  background-color: var(--app-bg);
+}
+
+.text-text-primary {
+  color: var(--text-primary);
+}
+
+.text-text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-accent-primary {
+  color: var(--accent-primary);
+}
+
+.text-accent-hover {
+  color: var(--accent-hover);
+}
+
+.bg-accent-primary {
+  background-color: var(--accent-primary);
+}
+
+.bg-accent-hover {
+  background-color: var(--accent-hover);
+}
+
+.border-border {
+  border-color: var(--border);
 }
 
 /* Glass morphism effect */
