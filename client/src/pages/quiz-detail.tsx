@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -29,7 +28,7 @@ export default function QuizDetail() {
   const { isAuthenticated, isLoading } = useAuth();
   const [, params] = useRoute("/quiz/:id");
   const queryClient = useQueryClient();
-  
+
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
   const [showResults, setShowResults] = useState(false);
@@ -122,13 +121,42 @@ export default function QuizDetail() {
     console.log("Show results:", showResults);
   }, [quiz, quizStarted, showResults]);
 
-  const questions: Question[] = quiz && (quiz as any).questions && Array.isArray((quiz as any).questions) ? (quiz as any).questions : [];
+  // Parse questions from quiz data - moved after all hooks
+  const questions: Question[] = React.useMemo(() => {
+    if (!quiz) return [];
+
+    // Try different ways to access questions
+    const quizData = quiz as any;
+    if (Array.isArray(quizData.questions)) {
+      console.log("Found questions array:", quizData.questions);
+      return quizData.questions;
+    }
+
+    // If quiz is an array, take the first element
+    if (Array.isArray(quiz) && quiz.length > 0) {
+      const firstQuiz = quiz[0] as any;
+      if (Array.isArray(firstQuiz.questions)) {
+        console.log("Found questions in first quiz element:", firstQuiz.questions);
+        return firstQuiz.questions;
+      }
+    }
+
+    console.log("No questions found, quiz structure:", quiz);
+    return [];
+  }, [quiz]);
   const progress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
 
   const handleStartQuiz = () => {
-    console.log("Starting quiz with", questions.length, "questions");
-    if (questions.length === 0) {
+    const quizQuestions = quiz?.questions;
+    console.log("Starting quiz with questions:", quizQuestions);
+    console.log("Quiz data:", quiz);
+    console.log("Questions array:", questions);
+    console.log("Questions length:", questions.length);
+
+    if (!questions || questions.length === 0) {
       console.error("No questions available for quiz!");
+      console.error("Quiz object:", quiz);
+      console.error("Raw questions:", quizQuestions);
       toast({
         title: "Erreur",
         description: "Aucune question disponible pour ce quiz",
@@ -159,17 +187,17 @@ export default function QuizDetail() {
     console.log("Current question:", currentQuestion);
     console.log("Questions length:", questions.length);
     console.log("Selected answers:", selectedAnswers);
-    
+
     setQuizCompleted(true);
     setShowResults(true);
-    
+
     // Calculate score
     const correctAnswers = selectedAnswers.reduce((score, answer, index) => {
       return answer === questions[index]?.correctAnswer ? score + 1 : score;
     }, 0);
-    
+
     const xpEarned = Math.floor((correctAnswers / questions.length) * ((quiz as any)?.xpReward || 10));
-    
+
     // Ensure quizId is valid before submitting
     if (!quizId) {
       console.error("Quiz ID is missing!");
@@ -180,14 +208,14 @@ export default function QuizDetail() {
       });
       return;
     }
-    
+
     console.log("Quiz submission data:", {
       quizId,
       score: correctAnswers,
       totalQuestions: questions.length,
       xpEarned,
     });
-    
+
     // Submit results
     submitResultMutation.mutate({
       quizId: quizId,
@@ -209,7 +237,7 @@ export default function QuizDetail() {
     }, 0);
     const percentage = (correctAnswers / questions.length) * 100;
     const xpEarned = Math.floor(percentage / 100 * ((quiz as any)?.xpReward || 10));
-    
+
     return { correctAnswers, percentage, xpEarned };
   };
 
@@ -273,7 +301,7 @@ export default function QuizDetail() {
   // Quiz results screen
   if (showResults) {
     const results = calculateResults();
-    
+
     return (
       <div className="min-h-screen bg-dark-bg text-white pb-20">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -350,7 +378,7 @@ export default function QuizDetail() {
 
   // Quiz question screen
   const question = questions[currentQuestion];
-  
+
   if (!question) {
     return (
       <div className="min-h-screen bg-dark-bg text-white flex items-center justify-center">
@@ -363,7 +391,7 @@ export default function QuizDetail() {
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen bg-dark-bg text-white pb-20">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -392,7 +420,7 @@ export default function QuizDetail() {
           <Card className="bg-card-bg border-gray-800 mb-6">
             <CardContent className="p-6">
               <h2 className="text-lg font-semibold mb-6">{question.question}</h2>
-              
+
               <div className="space-y-3">
                 {question.options.map((option, index) => (
                   <Button
