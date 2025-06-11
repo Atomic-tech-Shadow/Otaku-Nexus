@@ -39,386 +39,202 @@ export const frenchAnimeQuizzes = [
     ]
   },
 
-  // Niveau Facile - Shonen classiques
+  // Quiz Studio Ghibli
   {
-    title: "Shonen Classiques",
-    description: "Les grands classiques du manga shonen que tout otaku devrait connaître",
+    title: "Univers de Studio Ghibli",
+    description: "Explorez l'univers magique des films de Hayao Miyazaki et Studio Ghibli",
     difficulty: "easy" as const,
     xpReward: 20,
     questions: [
       {
-        question: "Dans Demon Slayer, quel est le nom de l'épée de Tanjiro ?",
-        options: ["Épée de Nichirin", "Épée de Démon", "Épée Solaire", "Épée Spirituelle"],
-        correctAnswer: 0,
-        explanation: "Tanjiro utilise une épée de Nichirin, forgée spécialement pour tuer les démons."
-      },
-      {
-        question: "Combien de Dragon Balls faut-il réunir pour invoquer Shenron ?",
-        options: ["5", "6", "7", "8"],
-        correctAnswer: 2,
-        explanation: "Il faut réunir les 7 Dragon Balls pour pouvoir invoquer le dragon Shenron et formuler un vœu."
-      },
-      {
-        question: "Quel est le nom du village ninja de Naruto ?",
-        options: ["Village de la Feuille", "Village du Sable", "Village de la Brume", "Village du Rocher"],
-        correctAnswer: 0,
-        explanation: "Naruto vient de Konohagakure, aussi appelé le Village Caché de la Feuille."
-      },
-      {
-        question: "Dans My Hero Academia, comment appelle-t-on les super-pouvoirs ?",
-        options: ["Quirks", "Powers", "Abilities", "Talents"],
-        correctAnswer: 0,
-        explanation: "Dans My Hero Academia, les super-pouvoirs sont appelés 'Quirks' ou 'Alters' en français."
-      },
-      {
-        question: "Quel est le nom de l'académie dans Assassination Classroom ?",
-        options: ["Classe 3-A", "Classe 3-E", "Classe 2-B", "Classe 1-A"],
+        question: "Quel est le nom de l'héroïne principale dans Mon Voisin Totoro ?",
+        options: ["Chihiro", "Satsuki", "Kiki", "Nausicaä"],
         correctAnswer: 1,
-        explanation: "L'histoire se déroule dans la classe 3-E du collège Kunugigaoka, une classe pour les élèves en difficulté."
+        explanation: "Satsuki est l'une des deux sœurs principales dans Mon Voisin Totoro, avec sa petite sœur Mei."
+      },
+      {
+        question: "Dans Le Voyage de Chihiro, comment s'appelle le dragon qui aide Chihiro ?",
+        options: ["Haku", "Calcifer", "No-Face", "Totoro"],
+        correctAnswer: 0,
+        explanation: "Haku est un dragon qui aide Chihiro tout au long de son aventure dans le monde des esprits."
+      },
+      {
+        question: "Quel est le métier de Kiki dans Kiki la petite sorcière ?",
+        options: ["Boulangère", "Livreuse", "Guérisseuse", "Professeure"],
+        correctAnswer: 1,
+        explanation: "Kiki utilise ses pouvoirs de vol pour créer un service de livraison express dans sa nouvelle ville."
+      },
+      {
+        question: "Dans Princesse Mononoke, comment s'appelle le héros ?",
+        options: ["Ashitaka", "Haku", "Jiro", "Pazu"],
+        correctAnswer: 0,
+        explanation: "Ashitaka est le prince guerrier qui devient maudit et part en quête de guérison."
+      },
+      {
+        question: "Quel animal mythique rencontre Mei dans Mon Voisin Totoro ?",
+        options: ["Un dragon", "Totoro", "Un phénix", "Un kappa"],
+        correctAnswer: 1,
+        explanation: "Totoro est l'esprit de la forêt, une créature douce et mystérieuse qui devient l'ami des enfants."
       }
     ]
   },
 
-  // Niveau Moyen - Seinen et connaissances approfondies
+  // Quiz JoJo's Bizarre Adventure
   {
-    title: "Seinen et Animes Matures",
-    description: "Pour les connaisseurs d'animes plus complexes et matures",
-    difficulty: "medium" as const,
-    xpReward: 30,
-    questions: [
-      {
-        question: "Dans Death Note, quel est le vrai nom de L ?",
-        options: ["Lawliet", "L Lawliet", "Elle Lawliet", "Ryuzaki"],
-        correctAnswer: 1,
-        explanation: "Le vrai nom complet de L est L Lawliet, révélé plus tard dans la série."
-      },
-      {
-        question: "Dans Steins;Gate, comment s'appelle le laboratoire de Okabe ?",
-        options: ["Future Gadget Laboratory", "Time Machine Lab", "Scientific Laboratory", "Physics Research Lab"],
-        correctAnswer: 0,
-        explanation: "Okabe et ses amis dirigent le 'Future Gadget Laboratory', un petit laboratoire d'inventions."
-      },
-      {
-        question: "Dans Monster, quel est le nom du protagoniste chirurgien ?",
-        options: ["Kenzo Tenma", "Johan Liebert", "Heinrich Lunge", "Wolfgang Grimmer"],
-        correctAnswer: 0,
-        explanation: "Le Dr. Kenzo Tenma est le protagoniste principal, un neurochirurgien japonais travaillant en Allemagne."
-      },
-      {
-        question: "Dans Psycho-Pass, comment s'appelle le système de surveillance ?",
-        options: ["Sibyl System", "Justice System", "Psycho System", "Dominator System"],
-        correctAnswer: 0,
-        explanation: "Le Système Sibyl analyse et juge la santé mentale et les tendances criminelles des citoyens."
-      },
-      {
-        question: "Dans Ghost in the Shell SAC, quel est le nom de la section spéciale ?",
-        options: ["Section 7", "Section 8", "Section 9", "Section 10"],
-        correctAnswer: 2,
-        explanation: "La Section 9 est l'unité d'élite de sécurité publique dirigée par le Major Kusanagi."
-      },
-      {
-        question: "Dans Berserk, quel est le nom de l'épée de Guts ?",
-        options: ["Dragon Slayer", "Demon Slayer", "God Slayer", "Beast Slayer"],
-        correctAnswer: 0,
-        explanation: "L'épée de Guts s'appelle 'Dragon Slayer', une énorme épée forgée pour tuer un dragon."
-      }
-    ]
-  },
-
-  // Niveau Moyen - Animes des années 90-2000
-  {
-    title: "Classiques des Années 90-2000",
-    description: "Les animes qui ont marqué une génération d'otakus",
+    title: "JoJo's Bizarre Adventure",
+    description: "L'univers bizarre et fascinant de la famille Joestar",
     difficulty: "medium" as const,
     xpReward: 25,
     questions: [
       {
-        question: "Dans Neon Genesis Evangelion, comment s'appelle l'organisation de Shinji ?",
-        options: ["SEELE", "NERV", "GEHIRN", "WILLE"],
+        question: "Comment s'appelle le premier JoJo de la série ?",
+        options: ["Joseph Joestar", "Jonathan Joestar", "Jotaro Kujo", "Josuke Higashikata"],
         correctAnswer: 1,
-        explanation: "NERV est l'organisation militaire secrète qui pilote les Evangelions contre les Anges."
+        explanation: "Jonathan Joestar est le protagoniste de la première partie, Phantom Blood."
       },
       {
-        question: "Dans Cowboy Bebop, quel est le nom du vaisseau de l'équipage ?",
-        options: ["Swordfish", "Bebop", "Red Tail", "Hammerhead"],
+        question: "Quel est le nom du Stand de Jotaro Kujo ?",
+        options: ["The World", "Star Platinum", "Crazy Diamond", "Gold Experience"],
         correctAnswer: 1,
-        explanation: "Le Bebop est le vaisseau principal où vit l'équipage de chasseurs de primes."
+        explanation: "Star Platinum est le Stand extrêmement puissant de Jotaro, capable d'arrêter le temps."
       },
       {
-        question: "Dans Trigun, quel est le surnom de Vash ?",
-        options: ["The Stampede", "The Humanoid Typhoon", "The Desert Gunman", "The Legendary Gunslinger"],
-        correctAnswer: 1,
-        explanation: "Vash est surnommé 'The Humanoid Typhoon' à cause des destructions qui suivent son passage."
-      },
-      {
-        question: "Dans Rurouni Kenshin, quelle est la technique signature de Kenshin ?",
-        options: ["Hiten Mitsurugi-ryu", "Kamiya Kasshin-ryu", "Nikaido Heiho", "Muteki-ryu"],
-        correctAnswer: 0,
-        explanation: "Kenshin pratique le Hiten Mitsurugi-ryu, un style d'épée extrêmement rapide et puissant."
-      },
-      {
-        question: "Dans Serial Experiments Lain, quel est le nom du réseau informatique ?",
-        options: ["The Net", "The Wired", "The Web", "The Matrix"],
-        correctAnswer: 1,
-        explanation: "The Wired est le réseau de communication globale central à l'intrigue de Lain."
-      }
-    ]
-  },
-
-  // Niveau Difficile - Connaissances d'expert
-  {
-    title: "Expert Otaku Challenge",
-    description: "Réservé aux vrais connaisseurs avec une culture anime approfondie",
-    difficulty: "hard" as const,
-    xpReward: 50,
-    questions: [
-      {
-        question: "Dans Legend of the Galactic Heroes, qui est l'auteur du roman original ?",
-        options: ["Yoshiki Tanaka", "Hiroshi Yamamoto", "Tow Ubukata", "Gen Urobuchi"],
-        correctAnswer: 0,
-        explanation: "Yoshiki Tanaka est l'auteur de la série de romans 'Legend of the Galactic Heroes'."
-      },
-      {
-        question: "Dans Lain, quel est le nom complet du protocole de communication ?",
-        options: ["IPv7", "Protocol 7", "Copland OS", "IPv6"],
+        question: "Qui est le vampire principal antagoniste de Jonathan Joestar ?",
+        options: ["Kars", "Wamuu", "Dio Brando", "Pucci"],
         correctAnswer: 2,
-        explanation: "Copland OS est mentionné comme le système d'exploitation dans Serial Experiments Lain."
+        explanation: "Dio Brando devient vampire et reste l'ennemi principal de la famille Joestar à travers plusieurs générations."
       },
       {
-        question: "Dans Texhnolyze, dans quelle ville souterraine se déroule l'action ?",
-        options: ["Lux", "Gabe", "Shibuya", "Underground City"],
-        correctAnswer: 0,
-        explanation: "Lux est la ville souterraine où se déroule l'intrigue sombre de Texhnolyze."
-      },
-      {
-        question: "Quel studio d'animation a produit 'Perfect Blue' ?",
-        options: ["Studio Ghibli", "Madhouse", "Production I.G", "Mappa"],
+        question: "Dans quelle ville se déroule principalement Diamond is Unbreakable ?",
+        options: ["Tokyo", "Morioh", "Naples", "New York"],
         correctAnswer: 1,
-        explanation: "Perfect Blue, le chef-d'œuvre de Satoshi Kon, a été produit par le studio Madhouse."
+        explanation: "Morioh est la ville fictive du Japon où Josuke vit et où se déroulent les événements de la partie 4."
       },
       {
-        question: "Dans Haibane Renmei, que signifie 'Sin-bound' ?",
-        options: ["Lié par le péché", "Condamné", "Souillé", "Toutes ces réponses"],
-        correctAnswer: 3,
-        explanation: "Sin-bound désigne les Haibane qui portent le poids d'un péché de leur vie passée."
-      },
-      {
-        question: "Qui a composé la musique de Ghost in the Shell (1995) ?",
-        options: ["Yoko Kanno", "Kenji Kawai", "Hiroyuki Sawano", "Toru Takemitsu"],
-        correctAnswer: 1,
-        explanation: "Kenji Kawai a composé la magnifique bande sonore du film Ghost in the Shell de 1995."
-      }
-    ]
-  },
-
-  // Niveau Facile - Studio Ghibli
-  {
-    title: "Magie du Studio Ghibli",
-    description: "L'univers enchanteur des films du Studio Ghibli",
-    difficulty: "easy" as const,
-    xpReward: 20,
-    questions: [
-      {
-        question: "Qui est le cofondateur et réalisateur principal du Studio Ghibli ?",
-        options: ["Hayao Miyazaki", "Isao Takahata", "Toshio Suzuki", "Mamoru Hosoda"],
-        correctAnswer: 0,
-        explanation: "Hayao Miyazaki est le cofondateur et réalisateur emblématique du Studio Ghibli."
-      },
-      {
-        question: "Dans Mon Voisin Totoro, comment s'appellent les deux sœurs ?",
-        options: ["Satsuki et Mei", "Kiki et Ursula", "San et Moro", "Chihiro et Lin"],
-        correctAnswer: 0,
-        explanation: "Les deux sœurs principales sont Satsuki (l'aînée) et Mei (la cadette)."
-      },
-      {
-        question: "Dans Le Voyage de Chihiro, quel est le vrai nom de Haku ?",
-        options: ["Spirited Away", "Nigihayami Kohaku Nushi", "Dragon des Eaux", "Maître des Rivières"],
-        correctAnswer: 1,
-        explanation: "Le vrai nom de Haku est Nigihayami Kohaku Nushi, l'esprit de la rivière Kohaku."
-      },
-      {
-        question: "Dans Princesse Mononoké, comment s'appelle le village de San ?",
-        options: ["Village des Loups", "Forêt Sacrée", "Elle vit avec les loups", "Mont Shishigami"],
+        question: "Quel est le cri de guerre caractéristique des Joestar ?",
+        options: ["WRYYY", "MUDA MUDA", "ORA ORA ORA", "DORARARA"],
         correctAnswer: 2,
-        explanation: "San, la Princesse Mononoké, a été élevée par les loups dans la forêt."
-      },
-      {
-        question: "Dans Kiki la Petite Sorcière, quel est le nom du chat de Kiki ?",
-        options: ["Totoro", "Jiji", "Catbus", "Calcifer"],
-        correctAnswer: 1,
-        explanation: "Jiji est le chat noir parlant qui accompagne Kiki dans ses aventures."
+        explanation: "ORA ORA ORA est le cri de guerre emblématique utilisé par plusieurs JoJo lors de leurs attaques."
       }
     ]
   },
 
-  // Niveau Moyen - Animes récents (2010s-2020s)
+  // Quiz Openings et Musiques d'anime
   {
-    title: "Nouvelle Génération (2010-2020)",
-    description: "Les animes qui définissent la nouvelle décennie",
+    title: "Openings et Musiques d'Anime",
+    description: "Testez vos connaissances sur les génériques et musiques les plus emblématiques",
     difficulty: "medium" as const,
-    xpReward: 35,
+    xpReward: 25,
     questions: [
       {
-        question: "Dans Jujutsu Kaisen, quel est le nom de la technique de Gojo ?",
-        options: ["Domain Expansion", "Limitless", "Six Eyes", "Infinity"],
+        question: "Qui chante l'opening 'Unravel' de Tokyo Ghoul ?",
+        options: ["TK from Ling tosite sigure", "ONE OK ROCK", "FLOW", "Asian Kung-Fu Generation"],
+        correctAnswer: 0,
+        explanation: "TK from Ling tosite sigure interprète 'Unravel', l'opening iconique de Tokyo Ghoul."
+      },
+      {
+        question: "Quel est le titre du premier opening de Attack on Titan ?",
+        options: ["Guren no Yumiya", "Shinzou wo Sasageyo", "Red Swan", "My War"],
+        correctAnswer: 0,
+        explanation: "'Guren no Yumiya' (Arc Cramoisi) par Linked Horizon est le premier opening d'Attack on Titan."
+      },
+      {
+        question: "Qui compose la musique de la plupart des films Studio Ghibli ?",
+        options: ["Yoko Kanno", "Joe Hisaishi", "Hiroyuki Sawano", "Yann Tiersen"],
         correctAnswer: 1,
-        explanation: "La technique héréditaire de Gojo s'appelle 'Limitless' (Muryokusho)."
+        explanation: "Joe Hisaishi est le compositeur attitré des films de Miyazaki et Studio Ghibli."
       },
       {
-        question: "Dans Attack on Titan, quel est le nom du père d'Eren ?",
-        options: ["Grisha Yeager", "Keith Shadis", "Rod Reiss", "Zeke Yeager"],
+        question: "Quel opening de Naruto est chanté par FLOW ?",
+        options: ["GO!!!", "Sign", "Blue Bird", "Silhouette"],
         correctAnswer: 0,
-        explanation: "Grisha Yeager est le père d'Eren et détient des secrets cruciaux sur les Titans."
+        explanation: "FLOW interprète 'GO!!!' qui est le 4ème opening de Naruto."
       },
       {
-        question: "Dans Violet Evergarden, pour quelle organisation travaille Violet ?",
-        options: ["CH Postal Company", "Auto Memory Doll Service", "Leidenschaftlich Army", "Evergarden Company"],
-        correctAnswer: 0,
-        explanation: "Violet travaille pour la CH Postal Company comme Auto Memory Doll."
-      },
-      {
-        question: "Dans Your Name, comment s'appelle la ville de Mitsuha ?",
-        options: ["Itomori", "Miyamizu", "Hida", "Gifu"],
-        correctAnswer: 0,
-        explanation: "Mitsuha vit dans la petite ville fictive d'Itomori dans la préfecture de Gifu."
-      },
-      {
-        question: "Dans Mob Psycho 100, quel est le pourcentage maximal de Mob ?",
-        options: ["100%", "1000%", "???%", "∞%"],
-        correctAnswer: 2,
-        explanation: "Le niveau maximal de Mob est représenté par '???%', un état incontrôlable."
-      },
-      {
-        question: "Dans Dr. Stone, quelle est la formule que répète constamment Senku ?",
-        options: ["E=mc²", "H₂SO₄", "10 milliards %", "Science Rules"],
-        correctAnswer: 2,
-        explanation: "Senku dit souvent 'Juu-oku percent' (10 milliards %) pour exprimer sa certitude scientifique."
+        question: "Dans quel anime entend-on l'opening 'Tank!' ?",
+        options: ["Samurai Champloo", "Cowboy Bebop", "Space Dandy", "Trigun"],
+        correctAnswer: 1,
+        explanation: "'Tank!' composé par Yoko Kanno est l'opening jazz emblématique de Cowboy Bebop."
       }
     ]
   },
 
-  // Niveau Difficile - Animes d'auteur et expérimentaux
+  // Quiz Culture Otaku Avancée
   {
-    title: "Animes d'Auteur et Expérimentaux",
-    description: "Pour les amateurs d'œuvres artistiques et avant-gardistes",
+    title: "Culture Otaku Avancée",
+    description: "Pour les vrais connaisseurs de la culture anime et manga",
     difficulty: "hard" as const,
-    xpReward: 45,
+    xpReward: 40,
     questions: [
       {
-        question: "Dans Angel's Egg, qui est le réalisateur ?",
-        options: ["Mamoru Oshii", "Satoshi Kon", "Hideaki Anno", "Masaaki Yuasa"],
-        correctAnswer: 0,
-        explanation: "Angel's Egg (1985) est un film expérimental réalisé par Mamoru Oshii."
-      },
-      {
-        question: "Dans Mind Game, quel studio a produit ce film d'animation unique ?",
-        options: ["Studio 4°C", "Madhouse", "Production I.G", "Shaft"],
-        correctAnswer: 0,
-        explanation: "Mind Game (2004) a été produit par Studio 4°C, connu pour ses œuvres expérimentales."
-      },
-      {
-        question: "Dans Paranoia Agent, quel est le nom du mystérieux agresseur ?",
-        options: ["Lil' Slugger", "Shounen Bat", "Golden Bat", "Night Stalker"],
-        correctAnswer: 1,
-        explanation: "L'agresseur mystérieux est appelé 'Shounen Bat' (Lil' Slugger en anglais)."
-      },
-      {
-        question: "Quel réalisateur a créé la trilogie Rebuild of Evangelion ?",
-        options: ["Hideaki Anno", "Kazuya Tsurumaki", "Masayuki", "Shinji Higuchi"],
-        correctAnswer: 0,
-        explanation: "Hideaki Anno a dirigé les films Rebuild of Evangelion, une réinterprétation de sa série originale."
-      },
-      {
-        question: "Dans Kaiba, dans quel type d'univers évolue le protagoniste ?",
-        options: ["Cyberpunk", "Transfert de mémoire", "Post-apocalyptique", "Steampunk"],
-        correctAnswer: 1,
-        explanation: "Kaiba se déroule dans un univers où les mémoires peuvent être transférées entre les corps."
-      }
-    ]
-  },
-
-  // Niveau Facile - Animes Romance et Slice of Life
-  {
-    title: "Romance et Tranches de Vie",
-    description: "Les histoires touchantes du quotidien et de l'amour",
-    difficulty: "easy" as const,
-    xpReward: 18,
-    questions: [
-      {
-        question: "Dans Your Lie in April, quel instrument joue Kousei ?",
-        options: ["Violon", "Piano", "Guitare", "Flûte"],
-        correctAnswer: 1,
-        explanation: "Kousei Arima est un prodige du piano qui a perdu sa capacité à entendre sa propre musique."
-      },
-      {
-        question: "Dans Toradora!, comment surnomme-t-on Taiga ?",
-        options: ["Palmtop Tiger", "Little Dragon", "Tiny Tornado", "Small Storm"],
-        correctAnswer: 0,
-        explanation: "Taiga Aisaka est surnommée 'Palmtop Tiger' à cause de sa petite taille et son caractère féroce."
-      },
-      {
-        question: "Dans A Silent Voice, de quel handicap souffre Shouko ?",
-        options: ["Cécité", "Surdité", "Mutité", "Paralysie"],
-        correctAnswer: 1,
-        explanation: "Shouko Nishimiya est malentendante, ce qui est central au thème de l'histoire."
-      },
-      {
-        question: "Dans K-On!, quel instrument joue Yui ?",
-        options: ["Basse", "Batterie", "Guitare", "Clavier"],
-        correctAnswer: 2,
-        explanation: "Yui Hirasawa apprend à jouer de la guitare électrique dans le club de musique."
-      },
-      {
-        question: "Dans Clannad, comment s'appelle la ville où se déroule l'histoire ?",
-        options: ["Hikarizaka", "Sakuragaoka", "Mizuiro", "Kanon"],
-        correctAnswer: 0,
-        explanation: "L'histoire de Clannad se déroule dans la ville fictive de Hikarizaka."
-      }
-    ]
-  },
-
-  // Niveau Moyen - Animes de sport
-  {
-    title: "Champions du Sport Anime",
-    description: "L'esprit de compétition et de dépassement de soi",
-    difficulty: "medium" as const,
-    xpReward: 28,
-    questions: [
-      {
-        question: "Dans Haikyuu!!, quel est le surnom de Hinata ?",
-        options: ["Little Giant", "Orange Hurricane", "Jumping Spider", "Sky Walker"],
-        correctAnswer: 0,
-        explanation: "Hinata aspire à devenir le nouveau 'Little Giant' comme son héros du lycée Karasuno."
-      },
-      {
-        question: "Dans Kuroko no Basket, combien y a-t-il de membres dans la Generation of Miracles ?",
-        options: ["4", "5", "6", "7"],
-        correctAnswer: 2,
-        explanation: "La Generation of Miracles compte 6 membres, dont Kuroko qui est le 'fantôme'."
-      },
-      {
-        question: "Dans Captain Tsubasa, quel est le nom de l'équipe nationale du Japon ?",
-        options: ["Samurai Blue", "Japan National Team", "Rising Sun", "Blue Warriors"],
-        correctAnswer: 1,
-        explanation: "L'équipe nationale japonaise est simplement appelée 'Japan National Team' dans la série."
-      },
-      {
-        question: "Dans Slam Dunk, dans quelle position joue Sakuragi ?",
-        options: ["Meneur", "Arrière", "Ailier", "Pivot"],
+        question: "Quel studio d'animation a produit Akira en 1988 ?",
+        options: ["Studio Pierrot", "Madhouse", "Studio Ghibli", "TMS Entertainment"],
         correctAnswer: 3,
-        explanation: "Sakuragi Hanamichi joue au poste de pivot (center) malgré son manque d'expérience initial."
+        explanation: "TMS Entertainment a produit Akira, film révolutionnaire d'animation japonaise."
       },
       {
-        question: "Dans Free!, quel style de nage préfère Haruka ?",
-        options: ["Brasse", "Dos crawlé", "Nage libre", "Papillon"],
-        correctAnswer: 2,
-        explanation: "Haruka Nanase excelle particulièrement en nage libre (freestyle)."
+        question: "Dans Serial Experiments Lain, quel est le nom du réseau virtuel ?",
+        options: ["The Wired", "The Net", "Cyberia", "The Matrix"],
+        correctAnswer: 0,
+        explanation: "The Wired est le réseau de communication global dans Serial Experiments Lain."
       },
       {
-        question: "Dans Yuri!!! on ICE, de quel pays vient Victor ?",
-        options: ["États-Unis", "Canada", "Russie", "Finlande"],
+        question: "Qui est le créateur original du manga Berserk ?",
+        options: ["Kentaro Miura", "Naoki Urasawa", "Makoto Yukimura", "Tsutomu Nihei"],
+        correctAnswer: 0,
+        explanation: "Kentaro Miura était le mangaka légendaire créateur de Berserk, décédé en 2021."
+      },
+      {
+        question: "Dans Neon Genesis Evangelion, que signifie 'AT Field' ?",
+        options: ["Absolute Terror Field", "Angel Territory Field", "Absolute Territory Field", "Anti-Terror Field"],
         correctAnswer: 2,
-        explanation: "Victor Nikiforov est un patineur artistique russe et champion du monde."
+        explanation: "AT Field signifie 'Absolute Territory Field', une barrière psychique dans Evangelion."
+      },
+      {
+        question: "Quel est le nom du mangaka de One Piece ?",
+        options: ["Masashi Kishimoto", "Eiichiro Oda", "Akira Toriyama", "Tite Kubo"],
+        correctAnswer: 1,
+        explanation: "Eiichiro Oda est le créateur et auteur du manga One Piece depuis 1997."
+      }
+    ]
+  },
+
+  // Quiz Films d'Animation
+  {
+    title: "Films d'Animation Japonais",
+    description: "Les chefs-d'œuvre du cinéma d'animation japonais",
+    difficulty: "medium" as const,
+    xpReward: 30,
+    questions: [
+      {
+        question: "Qui a réalisé 'Your Name' (Kimi no Na wa) ?",
+        options: ["Makoto Shinkai", "Mamoru Hosoda", "Satoshi Kon", "Hideaki Anno"],
+        correctAnswer: 0,
+        explanation: "Makoto Shinkai a réalisé 'Your Name', succès phénoménal du cinéma d'animation."
+      },
+      {
+        question: "Dans quel film apparaît le personnage de Calcifer ?",
+        options: ["Princesse Mononoke", "Le Château ambulant", "Nausicaä", "Porco Rosso"],
+        correctAnswer: 1,
+        explanation: "Calcifer est le démon du feu dans 'Le Château ambulant' de Miyazaki."
+      },
+      {
+        question: "Quel film de Satoshi Kon explore les rêves et la réalité ?",
+        options: ["Perfect Blue", "Paprika", "Tokyo Godfathers", "Millennium Actress"],
+        correctAnswer: 1,
+        explanation: "Paprika de Satoshi Kon explore magistralement les frontières entre rêves et réalité."
+      },
+      {
+        question: "Dans 'Akira', dans quelle ville se déroule l'action ?",
+        options: ["Neo-Tokyo", "New Tokyo", "Tokyo-3", "Future Tokyo"],
+        correctAnswer: 0,
+        explanation: "L'action d'Akira se déroule dans Neo-Tokyo en 2019, ville reconstruite après la Troisième Guerre Mondiale."
+      },
+      {
+        question: "Qui a composé la musique du film 'Ghost in the Shell' (1995) ?",
+        options: ["Joe Hisaishi", "Yoko Kanno", "Kenji Kawai", "Hiroyuki Sawano"],
+        correctAnswer: 2,
+        explanation: "Kenji Kawai a composé la bande sonore mystique et puissante de Ghost in the Shell."
       }
     ]
   }

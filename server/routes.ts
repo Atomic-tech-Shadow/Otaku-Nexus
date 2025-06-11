@@ -547,6 +547,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // YouTube API integration for videos
+  app.get('/api/external/youtube/search', async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      const apiKey = process.env.YOUTUBE_API_KEY;
+      
+      if (!apiKey) {
+        return res.status(500).json({ message: "YouTube API key not configured" });
+      }
+      
+      if (!query) {
+        return res.status(400).json({ message: "Query parameter 'q' is required" });
+      }
+
+      const searchQuery = `${query} anime opening`;
+      const response = await fetch(
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(searchQuery)}&type=video&key=${apiKey}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`YouTube API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Transform YouTube data to match our video format
+      const videos = data.items?.map((item: any) => ({
+        id: item.id.videoId,
+        title: item.snippet.title,
+        description: item.snippet.description,
+        videoUrl: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+        thumbnailUrl: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
+        duration: "N/A",
+        views: 0,
+        category: "opening",
+        source: "youtube"
+      })) || [];
+
+      res.json({ videos });
+    } catch (error) {
+      console.error("Error fetching from YouTube API:", error);
+      res.status(500).json({ message: "Failed to search videos from YouTube" });
+    }
+  });
+
+  // Anime opening music search
+  app.get('/api/external/music/openings', async (req, res) => {
+    try {
+      const anime = req.query.anime as string;
+      
+      if (!anime) {
+        return res.status(400).json({ message: "Anime parameter is required" });
+      }
+
+      // Search for anime openings on YouTube
+      const apiKey = process.env.YOUTUBE_API_KEY;
+      
+      if (!apiKey) {
+        return res.status(500).json({ message: "YouTube API key not configured" });
+      }
+
+      const searchQuery = `${anime} opening theme song`;
+      const response = await fetch(
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10&q=${encodeURIComponent(searchQuery)}&type=video&key=${apiKey}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`YouTube API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Transform YouTube data to match our music format
+      const openings = data.items?.map((item: any) => ({
+        id: item.id.videoId,
+        title: item.snippet.title,
+        artist: item.snippet.channelTitle,
+        anime: anime,
+        audioUrl: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+        thumbnailUrl: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
+        duration: "N/A",
+        type: "opening",
+        source: "youtube"
+      })) || [];
+
+      res.json({ openings });
+    } catch (error) {
+      console.error("Error fetching anime openings:", error);
+      res.status(500).json({ message: "Failed to fetch anime openings" });
+    }
+  });
+
   // Profile routes
   app.put('/api/profile', isAuthenticated, async (req: any, res) => {
     try {
