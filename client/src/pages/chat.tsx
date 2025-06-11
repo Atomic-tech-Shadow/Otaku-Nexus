@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Phone, Video, Settings, Send, Smile, ThumbsUp, Camera, Mic, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/loading-spinner";
@@ -20,6 +20,7 @@ interface Message {
   userId: string;
   userFirstName: string;
   userLastName: string;
+  userProfileImageUrl?: string;
   isAdmin: boolean;
   createdAt: string;
 }
@@ -72,7 +73,7 @@ export default function Chat() {
         body: { content: content.trim() },
       });
     },
-    onSuccess: (newMessage) => {
+    onSuccess: (newMessage: any) => {
       setNewMessage("");
       // Mise à jour optimiste locale
       queryClient.setQueryData(["/api/chat/messages"], (oldMessages: Message[] = []) => {
@@ -318,11 +319,16 @@ export default function Chat() {
                           "flex-shrink-0", 
                           showAvatar ? "opacity-100" : "opacity-0"
                         )}>
-                          <div className="w-8 h-8 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center shadow-lg border-2 border-white/20">
-                            <span className="text-xs font-bold text-white">
+                          <Avatar className="w-8 h-8 border-2 border-white/20 shadow-lg">
+                            <AvatarImage 
+                              src={message.userProfileImageUrl} 
+                              alt={message.userFirstName}
+                              className="object-cover"
+                            />
+                            <AvatarFallback className="text-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold">
                               {message.userFirstName?.[0]?.toUpperCase() || "?"}
-                            </span>
-                          </div>
+                            </AvatarFallback>
+                          </Avatar>
                         </div>
                       )}
                       
@@ -372,13 +378,13 @@ export default function Chat() {
           </div>
         </ScrollArea>
 
-        {/* Message Input - Style Facebook */}
-        <div className="bg-white border-t border-gray-200 px-4 py-3 shadow-sm">
-          <div className="flex items-center gap-3">
+        {/* Modern Message Input */}
+        <div className="backdrop-blur-xl bg-white/10 border-t border-white/20 px-6 py-4 shadow-2xl relative z-10">
+          <div className="flex items-center gap-4">
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-600 flex-shrink-0"
+              className="h-10 w-10 rounded-xl hover:bg-white/20 text-white/70 hover:text-white flex-shrink-0 transition-all duration-300"
             >
               <Camera className="w-5 h-5" />
             </Button>
@@ -389,7 +395,7 @@ export default function Chat() {
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Écrivez un message..."
-                className="bg-gray-100 border-0 rounded-full px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all resize-none text-gray-900 placeholder-gray-500"
+                className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl px-6 py-4 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white/20 transition-all resize-none text-white placeholder-white/50 shadow-lg"
                 disabled={sendMessageMutation.isPending}
                 maxLength={1000}
               />
@@ -398,7 +404,7 @@ export default function Chat() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-600 flex-shrink-0"
+              className="h-10 w-10 rounded-xl hover:bg-white/20 text-white/70 hover:text-white flex-shrink-0 transition-all duration-300"
             >
               <Mic className="w-5 h-5" />
             </Button>
@@ -406,7 +412,7 @@ export default function Chat() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-600 flex-shrink-0"
+              className="h-10 w-10 rounded-xl hover:bg-white/20 text-white/70 hover:text-white flex-shrink-0 transition-all duration-300"
             >
               <Smile className="w-5 h-5" />
             </Button>
@@ -416,7 +422,7 @@ export default function Chat() {
                 onClick={handleSendMessage}
                 disabled={sendMessageMutation.isPending}
                 size="icon"
-                className="h-9 w-9 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0 shadow-sm"
+                className="h-10 w-10 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white flex-shrink-0 shadow-lg transition-all duration-300 hover:scale-105"
               >
                 {sendMessageMutation.isPending ? (
                   <LoadingSpinner size="sm" />
@@ -428,7 +434,7 @@ export default function Chat() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 rounded-full hover:bg-gray-100 text-blue-600 flex-shrink-0"
+                className="h-10 w-10 rounded-xl hover:bg-white/20 text-white/70 hover:text-white flex-shrink-0 transition-all duration-300"
               >
                 <ThumbsUp className="w-5 h-5" />
               </Button>

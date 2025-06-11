@@ -345,6 +345,7 @@ export class DatabaseStorage implements IStorage {
         userId: chatMessages.userId,
         userFirstName: users.firstName,
         userLastName: users.lastName,
+        userProfileImageUrl: users.profileImageUrl,
         isAdmin: users.isAdmin,
         createdAt: chatMessages.createdAt,
       })

@@ -80,8 +80,15 @@ export default function EditProfile() {
         body: data,
       });
     },
-    onSuccess: () => {
+    onSuccess: (updatedUser) => {
+      // Invalider tous les caches liés à l'utilisateur
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
+      
+      // Forcer la mise à jour immédiate du cache utilisateur
+      queryClient.setQueryData(["/api/auth/user"], updatedUser);
+      
       toast({
         title: "Profil mis à jour",
         description: "Vos informations ont été sauvegardées avec succès.",

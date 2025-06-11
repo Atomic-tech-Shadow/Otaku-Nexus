@@ -122,12 +122,15 @@ export default function Admin() {
   });
 
   // Fetch global platform stats
-  const { data: platformStats } = useQuery({
+  const { data: platformStats = {
+    totalUsers: "∞",
+    totalQuizzes: "∞", 
+    totalAnime: "∞",
+    totalMessages: "∞"
+  } } = useQuery({
     queryKey: ["/api/admin/platform-stats"],
     enabled: isAuthenticated && user?.email === ADMIN_EMAIL,
     queryFn: async () => {
-      // Pour l'instant, retourner des stats statiques
-      // TODO: Implémenter les vraies stats dans le backend
       return {
         totalUsers: "∞",
         totalQuizzes: "∞",
