@@ -120,6 +120,29 @@ export default function EditProfile() {
     form.setValue("profileImageUrl", url);
   };
 
+  const compressImage = (file: File, maxWidth: number = 300, quality: number = 0.8): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions
+        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+        
+        // Draw and compress
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressedDataUrl);
+      };
+      
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleFileUpload = async (file: File) => {
     if (!file) return;
     
@@ -133,33 +156,19 @@ export default function EditProfile() {
       return;
     }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast({
-        title: "Erreur",
-        description: "L'image ne peut pas dépasser 5MB.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setUploading(true);
     
     try {
-      // Convert file to base64 for immediate preview and storage
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        setImagePreview(base64);
-        form.setValue("profileImageUrl", base64);
-        
-        toast({
-          title: "Image uploadée",
-          description: "Votre image de profil a été uploadée avec succès.",
-        });
-      };
-      reader.readAsDataURL(file);
+      // Compress image to reduce size
+      const compressedImage = await compressImage(file, 300, 0.8);
+      
+      setImagePreview(compressedImage);
+      form.setValue("profileImageUrl", compressedImage);
+      
+      toast({
+        title: "Image uploadée",
+        description: "Votre image de profil a été compressée et uploadée avec succès.",
+      });
     } catch (error) {
       console.error('Upload error:', error);
       toast({

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -148,7 +147,7 @@ export default function Chat() {
       if (diffMins < 60) return `${diffMins}m`;
       if (diffHours < 24) return `${diffHours}h`;
       if (diffDays < 7) return `${diffDays}j`;
-      
+
       return date.toLocaleDateString("fr-FR", {
         day: "2-digit",
         month: "2-digit",
@@ -184,7 +183,7 @@ export default function Chat() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex flex-col relative overflow-hidden">
       <ConnectionStatus />
-      
+
       {/* Modern Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5"></div>
@@ -193,7 +192,7 @@ export default function Chat() {
       </div>
 
       {/* Modern Glassmorphism Header */}
-      <div className="backdrop-blur-xl bg-white/10 border-b border-white/20 px-6 py-4 flex items-center justify-between shadow-2xl sticky top-0 z-50"></div>
+      <div className="backdrop-blur-xl bg-white/10 border-b border-white/20 px-6 py-4 flex items-center justify-between shadow-2xl sticky top-0 z-50">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -261,7 +260,7 @@ export default function Chat() {
                 </div>
               </div>
             )}
-            
+
             {!error && messages.length === 0 ? (
               <div className="text-center py-20">
                 <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 max-w-sm mx-auto">
@@ -277,19 +276,19 @@ export default function Chat() {
                 const isOwnMessage = message.userId === user?.id;
                 const prevMessage = messages[index - 1];
                 const nextMessage = messages[index + 1];
-                
+
                 const showAvatar = !isOwnMessage && (
                   !nextMessage || 
                   nextMessage.userId !== message.userId || 
                   index === messages.length - 1
                 );
-                
+
                 const showName = !isOwnMessage && (
                   !prevMessage || 
                   prevMessage.userId !== message.userId || 
                   index === 0
                 );
-                
+
                 const showTime = index === 0 || 
                   new Date(message.createdAt).getTime() - new Date(messages[index - 1]?.createdAt).getTime() > 300000;
 
@@ -308,7 +307,7 @@ export default function Chat() {
                         </div>
                       </div>
                     )}
-                    
+
                     <div className={cn(
                       "flex items-end gap-3 max-w-[85%]",
                       isOwnMessage ? "ml-auto flex-row-reverse" : "mr-auto",
@@ -331,7 +330,7 @@ export default function Chat() {
                           </Avatar>
                         </div>
                       )}
-                      
+
                       <div className="flex flex-col max-w-[80%]">
                         {!isOwnMessage && showName && (
                           <div className="flex items-center gap-2 mb-2 px-4">
@@ -346,7 +345,7 @@ export default function Chat() {
                             )}
                           </div>
                         )}
-                        
+
                         <div className={cn(
                           "relative px-5 py-3 rounded-2xl max-w-full break-words text-sm leading-relaxed shadow-xl backdrop-blur-xl",
                           isOwnMessage
@@ -356,7 +355,7 @@ export default function Chat() {
                           !isOwnMessage && !isConsecutive ? "rounded-bl-md" : ""
                         )}>
                           <p className="whitespace-pre-wrap">{message.content}</p>
-                          
+
                           {/* Message timestamp */}
                           <div className={cn(
                             "text-xs mt-2 opacity-70",
@@ -388,7 +387,7 @@ export default function Chat() {
             >
               <Camera className="w-5 h-5" />
             </Button>
-            
+
             <div className="flex-1 relative">
               <Input
                 value={newMessage}
@@ -440,7 +439,7 @@ export default function Chat() {
               </Button>
             )}
           </div>
-          
+
           {/* Indicateur d'activité */}
           <div className="text-xs text-gray-500 mt-2 px-2 flex items-center justify-between">
             <span className="animate-pulse">🌸 Chat global en temps réel</span>
