@@ -21,10 +21,15 @@ export default function Quiz() {
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  const { data: quizzes = [], isLoading } = useQuery({
+  const { data: quizzes = [], isLoading, error } = useQuery({
     queryKey: ["/api/quizzes"],
     retry: false,
   });
+
+  // Debug logging
+  console.log("Quiz data:", quizzes);
+  console.log("Quiz loading:", isLoading);
+  console.log("Quiz error:", error);
 
   const filteredQuizzes = Array.isArray(quizzes) ? quizzes.filter(quiz => {
     const difficultyMatch = selectedDifficulty === "all" || quiz.difficulty === selectedDifficulty;
@@ -113,7 +118,14 @@ export default function Quiz() {
           {!isLoading && filteredQuizzes.length === 0 && (
             <div className="text-center py-8">
               <div className="glass-morphism rounded-2xl p-6">
-                <p className="text-gray-300">No quizzes found matching your criteria.</p>
+                <p className="text-gray-300 mb-4">
+                  {quizzes.length === 0 ? "Aucun quiz disponible pour le moment." : "Aucun quiz ne correspond à vos critères."}
+                </p>
+                {error && (
+                  <p className="text-red-400 text-sm">
+                    Erreur de chargement: {error.message}
+                  </p>
+                )}
               </div>
             </div>
           )}

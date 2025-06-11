@@ -239,7 +239,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Quiz routes
   app.get('/api/quizzes', async (req, res) => {
     try {
-      const quizzes = await storage.getQuizzes();
+      let quizzes = await storage.getQuizzes();
+      
+      // Si aucun quiz n'existe, générer des quiz de base
+      if (quizzes.length === 0) {
+        console.log("Aucun quiz trouvé, génération de quiz de base...");
+        
+        // Importer et créer des quiz de base
+        const { mangaQuizzes } = require('./quiz-data');
+        
+        for (const quizData of mangaQuizzes.slice(0, 5)) {
+          try {
+            await storage.createQuiz(quizData);
+          } catch (err) {
+            console.log("Erreur lors de la création du quiz:", err);
+          }
+        }
+        
+        // Récupérer les quiz après création
+        quizzes = await storage.getQuizzes();
+      }
+      
+      console.log(`Retour de ${quizzes.length} quiz`);
       res.json(quizzes);
     } catch (error) {
       console.error("Error fetching quizzes:", error);
