@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle, XCircle, Trophy, Clock, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
+import QuizInstructions from "@/components/quiz/quiz-instructions";
 
 interface Question {
   question: string;
@@ -60,7 +61,10 @@ export default function QuizDetail() {
 
   const submitResultMutation = useMutation({
     mutationFn: async (result: any) => {
-      return await apiRequest("POST", "/api/quiz-results", result);
+      return await apiRequest("/api/quiz-results", {
+        method: "POST",
+        body: JSON.stringify(result),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
@@ -122,7 +126,7 @@ export default function QuizDetail() {
     );
   }
 
-  const questions: Question[] = quiz && Array.isArray(quiz.questions) ? quiz.questions : [];
+  const questions: Question[] = quiz && (quiz as any).questions && Array.isArray((quiz as any).questions) ? (quiz as any).questions : [];
   const progress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
 
   const handleStartQuiz = () => {

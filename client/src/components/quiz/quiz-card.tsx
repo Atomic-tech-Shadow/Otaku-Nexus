@@ -52,7 +52,7 @@ export default function QuizCard({ quiz, featured = false }: QuizCardProps) {
               </div>
             </div>
             <Link href={`/quiz/${quiz.id}`}>
-              <Button className="bg-white text-otaku-purple px-4 py-2 rounded-lg font-semibold text-sm btn-hover">
+              <Button className="bg-white text-otaku-purple px-4 py-2 rounded-lg font-semibold text-sm hover:bg-gray-100 transition-colors">
                 Start Quiz
               </Button>
             </Link>
@@ -63,7 +63,7 @@ export default function QuizCard({ quiz, featured = false }: QuizCardProps) {
   }
 
   return (
-    <Card className="bg-card-bg hover:bg-secondary-bg transition-all duration-300 card-hover border-gray-800">
+    <Card className="bg-card-bg hover:bg-secondary-bg transition-all duration-300 border-gray-800 hover:border-electric-blue/50">
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
@@ -96,7 +96,7 @@ export default function QuizCard({ quiz, featured = false }: QuizCardProps) {
           <Link href={`/quiz/${quiz.id}`}>
             <Button 
               size="sm" 
-              className="bg-electric-blue hover:bg-electric-blue/80 btn-hover"
+              className="bg-electric-blue hover:bg-electric-blue/80 transition-colors"
             >
               <Brain className="w-3 h-3 mr-1" />
               Start
