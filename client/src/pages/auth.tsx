@@ -47,9 +47,19 @@ export default function AuthPage() {
     },
     onError: (error: any) => {
       console.error("Login error:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
+      
+      let errorMessage = "Email ou mot de passe incorrect";
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
       toast({
         title: "Erreur de connexion",
-        description: error.message || "Email ou mot de passe incorrect",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -74,9 +84,19 @@ export default function AuthPage() {
     },
     onError: (error: any) => {
       console.error("Registration error:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
+      
+      let errorMessage = "Une erreur est survenue lors de l'inscription";
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
       toast({
         title: "Erreur d'inscription",
-        description: error.message || "Une erreur est survenue lors de l'inscription",
+        description: errorMessage,
         variant: "destructive",
       });
     },

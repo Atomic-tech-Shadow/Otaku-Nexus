@@ -109,6 +109,26 @@ export async function setupAuth(app: Express) {
       });
     } catch (error) {
       console.error("Register error:", error);
+      
+      // Gestion des erreurs de validation Zod
+      if (error && typeof error === 'object' && 'issues' in error) {
+        const zodError = error as any;
+        const firstIssue = zodError.issues?.[0];
+        return res.status(400).json({ 
+          message: firstIssue?.message || "Données invalides" 
+        });
+      }
+      
+      // Gestion des erreurs de base de données
+      if (error && typeof error === 'object' && 'code' in error) {
+        const dbError = error as any;
+        if (dbError.code === '23505') { // Violation de contrainte unique
+          return res.status(400).json({ 
+            message: "Un utilisateur avec cet email existe déjà" 
+          });
+        }
+      }
+      
       if (error instanceof Error) {
         res.status(400).json({ message: error.message });
       } else {
@@ -152,6 +172,16 @@ export async function setupAuth(app: Express) {
       });
     } catch (error) {
       console.error("Login error:", error);
+      
+      // Gestion des erreurs de validation Zod
+      if (error && typeof error === 'object' && 'issues' in error) {
+        const zodError = error as any;
+        const firstIssue = zodError.issues?.[0];
+        return res.status(400).json({ 
+          message: firstIssue?.message || "Données invalides" 
+        });
+      }
+      
       if (error instanceof Error) {
         res.status(400).json({ message: error.message });
       } else {
