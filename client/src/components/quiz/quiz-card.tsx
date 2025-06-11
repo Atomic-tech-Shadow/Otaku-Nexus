@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Trophy, Clock, Target } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Trophy, Clock, Users, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 
@@ -13,68 +13,51 @@ interface QuizCardProps {
     difficulty: string;
     questions: any;
     xpReward?: number;
+    createdAt?: string;
   };
-  featured?: boolean;
 }
 
-export default function QuizCard({ quiz, featured = false }: QuizCardProps) {
-  const difficultyColors = {
-    easy: "bg-green-500/20 text-green-400",
-    medium: "bg-yellow-500/20 text-yellow-400",
-    hard: "bg-red-500/20 text-red-400",
+const difficultyColors = {
+  easy: "bg-green-500/20 text-green-300 border-green-500/30",
+  medium: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
+  hard: "bg-red-500/20 text-red-300 border-red-500/30",
+};
+
+export default function QuizCard({ quiz }: QuizCardProps) {
+  const getQuestionCount = () => {
+    try {
+      if (Array.isArray(quiz.questions)) {
+        return quiz.questions.length;
+      }
+      if (typeof quiz.questions === 'string') {
+        const parsed = JSON.parse(quiz.questions);
+        return Array.isArray(parsed) ? parsed.length : 0;
+      }
+      return 0;
+    } catch {
+      return 0;
+    }
   };
 
-  const questionCount = Array.isArray(quiz.questions) ? quiz.questions.length : 
-                       quiz.questions?.length || 25;
-
-  if (featured) {
-    return (
-      <div className="bg-gradient-to-r from-otaku-purple to-hot-pink rounded-2xl p-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full transform translate-x-8 -translate-y-8"></div>
-        <div className="relative z-10">
-          <h4 className="text-xl font-bold mb-2">{quiz.title}</h4>
-          <p className="text-sm opacity-90 mb-4">
-            {quiz.description || "Test your knowledge of the greatest anime series!"}
-          </p>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="text-center">
-                <div className="text-sm font-bold">{questionCount}</div>
-                <div className="text-xs opacity-75">Questions</div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm font-bold capitalize">{quiz.difficulty}</div>
-                <div className="text-xs opacity-75">Difficulty</div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm font-bold">+{quiz.xpReward || 10} XP</div>
-                <div className="text-xs opacity-75">Reward</div>
-              </div>
-            </div>
-            <Link href={`/quiz/${quiz.id}`}>
-              <Button className="bg-white text-otaku-purple px-4 py-2 rounded-lg font-semibold text-sm hover:bg-gray-100 transition-colors">
-                Start Quiz
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const questionCount = getQuestionCount();
 
   return (
-    <Card className="bg-card-bg hover:bg-secondary-bg transition-all duration-300 border-gray-800 hover:border-electric-blue/50">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-3">
+    <Card className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 hover:from-slate-700/50 hover:to-slate-800/50 transition-all duration-300 border-slate-700/50 hover:border-electric-blue/50 backdrop-blur-sm">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
-            <h4 className="font-semibold text-sm mb-1">{quiz.title}</h4>
+            <h3 className="font-bold text-lg mb-2 text-white line-clamp-2">
+              {quiz.title}
+            </h3>
             {quiz.description && (
-              <p className="text-xs text-gray-400 line-clamp-2">{quiz.description}</p>
+              <p className="text-gray-400 text-sm line-clamp-2 mb-3">
+                {quiz.description}
+              </p>
             )}
           </div>
           <Badge 
             className={cn(
-              "ml-2",
+              "ml-3 flex-shrink-0",
               difficultyColors[quiz.difficulty as keyof typeof difficultyColors] || difficultyColors.medium
             )}
           >
@@ -82,24 +65,31 @@ export default function QuizCard({ quiz, featured = false }: QuizCardProps) {
           </Badge>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4 text-xs text-gray-400">
-            <span className="flex items-center">
-              <Target className="w-3 h-3 mr-1" />
-              {questionCount} questions
-            </span>
-            <span className="flex items-center">
-              <Trophy className="w-3 h-3 mr-1" />
-              {quiz.xpReward || 10} XP
-            </span>
+        <div className="flex items-center gap-4 text-sm text-gray-400 mb-4">
+          <div className="flex items-center gap-1">
+            <Clock className="w-4 h-4" />
+            <span>{questionCount} questions</span>
           </div>
+          <div className="flex items-center gap-1">
+            <Trophy className="w-4 h-4" />
+            <span>{quiz.xpReward || 10} XP</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 text-xs text-gray-500">
+              <Star className="w-3 h-3" />
+              <span>Populaire</span>
+            </div>
+          </div>
+          
           <Link href={`/quiz/${quiz.id}`}>
             <Button 
               size="sm" 
-              className="bg-electric-blue hover:bg-electric-blue/80 transition-colors"
+              className="bg-gradient-to-r from-electric-blue to-otaku-purple hover:from-electric-blue/80 hover:to-otaku-purple/80 text-white border-0"
             >
-              <Brain className="w-3 h-3 mr-1" />
-              Start
+              Commencer
             </Button>
           </Link>
         </div>

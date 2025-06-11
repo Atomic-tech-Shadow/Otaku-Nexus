@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -115,48 +115,61 @@ export default function QuizDetail() {
   // Debug log for questions
   useEffect(() => {
     console.log("Quiz data loaded:", quiz);
-    console.log("Questions:", quiz?.questions);
-    console.log("Questions length:", quiz?.questions?.length);
+    console.log("Questions:", (quiz as any)?.questions);
+    console.log("Questions length:", questions.length);
     console.log("Quiz started:", quizStarted);
     console.log("Show results:", showResults);
-  }, [quiz, quizStarted, showResults]);
+  }, [quiz, questions, quizStarted, showResults]);
 
   // Parse questions from quiz data - moved after all hooks
   const questions: Question[] = React.useMemo(() => {
     if (!quiz) return [];
 
-    // Try different ways to access questions
+    // Handle quiz data structure
     const quizData = quiz as any;
+    
+    // If questions is already an array, return it
     if (Array.isArray(quizData.questions)) {
-      console.log("Found questions array:", quizData.questions);
       return quizData.questions;
+    }
+
+    // If questions is a string (JSON), parse it
+    if (typeof quizData.questions === 'string') {
+      try {
+        const parsed = JSON.parse(quizData.questions);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      } catch (error) {
+        console.error("Failed to parse questions JSON:", error);
+      }
     }
 
     // If quiz is an array, take the first element
     if (Array.isArray(quiz) && quiz.length > 0) {
       const firstQuiz = quiz[0] as any;
       if (Array.isArray(firstQuiz.questions)) {
-        console.log("Found questions in first quiz element:", firstQuiz.questions);
         return firstQuiz.questions;
+      }
+      if (typeof firstQuiz.questions === 'string') {
+        try {
+          const parsed = JSON.parse(firstQuiz.questions);
+          if (Array.isArray(parsed)) {
+            return parsed;
+          }
+        } catch (error) {
+          console.error("Failed to parse questions JSON from first quiz:", error);
+        }
       }
     }
 
-    console.log("No questions found, quiz structure:", quiz);
+    console.log("No valid questions found, quiz structure:", quiz);
     return [];
   }, [quiz]);
   const progress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
 
   const handleStartQuiz = () => {
-    const quizQuestions = quiz?.questions;
-    console.log("Starting quiz with questions:", quizQuestions);
-    console.log("Quiz data:", quiz);
-    console.log("Questions array:", questions);
-    console.log("Questions length:", questions.length);
-
     if (!questions || questions.length === 0) {
-      console.error("No questions available for quiz!");
-      console.error("Quiz object:", quiz);
-      console.error("Raw questions:", quizQuestions);
       toast({
         title: "Erreur",
         description: "Aucune question disponible pour ce quiz",
