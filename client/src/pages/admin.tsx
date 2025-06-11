@@ -428,34 +428,42 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="posts" className="space-y-8">
-          <TabsList className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-2 shadow-2xl">
+          <TabsList className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-3 shadow-2xl grid w-full grid-cols-4 h-auto">
             <TabsTrigger 
               value="posts" 
-              className="flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 text-white/70 hover:text-white hover:bg-white/10 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg"
+              className="flex flex-col items-center gap-2 px-6 py-4 rounded-2xl transition-all duration-300 text-white/70 hover:text-white hover:bg-white/10 data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:scale-105 border-0"
             >
-              <MessageSquare className="h-4 w-4" />
-              Publications
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <MessageSquare className="h-5 w-5" />
+              </div>
+              <span className="text-sm font-medium">Publications</span>
             </TabsTrigger>
             <TabsTrigger 
               value="stats" 
-              className="flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 text-white/70 hover:text-white hover:bg-white/10 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-lg"
+              className="flex flex-col items-center gap-2 px-6 py-4 rounded-2xl transition-all duration-300 text-white/70 hover:text-white hover:bg-white/10 data-[state=active]:bg-gradient-to-br data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:scale-105 border-0"
             >
-              <Users className="h-4 w-4" />
-              Statistiques
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Users className="h-5 w-5" />
+              </div>
+              <span className="text-sm font-medium">Statistiques</span>
             </TabsTrigger>
             <TabsTrigger 
               value="quizzes" 
-              className="flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 text-white/70 hover:text-white hover:bg-white/10 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg"
+              className="flex flex-col items-center gap-2 px-6 py-4 rounded-2xl transition-all duration-300 text-white/70 hover:text-white hover:bg-white/10 data-[state=active]:bg-gradient-to-br data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:scale-105 border-0"
             >
-              <BookOpen className="h-4 w-4" />
-              Quiz
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <BookOpen className="h-5 w-5" />
+              </div>
+              <span className="text-sm font-medium">Quiz</span>
             </TabsTrigger>
             <TabsTrigger 
               value="content" 
-              className="flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 text-white/70 hover:text-white hover:bg-white/10 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-lg"
+              className="flex flex-col items-center gap-2 px-6 py-4 rounded-2xl transition-all duration-300 text-white/70 hover:text-white hover:bg-white/10 data-[state=active]:bg-gradient-to-br data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:scale-105 border-0"
             >
-              <Video className="h-4 w-4" />
-              Contenu
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Video className="h-5 w-5" />
+              </div>
+              <span className="text-sm font-medium">Contenu</span>
             </TabsTrigger>
           </TabsList>
 
