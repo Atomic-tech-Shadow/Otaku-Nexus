@@ -277,6 +277,8 @@ export default function Admin() {
     createFrenchQuizzesMutation.mutate();
   };
 
+  const [activeTab, setActiveTab] = useState("posts");
+
   // Redirect if not authenticated or not admin
   if (!isAuthenticated || !user?.isAdmin) {
     return (
@@ -705,10 +707,14 @@ export default function Admin() {
             </div>
           </TabsContent>
         </Tabs>
+        </CardContent>
+      </Card>
+      </main>
 
         {/* Edit Post Dialog */}
         <Dialog open={isEditPostOpen} onOpenChange={setIsEditPostOpen}>
-          <DialogContent className="backdrop-blur-xl bg-gray-900/95 border border-gray-700 max-w-3xl max-h-[90vh] overflow-y-auto text-white shadow-2xl"><DialogHeader className="border-b border-gray-700 pb-6">
+          <DialogContent className="backdrop-blur-xl bg-gray-900/95 border border-gray-700 max-w-3xl max-h-[90vh] overflow-y-auto text-white shadow-2xl">
+            <DialogHeader className="border-b border-gray-700 pb-6">
               <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                 Modifier la Publication
               </DialogTitle>
