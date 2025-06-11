@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -112,38 +113,17 @@ export default function QuizDetail() {
     }
   }, [timeLeft, quizStarted, quizCompleted]);
 
-  if (isLoading || quizLoading) {
-    return (
-      <div className="min-h-screen bg-dark-bg flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
-
-  if (!quiz) {
-    return (
-      <div className="min-h-screen bg-dark-bg text-white flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-bold mb-4">Quiz not found</h2>
-          <Link href="/quiz">
-            <Button>Back to Quizzes</Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const questions: Question[] = quiz && (quiz as any).questions && Array.isArray((quiz as any).questions) ? (quiz as any).questions : [];
-  const progress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
-
   // Debug log for questions
   useEffect(() => {
     console.log("Quiz data loaded:", quiz);
-    console.log("Questions:", questions);
-    console.log("Questions length:", questions.length);
+    console.log("Questions:", quiz?.questions);
+    console.log("Questions length:", quiz?.questions?.length);
     console.log("Quiz started:", quizStarted);
     console.log("Show results:", showResults);
-  }, [quiz, questions, quizStarted, showResults]);
+  }, [quiz, quizStarted, showResults]);
+
+  const questions: Question[] = quiz && (quiz as any).questions && Array.isArray((quiz as any).questions) ? (quiz as any).questions : [];
+  const progress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
 
   const handleStartQuiz = () => {
     console.log("Starting quiz with", questions.length, "questions");
@@ -232,6 +212,27 @@ export default function QuizDetail() {
     
     return { correctAnswers, percentage, xpEarned };
   };
+
+  if (isLoading || quizLoading) {
+    return (
+      <div className="min-h-screen bg-dark-bg flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!quiz) {
+    return (
+      <div className="min-h-screen bg-dark-bg text-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-4">Quiz not found</h2>
+          <Link href="/quiz">
+            <Button>Back to Quizzes</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // Quiz start screen
   if (!quizStarted) {
