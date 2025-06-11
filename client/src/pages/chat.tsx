@@ -134,19 +134,28 @@ export default function Chat() {
           ) : (
             processedMessages.map((message: Message) => (
               <div key={message.id} className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                  message.isOwn 
-                    ? 'bg-gradient-to-r from-electric-blue to-hot-pink text-white ml-auto' 
-                    : 'bg-gray-700 text-white'
-                }`}>
+                <div className={`flex gap-3 max-w-xs lg:max-w-md ${message.isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
                   {!message.isOwn && (
-                    <div className="text-xs text-gray-400 mb-1">
-                      {message.username || 'Anonyme'}
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-electric-blue to-hot-pink flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-white">
+                        {(message.username || 'A').charAt(0).toUpperCase()}
+                      </span>
                     </div>
                   )}
-                  <div className="text-sm">{message.content}</div>
-                  <div className={`text-xs mt-1 ${message.isOwn ? 'text-gray-200' : 'text-gray-400'}`}>
-                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <div className={`px-4 py-2 rounded-2xl ${
+                    message.isOwn 
+                      ? 'bg-gradient-to-r from-electric-blue to-hot-pink text-white ml-auto' 
+                      : 'bg-gray-700 text-white'
+                  }`}>
+                    {!message.isOwn && (
+                      <div className="text-xs text-gray-400 mb-1">
+                        {message.username || 'Anonyme'}
+                      </div>
+                    )}
+                    <div className="text-sm">{message.content}</div>
+                    <div className={`text-xs mt-1 ${message.isOwn ? 'text-gray-200' : 'text-gray-400'}`}>
+                      {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </div>
                 </div>
               </div>
