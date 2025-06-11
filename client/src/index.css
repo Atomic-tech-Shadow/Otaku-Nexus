@@ -633,3 +633,93 @@
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
 }
+
+/* Admin page improvements */
+.admin-tabs {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-tabs-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background-color: var(--secondary-bg);
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 16px;
+  gap: 2px;
+}
+
+.admin-tab-trigger {
+  padding: 8px 4px;
+  font-size: 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-tab-trigger[data-state="active"] {
+  background-color: var(--electric-blue);
+  color: white;
+}
+
+/* Quiz section improvements */
+.quiz-management-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.quiz-management-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  background: linear-gradient(45deg, var(--electric-blue), var(--hot-pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.quiz-management-subtitle {
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.quiz-create-button {
+  width: 100%;
+  max-width: 280px;
+  padding: 12px 24px;
+  background: linear-gradient(45deg, var(--hot-pink), var(--otaku-purple));
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.quiz-create-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 20, 147, 0.3);
+}
+
+/* Mobile responsive fixes */
+@media (max-width: 480px) {
+  .admin-tabs-list {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+  }
+  
+  .admin-tab-trigger {
+    font-size: 11px;
+    padding: 6px 2px;
+  }
+  
+  .quiz-management-title {
+    font-size: 20px;
+  }
+}

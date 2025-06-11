@@ -296,62 +296,46 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
-              <Settings className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-black bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Administration
-              </h1>
-              <p className="text-gray-400 mt-1">Panneau de contrôle de la plateforme</p>
-            </div>
-          </div>
-          
-          <div className="flex gap-3">
-            <Button 
-              onClick={() => window.location.href = '/'} 
-              variant="outline" 
-              className="border-gray-600 bg-gray-800 text-white hover:bg-gray-700"
-            >
-              <Home className="h-4 w-4 mr-2" />
-              Accueil
-            </Button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-dark-bg text-white pb-20">
+      {/* Background Animation */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-10 left-10 w-32 h-32 bg-electric-blue rounded-full opacity-20 animate-float"></div>
+        <div className="absolute top-40 right-5 w-24 h-24 bg-hot-pink rounded-full opacity-15 animate-pulse-slow"></div>
+        <div className="absolute bottom-20 left-5 w-20 h-20 bg-otaku-purple rounded-full opacity-25 animate-float" style={{ animationDelay: '2s' }}></div>
+      </div>
 
-        {/* Admin Tabs */}
-        <Tabs defaultValue="posts" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-800 border border-gray-700 rounded-2xl p-2">
-            <TabsTrigger value="posts" className="flex items-center gap-2 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
-              <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500/20 to-purple-500/20">
-                <MessageSquare className="h-4 w-4" />
-              </div>
-              <span className="text-sm font-medium">Publications</span>
-            </TabsTrigger>
-            <TabsTrigger value="stats" className="flex items-center gap-2 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white">
-              <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20">
-                <Users className="h-4 w-4" />
-              </div>
-              <span className="text-sm font-medium">Statistiques</span>
-            </TabsTrigger>
-            <TabsTrigger value="quizzes" className="flex items-center gap-2 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-500 data-[state=active]:text-white">
-              <div className="p-2 rounded-lg bg-gradient-to-r from-pink-500/20 to-purple-500/20">
-                <BookOpen className="h-4 w-4" />
-              </div>
-              <span className="text-sm font-medium">Quiz</span>
-            </TabsTrigger>
-            <TabsTrigger value="content" className="flex items-center gap-2 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-blue-500 data-[state=active]:text-white">
-              <div className="p-2 rounded-lg bg-gradient-to-r from-red-500/20 to-blue-500/20">
-                <Video className="h-4 w-4" />
-              </div>
-              <span className="text-sm font-medium">Contenu</span>
-            </TabsTrigger>
-          </TabsList>
+      <div className="relative z-10">
+        <AppHeader />
+
+        <main className="px-4 pb-6">
+          {/* Page Header */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-gradient-to-br from-electric-blue to-otaku-purple rounded-2xl mx-auto mb-4 flex items-center justify-center">
+              <Settings className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-gradient mb-2">Administration</h1>
+            <p className="text-gray-400">Panneau de contrôle de la plateforme</p>
+          </div>
+
+          {/* Navigation */}
+          <Card className="bg-card-bg border-gray-800 mb-6">
+            <CardContent className="p-4">
+              <Button 
+                onClick={() => window.location.href = '/'}
+                variant="outline"
+                className="w-full mb-4 border-gray-700 text-gray-300 hover:bg-gray-700"
+              >
+                <Home className="w-4 h-4 mr-2" />
+                Accueil
+              </Button>
+
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-4 bg-gray-800 mb-4">
+                  <TabsTrigger value="posts" className="text-xs px-2">Publications</TabsTrigger>
+                  <TabsTrigger value="stats" className="text-xs px-2">Statistiques</TabsTrigger>
+                  <TabsTrigger value="quiz" className="text-xs px-2">Quiz</TabsTrigger>
+                  <TabsTrigger value="content" className="text-xs px-2">Contenu</TabsTrigger>
+                </TabsList>
 
           <TabsContent value="posts">
             <div className="space-y-8">
@@ -396,7 +380,7 @@ export default function Admin() {
                               )}
                             />
                           </div>
-                          
+
                           <FormField
                             control={createForm.control}
                             name="type"
@@ -419,7 +403,7 @@ export default function Admin() {
                               </FormItem>
                             )}
                           />
-                          
+
                           <FormField
                             control={createForm.control}
                             name="imageUrl"
@@ -438,7 +422,7 @@ export default function Admin() {
                             )}
                           />
                         </div>
-                        
+
                         <FormField
                           control={createForm.control}
                           name="content"
@@ -456,7 +440,7 @@ export default function Admin() {
                             </FormItem>
                           )}
                         />
-                        
+
                         <div className="flex gap-4">
                           <FormField
                             control={createForm.control}
@@ -473,7 +457,7 @@ export default function Admin() {
                               </FormItem>
                             )}
                           />
-                          
+
                           <FormField
                             control={createForm.control}
                             name="adminOnly"
@@ -490,7 +474,7 @@ export default function Admin() {
                             )}
                           />
                         </div>
-                        
+
                         <div className="flex gap-3 pt-6">
                           <Button
                             type="submit"
@@ -605,7 +589,7 @@ export default function Admin() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => {
+                              onClick={()={() => {
                                 if (window.confirm("Êtes-vous sûr de vouloir supprimer cette publication ?")) {
                                   deletePostMutation.mutate(post.id);
                                 }
@@ -629,7 +613,7 @@ export default function Admin() {
           <TabsContent value="stats">
             <div className="space-y-6">
               <h2 className="text-3xl font-bold text-white mb-6">Statistiques de la Plateforme</h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Card className="bg-gray-800 border-gray-700">
                   <CardContent className="p-6">
@@ -642,7 +626,7 @@ export default function Admin() {
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 <Card className="bg-gray-800 border-gray-700">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -654,7 +638,7 @@ export default function Admin() {
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 <Card className="bg-gray-800 border-gray-700">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -666,7 +650,7 @@ export default function Admin() {
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 <Card className="bg-gray-800 border-gray-700">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -698,7 +682,7 @@ export default function Admin() {
                   {isCreatingQuizzes ? "Création..." : "Créer Quiz Français"}
                 </Button>
               </div>
-              
+
               <div className="bg-gray-800 rounded-2xl border border-gray-700 p-6">
                 <QuizListComponent />
               </div>
@@ -708,7 +692,7 @@ export default function Admin() {
           <TabsContent value="content">
             <div className="space-y-6">
               <h2 className="text-3xl font-bold text-white mb-6">Gestion du Contenu</h2>
-              
+
               <div className="bg-gray-800 rounded-2xl border border-gray-700 p-6">
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-gradient-to-r from-red-500/20 to-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -756,7 +740,7 @@ export default function Admin() {
                       )}
                     />
                   </div>
-                  
+
                   <FormField
                     control={editForm.control}
                     name="type"
@@ -779,7 +763,7 @@ export default function Admin() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={editForm.control}
                     name="imageUrl"
@@ -798,7 +782,7 @@ export default function Admin() {
                     )}
                   />
                 </div>
-                
+
                 <FormField
                   control={editForm.control}
                   name="content"
@@ -816,7 +800,7 @@ export default function Admin() {
                     </FormItem>
                   )}
                 />
-                
+
                 <div className="flex gap-4">
                   <FormField
                     control={editForm.control}
@@ -833,7 +817,7 @@ export default function Admin() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={editForm.control}
                     name="adminOnly"
@@ -850,7 +834,7 @@ export default function Admin() {
                     )}
                   />
                 </div>
-                
+
                 <div className="flex gap-3 pt-6">
                   <Button
                     type="submit"
