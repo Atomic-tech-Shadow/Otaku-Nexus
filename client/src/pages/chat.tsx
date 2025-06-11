@@ -49,9 +49,10 @@ export default function Chat() {
   const { data: messages = [], refetch, error } = useQuery<Message[]>({
     queryKey: ["/api/chat/messages"],
     enabled: !!user && isAuthenticated,
-    refetchInterval: 3000,
-    retry: 3,
-    retryDelay: 1000,
+    refetchInterval: 2000,
+    staleTime: 30 * 1000, // 30 seconds
+    retry: 2,
+    retryDelay: 500,
   });
 
   useEffect(() => {

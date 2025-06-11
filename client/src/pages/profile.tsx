@@ -33,17 +33,23 @@ export default function Profile() {
 
   const { data: userStats } = useQuery({
     queryKey: ["/api/user/stats"],
-    retry: false,
+    enabled: !!isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
   });
 
   const { data: favorites } = useQuery({
     queryKey: ["/api/favorites"],
-    retry: false,
+    enabled: !!isAuthenticated,
+    staleTime: 10 * 60 * 1000,
+    retry: 2,
   });
 
   const { data: quizResults } = useQuery({
     queryKey: ["/api/quiz-results"],
-    retry: false,
+    enabled: !!isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
   });
 
   if (isLoading) {

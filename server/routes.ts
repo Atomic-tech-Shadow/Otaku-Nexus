@@ -37,7 +37,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/anime', async (req, res) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
-      const animes = await storage.getAnimes(limit);
+      let animes = await storage.getAnimes(limit);
+      
+      // If no local data, fetch from Jikan API
+      if (animes.length === 0) {
+        try {
+          const response = await fetch('https://api.jikan.moe/v4/anime?order_by=popularity&sort=asc&limit=20');
+          if (response.ok) {
+            const data = await response.json();
+            const jikanAnimes = data.data;
+            
+            // Save to database
+            for (const anime of jikanAnimes) {
+              try {
+                await storage.createAnime({
+                  malId: anime.mal_id,
+                  title: anime.title,
+                  synopsis: anime.synopsis,
+                  imageUrl: anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url,
+                  score: anime.score?.toString(),
+                  year: anime.year,
+                  status: anime.status,
+                  episodes: anime.episodes
+                });
+              } catch (err) {
+                // Skip if already exists
+              }
+            }
+            animes = await storage.getAnimes(limit);
+          }
+        } catch (apiError) {
+          console.error("Error fetching from Jikan API:", apiError);
+        }
+      }
+      
       res.json(animes);
     } catch (error) {
       console.error("Error fetching animes:", error);
@@ -276,6 +309,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching quiz:", error);
       res.status(500).json({ message: "Failed to fetch quiz" });
+    }
+  });
+
+  // Generate quiz from real anime data
+  app.post('/api/quizzes/generate', isAuthenticated, async (req, res) => {
+    try {
+      const animes = await storage.getAnimes(50);
+      
+      if (animes.length < 5) {
+        return res.status(400).json({ message: "Not enough anime data to generate quiz" });
+      }
+      
+      const selectedAnimes = animes.sort(() => Math.random() - 0.5).slice(0, 10);
+      const questions = [];
+      
+      // Generate different types of questions
+      for (let i = 0; i < Math.min(8, selectedAnimes.length); i++) {
+        const anime = selectedAnimes[i];
+        const questionTypes = ['score', 'episodes', 'year', 'status'];
+        const questionType = questionTypes[Math.floor(Math.random() * questionTypes.length)];
+        
+        let question, options, correctAnswer, explanation;
+        
+        switch (questionType) {
+          case 'score':
+            if (anime.score) {
+              const correctScore = parseFloat(anime.score);
+              question = `Quel est le score de "${anime.title}" sur MyAnimeList ?`;
+              options = [
+                anime.score,
+                (correctScore + 0.5).toFixed(1),
+                (correctScore - 0.5).toFixed(1),
+                (correctScore + 1).toFixed(1)
+              ].sort(() => Math.random() - 0.5);
+              correctAnswer = options.indexOf(anime.score);
+              explanation = `${anime.title} a un score de ${anime.score} sur MyAnimeList.`;
+            }
+            break;
+            
+          case 'episodes':
+            if (anime.episodes) {
+              question = `Combien d'épisodes compte "${anime.title}" ?`;
+              options = [
+                anime.episodes.toString(),
+                (anime.episodes + 12).toString(),
+                (anime.episodes - 1).toString(),
+                "24"
+              ].sort(() => Math.random() - 0.5);
+              correctAnswer = options.indexOf(anime.episodes.toString());
+              explanation = `${anime.title} compte ${anime.episodes} épisodes.`;
+            }
+            break;
+            
+          case 'year':
+            if (anime.year) {
+              question = `En quelle année "${anime.title}" est-il sorti ?`;
+              options = [
+                anime.year.toString(),
+                (anime.year + 1).toString(),
+                (anime.year - 1).toString(),
+                (anime.year + 2).toString()
+              ].sort(() => Math.random() - 0.5);
+              correctAnswer = options.indexOf(anime.year.toString());
+              explanation = `${anime.title} est sorti en ${anime.year}.`;
+            }
+            break;
+            
+          case 'status':
+            if (anime.status) {
+              question = `Quel est le statut de "${anime.title}" ?`;
+              const statuses = ['Finished Airing', 'Currently Airing', 'Not yet aired'];
+              options = [anime.status, ...statuses.filter(s => s !== anime.status)].slice(0, 4);
+              options = options.sort(() => Math.random() - 0.5);
+              correctAnswer = options.indexOf(anime.status);
+              explanation = `${anime.title} a le statut : ${anime.status}.`;
+            }
+            break;
+        }
+        
+        if (question && options && explanation && correctAnswer !== -1) {
+          questions.push({ question, options, correctAnswer, explanation });
+        }
+      }
+      
+      if (questions.length < 3) {
+        return res.status(400).json({ message: "Could not generate enough valid questions" });
+      }
+      
+      const quiz = await storage.createQuiz({
+        title: `Quiz Anime Authentique - ${new Date().toLocaleDateString('fr-FR')}`,
+        description: "Quiz généré automatiquement basé sur de vraies données d'anime de MyAnimeList",
+        difficulty: "medium",
+        questions: questions.slice(0, 8),
+        xpReward: questions.length * 5
+      });
+      
+      res.json(quiz);
+    } catch (error) {
+      console.error("Error generating quiz:", error);
+      res.status(500).json({ message: "Failed to generate quiz" });
     }
   });
 

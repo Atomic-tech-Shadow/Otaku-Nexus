@@ -15,9 +15,10 @@ interface VideoCardProps {
     category?: string;
   };
   onClick?: () => void;
+  compact?: boolean;
 }
 
-export default function VideoCard({ video, onClick }: VideoCardProps) {
+export default function VideoCard({ video, onClick, compact = false }: VideoCardProps) {
   return (
     <Card 
       className="bg-card-bg border-border hover:border-accent-primary/50 transition-all duration-300 cursor-pointer group overflow-hidden"
