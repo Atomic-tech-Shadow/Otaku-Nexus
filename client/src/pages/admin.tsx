@@ -861,7 +861,7 @@ export default function Admin() {
                   <div className="absolute inset-0 bg-gradient-to-br from-otaku-purple/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   <h3 className="text-otaku-purple font-bold mb-3 text-lg relative z-10">🎌 Anime</h3>
                   <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">
-                    {platformStats?.totalAnime || "0"}
+                    {(platformStats as any)?.totalAnime || "0"}
                   </p>
                   <p className="text-sm text-text-secondary relative z-10">Dans la base</p>
                 </div>
@@ -869,7 +869,7 @@ export default function Admin() {
                   <div className="absolute inset-0 bg-gradient-to-br from-anime-red/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   <h3 className="text-anime-red font-bold mb-3 text-lg relative z-10">💬 Messages</h3>
                   <p className="text-4xl font-black text-text-primary mb-2 relative z-10 animate-glow">
-                    {platformStats?.totalMessages || "0"}
+                    {(platformStats as any)?.totalMessages || "0"}
                   </p>
                   <p className="text-sm text-text-secondary relative z-10">Messages envoyés</p>
                 </div>
