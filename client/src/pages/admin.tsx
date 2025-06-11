@@ -844,9 +844,30 @@ export default function Admin() {
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-otaku-purple to-anime-red bg-clip-text text-transparent">
                   Gestion des Quiz
                 </h2>
-                <Button className="relative bg-gradient-to-r from-otaku-purple to-anime-red hover:from-anime-red hover:to-otaku-purple text-white rounded-xl px-6 py-3 shadow-lg shadow-otaku-purple/30 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-anime-red/40 btn-hover group overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <Plus className="h-5 w-5 mr-2 relative z-10" />
+                <div className="flex gap-3">
+                  <Button 
+                    onClick={async () => {
+                      if (confirm('Êtes-vous sûr de vouloir supprimer TOUS les quiz ? Cette action est irréversible.')) {
+                        try {
+                          const response = await fetch('/api/quizzes/all', { method: 'DELETE' });
+                          if (response.ok) {
+                            toast({ title: "Succès", description: "Tous les quiz ont été supprimés" });
+                          } else {
+                            toast({ title: "Erreur", description: "Impossible de supprimer les quiz", variant: "destructive" });
+                          }
+                        } catch (error) {
+                          toast({ title: "Erreur", description: "Erreur réseau", variant: "destructive" });
+                        }
+                      }
+                    }}
+                    variant="destructive" 
+                    className="px-4 py-2 text-sm"
+                  >
+                    🗑️ Supprimer tous les quiz
+                  </Button>
+                  <Button className="relative bg-gradient-to-r from-otaku-purple to-anime-red hover:from-anime-red hover:to-otaku-purple text-white rounded-xl px-6 py-3 shadow-lg shadow-otaku-purple/30 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-anime-red/40 btn-hover group overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <Plus className="h-5 w-5 mr-2 relative z-10" />
                   <span className="relative z-10 font-semibold">Nouveau Quiz</span>
                 </Button>
               </div>

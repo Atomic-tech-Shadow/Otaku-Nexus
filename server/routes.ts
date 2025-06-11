@@ -333,6 +333,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete all quizzes (admin only)
+  app.delete('/api/quizzes/all', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      const adminEmail = process.env.ADMIN_USER_ID || "sorokomarco@gmail.com";
+
+      // Vérifier si l'utilisateur est l'admin spécifique
+      if (user?.email !== adminEmail) {
+        return res.status(403).json({ message: "Accès refusé - Admin uniquement" });
+      }
+
+      await storage.deleteAllQuizzes();
+      res.json({ message: "Tous les quiz ont été supprimés avec succès" });
+    } catch (error) {
+      console.error("Error deleting all quizzes:", error);
+      res.status(500).json({ message: "Failed to delete quizzes" });
+    }
+  });
+
   // Generate quiz from real anime data
   app.post('/api/quizzes/generate', isAuthenticated, async (req, res) => {
     try {

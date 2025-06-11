@@ -161,7 +161,7 @@ export default function QuizDetail() {
     
     // Submit results
     submitResultMutation.mutate({
-      quizId: (quiz as any)?.id,
+      quizId: quizId,
       score: correctAnswers,
       totalQuestions: questions.length,
       xpEarned: xpEarned,

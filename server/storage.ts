@@ -214,6 +214,13 @@ export class DatabaseStorage implements IStorage {
     return newQuiz;
   }
 
+  async deleteAllQuizzes(): Promise<void> {
+    // Delete all quiz results first (foreign key constraint)
+    await db.delete(quizResults);
+    // Then delete all quizzes
+    await db.delete(quizzes);
+  }
+
   async getFeaturedQuiz(): Promise<Quiz | undefined> {
     const [quiz] = await db
       .select()
