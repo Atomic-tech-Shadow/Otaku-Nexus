@@ -193,7 +193,7 @@ export default function Chat() {
       </div>
 
       {/* Modern Glassmorphism Header */}
-      <div className="backdrop-blur-xl bg-white/10 border-b border-white/20 px-6 py-4 flex items-center justify-between shadow-2xl sticky top-0 z-10">
+      <div className="backdrop-blur-xl bg-white/10 border-b border-white/20 px-6 py-4 flex items-center justify-between shadow-2xl sticky top-0 z-50"></div>
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
