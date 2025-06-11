@@ -34,14 +34,16 @@ export default function Videos() {
 
   // YouTube videos search
   const { data: youtubeData, isLoading: youtubeLoading } = useQuery({
-    queryKey: ["/api/external/youtube/search", searchTerm],
+    queryKey: ["/api/external/youtube/search", { q: searchTerm }],
+    queryFn: () => fetch(`/api/external/youtube/search?q=${encodeURIComponent(searchTerm)}`).then(res => res.json()),
     enabled: activeTab === "youtube" && searchTerm.length > 2,
     retry: false,
   });
 
   // Anime openings search
   const { data: musicData, isLoading: musicLoading } = useQuery({
-    queryKey: ["/api/external/music/openings", musicSearch],
+    queryKey: ["/api/external/music/openings", { anime: musicSearch }],
+    queryFn: () => fetch(`/api/external/music/openings?anime=${encodeURIComponent(musicSearch)}`).then(res => res.json()),
     enabled: activeTab === "music" && musicSearch.length > 2,
     retry: false,
   });

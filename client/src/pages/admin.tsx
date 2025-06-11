@@ -623,7 +623,7 @@ export default function Admin() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-gray-400 text-sm">Utilisateurs</p>
-                        <p className="text-2xl font-bold text-white">{platformStats?.totalUsers || 0}</p>
+                        <p className="text-2xl font-bold text-white">{(platformStats as any)?.totalUsers || 0}</p>
                       </div>
                       <Users className="h-8 w-8 text-blue-500" />
                     </div>
@@ -635,7 +635,7 @@ export default function Admin() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-gray-400 text-sm">Quiz</p>
-                        <p className="text-2xl font-bold text-white">{platformStats?.totalQuizzes || 0}</p>
+                        <p className="text-2xl font-bold text-white">{(platformStats as any)?.totalQuizzes || 0}</p>
                       </div>
                       <BookOpen className="h-8 w-8 text-purple-500" />
                     </div>
@@ -647,7 +647,7 @@ export default function Admin() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-gray-400 text-sm">Anime</p>
-                        <p className="text-2xl font-bold text-white">{platformStats?.totalAnime || 0}</p>
+                        <p className="text-2xl font-bold text-white">{(platformStats as any)?.totalAnime || 0}</p>
                       </div>
                       <Video className="h-8 w-8 text-pink-500" />
                     </div>
@@ -659,7 +659,7 @@ export default function Admin() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-gray-400 text-sm">Messages</p>
-                        <p className="text-2xl font-bold text-white">{platformStats?.totalMessages || 0}</p>
+                        <p className="text-2xl font-bold text-white">{(platformStats as any)?.totalMessages || 0}</p>
                       </div>
                       <MessageSquare className="h-8 w-8 text-green-500" />
                     </div>
