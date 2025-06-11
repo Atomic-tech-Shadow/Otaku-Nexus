@@ -207,37 +207,12 @@ export default function QuizDetail() {
               <p className="text-gray-400 text-sm">{(quiz as any)?.description}</p>
             </div>
 
-            <Card className="bg-card-bg border-gray-800 mb-6">
-              <CardContent className="p-6">
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold electric-blue">{questions.length}</div>
-                    <div className="text-sm text-gray-400">Questions</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold hot-pink">+{(quiz as any)?.xpReward || 10}</div>
-                    <div className="text-sm text-gray-400">XP Reward</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-center mb-6">
-                  <Badge className={`text-lg px-4 py-2 ${
-                    (quiz as any)?.difficulty === 'easy' ? 'bg-green-500/20 text-green-400' :
-                    (quiz as any)?.difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                    'bg-red-500/20 text-red-400'
-                  }`}>
-                    {(quiz as any)?.difficulty?.toUpperCase() || 'MEDIUM'}
-                  </Badge>
-                </div>
-
-                <Button 
-                  onClick={handleStartQuiz}
-                  className="w-full bg-electric-blue hover:bg-electric-blue/80 text-lg py-3"
-                >
-                  Start Quiz
-                </Button>
-              </CardContent>
-            </Card>
+            <QuizInstructions 
+              onStart={handleStartQuiz}
+              questionCount={questions.length}
+              xpReward={(quiz as any)?.xpReward || 10}
+              difficulty={(quiz as any)?.difficulty || 'medium'}
+            />
           </main>
           <BottomNavigation currentPath="/quiz" />
         </div>
