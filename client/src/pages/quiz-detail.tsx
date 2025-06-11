@@ -33,7 +33,7 @@ export default function QuizDetail() {
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [quizStarted, setQuizStarted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
+  const [timeLeft, setTimeLeft] = useState(0); // Will be set when quiz starts
   const [quizCompleted, setQuizCompleted] = useState(false);
 
   const quizId = params?.id ? parseInt(params.id) : null;
@@ -96,15 +96,21 @@ export default function QuizDetail() {
     },
   });
 
-  // Timer effect
+  // Timer effect - only runs when quiz is actually started
   useEffect(() => {
     if (quizStarted && !quizCompleted && timeLeft > 0) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
-    } else if (timeLeft === 0 && !quizCompleted) {
-      handleQuizComplete();
     }
   }, [quizStarted, quizCompleted, timeLeft]);
+
+  // Separate effect for timer expiration to avoid premature completion
+  useEffect(() => {
+    if (quizStarted && !quizCompleted && timeLeft === 0) {
+      console.log("Timer expired, completing quiz");
+      handleQuizComplete();
+    }
+  }, [timeLeft, quizStarted, quizCompleted]);
 
   if (isLoading || quizLoading) {
     return (
