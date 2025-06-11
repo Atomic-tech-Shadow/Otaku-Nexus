@@ -7,19 +7,25 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(method: string, url: string, data?: any) {
+export async function apiRequest(url: string, options?: {
+  method?: string;
+  body?: any;
+  headers?: Record<string, string>;
+}) {
   const token = localStorage.getItem("auth_token");
+  const method = options?.method || "GET";
 
   const config: RequestInit = {
     method,
     headers: {
       "Content-Type": "application/json",
       ...(token && { Authorization: `Bearer ${token}` }),
+      ...options?.headers,
     },
   };
 
-  if (data) {
-    config.body = JSON.stringify(data);
+  if (options?.body) {
+    config.body = JSON.stringify(options.body);
   }
 
   const response = await fetch(url, config);

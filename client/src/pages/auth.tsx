@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,12 +14,12 @@ export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const [loginData, setLoginData] = useState({
     email: "",
     password: "",
   });
-  
+
   const [registerData, setRegisterData] = useState({
     email: "",
     password: "",
@@ -31,15 +30,21 @@ export default function AuthPage() {
   const loginMutation = useMutation({
     mutationFn: async (data: typeof loginData) => {
       console.log("Sending login data:", data);
-      const response = await apiRequest("POST", "/api/auth/login", data);
-      
+      const response = await apiRequest("/api/auth/login", {
+        method: "POST",
+        body: {
+          email: data.email,
+          password: data.password,
+        },
+      });
+
       console.log("Login response status:", response.status);
       console.log("Login response headers:", Object.fromEntries(response.headers.entries()));
-      
+
       if (!response.ok) {
         let errorData;
         const contentType = response.headers.get("content-type");
-        
+
         if (contentType && contentType.includes("application/json")) {
           try {
             errorData = await response.json();
@@ -53,10 +58,10 @@ export default function AuthPage() {
           console.error("Non-JSON error response:", textResponse);
           errorData = { message: `Erreur serveur (${response.status}): ${response.statusText}` };
         }
-        
+
         throw new Error(errorData.message || "Email ou mot de passe incorrect");
       }
-      
+
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         return response.json();
@@ -75,15 +80,15 @@ export default function AuthPage() {
     onError: (error: any) => {
       console.error("Login error:", error);
       console.error("Error details:", JSON.stringify(error, null, 2));
-      
+
       let errorMessage = "Email ou mot de passe incorrect";
-      
+
       if (error?.message) {
         errorMessage = error.message;
       } else if (error?.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-      
+
       toast({
         title: "Erreur de connexion",
         description: errorMessage,
@@ -95,15 +100,23 @@ export default function AuthPage() {
   const registerMutation = useMutation({
     mutationFn: async (data: typeof registerData) => {
       console.log("Sending registration data:", data);
-      const response = await apiRequest("POST", "/api/auth/register", data);
-      
+      const response = await apiRequest("/api/auth/register", {
+        method: "POST",
+        body: {
+          email: data.email,
+          password: data.password,
+          firstName: data.firstName,
+          lastName: data.lastName,
+        },
+      });
+
       console.log("Registration response status:", response.status);
       console.log("Registration response headers:", Object.fromEntries(response.headers.entries()));
-      
+
       if (!response.ok) {
         let errorData;
         const contentType = response.headers.get("content-type");
-        
+
         if (contentType && contentType.includes("application/json")) {
           try {
             errorData = await response.json();
@@ -117,10 +130,10 @@ export default function AuthPage() {
           console.error("Non-JSON error response:", textResponse);
           errorData = { message: `Erreur serveur (${response.status}): ${response.statusText}` };
         }
-        
+
         throw new Error(errorData.message || "Une erreur est survenue lors de l'inscription");
       }
-      
+
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         return response.json();
@@ -139,15 +152,15 @@ export default function AuthPage() {
     onError: (error: any) => {
       console.error("Registration error:", error);
       console.error("Error details:", JSON.stringify(error, null, 2));
-      
+
       let errorMessage = "Une erreur est survenue lors de l'inscription";
-      
+
       if (error?.message) {
         errorMessage = error.message;
       } else if (error?.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-      
+
       toast({
         title: "Erreur d'inscription",
         description: errorMessage,
@@ -158,7 +171,7 @@ export default function AuthPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validation basique
     if (!loginData.email || !loginData.password) {
       toast({
@@ -168,7 +181,7 @@ export default function AuthPage() {
       });
       return;
     }
-    
+
     if (!loginData.email.includes('@')) {
       toast({
         title: "Erreur de validation",
@@ -177,13 +190,13 @@ export default function AuthPage() {
       });
       return;
     }
-    
+
     loginMutation.mutate(loginData);
   };
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validation basique
     if (!registerData.email || !registerData.password || !registerData.firstName || !registerData.lastName) {
       toast({
@@ -193,7 +206,7 @@ export default function AuthPage() {
       });
       return;
     }
-    
+
     if (registerData.password.length < 6) {
       toast({
         title: "Erreur de validation",
@@ -202,7 +215,7 @@ export default function AuthPage() {
       });
       return;
     }
-    
+
     if (!registerData.email.includes('@')) {
       toast({
         title: "Erreur de validation",
@@ -211,7 +224,7 @@ export default function AuthPage() {
       });
       return;
     }
-    
+
     registerMutation.mutate(registerData);
   };
 
@@ -226,7 +239,7 @@ export default function AuthPage() {
             Rejoignez la communauté otaku
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-dark-bg">
@@ -237,7 +250,7 @@ export default function AuthPage() {
                 Inscription
               </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
@@ -257,7 +270,7 @@ export default function AuthPage() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="login-password" className="text-white">
                     Mot de passe
@@ -282,7 +295,7 @@ export default function AuthPage() {
                     </button>
                   </div>
                 </div>
-                
+
                 <Button 
                   type="submit" 
                   className="w-full bg-electric-blue hover:bg-electric-blue/80"
@@ -292,7 +305,7 @@ export default function AuthPage() {
                 </Button>
               </form>
             </TabsContent>
-            
+
             <TabsContent value="register">
               <form onSubmit={handleRegister} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -312,7 +325,7 @@ export default function AuthPage() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="last-name" className="text-white">
                       Nom
@@ -330,7 +343,7 @@ export default function AuthPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="register-email" className="text-white">
                     Email
@@ -348,7 +361,7 @@ export default function AuthPage() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="register-password" className="text-white">
                     Mot de passe
@@ -377,7 +390,7 @@ export default function AuthPage() {
                     Minimum 6 caractères
                   </p>
                 </div>
-                
+
                 <Button 
                   type="submit" 
                   className="w-full bg-hot-pink hover:bg-hot-pink/80"
