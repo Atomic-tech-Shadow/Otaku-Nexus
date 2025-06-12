@@ -21,7 +21,19 @@ export default function AppHeader() {
               <img 
                 src={user.profileImageUrl} 
                 alt="Profile" 
-                className="w-full h-full object-cover" 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback to initials if image fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const parent = target.parentElement;
+                  if (parent && !parent.querySelector('.fallback-avatar')) {
+                    const fallback = document.createElement('div');
+                    fallback.className = 'fallback-avatar w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink flex items-center justify-center';
+                    fallback.innerHTML = `<span class="text-lg font-bold text-white">${(user?.firstName || user?.username || 'O').charAt(0).toUpperCase()}</span>`;
+                    parent.appendChild(fallback);
+                  }
+                }}
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink flex items-center justify-center">

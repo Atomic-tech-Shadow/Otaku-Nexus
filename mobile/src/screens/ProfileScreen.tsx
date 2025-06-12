@@ -101,7 +101,14 @@ export default function ProfileScreen({ navigation }: any) {
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
             {user?.profileImageUrl ? (
-              <Image source={{ uri: user.profileImageUrl }} style={styles.avatar} />
+              <Image 
+                source={{ uri: user.profileImageUrl }} 
+                style={styles.avatar}
+                onError={() => {
+                  // Handle image load error by showing initials
+                  console.log('Profile image failed to load, showing initials');
+                }}
+              />
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Text style={styles.avatarText}>
