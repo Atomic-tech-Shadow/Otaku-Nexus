@@ -33,6 +33,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, like, count, sql, and } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
@@ -237,8 +238,8 @@ export class DatabaseStorage implements IStorage {
 
     // Delete quiz results for duplicates first
     if (toDelete.length > 0) {
-      await db.delete(quizResults).where(sql`quiz_id IN (${toDelete.join(',')})`);
-      await db.delete(quizzes).where(sql`id IN (${toDelete.join(',')})`);
+      await db.delete(quizResults).where(inArray(quizResults.quizId, toDelete));
+      await db.delete(quizzes).where(inArray(quizzes.id, toDelete));
     }
   }
 
@@ -392,14 +393,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async sendChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
-    // Adapter les données pour la base de données
-    const messageData = {
-      roomId: message.roomId,
-      userId: message.userId,
-      message: message.message || message.content, // Support des deux formats
-    };
-    
-    const [newMessage] = await db.insert(chatMessages).values(messageData).returning();
+    const [newMessage] = await db.insert(chatMessages).values(message).returning();
     return newMessage;
   }
 
