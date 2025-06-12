@@ -10,6 +10,9 @@ import AnimeScreen from './src/screens/AnimeScreen';
 import QuizScreen from './src/screens/QuizScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import AuthScreen from './src/screens/AuthScreen';
+import VideosScreen from './src/screens/VideosScreen';
+import ChatScreen from './src/screens/ChatScreen';
+import AdminScreen from './src/screens/AdminScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -60,9 +63,24 @@ function AppNavigator() {
                 options={{ title: 'Quiz' }}
               />
               <Stack.Screen 
+                name="Videos" 
+                component={VideosScreen}
+                options={{ title: 'Vidéos' }}
+              />
+              <Stack.Screen 
+                name="Chat" 
+                component={ChatScreen}
+                options={{ title: 'Chat' }}
+              />
+              <Stack.Screen 
                 name="Profile" 
                 component={ProfileScreen}
                 options={{ title: 'Profil' }}
+              />
+              <Stack.Screen 
+                name="Admin" 
+                component={AdminScreen}
+                options={{ title: 'Administration' }}
               />
             </>
           )}

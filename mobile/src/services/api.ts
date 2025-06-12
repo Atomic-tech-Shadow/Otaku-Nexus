@@ -175,6 +175,77 @@ class ApiService {
       body: JSON.stringify(data),
     });
   }
+
+  // Chat endpoints
+  async getChatRooms(): Promise<any[]> {
+    return this.request<any[]>('/chat/rooms');
+  }
+
+  async getChatMessages(roomId: number, limit?: number): Promise<any[]> {
+    const params = limit ? `?limit=${limit}` : '';
+    return this.request<any[]>(`/chat/rooms/${roomId}/messages${params}`);
+  }
+
+  async sendChatMessage(data: {
+    roomId: number;
+    content: string;
+    userId: string;
+  }): Promise<any> {
+    return this.request<any>('/chat/messages', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Admin endpoints
+  async getAdminPosts(published?: boolean): Promise<any[]> {
+    const params = published !== undefined ? `?published=${published}` : '';
+    return this.request<any[]>(`/admin/posts${params}`);
+  }
+
+  async getAdminPost(id: number): Promise<any> {
+    return this.request<any>(`/admin/posts/${id}`);
+  }
+
+  async createAdminPost(data: {
+    title: string;
+    content: string;
+    type: string;
+    isPublished: boolean;
+    adminOnly?: boolean;
+  }): Promise<any> {
+    return this.request<any>('/admin/posts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateAdminPost(id: number, data: {
+    title?: string;
+    content?: string;
+    type?: string;
+    isPublished?: boolean;
+    adminOnly?: boolean;
+  }): Promise<any> {
+    return this.request<any>(`/admin/posts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAdminPost(id: number): Promise<void> {
+    await this.request(`/admin/posts/${id}`, { method: 'DELETE' });
+  }
+
+  async getPlatformStats(): Promise<{
+    totalUsers: number;
+    totalQuizzes: number;
+    totalAnime: number;
+    totalMessages: number;
+    totalPosts: number;
+  }> {
+    return this.request('/admin/stats');
+  }
 }
 
 export const apiService = new ApiService();

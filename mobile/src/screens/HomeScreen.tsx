@@ -113,6 +113,22 @@ export default function HomeScreen({ navigation }: any) {
             <Text style={styles.navCardTitle}>Quiz</Text>
             <Text style={styles.navCardSubtitle}>Tester vos connaissances</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.navCard, { backgroundColor: '#9b59b6' }]}
+            onPress={() => navigation.navigate('Videos')}
+          >
+            <Text style={styles.navCardTitle}>Vidéos</Text>
+            <Text style={styles.navCardSubtitle}>AMVs et openings</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.navCard, { backgroundColor: '#2ecc71' }]}
+            onPress={() => navigation.navigate('Chat')}
+          >
+            <Text style={styles.navCardTitle}>Chat</Text>
+            <Text style={styles.navCardSubtitle}>Communauté</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Featured Quiz */}
