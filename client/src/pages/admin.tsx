@@ -16,12 +16,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { 
-  Edit, Save, X, Plus, Eye, EyeOff, Trash2, Shield, Users, FileText, BarChart3, Settings, RefreshCw, TrendingUp, Calendar, Star, MessageSquare, PlayCircle, Trophy, Brain, Heart, Bell, Activity, Download
+  Edit, Save, X, Plus, Eye, EyeOff, Trash2, Shield, Users, FileText, BarChart3, Settings, RefreshCw, TrendingUp, Calendar, Star, MessageSquare, PlayCircle, Trophy, Brain, Heart, Bell, Activity, Download, Home, BookOpen, Video, Zap, LoadingSpinner
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import AppHeader from "@/components/layout/app-header";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const postSchema = z.object({
   title: z.string().min(1, "Le titre est requis"),
@@ -487,170 +488,119 @@ export default function Admin() {
                   </div>
                 </TabsContent>
 
-          {activeTab === "users" && (
-            <div className="space-y-6">
-              {/* User Management Section */}
-              <Card className="bg-card-bg border-gray-800">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-white">
-                    <Users className="h-5 w-5" />
-                    Gestion des Utilisateurs
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex gap-4 mb-6">
-                      <Button
-                        onClick={() => {
-                          // Fetch and display user list
-                          console.log("Fetching user list...");
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Actualiser Liste
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          // Export user data
-                          console.log("Exporting user data...");
-                        }}
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Exporter CSV
-                      </Button>
-                    </div>
+          <TabsContent value="users">
+                  <div className="space-y-6">
+                    {/* User Management Section */}
+                    <Card className="bg-card-bg border-gray-800">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-white">
+                          <Users className="h-5 w-5" />
+                          Gestion des Utilisateurs
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="flex gap-4 mb-6">
+                            <Button
+                              onClick={() => {
+                                // Fetch and display user list
+                                console.log("Fetching user list...");
+                              }}
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              Actualiser Liste
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                // Export user data
+                                console.log("Exporting user data...");
+                              }}
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Exporter CSV
+                            </Button>
+                          </div>
 
-                    {/* User Statistics */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                      <div className="bg-secondary-bg rounded-xl p-4 text-center">
-                        <Users className="w-8 h-8 electric-blue mx-auto mb-2" />
-                        <div className="text-2xl font-bold text-white">{platformStats?.totalUsers || 0}</div>
-                        <div className="text-sm text-gray-400">Utilisateurs Total</div>
-                      </div>
-                      <div className="bg-secondary-bg rounded-xl p-4 text-center">
-                        <Activity className="w-8 h-8 hot-pink mx-auto mb-2" />
-                        <div className="text-2xl font-bold text-white">
-                          {Math.floor((platformStats?.totalUsers || 0) * 0.7)}
-                        </div>
-                        <div className="text-sm text-gray-400">Actifs (7j)</div>
-                      </div>
-                      <div className="bg-secondary-bg rounded-xl p-4 text-center">
-                        <TrendingUp className="w-8 h-8 otaku-purple mx-auto mb-2" />
-                        <div className="text-2xl font-bold text-white">
-                          {Math.floor((platformStats?.totalUsers || 0) * 0.1)}
-                        </div>
-                        <div className="text-sm text-gray-400">Nouveaux (30j)</div>
-                      </div>
-                    </div>
+                          {/* User Statistics */}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div className="bg-gray-700 rounded-xl p-4 text-center">
+                              <Users className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+                              <div className="text-2xl font-bold text-white">{platformStats?.totalUsers || 0}</div>
+                              <div className="text-sm text-gray-400">Utilisateurs Total</div>
+                            </div>
+                            <div className="bg-gray-700 rounded-xl p-4 text-center">
+                              <Activity className="w-8 h-8 text-pink-400 mx-auto mb-2" />
+                              <div className="text-2xl font-bold text-white">
+                                {Math.floor((platformStats?.totalUsers || 0) * 0.7)}
+                              </div>
+                              <div className="text-sm text-gray-400">Actifs (7j)</div>
+                            </div>
+                            <div className="bg-gray-700 rounded-xl p-4 text-center">
+                              <TrendingUp className="w-8 h-8 text-purple-400 mx-auto mb-2" />
+                              <div className="text-2xl font-bold text-white">
+                                {Math.floor((platformStats?.totalUsers || 0) * 0.1)}
+                              </div>
+                              <div className="text-sm text-gray-400">Nouveaux (30j)</div>
+                            </div>
+                          </div>
 
-                    {/* User Actions */}
-                    <div className="space-y-3">
-                      <div className="bg-secondary-bg rounded-xl p-4">
-                        <h4 className="text-lg font-semibold text-white mb-3">Actions Rapides</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <Button
-                            onClick={() => {
-                              // Send notification to all users
-                              console.log("Sending notification to all users...");
-                            }}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white justify-start"
-                          >
-                            <Bell className="h-4 w-4 mr-2" />
-                            Notification Globale
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              // Backup user data
-                              console.log("Backing up user data...");
-                            }}
-                            className="bg-purple-600 hover:bg-purple-700 text-white justify-start"
-                          >
-                            <Shield className="h-4 w-4 mr-2" />
-                            Backup Données
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              // Clean inactive users
-                              console.log("Cleaning inactive users...");
-                            }}
-                            className="bg-orange-600 hover:bg-orange-700 text-white justify-start"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Nettoyer Inactifs
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              // Generate user report
-                              console.log("Generating user report...");
-                            }}
-                            className="bg-teal-600 hover:bg-teal-700 text-white justify-start"
-                          >
-                            <FileText className="h-4 w-4 mr-2" />
-                            Rapport Détaillé
-                          </Button>
+                          {/* User Actions */}
+                          <div className="space-y-3">
+                            <div className="bg-gray-700 rounded-xl p-4">
+                              <h4 className="text-lg font-semibold text-white mb-3">Actions Rapides</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <Button
+                                  onClick={() => {
+                                    // Send notification to all users
+                                    console.log("Sending notification to all users...");
+                                  }}
+                                  className="bg-indigo-600 hover:bg-indigo-700 text-white justify-start"
+                                >
+                                  <Bell className="h-4 w-4 mr-2" />
+                                  Notification Globale
+                                </Button>
+                                <Button
+                                  onClick={() => {
+                                    // Backup user data
+                                    console.log("Backing up user data...");
+                                  }}
+                                  className="bg-purple-600 hover:bg-purple-700 text-white justify-start"
+                                >
+                                  <Shield className="h-4 w-4 mr-2" />
+                                  Backup Données
+                                </Button>
+                                <Button
+                                  onClick={() => {
+                                    // Clean inactive users
+                                    console.log("Cleaning inactive users...");
+                                  }}
+                                  className="bg-orange-600 hover:bg-orange-700 text-white justify-start"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Nettoyer Inactifs
+                                </Button>
+                                <Button
+                                  onClick={() => {
+                                    // Generate user report
+                                    console.log("Generating user report...");
+                                  }}
+                                  className="bg-teal-600 hover:bg-teal-700 text-white justify-start"
+                                >
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  Rapport Détaillé
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+                </TabsContent>
 
-          {activeTab === "dashboard" && (
-            <div className="space-y-6">
-              {/* Statistics Cards */}
-                  {/* Real-time Monitoring */}
-                  <Card className="bg-card-bg border-gray-800">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-white">
-                        <Activity className="h-5 w-5" />
-                        Monitoring Temps Réel
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-secondary-bg rounded-xl p-4">
-                          <h4 className="text-sm font-semibold text-gray-400 mb-2">Activité Récente</h4>
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-300">Messages chat:</span>
-                              <span className="text-green-400">+{Math.floor(Math.random() * 10) + 1}</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-300">Quiz complétés:</span>
-                              <span className="text-blue-400">+{Math.floor(Math.random() * 5) + 1}</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-300">Nouveaux utilisateurs:</span>
-                              <span className="text-purple-400">+{Math.floor(Math.random() * 3)}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="bg-secondary-bg rounded-xl p-4">
-                          <h4 className="text-sm font-semibold text-gray-400 mb-2">Performance</h4>
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-300">Taux de complétion:</span>
-                              <span className="text-green-400">87%</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-300">Temps de réponse:</span>
-                              <span className="text-blue-400">125ms</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-300">Uptime:</span>
-                              <span className="text-purple-400">99.9%</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
+          
 
           <TabsContent value="posts">
             <div className="space-y-8">
@@ -981,7 +931,7 @@ export default function Admin() {
             </div>
           </TabsContent>
 
-          <TabsContent value="quizzes">
+          <TabsContent value="quiz">
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <div>
@@ -1043,6 +993,22 @@ export default function Admin() {
                   </div>
                   <h4 className="text-xl font-semibold text-white mb-2">Gestion du Contenu</h4>
                   <p className="text-gray-400">Cette section sera bientôt disponible pour gérer les vidéos et autres contenus.</p>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <div className="space-y-6">
+              <h2 className="text-3xl font-bold text-white mb-6">Paramètres Système</h2>
+
+              <div className="bg-gray-800 rounded-2xl border border-gray-700 p-6">
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Settings className="h-10 w-10 text-gray-400" />
+                  </div>
+                  <h4 className="text-xl font-semibold text-white mb-2">Paramètres Système</h4>
+                  <p className="text-gray-400">Configuration avancée de la plateforme (bientôt disponible).</p>
                 </div>
               </div>
             </div>
