@@ -5,8 +5,13 @@
     "esModuleInterop": true,
     "isolatedModules": true,
     "jsx": "react-native",
-    "lib": ["es2017", "dom"],
-    "types": ["react-native"],
+    "lib": [
+      "es2017",
+      "dom"
+    ],
+    "types": [
+      "react-native"
+    ],
     "moduleResolution": "node",
     "noEmit": true,
     "strict": false,
@@ -14,8 +19,12 @@
     "baseUrl": ".",
     "skipLibCheck": true,
     "paths": {
-      "@/*": ["./src/*"],
-      "@shared/*": ["../shared/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@shared/*": [
+        "../shared/*"
+      ]
     }
   },
   "exclude": [
@@ -23,5 +32,12 @@
     "babel.config.js",
     "metro.config.js",
     "jest.config.js"
+  ],
+  "extends": "expo/tsconfig.base",
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
   ]
 }
