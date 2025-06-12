@@ -5,575 +5,371 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  FlatList,
-  Alert,
-  Modal,
-  RefreshControl,
+  Image,
+  Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { apiService } from '../services/api';
-import { Quiz, QuizQuestion } from '../types';
-import { useAuth } from '../hooks/useAuth';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function QuizScreen({ navigation, route }: any) {
-  const { user, updateUser } = useAuth();
+const { width, height } = Dimensions.get('window');
+
+interface Quiz {
+  id: number;
+  title: string;
+  description: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  questions: any[];
+  xpReward: number;
+  imageUrl?: string;
+}
+
+const ModernQuizScreen = () => {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [score, setScore] = useState(0);
-  const [timeSpent, setTimeSpent] = useState(0);
-  const [quizStartTime, setQuizStartTime] = useState<number>(0);
-  const [showResult, setShowResult] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [quizInProgress, setQuizInProgress] = useState(false);
+  const [selectedDifficulty, setSelectedDifficulty] = useState('all');
 
   useEffect(() => {
-    loadQuizzes();
+    fetchQuizzes();
   }, []);
 
-  useEffect(() => {
-    if (quizInProgress && quizStartTime > 0) {
-      const interval = setInterval(() => {
-        setTimeSpent(Math.floor((Date.now() - quizStartTime) / 1000));
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [quizInProgress, quizStartTime]);
-
-  const loadQuizzes = async () => {
+  const fetchQuizzes = async () => {
     try {
-      const quizzesData = await apiService.getQuizzes();
-      setQuizzes(quizzesData);
-    } catch (error) {
-      Alert.alert('Erreur', 'Impossible de charger les quiz');
-    } finally {
+      // Simulated API call - replace with actual API
+      const mockQuizzes: Quiz[] = [
+        {
+          id: 1,
+          title: "🔥 Attack on Titan - Les Secrets",
+          description: "Plongez dans l'univers complexe d'Attack on Titan et ses mystères",
+          difficulty: "medium",
+          xpReward: 35,
+          questions: Array(5).fill({}),
+          imageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop"
+        },
+        {
+          id: 2,
+          title: "⚡ Demon Slayer - Techniques de Combat",
+          description: "Maîtrisez-vous les techniques de respiration des chasseurs de démons ?",
+          difficulty: "easy",
+          xpReward: 25,
+          questions: Array(4).fill({}),
+          imageUrl: "https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?w=400&h=250&fit=crop"
+        },
+        {
+          id: 3,
+          title: "🌟 Jujutsu Kaisen - Énergies Occultes",
+          description: "Explorez le monde mystérieux des techniques d'exorcisme",
+          difficulty: "hard",
+          xpReward: 45,
+          questions: Array(5).fill({}),
+          imageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop"
+        }
+      ];
+      
+      setQuizzes(mockQuizzes);
       setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadQuizzes();
-  };
-
-  const startQuiz = (quiz: Quiz) => {
-    setCurrentQuiz(quiz);
-    setCurrentQuestionIndex(0);
-    setSelectedAnswer(null);
-    setScore(0);
-    setTimeSpent(0);
-    setQuizStartTime(Date.now());
-    setShowResult(false);
-    setQuizInProgress(true);
-  };
-
-  const selectAnswer = (answerIndex: number) => {
-    setSelectedAnswer(answerIndex);
-  };
-
-  const nextQuestion = () => {
-    if (selectedAnswer === null) {
-      Alert.alert('Attention', 'Veuillez sélectionner une réponse');
-      return;
-    }
-
-    const currentQuestion = currentQuiz?.questions[currentQuestionIndex];
-    if (currentQuestion && selectedAnswer === currentQuestion.correctAnswer) {
-      setScore(score + 1);
-    }
-
-    if (currentQuestionIndex < (currentQuiz?.questions.length || 0) - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setSelectedAnswer(null);
-    } else {
-      finishQuiz();
-    }
-  };
-
-  const finishQuiz = async () => {
-    if (!currentQuiz) return;
-
-    const finalTimeSpent = Math.floor((Date.now() - quizStartTime) / 1000);
-    const finalScore = selectedAnswer === currentQuiz.questions[currentQuestionIndex].correctAnswer 
-      ? score + 1 
-      : score;
-    
-    try {
-      await apiService.submitQuizResult({
-        quizId: currentQuiz.id,
-        score: finalScore,
-        timeSpent: finalTimeSpent,
-      });
-
-      // Mise à jour de l'XP utilisateur
-      if (user) {
-        const xpEarned = Math.floor((finalScore / currentQuiz.questions.length) * currentQuiz.xpReward);
-        updateUser({
-          ...user,
-          xp: user.xp + xpEarned,
-        });
-      }
-
-      setScore(finalScore);
-      setTimeSpent(finalTimeSpent);
-      setShowResult(true);
-      setQuizInProgress(false);
     } catch (error) {
-      Alert.alert('Erreur', 'Impossible de sauvegarder le résultat');
+      console.error('Error fetching quizzes:', error);
+      setLoading(false);
     }
-  };
-
-  const closeQuiz = () => {
-    setCurrentQuiz(null);
-    setShowResult(false);
-    setQuizInProgress(false);
   };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'easy': return '#2ecc71';
-      case 'medium': return '#f39c12';
-      case 'hard': return '#e74c3c';
-      default: return '#95a5a6';
+      case 'easy':
+        return ['#4ade80', '#22c55e'];
+      case 'medium':
+        return ['#f59e0b', '#d97706'];
+      case 'hard':
+        return ['#ef4444', '#dc2626'];
+      default:
+        return ['#6366f1', '#4f46e5'];
     }
   };
 
-  const getDifficultyText = (difficulty: string) => {
+  const getDifficultyIcon = (difficulty: string) => {
     switch (difficulty) {
-      case 'easy': return 'Facile';
-      case 'medium': return 'Moyen';
-      case 'hard': return 'Difficile';
-      default: return difficulty;
+      case 'easy':
+        return 'leaf-outline';
+      case 'medium':
+        return 'flash-outline';
+      case 'hard':
+        return 'flame-outline';
+      default:
+        return 'help-outline';
     }
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const renderQuizItem = ({ item }: { item: Quiz }) => (
-    <TouchableOpacity
-      style={styles.quizCard}
-      onPress={() => startQuiz(item)}
-    >
-      <LinearGradient
-        colors={item.isFeatured ? ['#9b59b6', '#8e44ad'] : ['#3498db', '#2980b9']}
-        style={styles.quizGradient}
-      >
-        {item.isFeatured && (
-          <View style={styles.featuredBadge}>
-            <Text style={styles.featuredText}>FEATURED</Text>
-          </View>
-        )}
-        <Text style={styles.quizTitle}>{item.title}</Text>
-        {item.description && (
-          <Text style={styles.quizDescription}>{item.description}</Text>
-        )}
-        <View style={styles.quizMeta}>
-          <View style={styles.difficultyBadge}>
-            <Text style={[styles.difficultyText, { color: getDifficultyColor(item.difficulty) }]}>
-              {getDifficultyText(item.difficulty)}
-            </Text>
-          </View>
-          <Text style={styles.quizReward}>+{item.xpReward} XP</Text>
-        </View>
-        <Text style={styles.questionCount}>
-          {item.questions.length} questions
-        </Text>
-      </LinearGradient>
-    </TouchableOpacity>
+  const filteredQuizzes = quizzes.filter(quiz => 
+    selectedDifficulty === 'all' || quiz.difficulty === selectedDifficulty
   );
 
-  if (currentQuiz && !showResult) {
-    const currentQuestion = currentQuiz.questions[currentQuestionIndex];
-    const progress = ((currentQuestionIndex + 1) / currentQuiz.questions.length) * 100;
-
+  if (loading) {
     return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={['#3498db', '#2980b9']}
-          style={styles.quizHeader}
-        >
-          <View style={styles.quizProgress}>
-            <Text style={styles.quizProgressText}>
-              Question {currentQuestionIndex + 1} sur {currentQuiz.questions.length}
-            </Text>
-            <Text style={styles.quizTime}>⏱️ {formatTime(timeSpent)}</Text>
-          </View>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${progress}%` }]} />
-          </View>
-        </LinearGradient>
-
-        <ScrollView style={styles.questionContainer}>
-          <Text style={styles.questionText}>{currentQuestion.question}</Text>
-          
-          <View style={styles.optionsContainer}>
-            {currentQuestion.options.map((option, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.optionButton,
-                  selectedAnswer === index && styles.optionButtonSelected
-                ]}
-                onPress={() => selectAnswer(index)}
-              >
-                <Text style={[
-                  styles.optionText,
-                  selectedAnswer === index && styles.optionTextSelected
-                ]}>
-                  {option}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-
-        <View style={styles.quizActions}>
-          <TouchableOpacity
-            style={styles.quitButton}
-            onPress={() => {
-              Alert.alert(
-                'Quitter le quiz',
-                'Êtes-vous sûr de vouloir quitter ? Votre progression sera perdue.',
-                [
-                  { text: 'Annuler', style: 'cancel' },
-                  { text: 'Quitter', style: 'destructive', onPress: closeQuiz }
-                ]
-              );
-            }}
-          >
-            <Text style={styles.quitButtonText}>Quitter</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.nextButton, selectedAnswer === null && styles.nextButtonDisabled]}
-            onPress={nextQuestion}
-            disabled={selectedAnswer === null}
-          >
-            <Text style={styles.nextButtonText}>
-              {currentQuestionIndex === currentQuiz.questions.length - 1 ? 'Terminer' : 'Suivant'}
-            </Text>
-          </TouchableOpacity>
+      <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00D4FF" />
+          <Text style={styles.loadingText}>Chargement des quiz...</Text>
         </View>
-      </View>
+      </LinearGradient>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={['#3498db', '#2980b9']}
-        style={styles.header}
-      >
-        <Text style={styles.headerTitle}>Quiz</Text>
-        <Text style={styles.headerSubtitle}>Testez vos connaissances</Text>
-      </LinearGradient>
-
-      <FlatList
-        data={quizzes}
-        renderItem={renderQuizItem}
-        keyExtractor={(item) => item.id.toString()}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        contentContainerStyle={styles.quizList}
-        showsVerticalScrollIndicator={false}
-      />
-
-      <Modal
-        visible={showResult}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={closeQuiz}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.resultModal}>
-            <LinearGradient
-              colors={['#2ecc71', '#27ae60']}
-              style={styles.resultHeader}
-            >
-              <Text style={styles.resultTitle}>Quiz terminé!</Text>
-            </LinearGradient>
-            
-            <View style={styles.resultContent}>
-              <Text style={styles.resultScore}>
-                Score: {score}/{currentQuiz?.questions.length}
-              </Text>
-              <Text style={styles.resultPercentage}>
-                {Math.round((score / (currentQuiz?.questions.length || 1)) * 100)}%
-              </Text>
-              <Text style={styles.resultTime}>
-                Temps: {formatTime(timeSpent)}
-              </Text>
-              <Text style={styles.resultXP}>
-                +{Math.floor((score / (currentQuiz?.questions.length || 1)) * (currentQuiz?.xpReward || 0))} XP
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.resultButton}
-              onPress={closeQuiz}
-            >
-              <Text style={styles.resultButtonText}>Continuer</Text>
-            </TouchableOpacity>
-          </View>
+    <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Quiz Otaku</Text>
+          <Text style={styles.headerSubtitle}>Testez vos connaissances anime</Text>
         </View>
-      </Modal>
-    </View>
+
+        {/* Difficulty Filter */}
+        <View style={styles.filterContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {['all', 'easy', 'medium', 'hard'].map((difficulty) => (
+              <TouchableOpacity
+                key={difficulty}
+                style={[
+                  styles.filterButton,
+                  selectedDifficulty === difficulty && styles.filterButtonActive
+                ]}
+                onPress={() => setSelectedDifficulty(difficulty)}
+              >
+                <Text style={[
+                  styles.filterText,
+                  selectedDifficulty === difficulty && styles.filterTextActive
+                ]}>
+                  {difficulty === 'all' ? 'Tous' : 
+                   difficulty === 'easy' ? 'Facile' :
+                   difficulty === 'medium' ? 'Moyen' : 'Difficile'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Quiz Cards */}
+        <View style={styles.quizGrid}>
+          {filteredQuizzes.map((quiz) => (
+            <TouchableOpacity
+              key={quiz.id}
+              style={styles.quizCard}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
+                style={styles.cardGradient}
+              >
+                {/* Quiz Image */}
+                <View style={styles.imageContainer}>
+                  <Image
+                    source={{ uri: quiz.imageUrl }}
+                    style={styles.quizImage}
+                    resizeMode="cover"
+                  />
+                  <LinearGradient
+                    colors={['transparent', 'rgba(0,0,0,0.7)']}
+                    style={styles.imageOverlay}
+                  />
+                </View>
+
+                {/* Quiz Info */}
+                <View style={styles.cardContent}>
+                  <Text style={styles.quizTitle} numberOfLines={2}>
+                    {quiz.title}
+                  </Text>
+                  <Text style={styles.quizDescription} numberOfLines={2}>
+                    {quiz.description}
+                  </Text>
+
+                  {/* Stats Row */}
+                  <View style={styles.statsRow}>
+                    <View style={styles.statItem}>
+                      <Ionicons name="help-circle-outline" size={16} color="#64748b" />
+                      <Text style={styles.statText}>{quiz.questions.length} questions</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                      <Ionicons name="trophy-outline" size={16} color="#64748b" />
+                      <Text style={styles.statText}>{quiz.xpReward} XP</Text>
+                    </View>
+                  </View>
+
+                  {/* Difficulty Badge */}
+                  <LinearGradient
+                    colors={getDifficultyColor(quiz.difficulty)}
+                    style={styles.difficultyBadge}
+                  >
+                    <Ionicons 
+                      name={getDifficultyIcon(quiz.difficulty) as any} 
+                      size={12} 
+                      color="white" 
+                    />
+                    <Text style={styles.difficultyText}>
+                      {quiz.difficulty === 'easy' ? 'Facile' :
+                       quiz.difficulty === 'medium' ? 'Moyen' : 'Difficile'}
+                    </Text>
+                  </LinearGradient>
+                </View>
+
+                {/* Play Button */}
+                <TouchableOpacity style={styles.playButton}>
+                  <LinearGradient
+                    colors={['#00D4FF', '#7B68EE']}
+                    style={styles.playGradient}
+                  >
+                    <Ionicons name="play" size={20} color="white" />
+                  </LinearGradient>
+                </TouchableOpacity>
+              </LinearGradient>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+    </LinearGradient>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    paddingTop: 50,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: 'white',
+    marginTop: 10,
+    fontSize: 16,
   },
   header: {
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    padding: 20,
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 4,
+    color: 'white',
+    marginBottom: 8,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: '#64748b',
   },
-  quizList: {
-    padding: 16,
-    paddingBottom: 32,
+  filterContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  filterButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginRight: 10,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  filterButtonActive: {
+    backgroundColor: '#00D4FF',
+    borderColor: '#00D4FF',
+  },
+  filterText: {
+    color: '#64748b',
+    fontWeight: '600',
+  },
+  filterTextActive: {
+    color: 'white',
+  },
+  quizGrid: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   quizCard: {
-    marginBottom: 16,
-    borderRadius: 12,
+    marginBottom: 20,
+    borderRadius: 16,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
-  quizGradient: {
-    padding: 20,
+  cardGradient: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    overflow: 'hidden',
   },
-  featuredBadge: {
+  imageContainer: {
+    height: 120,
+    position: 'relative',
+  },
+  quizImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imageOverlay: {
     position: 'absolute',
-    top: 12,
-    right: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 60,
   },
-  featuredText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#fff',
+  cardContent: {
+    padding: 16,
   },
   quizTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: 'white',
     marginBottom: 8,
   },
   quizDescription: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: '#64748b',
     marginBottom: 12,
+    lineHeight: 20,
   },
-  quizMeta: {
+  statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  statItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+  },
+  statText: {
+    color: '#64748b',
+    fontSize: 12,
+    marginLeft: 4,
   },
   difficultyBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
   },
   difficultyText: {
+    color: 'white',
     fontSize: 12,
-    fontWeight: 'bold',
-  },
-  quizReward: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#f1c40f',
-  },
-  questionCount: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  quizHeader: {
-    paddingTop: 60,
-    paddingBottom: 16,
-    paddingHorizontal: 20,
-  },
-  quizProgress: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  quizProgressText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  quizTime: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.9)',
-  },
-  progressBar: {
-    height: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderRadius: 2,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 2,
-  },
-  questionContainer: {
-    flex: 1,
-    padding: 20,
-  },
-  questionText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 24,
-    lineHeight: 26,
-  },
-  optionsContainer: {
-    gap: 12,
-  },
-  optionButton: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#e0e0e0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  optionButtonSelected: {
-    borderColor: '#3498db',
-    backgroundColor: '#ebf3fd',
-  },
-  optionText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  optionTextSelected: {
-    color: '#3498db',
     fontWeight: '600',
+    marginLeft: 4,
   },
-  quizActions: {
-    flexDirection: 'row',
-    padding: 20,
-    gap: 12,
+  playButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    borderRadius: 20,
+    overflow: 'hidden',
   },
-  quitButton: {
-    flex: 1,
-    backgroundColor: '#95a5a6',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  quitButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  nextButton: {
-    flex: 2,
-    backgroundColor: '#3498db',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  nextButtonDisabled: {
-    backgroundColor: '#bdc3c7',
-  },
-  nextButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  playGradient: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  resultModal: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    width: '90%',
-    maxWidth: 400,
-    overflow: 'hidden',
-  },
-  resultHeader: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  resultTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  resultContent: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  resultScore: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  resultPercentage: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2ecc71',
-    marginBottom: 16,
-  },
-  resultTime: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 8,
-  },
-  resultXP: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#f39c12',
-  },
-  resultButton: {
-    backgroundColor: '#3498db',
-    padding: 16,
-    alignItems: 'center',
-    margin: 20,
-    borderRadius: 12,
-  },
-  resultButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
 });
+
+export default ModernQuizScreen;

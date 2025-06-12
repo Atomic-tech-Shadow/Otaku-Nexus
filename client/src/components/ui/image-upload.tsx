@@ -1,185 +1,162 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { Upload, X, Image as ImageIcon, Camera } from "lucide-react";
+import { Camera, Upload, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ImageUploadProps {
-  onImageUpload: (imageData: string) => void;
-  currentImage?: string;
+  value?: string;
+  onChange: (url: string) => void;
+  onRemove?: () => void;
   className?: string;
-  maxSize?: number; // in MB
+  placeholder?: string;
+  accept?: string;
 }
 
-export function ImageUpload({ onImageUpload, currentImage, className = "", maxSize = 10 }: ImageUploadProps) {
-  const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState<string>(currentImage || "");
+export function ImageUpload({
+  value,
+  onChange,
+  onRemove,
+  className,
+  placeholder = "Cliquez pour uploader une image",
+  accept = "image/*"
+}: ImageUploadProps) {
+  const [isUploading, setIsUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
 
-  const compressImage = async (file: File, maxWidth: number = 1200, quality: number = 0.8): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-
-      img.onload = () => {
-        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
-        const width = img.width * ratio;
-        const height = img.height * ratio;
-
-        canvas.width = width;
-        canvas.height = height;
-
-        ctx!.imageSmoothingEnabled = true;
-        ctx!.imageSmoothingQuality = 'high';
-        ctx?.drawImage(img, 0, 0, width, height);
-        
-        const outputFormat = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-        const compressedDataUrl = canvas.toDataURL(outputFormat, quality);
-        
-        URL.revokeObjectURL(img.src);
-        resolve(compressedDataUrl);
-      };
-
-      img.onerror = () => {
-        URL.revokeObjectURL(img.src);
-        reject(new Error('Failed to load image'));
-      };
-      
-      img.src = URL.createObjectURL(file);
-    });
-  };
-
-  const handleFileUpload = async (file: File) => {
+  const handleFileSelect = async (file: File) => {
     if (!file) return;
 
-    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validImageTypes.includes(file.type)) {
-      toast({
-        title: "Format non supporté",
-        description: "Formats acceptés: JPG, PNG, GIF, WebP",
-        variant: "destructive",
-      });
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Veuillez sélectionner un fichier image valide');
       return;
     }
 
-    if (file.size > maxSize * 1024 * 1024) {
-      toast({
-        title: "Fichier trop volumineux",
-        description: `La taille maximale est de ${maxSize}MB.`,
-        variant: "destructive",
-      });
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La taille du fichier ne doit pas dépasser 5MB');
       return;
     }
 
-    setUploading(true);
+    setIsUploading(true);
 
     try {
-      let processedImage: string;
-      
-      if (file.size > 1024 * 1024) {
-        processedImage = await compressImage(file, 1200, 0.8);
-      } else {
-        const reader = new FileReader();
-        processedImage = await new Promise((resolve, reject) => {
-          reader.onload = (e) => resolve(e.target?.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-      }
-
-      setPreview(processedImage);
-      onImageUpload(processedImage);
-
-      toast({
-        title: "Image uploadée",
-        description: `Image de ${(file.size / 1024 / 1024).toFixed(2)}MB uploadée avec succès.`,
-      });
+      // Convert to base64 for preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        onChange(result);
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
     } catch (error) {
-      toast({
-        title: "Erreur d'upload",
-        description: "Impossible d'uploader l'image.",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
+      console.error('Erreur lors de l\'upload:', error);
+      alert('Erreur lors de l\'upload de l\'image');
+      setIsUploading(false);
     }
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      handleFileUpload(file);
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
     }
   };
 
-  const removeImage = () => {
-    setPreview("");
-    onImageUpload("");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+  };
+
+  const openFileDialog = () => {
+    fileInputRef.current?.click();
   };
 
   return (
-    <div className={className}>
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileSelect}
-        accept="image/*"
-        className="hidden"
-      />
-
-      {preview ? (
-        <Card className="relative overflow-hidden bg-gray-800 border-gray-700">
-          <img 
-            src={preview} 
-            alt="Preview" 
-            className="w-full h-48 object-cover"
-          />
-          <div className="absolute top-2 right-2 flex gap-2">
+    <div className={cn("space-y-4", className)}>
+      {value ? (
+        <div className="relative">
+          <div className="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-electric-blue">
+            <img
+              src={value}
+              alt="Preview"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          {onRemove && (
             <Button
-              size="sm"
+              type="button"
               variant="destructive"
-              onClick={removeImage}
-              className="h-8 w-8 p-0"
+              size="sm"
+              className="absolute -top-2 -right-2 h-8 w-8 rounded-full p-0"
+              onClick={onRemove}
             >
               <X className="h-4 w-4" />
             </Button>
-          </div>
-        </Card>
+          )}
+        </div>
       ) : (
-        <Card 
-          className="border-2 border-dashed border-gray-600 hover:border-gray-500 transition-colors cursor-pointer bg-gray-800/50"
-          onClick={() => fileInputRef.current?.click()}
+        <div
+          className={cn(
+            "w-32 h-32 mx-auto rounded-full border-2 border-dashed border-gray-600 bg-gray-800 hover:bg-gray-700 cursor-pointer transition-colors flex flex-col items-center justify-center",
+            dragActive && "border-electric-blue bg-gray-700",
+            isUploading && "opacity-50 cursor-not-allowed"
+          )}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onClick={openFileDialog}
         >
-          <div className="p-8 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-electric-blue to-hot-pink rounded-2xl flex items-center justify-center">
-              <ImageIcon className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-lg font-semibold text-white mb-2">
-              Ajouter une image
-            </h3>
-            <p className="text-gray-400 mb-4">
-              Cliquez pour sélectionner depuis votre appareil
-            </p>
-            <Button 
-              type="button"
-              disabled={uploading}
-              className="bg-gradient-to-r from-electric-blue to-hot-pink"
-            >
-              {uploading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              ) : (
-                <Upload className="w-4 h-4 mr-2" />
-              )}
-              {uploading ? "Upload en cours..." : "Choisir une image"}
-            </Button>
-          </div>
-        </Card>
+          {isUploading ? (
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-electric-blue"></div>
+          ) : (
+            <>
+              <Camera className="h-8 w-8 text-gray-400 mb-2" />
+              <span className="text-xs text-gray-400 text-center px-2">
+                {placeholder}
+              </span>
+            </>
+          )}
+        </div>
       )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            handleFileSelect(file);
+          }
+        }}
+      />
+
+      <div className="flex gap-2 justify-center">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={openFileDialog}
+          disabled={isUploading}
+          className="border-gray-600 text-gray-300 hover:bg-gray-800"
+        >
+          <Upload className="h-4 w-4 mr-2" />
+          {value ? 'Changer' : 'Upload'}
+        </Button>
+      </div>
     </div>
   );
 }
+
+export default ImageUpload;
