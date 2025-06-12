@@ -16,7 +16,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { 
-  Edit, Save, X, Plus, Eye, EyeOff, Trash2, Shield, Users, FileText, BarChart3, Settings, RefreshCw, TrendingUp, Calendar, Star, MessageSquare, PlayCircle, Trophy, Brain, Heart, Bell, Activity, Download, Home, BookOpen, Video, Zap
+  Edit, Save, X, Plus, Eye, EyeOff, Trash2, Shield, Users, FileText, BarChart3, Settings, RefreshCw, TrendingUp, Calendar, Star, MessageSquare, PlayCircle, Trophy, Brain, Heart, Bell, Activity, Download, BookOpen, Video, Zap, Home
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -350,28 +350,46 @@ export default function Admin() {
               </Button>
 
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-6 bg-gray-800 mb-4">
-                  <TabsTrigger value="dashboard" className="text-xs px-1">Dashboard</TabsTrigger>
-                  <TabsTrigger value="posts" className="text-xs px-1">Publications</TabsTrigger>
-                  <TabsTrigger value="users" className="text-xs px-1">Utilisateurs</TabsTrigger>
-                  <TabsTrigger value="quiz" className="text-xs px-1">Quiz</TabsTrigger>
-                  <TabsTrigger value="content" className="text-xs px-1">Contenu</TabsTrigger>
-                  <TabsTrigger value="settings" className="text-xs px-1">Paramètres</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 bg-gray-800 mb-4 gap-1">
+                  <TabsTrigger value="dashboard" className="text-xs px-2 py-2">
+                    <BarChart3 className="h-4 w-4 md:mr-1" />
+                    <span className="hidden md:inline">Dashboard</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="posts" className="text-xs px-2 py-2">
+                    <FileText className="h-4 w-4 md:mr-1" />
+                    <span className="hidden md:inline">Posts</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="users" className="text-xs px-2 py-2">
+                    <Users className="h-4 w-4 md:mr-1" />
+                    <span className="hidden md:inline">Users</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="quiz" className="text-xs px-2 py-2">
+                    <BookOpen className="h-4 w-4 md:mr-1" />
+                    <span className="hidden md:inline">Quiz</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="content" className="text-xs px-2 py-2">
+                    <Video className="h-4 w-4 md:mr-1" />
+                    <span className="hidden md:inline">Content</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="settings" className="text-xs px-2 py-2">
+                    <Settings className="h-4 w-4 md:mr-1" />
+                    <span className="hidden md:inline">Settings</span>
+                  </TabsTrigger>
                 </TabsList>
 
                 {/* Dashboard Tab */}
                 <TabsContent value="dashboard">
                   <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                       {/* Stats Cards */}
                       <Card className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border-blue-500/30">
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-blue-300 text-sm font-medium">Total Utilisateurs</p>
-                              <p className="text-3xl font-bold text-white">{platformStats?.totalUsers || 0}</p>
+                        <CardContent className="p-4 md:p-6">
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div className="mb-2 md:mb-0">
+                              <p className="text-blue-300 text-xs md:text-sm font-medium">Total Utilisateurs</p>
+                              <p className="text-xl md:text-3xl font-bold text-white">{platformStats?.totalUsers || 0}</p>
                             </div>
-                            <Users className="h-12 w-12 text-blue-400" />
+                            <Users className="h-8 w-8 md:h-12 md:w-12 text-blue-400 self-end md:self-auto" />
                           </div>
                         </CardContent>
                       </Card>
@@ -933,47 +951,45 @@ export default function Admin() {
 
           <TabsContent value="quiz">
             <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-3xl font-bold text-white mb-2">Gestion des Quiz</h2>
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+                <div className="text-center md:text-left">
+                  <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Gestion des Quiz</h2>
                   <p className="text-gray-400">Créez et gérez les quiz de votre plateforme</p>
                 </div>
-                 <div className="flex gap-2">
-                          <Button
-                            onClick={handleCreateFrenchQuizzes}
-                            disabled={isCreatingQuizzes}
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                          >
-                            {isCreatingQuizzes ? (
-                              <LoadingSpinner size="sm" />
-                            ) : (
-                              <>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Quiz Français
-                              </>
-                            )}
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              // Create anime-specific quiz
-                              console.log("Creating anime quiz...");
-                            }}
-                            className="bg-purple-600 hover:bg-purple-700 text-white"
-                          >
-                            <Star className="h-4 w-4 mr-2" />
-                            Quiz Anime
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              // Create difficulty-based quiz
-                              console.log("Creating expert quiz...");
-                            }}
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                          >
-                            <Trophy className="h-4 w-4 mr-2" />
-                            Quiz Expert
-                          </Button>
-                        </div>
+                <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                  <Button
+                    onClick={handleCreateFrenchQuizzes}
+                    disabled={isCreatingQuizzes}
+                    className="bg-green-600 hover:bg-green-700 text-white flex-1 md:flex-none"
+                  >
+                    {isCreatingQuizzes ? (
+                      <LoadingSpinner size="sm" />
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Quiz Français
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      console.log("Creating anime quiz...");
+                    }}
+                    className="bg-purple-600 hover:bg-purple-700 text-white flex-1 md:flex-none"
+                  >
+                    <Star className="h-4 w-4 mr-2" />
+                    Quiz Anime
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      console.log("Creating expert quiz...");
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white flex-1 md:flex-none"
+                  >
+                    <Trophy className="h-4 w-4 mr-2" />
+                    Quiz Expert
+                  </Button>
+                </div>
               </div>
 
               <div className="bg-gray-800 rounded-2xl border border-gray-700 p-6">
