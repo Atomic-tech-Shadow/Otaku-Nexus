@@ -910,6 +910,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create French quizzes endpoint
+  app.post('/api/admin/create-french-quizzes', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      // Import French quiz data
+      const { frenchQuizzes } = await import('./french-quiz-data');
+      
+      const createdQuizzes = [];
+      for (const quizData of frenchQuizzes) {
+        try {
+          const quiz = await storage.createQuiz({
+            title: quizData.title,
+            description: quizData.description,
+            difficulty: quizData.difficulty,
+            questions: quizData.questions,
+            xpReward: quizData.xpReward
+          });
+          createdQuizzes.push(quiz);
+        } catch (error) {
+          console.log(`Quiz ${quizData.title} might already exist or error:`, error);
+        }
+      }
+
+      res.json({
+        message: `Successfully created ${createdQuizzes.length} French quizzes`,
+        quizzes: createdQuizzes
+      });
+    } catch (error) {
+      console.error("Error creating French quizzes:", error);
+      res.status(500).json({ message: "Failed to create French quizzes" });
+    }
+  });
+
   // Get all chat messages
   app.get('/api/chat/messages', isAuthenticated, async (req: any, res) => {
     try {

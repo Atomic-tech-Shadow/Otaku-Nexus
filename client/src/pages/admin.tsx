@@ -350,46 +350,46 @@ export default function Admin() {
               </Button>
 
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 bg-gray-800 mb-4 gap-1">
-                  <TabsTrigger value="dashboard" className="text-xs px-2 py-2">
-                    <BarChart3 className="h-4 w-4 md:mr-1" />
-                    <span className="hidden md:inline">Dashboard</span>
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 bg-gray-800 mb-4 gap-1">
+                  <TabsTrigger value="dashboard" className="text-xs px-2 py-2 flex flex-col md:flex-row items-center">
+                    <BarChart3 className="h-4 w-4 md:mr-1 mb-1 md:mb-0" />
+                    <span className="text-[10px] md:text-xs">Dashboard</span>
                   </TabsTrigger>
-                  <TabsTrigger value="posts" className="text-xs px-2 py-2">
-                    <FileText className="h-4 w-4 md:mr-1" />
-                    <span className="hidden md:inline">Posts</span>
+                  <TabsTrigger value="posts" className="text-xs px-2 py-2 flex flex-col md:flex-row items-center">
+                    <FileText className="h-4 w-4 md:mr-1 mb-1 md:mb-0" />
+                    <span className="text-[10px] md:text-xs">Posts</span>
                   </TabsTrigger>
-                  <TabsTrigger value="users" className="text-xs px-2 py-2">
-                    <Users className="h-4 w-4 md:mr-1" />
-                    <span className="hidden md:inline">Users</span>
+                  <TabsTrigger value="users" className="text-xs px-2 py-2 flex flex-col md:flex-row items-center">
+                    <Users className="h-4 w-4 md:mr-1 mb-1 md:mb-0" />
+                    <span className="text-[10px] md:text-xs">Users</span>
                   </TabsTrigger>
-                  <TabsTrigger value="quiz" className="text-xs px-2 py-2">
-                    <BookOpen className="h-4 w-4 md:mr-1" />
-                    <span className="hidden md:inline">Quiz</span>
+                  <TabsTrigger value="quiz" className="text-xs px-2 py-2 flex flex-col md:flex-row items-center">
+                    <BookOpen className="h-4 w-4 md:mr-1 mb-1 md:mb-0" />
+                    <span className="text-[10px] md:text-xs">Quiz</span>
                   </TabsTrigger>
-                  <TabsTrigger value="content" className="text-xs px-2 py-2">
-                    <Video className="h-4 w-4 md:mr-1" />
-                    <span className="hidden md:inline">Content</span>
+                  <TabsTrigger value="content" className="text-xs px-2 py-2 flex flex-col md:flex-row items-center">
+                    <Video className="h-4 w-4 md:mr-1 mb-1 md:mb-0" />
+                    <span className="text-[10px] md:text-xs">Content</span>
                   </TabsTrigger>
-                  <TabsTrigger value="settings" className="text-xs px-2 py-2">
-                    <Settings className="h-4 w-4 md:mr-1" />
-                    <span className="hidden md:inline">Settings</span>
+                  <TabsTrigger value="settings" className="text-xs px-2 py-2 flex flex-col md:flex-row items-center">
+                    <Settings className="h-4 w-4 md:mr-1 mb-1 md:mb-0" />
+                    <span className="text-[10px] md:text-xs">Settings</span>
                   </TabsTrigger>
                 </TabsList>
 
                 {/* Dashboard Tab */}
                 <TabsContent value="dashboard">
                   <div className="space-y-6">
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                       {/* Stats Cards */}
                       <Card className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border-blue-500/30">
                         <CardContent className="p-4 md:p-6">
-                          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                            <div className="mb-2 md:mb-0">
+                          <div className="flex items-center justify-between">
+                            <div>
                               <p className="text-blue-300 text-xs md:text-sm font-medium">Total Utilisateurs</p>
                               <p className="text-xl md:text-3xl font-bold text-white">{platformStats?.totalUsers || 0}</p>
                             </div>
-                            <Users className="h-8 w-8 md:h-12 md:w-12 text-blue-400 self-end md:self-auto" />
+                            <Users className="h-8 w-8 md:h-12 md:w-12 text-blue-400" />
                           </div>
                         </CardContent>
                       </Card>
