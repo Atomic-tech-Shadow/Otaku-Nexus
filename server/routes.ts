@@ -945,22 +945,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all chat messages
   app.get('/api/chat/messages', isAuthenticated, async (req: any, res) => {
     try {
-      // Create admin user if none exists
-      await storage.ensureAdminUser();
-      // Ensure default room exists
-      await storage.ensureDefaultChatRoom();
-      
-      const limit = parseInt(req.query.limit as string) || 100;
+      const limit = parseInt(req.query.limit as string) || 50; // Réduire la limite par défaut
       const messages = await storage.getChatMessages(1, limit);
       
-      // Ensure unique IDs and sort by creation time
+      // Simplifier le traitement des messages
       const sortedMessages = messages
+        .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
         .map((message: any, index: number) => ({
           ...message,
-          id: `${message.id}-${index}`,
-        }))
-        .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          id: `${message.id}-${message.createdAt || Date.now()}-${index}`,
+        }));
       
+      // Ajouter des headers de cache
+      res.set('Cache-Control', 'private, max-age=10');
       res.json(sortedMessages);
     } catch (error) {
       console.error("Get messages error:", error);
@@ -985,27 +982,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Le message est trop long (max 1000 caractères)" });
       }
 
-      // Ensure default room exists
-      await storage.ensureDefaultChatRoom();
-
       const messageData = {
         message: messageContent.trim(),
         roomId: 1, // Default room
         userId,
       };
       
-      const newMessage = await storage.sendChatMessage(messageData);
+      // Créer le message en parallèle avec la récupération de l'utilisateur
+      const [newMessage, user] = await Promise.all([
+        storage.sendChatMessage(messageData),
+        storage.getUser(userId)
+      ]);
       
-      // Get user info for the response
-      const user = await storage.getUser(userId);
-      
-      // Return enriched message data
+      // Return enriched message data immédiatement
       const enrichedMessage = {
         ...newMessage,
         id: `${newMessage.id}-${Date.now()}`,
         userId: userId,
         userFirstName: user?.firstName || 'Utilisateur',
         userLastName: user?.lastName || '',
+        userProfileImageUrl: user?.profileImageUrl,
         isAdmin: user?.isAdmin || false,
         createdAt: new Date().toISOString(),
       };
@@ -1013,7 +1009,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(enrichedMessage);
     } catch (error) {
       console.error("Error sending chat message:", error);
-      res.status(500).json({ message: "Échec de l'envoi du message", error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ message: "Échec de l'envoi du message" });
     }
   });
 

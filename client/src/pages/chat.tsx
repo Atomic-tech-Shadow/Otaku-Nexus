@@ -9,6 +9,7 @@ import AppHeader from "@/components/layout/app-header";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import { Link } from "wouter";
 import { TwitterVerificationBadge } from "@/components/ui/verification-badges";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface Message {
   id: string;
@@ -33,10 +34,11 @@ export default function Chat() {
 
   const { data: messages = [], isLoading, refetch } = useQuery({
     queryKey: ["/api/chat/messages"],
-    refetchInterval: 2000, // Plus fréquent pour de meilleurs updates
-    retry: 2,
+    refetchInterval: 5000, // Moins fréquent pour réduire la charge
+    retry: 1,
     refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false, // Éviter les refetch inutiles
+    staleTime: 30000, // Cache les données pendant 30 secondes
   });
 
   const sendMessageMutation = useMutation({
@@ -50,13 +52,43 @@ export default function Chat() {
       if (!response.ok) throw new Error("Failed to send message");
       return response.json();
     },
-    onSuccess: async () => {
-      setNewMessage("");
-      // Invalidate et refetch immédiatement
-      await queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
-      await refetch();
+    onMutate: async (content: string) => {
+      // Optimistic update - afficher le message immédiatement
+      const previousMessages = queryClient.getQueryData(["/api/chat/messages"]);
+      const tempMessage = {
+        id: `temp-${Date.now()}`,
+        content,
+        userId: user?.id,
+        userFirstName: user?.firstName,
+        userLastName: user?.lastName,
+        userProfileImageUrl: user?.profileImageUrl,
+        isAdmin: user?.isAdmin,
+        createdAt: new Date().toISOString(),
+        isOwn: true,
+        isPending: true
+      };
+      
+      queryClient.setQueryData(["/api/chat/messages"], (old: any) => 
+        [...(old || []), tempMessage]
+      );
+      
+      setNewMessage(""); // Vider le champ immédiatement
+      return { previousMessages };
     },
-    onError: () => {
+    onSuccess: (data) => {
+      // Remplacer le message temporaire par le vrai message
+      queryClient.setQueryData(["/api/chat/messages"], (old: any) => {
+        const messages = old || [];
+        const filteredMessages = messages.filter((msg: any) => !msg.id.startsWith('temp-'));
+        return [...filteredMessages, data];
+      });
+    },
+    onError: (error, variables, context) => {
+      // Restaurer l'état précédent en cas d'erreur
+      if (context?.previousMessages) {
+        queryClient.setQueryData(["/api/chat/messages"], context.previousMessages);
+      }
+      setNewMessage(variables); // Remettre le message dans le champ
       toast({
         title: "Erreur",
         description: "Impossible d'envoyer le message",
@@ -207,7 +239,14 @@ export default function Chat() {
                         )}
                       </div>
                     )}
-                    <div className="text-sm">{message.content}</div>
+                    <div className="text-sm">
+                      {message.content}
+                      {message.isPending && (
+                        <span className="ml-2 opacity-50">
+                          <LoadingSpinner size="sm" />
+                        </span>
+                      )}
+                    </div>
                     <div className={`text-xs mt-1 ${message.isOwn ? 'text-gray-200' : 'text-gray-400'}`}>
                       {new Date(message.createdAt || message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
