@@ -975,7 +975,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userFirstName: user?.firstName || 'Utilisateur',
         userLastName: user?.lastName || '',
         isAdmin: user?.isAdmin || false,
-        content: messageContent.trim(),
         createdAt: new Date().toISOString(),
       };
       
