@@ -40,6 +40,7 @@ export default function QuizDetail() {
 
   const { data: quiz, isLoading: quizLoading } = useQuery({
     queryKey: ["/api/quizzes", quizId],
+    queryFn: () => apiRequest(`/api/quizzes/${quizId}`),
     enabled: !!quizId,
     retry: false,
   });
@@ -119,8 +120,13 @@ export default function QuizDetail() {
     // Handle quiz data structure
     const quizData = quiz as any;
     
+    console.log("Processing quiz data:", quizData);
+    console.log("Questions field type:", typeof quizData.questions);
+    console.log("Questions value:", quizData.questions);
+    
     // If questions is already an array, return it
     if (Array.isArray(quizData.questions)) {
+      console.log("Questions is already an array, length:", quizData.questions.length);
       return quizData.questions;
     }
 
@@ -129,6 +135,7 @@ export default function QuizDetail() {
       try {
         const parsed = JSON.parse(quizData.questions);
         if (Array.isArray(parsed)) {
+          console.log("Successfully parsed questions from string, length:", parsed.length);
           return parsed;
         }
       } catch (error) {
@@ -139,13 +146,18 @@ export default function QuizDetail() {
     // If quiz is an array, take the first element
     if (Array.isArray(quiz) && quiz.length > 0) {
       const firstQuiz = quiz[0] as any;
+      console.log("Quiz is array, processing first element:", firstQuiz);
+      
       if (Array.isArray(firstQuiz.questions)) {
+        console.log("First quiz questions is array, length:", firstQuiz.questions.length);
         return firstQuiz.questions;
       }
+      
       if (typeof firstQuiz.questions === 'string') {
         try {
           const parsed = JSON.parse(firstQuiz.questions);
           if (Array.isArray(parsed)) {
+            console.log("Successfully parsed questions from first quiz string, length:", parsed.length);
             return parsed;
           }
         } catch (error) {
@@ -169,16 +181,43 @@ export default function QuizDetail() {
   }, [quiz, questions, quizStarted, showResults]);
 
   const handleStartQuiz = () => {
+    console.log("Starting quiz with questions:", questions);
+    console.log("Questions length:", questions.length);
+    
     if (!questions || questions.length === 0) {
       toast({
         title: "Erreur",
-        description: "Aucune question disponible pour ce quiz",
+        description: "Aucune question disponible pour ce quiz. Veuillez réessayer plus tard.",
         variant: "destructive",
       });
       return;
     }
+
+    // Validate that questions have the required structure
+    const validQuestions = questions.filter(q => 
+      q && 
+      q.question && 
+      q.options && 
+      Array.isArray(q.options) && 
+      q.options.length > 0 &&
+      typeof q.correctAnswer === 'number'
+    );
+
+    if (validQuestions.length === 0) {
+      toast({
+        title: "Erreur",
+        description: "Les questions de ce quiz ne sont pas valides. Veuillez contacter l'administrateur.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (validQuestions.length !== questions.length) {
+      console.warn(`Some questions are invalid. Valid: ${validQuestions.length}, Total: ${questions.length}`);
+    }
+
     setQuizStarted(true);
-    setTimeLeft(questions.length * 60); // 1 minute per question
+    setTimeLeft(validQuestions.length * 60); // 1 minute per question
   };
 
   const handleAnswerSelect = (answerIndex: number) => {
@@ -262,13 +301,14 @@ export default function QuizDetail() {
     );
   }
 
-  if (!quiz) {
+  if (!quiz && !quizLoading) {
     return (
       <div className="min-h-screen bg-dark-bg text-white flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-bold mb-4">Quiz not found</h2>
+          <h2 className="text-xl font-bold mb-4">Quiz introuvable</h2>
+          <p className="text-gray-400 mb-4">Le quiz demandé n'existe pas ou a été supprimé.</p>
           <Link href="/quiz">
-            <Button>Back to Quizzes</Button>
+            <Button>Retour aux Quiz</Button>
           </Link>
         </div>
       </div>
@@ -400,10 +440,25 @@ export default function QuizDetail() {
     return (
       <div className="min-h-screen bg-dark-bg text-white flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-bold mb-4">Question not found</h2>
-          <Link href="/quiz">
-            <Button>Back to Quizzes</Button>
-          </Link>
+          <h2 className="text-xl font-bold mb-4">Question introuvable</h2>
+          <p className="text-gray-400 mb-4">Impossible de charger la question #{currentQuestion + 1}.</p>
+          <div className="space-y-3">
+            <Link href="/quiz">
+              <Button>Retour aux Quiz</Button>
+            </Link>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (currentQuestion > 0) {
+                  setCurrentQuestion(currentQuestion - 1);
+                } else {
+                  setQuizStarted(false);
+                }
+              }}
+            >
+              Question Précédente
+            </Button>
+          </div>
         </div>
       </div>
     );
