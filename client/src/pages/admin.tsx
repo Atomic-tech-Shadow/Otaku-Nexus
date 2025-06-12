@@ -300,12 +300,18 @@ export default function Admin() {
   // Redirect if not authenticated or not admin
   if (!isAuthenticated || !user?.isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
         <Card className="bg-gray-800 border-gray-700 max-w-md w-full">
           <CardContent className="p-6 text-center">
-            <h1 className="text-2xl font-bold text-white mb-4">Accès Refusé</h1>
-            <p className="text-gray-400 mb-6">Vous devez être administrateur pour accéder à cette page.</p>
-            <Button onClick={() => window.location.href = '/'} className="bg-blue-600 hover:bg-blue-700">
+            <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+              <Shield className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-xl font-bold text-white mb-2">Accès Refusé</h1>
+            <p className="text-gray-400 mb-6 text-sm">Vous devez être administrateur pour accéder à cette page.</p>
+            <Button 
+              onClick={() => window.location.href = '/'} 
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
               <Home className="h-4 w-4 mr-2" />
               Retour à l'accueil
             </Button>
@@ -316,194 +322,223 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white pb-20">
+    <div className="min-h-screen bg-dark-bg text-white">
       {/* Background Animation */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-10 left-10 w-32 h-32 bg-electric-blue rounded-full opacity-20 animate-float"></div>
-        <div className="absolute top-40 right-5 w-24 h-24 bg-hot-pink rounded-full opacity-15 animate-pulse-slow"></div>
-        <div className="absolute bottom-20 left-5 w-20 h-20 bg-otaku-purple rounded-full opacity-25 animate-float" style={{ animationDelay: '2s' }}></div>
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-10 left-10 w-20 h-20 bg-electric-blue rounded-full opacity-10 animate-float"></div>
+        <div className="absolute top-40 right-5 w-16 h-16 bg-hot-pink rounded-full opacity-10 animate-pulse-slow"></div>
+        <div className="absolute bottom-20 left-5 w-12 h-12 bg-otaku-purple rounded-full opacity-15 animate-float" style={{ animationDelay: '2s' }}></div>
       </div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 pb-20">
         <AppHeader />
 
-        <main className="px-4 pb-6">
+        <main className="px-4 py-4">
           {/* Page Header */}
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-electric-blue to-otaku-purple rounded-2xl mx-auto mb-4 flex items-center justify-center">
-              <Settings className="w-8 h-8 text-white" />
+          <div className="text-center mb-6">
+            <div className="w-12 h-12 bg-gradient-to-br from-electric-blue to-otaku-purple rounded-xl mx-auto mb-3 flex items-center justify-center">
+              <Settings className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gradient mb-2">Administration</h1>
-            <p className="text-gray-400">Panneau de contrôle de la plateforme</p>
+            <h1 className="text-xl font-bold text-gradient mb-1">Administration</h1>
+            <p className="text-gray-400 text-sm">Panneau de contrôle</p>
           </div>
 
           {/* Navigation */}
-          <Card className="bg-card-bg border-gray-800 mb-6">
-            <CardContent className="p-4">
-              <Button 
-                onClick={() => window.location.href = '/'}
-                variant="outline"
-                className="w-full mb-4 border-gray-700 text-gray-300 hover:bg-gray-700"
-              >
-                <Home className="w-4 h-4 mr-2" />
-                Accueil
-              </Button>
+          <div className="mb-6">
+            <Button 
+              onClick={() => window.location.href = '/'}
+              variant="outline"
+              className="w-full mb-4 border-gray-700 text-gray-300 hover:bg-gray-700 h-12"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Retour à l'accueil
+            </Button>
 
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 bg-gray-800 mb-4 gap-1">
-                  <TabsTrigger value="dashboard" className="text-xs px-2 py-2 flex flex-col md:flex-row items-center">
-                    <BarChart3 className="h-4 w-4 md:mr-1 mb-1 md:mb-0" />
-                    <span className="text-[10px] md:text-xs">Dashboard</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="posts" className="text-xs px-2 py-2 flex flex-col md:flex-row items-center">
-                    <FileText className="h-4 w-4 md:mr-1 mb-1 md:mb-0" />
-                    <span className="text-[10px] md:text-xs">Posts</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="users" className="text-xs px-2 py-2 flex flex-col md:flex-row items-center">
-                    <Users className="h-4 w-4 md:mr-1 mb-1 md:mb-0" />
-                    <span className="text-[10px] md:text-xs">Users</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="quiz" className="text-xs px-2 py-2 flex flex-col md:flex-row items-center">
-                    <BookOpen className="h-4 w-4 md:mr-1 mb-1 md:mb-0" />
-                    <span className="text-[10px] md:text-xs">Quiz</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="content" className="text-xs px-2 py-2 flex flex-col md:flex-row items-center">
-                    <Video className="h-4 w-4 md:mr-1 mb-1 md:mb-0" />
-                    <span className="text-[10px] md:text-xs">Content</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="settings" className="text-xs px-2 py-2 flex flex-col md:flex-row items-center">
-                    <Settings className="h-4 w-4 md:mr-1 mb-1 md:mb-0" />
-                    <span className="text-[10px] md:text-xs">Settings</span>
-                  </TabsTrigger>
-                </TabsList>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-3 bg-gray-800 mb-6 p-1 h-auto">
+                <TabsTrigger 
+                  value="dashboard" 
+                  className="text-xs p-3 flex flex-col items-center gap-1 data-[state=active]:bg-electric-blue data-[state=active]:text-white"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  <span>Dashboard</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="posts" 
+                  className="text-xs p-3 flex flex-col items-center gap-1 data-[state=active]:bg-electric-blue data-[state=active]:text-white"
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>Publications</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="quiz" 
+                  className="text-xs p-3 flex flex-col items-center gap-1 data-[state=active]:bg-electric-blue data-[state=active]:text-white"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  <span>Quiz</span>
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Secondary tabs for less used features */}
+              <div className="grid grid-cols-3 gap-2 mb-6">
+                <Button
+                  variant={activeTab === "users" ? "default" : "outline"}
+                  onClick={() => setActiveTab("users")}
+                  className="text-xs p-3 h-auto flex flex-col items-center gap-1"
+                  size="sm"
+                >
+                  <Users className="h-4 w-4" />
+                  <span>Utilisateurs</span>
+                </Button>
+                <Button
+                  variant={activeTab === "content" ? "default" : "outline"}
+                  onClick={() => setActiveTab("content")}
+                  className="text-xs p-3 h-auto flex flex-col items-center gap-1"
+                  size="sm"
+                >
+                  <Video className="h-4 w-4" />
+                  <span>Contenu</span>
+                </Button>
+                <Button
+                  variant={activeTab === "settings" ? "default" : "outline"}
+                  onClick={() => setActiveTab("settings")}
+                  className="text-xs p-3 h-auto flex flex-col items-center gap-1"
+                  size="sm"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Paramètres</span>
+                </Button>
+              </div>
 
                 {/* Dashboard Tab */}
-                <TabsContent value="dashboard">
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                      {/* Stats Cards */}
-                      <Card className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border-blue-500/30">
-                        <CardContent className="p-4 md:p-6">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-blue-300 text-xs md:text-sm font-medium">Total Utilisateurs</p>
-                              <p className="text-xl md:text-3xl font-bold text-white">{platformStats?.totalUsers || 0}</p>
-                            </div>
-                            <Users className="h-8 w-8 md:h-12 md:w-12 text-blue-400" />
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-gradient-to-br from-green-600/20 to-green-800/20 border-green-500/30">
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-green-300 text-sm font-medium">Quiz Disponibles</p>
-                              <p className="text-3xl font-bold text-white">{platformStats?.totalQuizzes || 0}</p>
-                            </div>
-                            <BookOpen className="h-12 w-12 text-green-400" />
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border-purple-500/30">
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-purple-300 text-sm font-medium">Anime Database</p>
-                              <p className="text-3xl font-bold text-white">{platformStats?.totalAnime || 0}</p>
-                            </div>
-                            <Video className="h-12 w-12 text-purple-400" />
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-gradient-to-br from-pink-600/20 to-pink-800/20 border-pink-500/30">
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-pink-300 text-sm font-medium">Messages Chat</p>
-                              <p className="text-3xl font-bold text-white">{platformStats?.totalMessages || 0}</p>
-                            </div>
-                            <MessageSquare className="h-12 w-12 text-pink-400" />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    {/* Quick Actions */}
-                    <Card className="bg-gray-800/50 border-gray-700">
-                      <CardHeader>
-                        <CardTitle className="text-white flex items-center gap-2">
-                          <Zap className="h-5 w-5 text-yellow-400" />
-                          Actions Rapides
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <Button 
-                            onClick={() => setActiveTab("posts")}
-                            className="bg-blue-600 hover:bg-blue-700 text-white"
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Nouvelle Publication
-                          </Button>
-                          <Button 
-                            onClick={handleCreateFrenchQuizzes}
-                            disabled={isCreatingQuizzes}
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                          >
-                            <BookOpen className="h-4 w-4 mr-2" />
-                            Créer Quiz
-                          </Button>
-                          <Button 
-                            onClick={() => refetchStats()}
-                            className="bg-purple-600 hover:bg-purple-700 text-white"
-                          >
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            Actualiser Stats
-                          </Button>
-                          <Button 
-                            onClick={() => setActiveTab("users")}
-                            className="bg-orange-600 hover:bg-orange-700 text-white"
-                          >
-                            <Users className="h-4 w-4 mr-2" />
-                            Gérer Utilisateurs
-                          </Button>
+                <TabsContent value="dashboard" className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Stats Cards */}
+                    <Card className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border-blue-500/30">
+                      <CardContent className="p-4">
+                        <div className="text-center">
+                          <Users className="h-8 w-8 text-blue-400 mx-auto mb-2" />
+                          <p className="text-blue-300 text-xs font-medium mb-1">Utilisateurs</p>
+                          <p className="text-xl font-bold text-white">{platformStats?.totalUsers || 0}</p>
                         </div>
                       </CardContent>
                     </Card>
 
-                    {/* Recent Activity */}
-                    <Card className="bg-gray-800/50 border-gray-700">
-                      <CardHeader>
-                        <CardTitle className="text-white flex items-center gap-2">
-                          <Activity className="h-5 w-5 text-green-400" />
-                          Activité Récente
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {posts.slice(0, 5).map((post) => (
-                            <div key={post.id} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
-                              <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                                <div>
-                                  <p className="text-white font-medium">{post.title}</p>
-                                  <p className="text-gray-400 text-sm">
-                                    {new Date(post.createdAt).toLocaleDateString('fr-FR')}
-                                  </p>
-                                </div>
-                              </div>
-                              <Badge variant={post.isPublished ? "default" : "secondary"}>
-                                {post.isPublished ? "Publié" : "Brouillon"}
-                              </Badge>
-                            </div>
-                          ))}
+                      <Card className="bg-gradient-to-br from-green-600/20 to-green-800/20 border-green-500/30">
+                      <CardContent className="p-4">
+                        <div className="text-center">
+                          <BookOpen className="h-8 w-8 text-green-400 mx-auto mb-2" />
+                          <p className="text-green-300 text-xs font-medium mb-1">Quiz</p>
+                          <p className="text-xl font-bold text-white">{platformStats?.totalQuizzes || 0}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border-purple-500/30">
+                      <CardContent className="p-4">
+                        <div className="text-center">
+                          <Video className="h-8 w-8 text-purple-400 mx-auto mb-2" />
+                          <p className="text-purple-300 text-xs font-medium mb-1">Anime</p>
+                          <p className="text-xl font-bold text-white">{platformStats?.totalAnime || 0}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-br from-pink-600/20 to-pink-800/20 border-pink-500/30">
+                      <CardContent className="p-4">
+                        <div className="text-center">
+                          <MessageSquare className="h-8 w-8 text-pink-400 mx-auto mb-2" />
+                          <p className="text-pink-300 text-xs font-medium mb-1">Messages</p>
+                          <p className="text-xl font-bold text-white">{platformStats?.totalMessages || 0}</p>
                         </div>
                       </CardContent>
                     </Card>
                   </div>
+
+                    {/* Quick Actions */}
+                  <Card className="bg-gray-800/50 border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="text-white flex items-center gap-2 text-lg">
+                        <Zap className="h-5 w-5 text-yellow-400" />
+                        Actions Rapides
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 gap-3">
+                        <Button 
+                          onClick={() => setActiveTab("posts")}
+                          className="bg-blue-600 hover:bg-blue-700 text-white h-12 text-left justify-start"
+                        >
+                          <Plus className="h-4 w-4 mr-3" />
+                          Nouvelle Publication
+                        </Button>
+                        <Button 
+                          onClick={handleCreateFrenchQuizzes}
+                          disabled={isCreatingQuizzes}
+                          className="bg-green-600 hover:bg-green-700 text-white h-12 text-left justify-start"
+                        >
+                          {isCreatingQuizzes ? (
+                            <LoadingSpinner size="sm" />
+                          ) : (
+                            <BookOpen className="h-4 w-4 mr-3" />
+                          )}
+                          Créer Quiz Français
+                        </Button>
+                        <Button 
+                          onClick={() => refetchStats()}
+                          className="bg-purple-600 hover:bg-purple-700 text-white h-12 text-left justify-start"
+                        >
+                          <RefreshCw className="h-4 w-4 mr-3" />
+                          Actualiser Statistiques
+                        </Button>
+                        <Button 
+                          onClick={() => setActiveTab("users")}
+                          className="bg-orange-600 hover:bg-orange-700 text-white h-12 text-left justify-start"
+                        >
+                          <Users className="h-4 w-4 mr-3" />
+                          Gérer Utilisateurs
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                    {/* Recent Activity */}
+                  <Card className="bg-gray-800/50 border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="text-white flex items-center gap-2 text-lg">
+                        <Activity className="h-5 w-5 text-green-400" />
+                        Activité Récente
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {posts.slice(0, 3).map((post) => (
+                          <div key={post.id} className="p-3 bg-gray-700/50 rounded-lg">
+                            <div className="flex items-start gap-3">
+                              <div className="w-2 h-2 bg-green-400 rounded-full mt-2"></div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white font-medium text-sm truncate">{post.title}</p>
+                                <p className="text-gray-400 text-xs">
+                                  {new Date(post.createdAt).toLocaleDateString('fr-FR')}
+                                </p>
+                                <Badge 
+                                  variant={post.isPublished ? "default" : "secondary"}
+                                  className="mt-1 text-xs"
+                                >
+                                  {post.isPublished ? "Publié" : "Brouillon"}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        {posts.length === 0 && (
+                          <div className="text-center py-6">
+                            <p className="text-gray-400 text-sm">Aucune activité récente</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </TabsContent>
 
           <TabsContent value="users">
@@ -620,21 +655,19 @@ export default function Admin() {
 
           
 
-          <TabsContent value="posts">
-            <div className="space-y-8">
-              {/* Header with Create Button */}
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-3xl font-bold text-white mb-2">Gestion des Publications</h2>
-                  <p className="text-gray-400">Créez et gérez les publications de votre plateforme</p>
-                </div>
-                <Dialog open={isCreatePostOpen} onOpenChange={setIsCreatePostOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-xl px-6 py-3 shadow-lg transition-all duration-300 hover:scale-105">
-                      <Plus className="h-5 w-5 mr-2" />
-                      Nouvelle Publication
-                    </Button>
-                  </DialogTrigger>
+          <TabsContent value="posts" className="space-y-4">
+            <div className="text-center mb-4">
+              <h2 className="text-xl font-bold text-white mb-1">Publications</h2>
+              <p className="text-gray-400 text-sm">Gérez vos publications</p>
+            </div>
+
+            <Dialog open={isCreatePostOpen} onOpenChange={setIsCreatePostOpen}>
+              <DialogTrigger asChild>
+                <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white h-12">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nouvelle Publication
+                </Button>
+              </DialogTrigger>
                   <DialogContent className="backdrop-blur-xl bg-gray-900/95 border border-gray-700 max-w-3xl max-h-[90vh] overflow-y-auto text-white shadow-2xl">
                     <DialogHeader className="border-b border-gray-700 pb-6">
                       <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
@@ -781,43 +814,47 @@ export default function Admin() {
                 </Dialog>
               </div>
 
-              {/* Posts List */}
-              <div className="bg-gray-800 rounded-2xl border border-gray-700 p-6">
+              <Card className="bg-gray-800 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white text-lg">Mes Publications</CardTitle>
+              </CardHeader>
+              <CardContent>
                 {postsLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p className="text-gray-400">Chargement des publications...</p>
+                  <div className="text-center py-6">
+                    <LoadingSpinner />
+                    <p className="text-gray-400 mt-2 text-sm">Chargement...</p>
                   </div>
                 ) : !Array.isArray(posts) || posts.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <MessageSquare className="h-10 w-10 text-gray-400" />
+                  <div className="text-center py-8">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
+                      <MessageSquare className="h-6 w-6 text-gray-400" />
                     </div>
-                    <h4 className="text-xl font-semibold text-white mb-2">Aucune Publication</h4>
-                    <p className="text-gray-400 mb-6">Commencez par créer votre première publication pour engager votre communauté</p>
+                    <h4 className="text-lg font-semibold text-white mb-2">Aucune Publication</h4>
+                    <p className="text-gray-400 mb-4 text-sm">Créez votre première publication</p>
                     <Button 
                       onClick={() => setIsCreatePostOpen(true)}
-                      className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-xl px-6 py-3"
+                      className="bg-gradient-to-r from-blue-500 to-purple-500 text-white"
+                      size="sm"
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Créer ma première publication
+                      Créer
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {(posts as AdminPost[]).map((post: AdminPost, index: number) => (
+                  <div className="space-y-3">
+                    {(posts as AdminPost[]).map((post: AdminPost) => (
                       <div 
                         key={post.id} 
-                        className="backdrop-blur-xl bg-gray-700/50 border border-gray-600 rounded-2xl p-6 hover:bg-gray-700/80 transition-all duration-300 group"
+                        className="bg-gray-700/50 border border-gray-600 rounded-xl p-4"
                       >
-                        <div className="flex justify-between items-start mb-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h4 className="text-lg font-semibold text-white group-hover:text-blue-300 transition-colors">
-                                {post.title}
-                              </h4>
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-white font-medium text-sm mb-1 truncate">
+                              {post.title}
+                            </h4>
+                            <div className="flex flex-wrap gap-1 mb-2">
                               <Badge 
-                                variant={post.type === 'announcement' ? 'default' : post.type === 'event' ? 'secondary' : 'outline'}
+                                variant="outline"
                                 className="text-xs"
                               >
                                 {post.type === 'announcement' && 'Annonce'}
@@ -825,28 +862,23 @@ export default function Admin() {
                                 {post.type === 'update' && 'Mise à jour'}
                               </Badge>
                               {post.isPublished ? (
-                                <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                                <Badge className="bg-green-500/20 text-green-300 text-xs">
                                   Publié
                                 </Badge>
                               ) : (
-                                <Badge variant="outline" className="border-yellow-500/30 text-yellow-300">
+                                <Badge variant="outline" className="text-yellow-300 text-xs">
                                   Brouillon
                                 </Badge>
                               )}
-                              {post.adminOnly && (
-                                <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
-                                  Admin
-                                </Badge>
-                              )}
                             </div>
-                            <p className="text-gray-300 text-sm line-clamp-2 mb-3">
+                            <p className="text-gray-300 text-xs line-clamp-2 mb-2">
                               {post.content}
                             </p>
                             <p className="text-gray-500 text-xs">
-                              Créé le {new Date(post.createdAt).toLocaleDateString('fr-FR')}
+                              {new Date(post.createdAt).toLocaleDateString('fr-FR')}
                             </p>
                           </div>
-                          <div className="flex gap-2 ml-4">
+                          <div className="flex flex-col gap-2">
                             <Button
                               size="sm"
                               variant="outline"
@@ -855,33 +887,33 @@ export default function Admin() {
                                 isPublished: !post.isPublished
                               })}
                               disabled={togglePublishMutation.isPending}
-                              className="backdrop-blur-xl bg-gray-800 border border-gray-600 text-white hover:bg-gray-700 rounded-xl"
+                              className="h-8 w-8 p-0"
                               title={post.isPublished ? "Masquer" : "Publier"}
                             >
-                              {post.isPublished ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              {post.isPublished ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => handleEditPost(post)}
-                              className="backdrop-blur-xl bg-blue-500/20 border border-blue-500/30 text-blue-300 hover:bg-blue-500/30 rounded-xl"
+                              className="h-8 w-8 p-0"
                               title="Modifier"
                             >
-                              <Edit className="h-4 w-4" />
+                              <Edit className="h-3 w-3" />
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                if (window.confirm("Êtes-vous sûr de vouloir supprimer cette publication ?")) {
+                                if (window.confirm("Supprimer cette publication ?")) {
                                   deletePostMutation.mutate(post.id);
                                 }
                               }}
                               disabled={deletePostMutation.isPending}
-                              className="backdrop-blur-xl bg-red-500/20 border border-red-500/30 text-red-300 hover:bg-red-500/30 rounded-xl"
+                              className="h-8 w-8 p-0 text-red-400 hover:text-red-300"
                               title="Supprimer"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
                         </div>
@@ -889,8 +921,8 @@ export default function Admin() {
                     ))}
                   </div>
                 )}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="stats">
@@ -949,53 +981,53 @@ export default function Admin() {
             </div>
           </TabsContent>
 
-          <TabsContent value="quiz">
-            <div className="space-y-6">
-              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-                <div className="text-center md:text-left">
-                  <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Gestion des Quiz</h2>
-                  <p className="text-gray-400">Créez et gérez les quiz de votre plateforme</p>
-                </div>
-                <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-                  <Button
-                    onClick={handleCreateFrenchQuizzes}
-                    disabled={isCreatingQuizzes}
-                    className="bg-green-600 hover:bg-green-700 text-white flex-1 md:flex-none"
-                  >
-                    {isCreatingQuizzes ? (
-                      <LoadingSpinner size="sm" />
-                    ) : (
-                      <>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Quiz Français
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      console.log("Creating anime quiz...");
-                    }}
-                    className="bg-purple-600 hover:bg-purple-700 text-white flex-1 md:flex-none"
-                  >
-                    <Star className="h-4 w-4 mr-2" />
-                    Quiz Anime
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      console.log("Creating expert quiz...");
-                    }}
-                    className="bg-red-600 hover:bg-red-700 text-white flex-1 md:flex-none"
-                  >
-                    <Trophy className="h-4 w-4 mr-2" />
-                    Quiz Expert
-                  </Button>
-                </div>
-              </div>
-
-              <div className="bg-gray-800 rounded-2xl border border-gray-700 p-6">
-                <QuizListComponent />
-              </div>
+          <TabsContent value="quiz" className="space-y-4">
+            <div className="text-center mb-4">
+              <h2 className="text-xl font-bold text-white mb-1">Gestion des Quiz</h2>
+              <p className="text-gray-400 text-sm">Créez et gérez les quiz</p>
             </div>
+
+            <div className="grid grid-cols-1 gap-3 mb-4">
+              <Button
+                onClick={handleCreateFrenchQuizzes}
+                disabled={isCreatingQuizzes}
+                className="bg-green-600 hover:bg-green-700 text-white h-12 justify-start"
+              >
+                {isCreatingQuizzes ? (
+                  <LoadingSpinner size="sm" />
+                ) : (
+                  <Plus className="h-4 w-4 mr-3" />
+                )}
+                Créer Quiz Français
+              </Button>
+              <Button
+                onClick={() => {
+                  console.log("Creating anime quiz...");
+                }}
+                className="bg-purple-600 hover:bg-purple-700 text-white h-12 justify-start"
+              >
+                <Star className="h-4 w-4 mr-3" />
+                Créer Quiz Anime
+              </Button>
+              <Button
+                onClick={() => {
+                  console.log("Creating expert quiz...");
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white h-12 justify-start"
+              >
+                <Trophy className="h-4 w-4 mr-3" />
+                Créer Quiz Expert
+              </Button>
+            </div>
+
+            <Card className="bg-gray-800 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white text-lg">Quiz Disponibles</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <QuizListComponent />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="content">
@@ -1030,9 +1062,8 @@ export default function Admin() {
             </div>
           </TabsContent>
         </Tabs>
-        </CardContent>
-      </Card>
-      </main>
+          </div>
+        </main>
 
         {/* Edit Post Dialog */}
         <Dialog open={isEditPostOpen} onOpenChange={setIsEditPostOpen}>
