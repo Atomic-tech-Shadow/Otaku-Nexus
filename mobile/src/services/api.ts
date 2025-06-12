@@ -11,7 +11,7 @@ import {
 } from '../types';
 
 // Configuration de l'API - remplacez par l'URL de votre serveur
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://rest-express-43652320.replit.app/api';
 
 class ApiService {
   private token: string | null = null;
@@ -36,7 +36,7 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
