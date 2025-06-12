@@ -184,6 +184,16 @@ export default function HomeScreen({ navigation }: any) {
             >
               <Text style={styles.quickActionText}>Mes Favoris</Text>
             </TouchableOpacity>
+            {user?.isAdmin && (
+              <TouchableOpacity
+                style={[styles.quickAction, { backgroundColor: '#e74c3c' }]}
+                onPress={() => navigation.navigate('Admin')}
+              >
+                <Text style={[styles.quickActionText, { color: '#fff' }]}>
+                  Administration
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>
@@ -235,12 +245,13 @@ const styles = StyleSheet.create({
   },
   navCards: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     marginBottom: 20,
     gap: 12,
   },
   navCard: {
-    flex: 1,
-    padding: 20,
+    width: '47%',
+    padding: 16,
     borderRadius: 12,
     alignItems: 'center',
   },

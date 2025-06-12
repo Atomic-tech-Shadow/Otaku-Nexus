@@ -6,10 +6,13 @@ Ce guide vous explique comment installer et utiliser l'application mobile React 
 
 L'application mobile comprend :
 - Interface d'authentification avec connexion/inscription
-- Écran d'accueil avec navigation rapide vers les fonctionnalités
+- Écran d'accueil avec navigation rapide vers toutes les fonctionnalités
 - Système de découverte d'anime avec recherche et favoris
-- Quiz interactifs avec système de points XP
+- Quiz interactifs avec système de points XP et timer
+- Section vidéos avec AMVs, openings et contenus anime
+- Chat en temps réel avec salons publics
 - Profil utilisateur avec statistiques et niveaux
+- Panel d'administration (pour les admins)
 
 ## Installation rapide
 
@@ -79,12 +82,32 @@ const API_BASE_URL = 'http://VOTRE_ADRESSE_IP:5000/api';
 - Récompenses XP basées sur les performances
 - Quiz du jour mis en avant
 
+### Section vidéos
+- Vidéos populaires et tendance
+- AMVs et openings d'anime
+- Lecture directe via liens externes
+- Catégorisation du contenu
+- Compteur de vues
+
+### Chat en temps réel
+- Salons de discussion publics
+- Messages instantanés via WebSocket
+- Interface utilisateur intuitive
+- Identification des administrateurs
+- Historique des conversations
+
 ### Profil utilisateur
 - Affichage des statistiques personnelles
 - Système de niveaux basé sur l'XP
 - Barre de progression vers le niveau suivant
 - Modification des informations personnelles
 - Historique des quiz complétés
+
+### Administration (admins uniquement)
+- Création et gestion d'articles
+- Statistiques de la plateforme
+- Gestion des publications
+- Types d'articles (actualités, annonces, mises à jour)
 
 ## Structure technique
 
