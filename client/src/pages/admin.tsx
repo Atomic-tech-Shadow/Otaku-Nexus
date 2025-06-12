@@ -11,10 +11,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Settings, Plus, Edit, Trash2, Eye, EyeOff, Users, MessageSquare, Video, BookOpen, ArrowLeft, Home } from "lucide-react";
+import { 
+  Settings, Plus, Edit, Trash2, Eye, EyeOff, Users, MessageSquare, Video, BookOpen, 
+  ArrowLeft, Home, Shield, BarChart3, Database, Upload, Download, RefreshCw,
+  Calendar, Clock, TrendingUp, Activity, FileText, Image as ImageIcon,
+  Zap, Star, Trophy, Target, Gamepad2, Play, PlusCircle, Settings2
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -28,7 +34,20 @@ const postSchema = z.object({
   }),
   isPublished: z.boolean().default(false),
   adminOnly: z.boolean().default(false),
-  imageUrl: z.string().url("URL d'image invalide").optional().or(z.literal("")),
+  imageUrl: z.string().optional(),
+});
+
+const quizSchema = z.object({
+  title: z.string().min(1, "Le titre est requis"),
+  description: z.string().min(1, "La description est requise"),
+  difficulty: z.enum(["easy", "medium", "hard"]),
+  xpReward: z.number().min(1, "Les points XP doivent être positifs"),
+  questions: z.array(z.object({
+    question: z.string().min(1, "La question est requise"),
+    options: z.array(z.string()).length(4, "Il faut exactement 4 options"),
+    correctAnswer: z.number().min(0).max(3),
+    explanation: z.string().min(1, "L'explication est requise"),
+  })).min(1, "Au moins une question est requise"),
 });
 
 interface AdminPost {
@@ -333,12 +352,143 @@ export default function Admin() {
               </Button>
 
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-4 bg-gray-800 mb-4">
-                  <TabsTrigger value="posts" className="text-xs px-2">Publications</TabsTrigger>
-                  <TabsTrigger value="stats" className="text-xs px-2">Statistiques</TabsTrigger>
-                  <TabsTrigger value="quiz" className="text-xs px-2">Quiz</TabsTrigger>
-                  <TabsTrigger value="content" className="text-xs px-2">Contenu</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-6 bg-gray-800 mb-4">
+                  <TabsTrigger value="dashboard" className="text-xs px-1">Dashboard</TabsTrigger>
+                  <TabsTrigger value="posts" className="text-xs px-1">Publications</TabsTrigger>
+                  <TabsTrigger value="users" className="text-xs px-1">Utilisateurs</TabsTrigger>
+                  <TabsTrigger value="quiz" className="text-xs px-1">Quiz</TabsTrigger>
+                  <TabsTrigger value="content" className="text-xs px-1">Contenu</TabsTrigger>
+                  <TabsTrigger value="settings" className="text-xs px-1">Paramètres</TabsTrigger>
                 </TabsList>
+
+                {/* Dashboard Tab */}
+                <TabsContent value="dashboard">
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* Stats Cards */}
+                      <Card className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border-blue-500/30">
+                        <CardContent className="p-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-blue-300 text-sm font-medium">Total Utilisateurs</p>
+                              <p className="text-3xl font-bold text-white">{platformStats?.totalUsers || 0}</p>
+                            </div>
+                            <Users className="h-12 w-12 text-blue-400" />
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-green-600/20 to-green-800/20 border-green-500/30">
+                        <CardContent className="p-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-green-300 text-sm font-medium">Quiz Disponibles</p>
+                              <p className="text-3xl font-bold text-white">{platformStats?.totalQuizzes || 0}</p>
+                            </div>
+                            <BookOpen className="h-12 w-12 text-green-400" />
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border-purple-500/30">
+                        <CardContent className="p-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-purple-300 text-sm font-medium">Anime Database</p>
+                              <p className="text-3xl font-bold text-white">{platformStats?.totalAnime || 0}</p>
+                            </div>
+                            <Video className="h-12 w-12 text-purple-400" />
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-pink-600/20 to-pink-800/20 border-pink-500/30">
+                        <CardContent className="p-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-pink-300 text-sm font-medium">Messages Chat</p>
+                              <p className="text-3xl font-bold text-white">{platformStats?.totalMessages || 0}</p>
+                            </div>
+                            <MessageSquare className="h-12 w-12 text-pink-400" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Quick Actions */}
+                    <Card className="bg-gray-800/50 border-gray-700">
+                      <CardHeader>
+                        <CardTitle className="text-white flex items-center gap-2">
+                          <Zap className="h-5 w-5 text-yellow-400" />
+                          Actions Rapides
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <Button 
+                            onClick={() => setActiveTab("posts")}
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Nouvelle Publication
+                          </Button>
+                          <Button 
+                            onClick={handleCreateFrenchQuizzes}
+                            disabled={isCreatingQuizzes}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <BookOpen className="h-4 w-4 mr-2" />
+                            Créer Quiz
+                          </Button>
+                          <Button 
+                            onClick={() => refetchStats()}
+                            className="bg-purple-600 hover:bg-purple-700 text-white"
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Actualiser Stats
+                          </Button>
+                          <Button 
+                            onClick={() => setActiveTab("users")}
+                            className="bg-orange-600 hover:bg-orange-700 text-white"
+                          >
+                            <Users className="h-4 w-4 mr-2" />
+                            Gérer Utilisateurs
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Recent Activity */}
+                    <Card className="bg-gray-800/50 border-gray-700">
+                      <CardHeader>
+                        <CardTitle className="text-white flex items-center gap-2">
+                          <Activity className="h-5 w-5 text-green-400" />
+                          Activité Récente
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {posts.slice(0, 5).map((post) => (
+                            <div key={post.id} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                                <div>
+                                  <p className="text-white font-medium">{post.title}</p>
+                                  <p className="text-gray-400 text-sm">
+                                    {new Date(post.createdAt).toLocaleDateString('fr-FR')}
+                                  </p>
+                                </div>
+                              </div>
+                              <Badge variant={post.isPublished ? "default" : "secondary"}>
+                                {post.isPublished ? "Publié" : "Brouillon"}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
 
           <TabsContent value="posts">
             <div className="space-y-8">
@@ -412,12 +562,12 @@ export default function Admin() {
                             name="imageUrl"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-white font-semibold">URL de l'Image (Optionnel)</FormLabel>
+                                <FormLabel className="text-white font-semibold">Image (Optionnel)</FormLabel>
                                 <FormControl>
-                                  <Input
-                                    placeholder="https://example.com/image.jpg"
-                                    {...field}
-                                    className="backdrop-blur-xl bg-gray-800 border border-gray-600 text-white placeholder:text-gray-400 rounded-xl"
+                                  <ImageUpload
+                                    onImageUpload={field.onChange}
+                                    currentImage={field.value}
+                                    maxSize={5}
                                   />
                                 </FormControl>
                                 <FormMessage />
