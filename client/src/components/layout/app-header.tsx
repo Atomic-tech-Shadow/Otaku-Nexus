@@ -15,34 +15,11 @@ export default function AppHeader() {
     <header className="relative z-10 p-4 bg-gradient-to-r from-card-bg to-secondary-bg">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          {/* Profile image */}
-          <div className="w-12 h-12 rounded-full border-2 border-electric-blue overflow-hidden">
-            {user?.profileImageUrl ? (
-              <img 
-                src={user.profileImageUrl} 
-                alt="Profile" 
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  // Fallback to initials if image fails to load
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  const parent = target.parentElement;
-                  if (parent && !parent.querySelector('.fallback-avatar')) {
-                    const fallback = document.createElement('div');
-                    fallback.className = 'fallback-avatar w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink flex items-center justify-center';
-                    fallback.innerHTML = `<span class="text-lg font-bold text-white">${(user?.firstName || user?.username || 'O').charAt(0).toUpperCase()}</span>`;
-                    parent.appendChild(fallback);
-                  }
-                }}
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink flex items-center justify-center">
-                <span className="text-lg font-bold text-white">
-                  {(user?.firstName || user?.username || 'O').charAt(0).toUpperCase()}
-                </span>
-              </div>
-            )}
-          </div>
+          <ModernAvatar 
+            user={user}
+            size="lg"
+            className="border-2 border-electric-blue"
+          />
           <div>
             <h2 className="text-sm font-semibold flex items-center gap-2">
               {user?.firstName || user?.username || 'Anonymous Otaku'}
