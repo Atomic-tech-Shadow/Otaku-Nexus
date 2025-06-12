@@ -323,7 +323,7 @@ export default function EditProfile() {
                         src={imagePreview || user?.profileImageUrl}
                         alt="Profile"
                       />
-                      <AvatarFallback className="text-xl bg-electric-blue">
+                      <AvatarFallback className="text-xl">
                         {(form.watch("firstName") || user?.firstName || "U").charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>

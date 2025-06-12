@@ -115,8 +115,20 @@ export default function Chat() {
                 </Button>
               </Link>
 
-              <div className="w-10 h-10 bg-gradient-to-br from-electric-blue to-hot-pink rounded-full flex items-center justify-center">
-                <span className="text-sm font-bold">GO</span>
+              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-electric-blue">
+                {user?.profileImageUrl ? (
+                  <img 
+                    src={user.profileImageUrl} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink flex items-center justify-center">
+                    <span className="text-sm font-bold text-white">
+                      {(user?.firstName || user?.username || 'O').charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div>

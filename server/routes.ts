@@ -757,10 +757,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedUser);
     } catch (error) {
       console.error("Error updating user profile:", error);
-      if (error.name === 'ZodError') {
+      if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
         return res.status(400).json({ 
           message: "Données de profil invalides", 
-          errors: error.errors 
+          errors: (error as any).errors 
         });
       }
       res.status(500).json({ message: "Failed to update profile" });
@@ -981,7 +981,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(enrichedMessage);
     } catch (error) {
       console.error("Error sending chat message:", error);
-      res.status(500).json({ message: "Échec de l'envoi du message", error: error.message });
+      res.status(500).json({ message: "Échec de l'envoi du message", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
