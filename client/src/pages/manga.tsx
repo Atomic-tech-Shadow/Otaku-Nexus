@@ -36,8 +36,9 @@ export default function MangaPage() {
   };
 
   const handleChapterRead = (chapter: any) => {
-    // Navigation vers le lecteur de chapitre
-    window.open(`/manga/chapter/${chapter.id}/read`, '_blank');
+    // Navigation vers le lecteur de chapitre avec l'ID du manga
+    const mangaId = selectedManga?.id || selectedManga?.mangaDxId;
+    window.open(`/manga/chapter/${chapter.id}/read?mangaId=${mangaId}`, '_blank');
   };
 
   const handleChapterDownload = async (chapter: any) => {

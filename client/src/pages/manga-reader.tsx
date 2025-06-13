@@ -65,6 +65,10 @@ export default function MangaReader() {
     backgroundColor: '#1a1a1a'
   });
 
+  // Récupérer l'ID du manga depuis l'URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const mangaId = urlParams.get('mangaId');
+
   // Récupérer les pages du chapitre
   const { data: chapterData, isLoading, error } = useQuery<{
     pages: ChapterPage[];
@@ -76,10 +80,9 @@ export default function MangaReader() {
     enabled: !!chapterId,
   });
 
-  // Récupérer les détails du chapitre
   const { data: chapters = [] } = useQuery<Chapter[]>({
-    queryKey: ['/api/manga', chapterData?.pages?.[0]?.mangaId, 'chapters'],
-    enabled: !!chapterData?.pages?.[0]?.mangaId,
+    queryKey: ['/api/manga', mangaId, 'chapters'],
+    enabled: !!mangaId,
   });
 
   const currentChapterIndex = chapters.findIndex(ch => ch.id === chapterId);

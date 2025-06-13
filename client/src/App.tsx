@@ -21,6 +21,7 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import MangaPage from "@/pages/manga";
 import MangaReaderPage from "@/pages/manga-reader";
 
+
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -68,6 +69,16 @@ function Router() {
             <EditProfile />
           </ProtectedRoute>
         </Route>
+        <Route path="/manga">
+          <ProtectedRoute>
+            <MangaPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/manga/chapter/:chapterId/read">
+          <ProtectedRoute>
+            <MangaReaderPage />
+          </ProtectedRoute>
+        </Route>
         <Route path="/chat">
           <ProtectedRoute>
             <Chat />
@@ -78,6 +89,7 @@ function Router() {
             <Admin />
           </ProtectedRoute>
         </Route>
+
         <Route component={NotFound} />
       </Switch>
   );
