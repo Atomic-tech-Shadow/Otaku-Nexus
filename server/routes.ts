@@ -19,6 +19,7 @@ import {
   updateUserProfileSchema,
 } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
+import { mangaDxService } from "./mangadx-api";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -302,42 +303,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/manga/:id/chapters', async (req, res) => {
     try {
-      const mangaId = parseInt(req.params.id);
-      let chapters = await storage.getMangaChapters(mangaId);
+      const mangaId = req.params.id;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
+      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
       
-      // Si pas de chapitres locaux, récupérer depuis MangaDx
-      if (chapters.length === 0) {
-        try {
-          const response = await fetch(`https://api.mangadx.org/manga/${req.params.id}/feed?limit=500&order[chapter]=asc&translatedLanguage[]=fr&translatedLanguage[]=en`);
-          if (response.ok) {
-            const data = await response.json();
-            
-            for (const chapter of data.data) {
-              try {
-                await storage.createMangaChapter({
-                  mangadxId: chapter.id,
-                  mangaId: mangaId,
-                  chapterNumber: chapter.attributes.chapter || '0',
-                  title: chapter.attributes.title || '',
-                  volume: chapter.attributes.volume,
-                  pages: chapter.attributes.pages || 0,
-                  translatedLanguage: chapter.attributes.translatedLanguage,
-                  scanlationGroup: chapter.relationships.find((rel: any) => rel.type === 'scanlation_group')?.attributes?.name || '',
-                  publishAt: new Date(chapter.attributes.publishAt),
-                  readableAt: new Date(chapter.attributes.readableAt),
-                  version: chapter.attributes.version
-                });
-              } catch (err) {
-                console.log('Erreur sauvegarde chapitre:', err);
-              }
-            }
-            chapters = await storage.getMangaChapters(mangaId);
-          }
-        } catch (apiError) {
-          console.error("Erreur API MangaDx chapitres:", apiError);
-        }
-      }
-      
+      const chapters = await mangaDxService.getMangaChapters(mangaId, limit, offset);
       res.json(chapters);
     } catch (error) {
       console.error("Erreur récupération chapitres:", error);
@@ -348,62 +318,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/manga/chapter/:chapterId/pages', async (req, res) => {
     try {
       const chapterId = req.params.chapterId;
-      let chapter = await storage.getChapterByMangaDxId(chapterId);
+      const pages = await mangaDxService.getChapterPages(chapterId);
       
-      if (!chapter || !chapter.hash || !chapter.data) {
-        // Récupérer les pages depuis MangaDx
-        try {
-          const response = await fetch(`https://api.mangadx.org/at-home/server/${chapterId}`);
-          if (response.ok) {
-            const data = await response.json();
-            const baseUrl = data.baseUrl;
-            const hash = data.chapter.hash;
-            const pages = data.chapter.data;
-            const pagesSaver = data.chapter.dataSaver;
-            
-            // Mettre à jour le chapitre avec les données des pages
-            if (chapter) {
-              chapter = await storage.updateMangaChapter(chapter.id, {
-                hash,
-                data: pages,
-                dataSaver: pagesSaver
-              });
-            }
-            
-            // Construire les URLs des pages
-            const pageUrls = pages.map((page: string, index: number) => ({
-              pageNumber: index + 1,
-              imageUrl: `${baseUrl}/data/${hash}/${page}`,
-              imageUrlSaver: `${baseUrl}/data-saver/${hash}/${pagesSaver[index] || page}`
-            }));
-            
-            res.json({
-              chapter: chapter,
-              pages: pageUrls,
-              baseUrl,
-              hash
-            });
-          } else {
-            res.status(404).json({ message: "Chapitre non trouvé sur MangaDx" });
-          }
-        } catch (apiError) {
-          console.error("Erreur API MangaDx pages:", apiError);
-          res.status(500).json({ message: "Erreur récupération pages depuis MangaDx" });
-        }
-      } else {
-        // Utiliser les données en cache
-        const baseUrl = `https://uploads.mangadx.org/data/${chapter.hash}`;
-        const pageUrls = chapter.data.map((page: string, index: number) => ({
-          pageNumber: index + 1,
-          imageUrl: `${baseUrl}/${page}`,
-          imageUrlSaver: chapter.dataSaver ? `https://uploads.mangadx.org/data-saver/${chapter.hash}/${chapter.dataSaver[index]}` : null
-        }));
-        
-        res.json({
-          chapter: chapter,
-          pages: pageUrls
-        });
+      if (!pages) {
+        return res.status(404).json({ message: "Chapitre non trouvé" });
       }
+      
+      // Construire les URLs des pages
+      const pageUrls = pages.chapter.data.map((page: string, index: number) => ({
+        pageNumber: index + 1,
+        imageUrl: `${pages.baseUrl}/data/${pages.chapter.hash}/${page}`,
+        imageUrlSaver: `${pages.baseUrl}/data-saver/${pages.chapter.hash}/${pages.chapter.dataSaver[index] || page}`
+      }));
+      
+      res.json({
+        pages: pageUrls,
+        baseUrl: pages.baseUrl,
+        hash: pages.chapter.hash,
+        totalPages: pages.chapter.data.length
+      });
     } catch (error) {
       console.error("Erreur récupération pages:", error);
       res.status(500).json({ message: "Échec de récupération des pages" });
@@ -1095,6 +1028,172 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Erreur de vérification admin" });
     }
   };
+
+  // Routes d'administration étendues
+  app.get('/api/admin/stats', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getPlatformStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching platform stats:", error);
+      res.status(500).json({ message: "Failed to fetch platform stats" });
+    }
+  });
+
+  app.get('/api/admin/users', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = (page - 1) * limit;
+      
+      // Get users with pagination
+      const users = await storage.getUsersPaginated(limit, offset);
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.put('/api/admin/users/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const updates = req.body;
+      const user = await storage.updateUserAdmin(userId, updates);
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  app.delete('/api/admin/users/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const userId = req.params.id;
+      await storage.deleteUser(userId);
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
+  app.get('/api/admin/quizzes', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const quizzes = await storage.getQuizzes();
+      res.json(quizzes);
+    } catch (error) {
+      console.error("Error fetching quizzes:", error);
+      res.status(500).json({ message: "Failed to fetch quizzes" });
+    }
+  });
+
+  app.delete('/api/admin/quizzes/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const quizId = parseInt(req.params.id);
+      await storage.deleteQuiz(quizId);
+      res.json({ message: "Quiz deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting quiz:", error);
+      res.status(500).json({ message: "Failed to delete quiz" });
+    }
+  });
+
+  app.get('/api/admin/anime', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const animes = await storage.getAnimes(100);
+      res.json(animes);
+    } catch (error) {
+      console.error("Error fetching anime:", error);
+      res.status(500).json({ message: "Failed to fetch anime" });
+    }
+  });
+
+  app.delete('/api/admin/anime/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const animeId = parseInt(req.params.id);
+      await storage.deleteAnime(animeId);
+      res.json({ message: "Anime deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting anime:", error);
+      res.status(500).json({ message: "Failed to delete anime" });
+    }
+  });
+
+  app.get('/api/admin/manga', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const mangas = await storage.getMangas(100);
+      res.json(mangas);
+    } catch (error) {
+      console.error("Error fetching manga:", error);
+      res.status(500).json({ message: "Failed to fetch manga" });
+    }
+  });
+
+  app.delete('/api/admin/manga/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const mangaId = parseInt(req.params.id);
+      await storage.deleteManga(mangaId);
+      res.json({ message: "Manga deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting manga:", error);
+      res.status(500).json({ message: "Failed to delete manga" });
+    }
+  });
+
+  app.get('/api/admin/chat/messages', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const roomId = req.query.roomId ? parseInt(req.query.roomId as string) : undefined;
+      const limit = parseInt(req.query.limit as string) || 100;
+      
+      if (roomId) {
+        const messages = await storage.getChatMessages(roomId, limit);
+        res.json(messages);
+      } else {
+        const rooms = await storage.getChatRooms();
+        res.json(rooms);
+      }
+    } catch (error) {
+      console.error("Error fetching chat data:", error);
+      res.status(500).json({ message: "Failed to fetch chat data" });
+    }
+  });
+
+  app.delete('/api/admin/chat/messages/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      await storage.deleteChatMessage(messageId);
+      res.json({ message: "Message deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      res.status(500).json({ message: "Failed to delete message" });
+    }
+  });
+
+  app.post('/api/admin/system/cleanup', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const type = req.body.type;
+      
+      switch (type) {
+        case 'duplicates':
+          await storage.cleanupDuplicateQuizzes();
+          break;
+        case 'old_sessions':
+          await storage.cleanupOldSessions();
+          break;
+        case 'unused_data':
+          await storage.cleanupUnusedData();
+          break;
+        default:
+          return res.status(400).json({ message: "Invalid cleanup type" });
+      }
+      
+      res.json({ message: `${type} cleanup completed successfully` });
+    } catch (error) {
+      console.error("Error during cleanup:", error);
+      res.status(500).json({ message: "Failed to perform cleanup" });
+    }
+  });
 
   app.get('/api/admin/posts', isAuthenticated, isAdmin, async (req, res) => {
     try {
