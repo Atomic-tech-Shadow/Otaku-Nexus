@@ -217,6 +217,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/manga/popular', async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const mangas = await mangaDxService.getPopularManga(limit);
+      res.json(mangas);
+    } catch (error) {
+      console.error("Erreur récupération mangas populaires:", error);
+      res.status(500).json({ message: "Échec de récupération des mangas populaires" });
+    }
+  });
+
+  app.get('/api/manga/latest', async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const mangas = await mangaDxService.getLatestManga(limit);
+      res.json(mangas);
+    } catch (error) {
+      console.error("Erreur récupération derniers mangas:", error);
+      res.status(500).json({ message: "Échec de récupération des derniers mangas" });
+    }
+  });
+
   app.get('/api/manga/search', async (req, res) => {
     try {
       const query = req.query.q as string;
