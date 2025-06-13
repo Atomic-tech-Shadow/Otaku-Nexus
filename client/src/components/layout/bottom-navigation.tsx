@@ -1,13 +1,15 @@
 import { Home, Search, Heart, MessageCircle, User, Gamepad2, Play, BookOpen, Brain } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from '@/hooks/useAuth';
 
 interface BottomNavigationProps {
-  currentPath: string;
+  currentPath?: string;
 }
 
-export default function BottomNavigation({ currentPath }: BottomNavigationProps) {
+export default function BottomNavigation({ currentPath: propCurrentPath }: BottomNavigationProps) {
+  const [location] = useLocation();
+  const currentPath = propCurrentPath || location;
   const { user } = useAuth();
   const ADMIN_USER_ID = "43652320";
   const isAdmin = user?.id === ADMIN_USER_ID;

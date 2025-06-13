@@ -196,7 +196,7 @@ export default function Anime() {
           )}
         </main>
 
-        <BottomNavigation currentPath="/anime" />
+        <BottomNavigation />
       </div>
     </div>
   );

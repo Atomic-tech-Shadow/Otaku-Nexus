@@ -226,7 +226,7 @@ export default function Home() {
           )}
         </main>
 
-        <BottomNavigation currentPath="/" />
+        <BottomNavigation />
       </div>
     </div>
   );
