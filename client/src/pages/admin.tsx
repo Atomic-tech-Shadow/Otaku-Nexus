@@ -268,13 +268,20 @@ export default function Admin() {
 
           {/* Admin Tabs */}
           <Tabs defaultValue="dashboard" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 bg-gray-800 border border-gray-700 rounded-xl p-1">
+            <TabsList className="grid w-full grid-cols-4 bg-gray-800 border border-gray-700 rounded-xl p-1">
               <TabsTrigger 
                 value="dashboard" 
                 className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white"
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Dashboard
+              </TabsTrigger>
+              <TabsTrigger 
+                value="content" 
+                className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white"
+              >
+                <Brain className="h-4 w-4 mr-2" />
+                Contenu
               </TabsTrigger>
               <TabsTrigger 
                 value="posts" 
@@ -297,6 +304,50 @@ export default function Admin() {
               <div className="text-center mb-4">
                 <h2 className="text-xl font-bold text-white mb-1">Tableau de bord</h2>
                 <p className="text-gray-400 text-sm">Vue d'ensemble de la plateforme</p>
+              </div>
+
+              {/* Actions rapides */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <Card className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 border-purple-500/30">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-white mb-2">Créateur de Quiz</h3>
+                        <p className="text-gray-300 text-sm mb-4">Créez et publiez des quiz pour votre communauté</p>
+                        <Button 
+                          onClick={() => window.location.href = '/admin/quiz-creator'}
+                          className="bg-purple-600 hover:bg-purple-700 text-white"
+                        >
+                          <Brain className="h-4 w-4 mr-2" />
+                          Créer un Quiz
+                          <ExternalLink className="h-4 w-4 ml-2" />
+                        </Button>
+                      </div>
+                      <Brain className="h-12 w-12 text-purple-400" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-green-600/20 to-blue-600/20 border-green-500/30">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-white mb-2">Gestion Manga</h3>
+                        <p className="text-gray-300 text-sm mb-4">API MangaDx intégrée pour les scans</p>
+                        <Button 
+                          onClick={() => window.location.href = '/manga'}
+                          variant="outline"
+                          className="border-green-500/50 text-green-400 hover:bg-green-600/20"
+                        >
+                          <BookOpen className="h-4 w-4 mr-2" />
+                          Voir les Manga
+                          <ExternalLink className="h-4 w-4 ml-2" />
+                        </Button>
+                      </div>
+                      <BookOpen className="h-12 w-12 text-green-400" />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
               {statsLoading ? (
@@ -355,6 +406,201 @@ export default function Admin() {
                   </Card>
                 </div>
               )}
+            </TabsContent>
+
+            {/* Content Tab */}
+            <TabsContent value="content" className="space-y-4">
+              <div className="text-center mb-4">
+                <h2 className="text-xl font-bold text-white mb-1">Gestion du Contenu</h2>
+                <p className="text-gray-400 text-sm">Créez et publiez du contenu pour votre communauté</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Quiz Creator */}
+                <Card className="bg-gradient-to-br from-purple-600/30 to-blue-600/30 border-purple-500/50 hover:shadow-xl transition-all">
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <Brain className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-white mb-2">Quiz Creator</h3>
+                      <p className="text-gray-300 text-sm mb-4">Créez des quiz interactifs avec questions multiples et explications</p>
+                      <div className="space-y-2">
+                        <Button 
+                          onClick={() => window.location.href = '/admin/quiz-creator'}
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Créer un Quiz
+                        </Button>
+                        <div className="text-xs text-gray-400">
+                          {stats?.totalQuizzes || 0} quiz publiés
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Manga Management */}
+                <Card className="bg-gradient-to-br from-green-600/30 to-teal-600/30 border-green-500/50 hover:shadow-xl transition-all">
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <BookOpen className="h-12 w-12 text-green-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-white mb-2">Manga Scans</h3>
+                      <p className="text-gray-300 text-sm mb-4">Gérez les scans via l'API MangaDx intégrée</p>
+                      <div className="space-y-2">
+                        <Button 
+                          onClick={() => window.location.href = '/manga'}
+                          variant="outline"
+                          className="w-full border-green-500/50 text-green-400 hover:bg-green-600/20"
+                        >
+                          <BookOpen className="h-4 w-4 mr-2" />
+                          Voir les Manga
+                        </Button>
+                        <div className="text-xs text-gray-400">
+                          API MangaDx connectée
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Anime Content */}
+                <Card className="bg-gradient-to-br from-pink-600/30 to-purple-600/30 border-pink-500/50 hover:shadow-xl transition-all">
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <Star className="h-12 w-12 text-pink-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-white mb-2">Anime</h3>
+                      <p className="text-gray-300 text-sm mb-4">Gérez le contenu anime et les recommandations</p>
+                      <div className="space-y-2">
+                        <Button 
+                          onClick={() => window.location.href = '/anime'}
+                          variant="outline"
+                          className="w-full border-pink-500/50 text-pink-400 hover:bg-pink-600/20"
+                        >
+                          <Star className="h-4 w-4 mr-2" />
+                          Voir les Anime
+                        </Button>
+                        <div className="text-xs text-gray-400">
+                          {stats?.totalAnime || 0} anime référencés
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Video Content */}
+                <Card className="bg-gradient-to-br from-orange-600/30 to-red-600/30 border-orange-500/50 hover:shadow-xl transition-all">
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <Video className="h-12 w-12 text-orange-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-white mb-2">Vidéos</h3>
+                      <p className="text-gray-300 text-sm mb-4">Gérez les vidéos et contenus multimédia</p>
+                      <div className="space-y-2">
+                        <Button 
+                          onClick={() => window.location.href = '/videos'}
+                          variant="outline"
+                          className="w-full border-orange-500/50 text-orange-400 hover:bg-orange-600/20"
+                        >
+                          <Video className="h-4 w-4 mr-2" />
+                          Voir les Vidéos
+                        </Button>
+                        <div className="text-xs text-gray-400">
+                          Contenu multimédia
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Chat Management */}
+                <Card className="bg-gradient-to-br from-blue-600/30 to-cyan-600/30 border-blue-500/50 hover:shadow-xl transition-all">
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <MessageSquare className="h-12 w-12 text-blue-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-white mb-2">Chat</h3>
+                      <p className="text-gray-300 text-sm mb-4">Modérez les discussions communautaires</p>
+                      <div className="space-y-2">
+                        <Button 
+                          onClick={() => window.location.href = '/chat'}
+                          variant="outline"
+                          className="w-full border-blue-500/50 text-blue-400 hover:bg-blue-600/20"
+                        >
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          Modérer le Chat
+                        </Button>
+                        <div className="text-xs text-gray-400">
+                          {stats?.totalMessages || 0} messages
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* User Management */}
+                <Card className="bg-gradient-to-br from-indigo-600/30 to-purple-600/30 border-indigo-500/50 hover:shadow-xl transition-all">
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <Users className="h-12 w-12 text-indigo-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-white mb-2">Utilisateurs</h3>
+                      <p className="text-gray-300 text-sm mb-4">Gérez les comptes et permissions</p>
+                      <div className="space-y-2">
+                        <Button 
+                          onClick={() => window.location.href = '/profile'}
+                          variant="outline"
+                          className="w-full border-indigo-500/50 text-indigo-400 hover:bg-indigo-600/20"
+                        >
+                          <Users className="h-4 w-4 mr-2" />
+                          Gérer Utilisateurs
+                        </Button>
+                        <div className="text-xs text-gray-400">
+                          {stats?.totalUsers || 0} utilisateurs
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Quick Actions */}
+              <Card className="bg-gray-800/50 border-gray-700 mt-6">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Zap className="h-5 w-5" />
+                    Actions Rapides
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Button 
+                      onClick={() => window.location.href = '/admin/quiz-creator'}
+                      className="bg-purple-600/20 border border-purple-500/30 text-purple-400 hover:bg-purple-600/30"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nouveau Quiz
+                    </Button>
+                    <Button 
+                      onClick={() => setIsCreatePostOpen(true)}
+                      className="bg-blue-600/20 border border-blue-500/30 text-blue-400 hover:bg-blue-600/30"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Nouvelle Publication
+                    </Button>
+                    <Button 
+                      onClick={() => window.location.href = '/manga'}
+                      className="bg-green-600/20 border border-green-500/30 text-green-400 hover:bg-green-600/30"
+                    >
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      Parcourir Manga
+                    </Button>
+                    <Button 
+                      onClick={() => window.location.href = '/chat'}
+                      className="bg-orange-600/20 border border-orange-500/30 text-orange-400 hover:bg-orange-600/30"
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Modérer Chat
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             {/* Posts Tab */}
