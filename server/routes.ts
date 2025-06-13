@@ -197,6 +197,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Animal anime routes
+  app.get('/api/anime/animals', async (req, res) => {
+    try {
+      const animes = await storage.getAnimalAnimes(20);
+      res.json(animes);
+    } catch (error) {
+      console.error("Error getting animal animes:", error);
+      res.status(500).json({ message: "Failed to get animal animes" });
+    }
+  });
+
+  app.get('/api/anime/animals/search', async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      if (!query) {
+        return res.status(400).json({ message: "Query parameter 'q' is required" });
+      }
+      const animes = await storage.searchAnimalAnimes(query);
+      res.json(animes);
+    } catch (error) {
+      console.error("Error searching animal animes:", error);
+      res.status(500).json({ message: "Failed to search animal animes" });
+    }
+  });
+
   // Anime favorites routes
   app.get('/api/favorites', isAuthenticated, async (req: any, res) => {
     try {

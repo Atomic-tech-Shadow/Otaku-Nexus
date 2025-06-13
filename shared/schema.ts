@@ -91,6 +91,9 @@ export const animes = pgTable("animes", {
   year: integer("year"),
   status: text("status"),
   episodes: integer("episodes"),
+  genres: text("genres").array(),
+  hasAnimals: boolean("has_animals").default(false),
+  animalTypes: text("animal_types").array(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
