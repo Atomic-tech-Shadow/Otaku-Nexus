@@ -92,8 +92,24 @@ export const animes = pgTable("animes", {
   status: text("status"),
   episodes: integer("episodes"),
   genres: text("genres").array(),
-  hasAnimals: boolean("has_animals").default(false),
-  animalTypes: text("animal_types").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const mangas = pgTable("mangas", {
+  id: serial("id").primaryKey(),
+  malId: integer("mal_id").unique().notNull(),
+  title: text("title").notNull(),
+  synopsis: text("synopsis"),
+  imageUrl: text("image_url"),
+  score: text("score"),
+  year: integer("year"),
+  status: text("status"),
+  chapters: integer("chapters"),
+  volumes: integer("volumes"),
+  genres: text("genres").array(),
+  authors: text("authors").array(),
+  serialization: text("serialization"),
+  type: text("type"), // manga, manhwa, manhua, etc.
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -101,6 +117,14 @@ export const animeFavorites = pgTable("anime_favorites", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
   animeId: integer("anime_id").notNull().references(() => animes.id),
+  rating: integer("rating"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const mangaFavorites = pgTable("manga_favorites", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  mangaId: integer("manga_id").notNull().references(() => mangas.id),
   rating: integer("rating"),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -194,6 +218,16 @@ export const insertAnimeFavoriteSchema = createInsertSchema(animeFavorites).omit
   createdAt: true,
 });
 
+export const insertMangaSchema = createInsertSchema(mangas).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertMangaFavoriteSchema = createInsertSchema(mangaFavorites).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertQuizSchema = createInsertSchema(quizzes).omit({
   id: true,
   createdAt: true,
@@ -246,6 +280,10 @@ export type Anime = typeof animes.$inferSelect;
 export type InsertAnime = z.infer<typeof insertAnimeSchema>;
 export type AnimeFavorite = typeof animeFavorites.$inferSelect;
 export type InsertAnimeFavorite = z.infer<typeof insertAnimeFavoriteSchema>;
+export type Manga = typeof mangas.$inferSelect;
+export type InsertManga = z.infer<typeof insertMangaSchema>;
+export type MangaFavorite = typeof mangaFavorites.$inferSelect;
+export type InsertMangaFavorite = z.infer<typeof insertMangaFavoriteSchema>;
 export type Quiz = typeof quizzes.$inferSelect;
 export type InsertQuiz = z.infer<typeof insertQuizSchema>;
 export type QuizResult = typeof quizResults.$inferSelect;

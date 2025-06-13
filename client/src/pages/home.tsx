@@ -8,7 +8,7 @@ import QuizCard from "@/components/quiz/quiz-card";
 import VideoCard from "@/components/video/video-card";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
-import { Brain, Search, PawPrint, Sparkles } from "lucide-react";
+import { Brain, Search, BookOpen, Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import { PostCard } from "@/components/ui/post-card";
 
@@ -109,13 +109,13 @@ export default function Home() {
                 </Button>
               </Link>
             </div>
-            {/* Special Animal Anime Section */}
-            <Link href="/anime/animals">
-              <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 btn-hover relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-pink-500/20 to-purple-500/20 animate-pulse"></div>
+            {/* Special Manga Section */}
+            <Link href="/manga">
+              <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 btn-hover relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 animate-pulse"></div>
                 <div className="relative flex items-center justify-center">
-                  <PawPrint className="w-4 h-4 mr-2" />
-                  <span className="font-semibold">Anime Animaliers</span>
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  <span className="font-semibold">Explorer les Mangas</span>
                   <Sparkles className="w-4 h-4 ml-2 animate-pulse" />
                 </div>
               </Button>

@@ -50,8 +50,13 @@ export interface IStorage {
   createAnime(anime: InsertAnime): Promise<Anime>;
   getTrendingAnimes(): Promise<Anime[]>;
   searchAnimes(query: string): Promise<Anime[]>;
-  getAnimalAnimes(limit?: number): Promise<Anime[]>;
-  searchAnimalAnimes(query: string): Promise<Anime[]>;
+
+  // Manga operations
+  getMangas(limit?: number): Promise<Manga[]>;
+  getMangaByMalId(malId: number): Promise<Manga | undefined>;
+  createManga(manga: InsertManga): Promise<Manga>;
+  getTrendingMangas(): Promise<Manga[]>;
+  searchMangas(query: string): Promise<Manga[]>;
 
   // Anime favorites operations
   getUserFavorites(userId: string): Promise<AnimeFavorite[]>;
@@ -184,27 +189,7 @@ export class DatabaseStorage implements IStorage {
       .limit(20);
   }
 
-  async getAnimalAnimes(limit = 20): Promise<Anime[]> {
-    return await db
-      .select()
-      .from(animes)
-      .where(eq(animes.hasAnimals, true))
-      .orderBy(desc(animes.score))
-      .limit(limit);
-  }
 
-  async searchAnimalAnimes(query: string): Promise<Anime[]> {
-    return await db
-      .select()
-      .from(animes)
-      .where(
-        and(
-          eq(animes.hasAnimals, true),
-          sql`${animes.title} ILIKE ${'%' + query + '%'}`
-        )
-      )
-      .limit(20);
-  }
 
   // Anime favorites operations
   async getUserFavorites(userId: string): Promise<AnimeFavorite[]> {
