@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { mangaApi } from "@/lib/api";
 import { motion } from "framer-motion";
+import AppHeader from "@/components/layout/app-header";
+import BottomNavigation from "@/components/layout/bottom-navigation";
 
 export default function MangaPage() {
   const [searchTerm, setSearchTerm] = useState("");

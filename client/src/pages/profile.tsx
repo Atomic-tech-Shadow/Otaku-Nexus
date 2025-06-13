@@ -271,7 +271,7 @@ export default function Profile() {
           </section>
         </main>
 
-        <BottomNavigation currentPath="/profile" />
+        <BottomNavigation />
       </div>
     </div>
   );

@@ -283,7 +283,7 @@ export default function Chat() {
           </div>
         </div>
 
-        <BottomNavigation currentPath="/chat" />
+        <BottomNavigation />
       </div>
     </div>
   );

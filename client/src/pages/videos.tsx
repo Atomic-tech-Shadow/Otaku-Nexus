@@ -347,7 +347,7 @@ export default function Videos() {
           )}
         </main>
 
-        <BottomNavigation currentPath="/videos" />
+        <BottomNavigation />
       </div>
     </div>
   );
