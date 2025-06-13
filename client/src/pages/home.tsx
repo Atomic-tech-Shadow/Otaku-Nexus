@@ -95,24 +95,31 @@ export default function Home() {
 
           {/* Quick Actions */}
           <section className="mb-6">
-            <div className="flex space-x-3">
-              <div className="flex-1">
-                <Link href="/anime">
-                  <Button className="w-full bg-gradient-to-r from-electric-blue to-hot-pink hover:from-electric-blue/80 hover:to-hot-pink/80 btn-hover">
-                    <Search className="w-4 h-4 mr-2" />
-                    Explore Anime
-                  </Button>
-                </Link>
-              </div>
-              <div className="flex-1">
-                <Link href="/quiz">
-                  <Button className="w-full bg-gradient-to-r from-otaku-purple to-anime-red hover:from-otaku-purple/80 hover:to-anime-red/80 btn-hover">
-                    <Brain className="w-4 h-4 mr-2" />
-                    Take Quiz
-                  </Button>
-                </Link>
-              </div>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <Link href="/anime">
+                <Button className="w-full bg-gradient-to-r from-electric-blue to-hot-pink hover:from-electric-blue/80 hover:to-hot-pink/80 btn-hover">
+                  <Search className="w-4 h-4 mr-2" />
+                  Explore Anime
+                </Button>
+              </Link>
+              <Link href="/quiz">
+                <Button className="w-full bg-gradient-to-r from-otaku-purple to-anime-red hover:from-otaku-purple/80 hover:to-anime-red/80 btn-hover">
+                  <Brain className="w-4 h-4 mr-2" />
+                  Take Quiz
+                </Button>
+              </Link>
             </div>
+            {/* Special Animal Anime Section */}
+            <Link href="/anime/animals">
+              <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 btn-hover relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-pink-500/20 to-purple-500/20 animate-pulse"></div>
+                <div className="relative flex items-center justify-center">
+                  <PawPrint className="w-4 h-4 mr-2" />
+                  <span className="font-semibold">Anime Animaliers</span>
+                  <Sparkles className="w-4 h-4 ml-2 animate-pulse" />
+                </div>
+              </Button>
+            </Link>
           </section>
 
           {/* Trending Anime */}
