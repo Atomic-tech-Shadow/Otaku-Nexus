@@ -19,19 +19,17 @@ export default function BottomNavigation({ currentPath: propCurrentPath }: Botto
     { icon: Search, label: "Anime", path: "/anime" },
     { icon: Brain, label: "Quiz", path: "/quiz" },
     { path: "/videos", label: "Vidéos", icon: Play },
-    { path: "/manga", label: "Manga", icon: BookOpen },
-    { path: "/chat", label: "Chat", icon: MessageCircle },
-    { icon: User, label: "Profile", path: "/profile" },
+    { icon: User, label: "Profil", path: "/profile" },
   ];
 
   return (
     <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-card-bg border-t border-gray-800">
-      <div className="flex items-center justify-around py-2">
+      <div className="flex items-center justify-around py-2 px-2">
         {navItems.map((item) => {
           const isActive = currentPath === item.path;
           return (
             <Link key={item.path} href={item.path}>
-              <button className="flex flex-col items-center py-2 px-3">
+              <button className="flex flex-col items-center py-2 px-2 min-w-0 flex-1">
                 <item.icon 
                   className={cn(
                     "w-5 h-5 mb-1",
@@ -40,7 +38,7 @@ export default function BottomNavigation({ currentPath: propCurrentPath }: Botto
                 />
                 <span 
                   className={cn(
-                    "text-xs",
+                    "text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-full",
                     isActive ? "electric-blue" : "text-gray-400"
                   )}
                 >
