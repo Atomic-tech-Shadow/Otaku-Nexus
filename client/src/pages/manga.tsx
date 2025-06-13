@@ -91,7 +91,7 @@ export default function MangaPage() {
     }
   };
 
-  if (isLoading || loading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
@@ -130,8 +130,12 @@ export default function MangaPage() {
   );
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col lg:flex-row gap-8">
+    <div className="min-h-screen bg-dark-bg text-white pb-20">
+      <div className="relative z-10">
+        <AppHeader />
+        
+        <main className="px-4 py-4">
+          <div className="flex flex-col lg:flex-row gap-8">
         {/* Liste des mangas */}
         <div className="lg:w-1/2">
           <div className="mb-6">
@@ -288,6 +292,10 @@ export default function MangaPage() {
             </Card>
           )}
         </div>
+      </div>
+        </main>
+        
+        <BottomNavigation />
       </div>
     </div>
   );

@@ -21,7 +21,7 @@ export default function Quiz() {
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  const { data: quizzes = [], isLoading, error } = useQuery({
+  const { data: quizzes = [], isLoading, error } = useQuery<any[]>({
     queryKey: ["/api/quizzes"],
     retry: false,
   });

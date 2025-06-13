@@ -97,28 +97,34 @@ export default function Home() {
           <section className="mb-6">
             <div className="grid grid-cols-2 gap-3 mb-3">
               <Link href="/anime">
-                <Button className="w-full bg-gradient-to-r from-electric-blue to-hot-pink hover:from-electric-blue/80 hover:to-hot-pink/80 btn-hover">
-                  <Search className="w-4 h-4 mr-2" />
-                  Explore Anime
-                </Button>
+                <div>
+                  <Button className="w-full bg-gradient-to-r from-electric-blue to-hot-pink hover:from-electric-blue/80 hover:to-hot-pink/80 btn-hover">
+                    <Search className="w-4 h-4 mr-2" />
+                    Explore Anime
+                  </Button>
+                </div>
               </Link>
               <Link href="/quiz">
-                <Button className="w-full bg-gradient-to-r from-otaku-purple to-anime-red hover:from-otaku-purple/80 hover:to-anime-red/80 btn-hover">
-                  <Brain className="w-4 h-4 mr-2" />
-                  Take Quiz
-                </Button>
+                <div>
+                  <Button className="w-full bg-gradient-to-r from-otaku-purple to-anime-red hover:from-otaku-purple/80 hover:to-anime-red/80 btn-hover">
+                    <Brain className="w-4 h-4 mr-2" />
+                    Take Quiz
+                  </Button>
+                </div>
               </Link>
             </div>
             {/* Special Manga Section */}
             <Link href="/manga">
-              <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 btn-hover relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 animate-pulse"></div>
-                <div className="relative flex items-center justify-center">
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  <span className="font-semibold">Explorer les Mangas</span>
-                  <Sparkles className="w-4 h-4 ml-2 animate-pulse" />
-                </div>
-              </Button>
+              <div>
+                <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 btn-hover relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 animate-pulse"></div>
+                  <div className="relative flex items-center justify-center">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    <span className="font-semibold">Explorer les Mangas</span>
+                    <Sparkles className="w-4 h-4 ml-2 animate-pulse" />
+                  </div>
+                </Button>
+              </div>
             </Link>
           </section>
 
