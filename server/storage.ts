@@ -62,6 +62,17 @@ export interface IStorage {
   createAnime(anime: InsertAnime): Promise<Anime>;
   getTrendingAnimes(): Promise<Anime[]>;
   searchAnimes(query: string): Promise<Anime[]>;
+  updateAnimeGogoId(animeId: number, gogoAnimeId: string): Promise<Anime>;
+
+  // Anime streaming operations
+  getAnimeEpisodes(animeId: number): Promise<AnimeEpisode[]>;
+  getAnimeEpisode(episodeId: number): Promise<AnimeEpisode | undefined>;
+  createAnimeEpisode(episode: InsertAnimeEpisode): Promise<AnimeEpisode>;
+  getEpisodeStreamingSources(episodeId: number): Promise<AnimeStreamingSource[]>;
+  createStreamingSource(source: InsertAnimeStreamingSource): Promise<AnimeStreamingSource>;
+  getUserWatchHistory(userId: string, animeId?: number): Promise<AnimeWatchHistory[]>;
+  updateWatchHistory(history: InsertAnimeWatchHistory): Promise<AnimeWatchHistory>;
+  markEpisodeWatched(userId: string, episodeId: number, watchedDuration: number, totalDuration: number): Promise<AnimeWatchHistory>;
 
   // Manga operations
   getMangas(limit?: number): Promise<Manga[]>;
@@ -220,6 +231,126 @@ export class DatabaseStorage implements IStorage {
       .from(animes)
       .where(sql`${animes.title} ILIKE ${'%' + query + '%'}`)
       .limit(20);
+  }
+
+  async updateAnimeGogoId(animeId: number, gogoAnimeId: string): Promise<Anime> {
+    const [result] = await db
+      .update(animes)
+      .set({ gogoAnimeId })
+      .where(eq(animes.id, animeId))
+      .returning();
+    return result;
+  }
+
+  async getAnimeEpisodes(animeId: number): Promise<AnimeEpisode[]> {
+    return await db
+      .select()
+      .from(animeEpisodes)
+      .where(eq(animeEpisodes.animeId, animeId))
+      .orderBy(animeEpisodes.episodeNumber);
+  }
+
+  async getAnimeEpisode(episodeId: number): Promise<AnimeEpisode | undefined> {
+    const [result] = await db
+      .select()
+      .from(animeEpisodes)
+      .where(eq(animeEpisodes.id, episodeId));
+    return result;
+  }
+
+  async createAnimeEpisode(episode: InsertAnimeEpisode): Promise<AnimeEpisode> {
+    const [result] = await db
+      .insert(animeEpisodes)
+      .values(episode)
+      .returning();
+    return result;
+  }
+
+  async getEpisodeStreamingSources(episodeId: number): Promise<AnimeStreamingSource[]> {
+    return await db
+      .select()
+      .from(animeStreamingSources)
+      .where(eq(animeStreamingSources.episodeId, episodeId))
+      .orderBy(desc(animeStreamingSources.isDefault));
+  }
+
+  async createStreamingSource(source: InsertAnimeStreamingSource): Promise<AnimeStreamingSource> {
+    const [result] = await db
+      .insert(animeStreamingSources)
+      .values(source)
+      .returning();
+    return result;
+  }
+
+  async getUserWatchHistory(userId: string, animeId?: number): Promise<AnimeWatchHistory[]> {
+    const query = db
+      .select({
+        id: animeWatchHistory.id,
+        userId: animeWatchHistory.userId,
+        episodeId: animeWatchHistory.episodeId,
+        watchedAt: animeWatchHistory.watchedAt,
+        watchedDuration: animeWatchHistory.watchedDuration,
+        totalDuration: animeWatchHistory.totalDuration,
+        isCompleted: animeWatchHistory.isCompleted,
+        episodeNumber: animeEpisodes.episodeNumber,
+        episodeTitle: animeEpisodes.title,
+        animeTitle: animes.title,
+        animeId: animes.id,
+      })
+      .from(animeWatchHistory)
+      .innerJoin(animeEpisodes, eq(animeWatchHistory.episodeId, animeEpisodes.id))
+      .innerJoin(animes, eq(animeEpisodes.animeId, animes.id))
+      .where(eq(animeWatchHistory.userId, userId));
+
+    if (animeId) {
+      query.where(eq(animes.id, animeId));
+    }
+
+    return await query.orderBy(desc(animeWatchHistory.watchedAt)) as any[];
+  }
+
+  async updateWatchHistory(history: InsertAnimeWatchHistory): Promise<AnimeWatchHistory> {
+    const existing = await db
+      .select()
+      .from(animeWatchHistory)
+      .where(
+        and(
+          eq(animeWatchHistory.userId, history.userId),
+          eq(animeWatchHistory.episodeId, history.episodeId)
+        )
+      );
+
+    if (existing.length > 0) {
+      const [result] = await db
+        .update(animeWatchHistory)
+        .set({
+          watchedDuration: history.watchedDuration,
+          totalDuration: history.totalDuration,
+          isCompleted: history.isCompleted,
+          watchedAt: new Date(),
+        })
+        .where(eq(animeWatchHistory.id, existing[0].id))
+        .returning();
+      return result;
+    } else {
+      const [result] = await db
+        .insert(animeWatchHistory)
+        .values(history)
+        .returning();
+      return result;
+    }
+  }
+
+  async markEpisodeWatched(userId: string, episodeId: number, watchedDuration: number, totalDuration: number): Promise<AnimeWatchHistory> {
+    const isCompleted = watchedDuration >= totalDuration * 0.9;
+    
+    return this.updateWatchHistory({
+      userId,
+      episodeId,
+      watchedDuration,
+      totalDuration,
+      isCompleted,
+    });
   }
 
   // Manga operations
