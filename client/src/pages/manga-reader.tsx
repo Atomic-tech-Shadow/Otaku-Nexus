@@ -67,7 +67,7 @@ export default function MangaReader() {
 
   // Récupérer l'ID du manga depuis l'URL
   const urlParams = new URLSearchParams(window.location.search);
-  const mangaId = urlParams.get('mangaId');
+  const mangaIdFromUrl = urlParams.get('mangaId');
 
   // Récupérer les pages du chapitre
   const { data: chapterData, isLoading, error } = useQuery<{
@@ -81,8 +81,8 @@ export default function MangaReader() {
   });
 
   const { data: chapters = [] } = useQuery<Chapter[]>({
-    queryKey: ['/api/manga', mangaId, 'chapters'],
-    enabled: !!mangaId,
+    queryKey: ['/api/manga', mangaIdFromUrl, 'chapters'],
+    enabled: !!mangaIdFromUrl,
   });
 
   const currentChapterIndex = chapters.findIndex(ch => ch.id === chapterId);
