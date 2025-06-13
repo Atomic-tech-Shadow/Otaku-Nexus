@@ -44,7 +44,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
       let animes = await storage.getAnimes(limit);
-      
+
       // If no local data, fetch from Jikan API
       if (animes.length === 0) {
         try {
@@ -52,7 +52,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (response.ok) {
             const data = await response.json();
             const jikanAnimes = data.data;
-            
+
             // Save to database
             for (const anime of jikanAnimes) {
               try {
@@ -76,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Error fetching from Jikan API:", apiError);
         }
       }
-      
+
       res.json(animes);
     } catch (error) {
       console.error("Error fetching animes:", error);
@@ -88,7 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // First try to get from database
       let animes = await storage.getTrendingAnimes();
-      
+
       // If no data in database, fetch from Jikan API
       if (animes.length === 0) {
         try {
@@ -96,7 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (response.ok) {
             const data = await response.json();
             const jikanAnimes = data.data;
-            
+
             // Save to database and return
             const savedAnimes = [];
             for (const anime of jikanAnimes) {
@@ -123,7 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Error fetching from Jikan API:", apiError);
         }
       }
-      
+
       res.json(animes);
     } catch (error) {
       console.error("Error fetching trending animes:", error);
@@ -137,10 +137,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!query) {
         return res.status(400).json({ message: "Query parameter 'q' is required" });
       }
-      
+
       // First search local database
       let animes = await storage.searchAnimes(query);
-      
+
       // If no local results, search Jikan API
       if (animes.length === 0) {
         try {
@@ -148,7 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (response.ok) {
             const data = await response.json();
             const jikanAnimes = data.data;
-            
+
             // Save to database
             const savedAnimes = [];
             for (const anime of jikanAnimes) {
@@ -184,7 +184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Error fetching from Jikan API:", apiError);
         }
       }
-      
+
       res.json(animes);
     } catch (error) {
       console.error("Error searching animes:", error);
@@ -207,46 +207,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/manga', async (req, res) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
-      let mangas = await storage.getMangas(limit);
-      
-      // Si pas de données locales, récupérer depuis MangaDx
-      if (mangas.length === 0) {
-        try {
-          const response = await fetch('https://api.mangadex.org/manga?limit=20&order[createdAt]=desc&includes[]=cover_art&includes[]=author&includes[]=artist');
-          if (response.ok) {
-            const data = await response.json();
-            const mangaDxMangas = data.data;
-            
-            // Sauvegarder en base de données
-            for (const manga of mangaDxMangas) {
-              try {
-                const coverArt = manga.relationships.find((rel: any) => rel.type === 'cover_art');
-                const imageUrl = coverArt ? `https://uploads.mangadx.org/covers/${manga.id}/${coverArt.attributes.fileName}` : null;
-                
-                await storage.createManga({
-                  malId: 0, // MangaDx n'utilise pas MAL ID
-                  title: manga.attributes.title.en || manga.attributes.title.fr || Object.values(manga.attributes.title)[0],
-                  synopsis: manga.attributes.description.en || manga.attributes.description.fr || '',
-                  imageUrl,
-                  score: manga.attributes.rating?.toString() || '0',
-                  year: manga.attributes.year,
-                  status: manga.attributes.status,
-                  chapters: manga.attributes.lastChapter ? parseInt(manga.attributes.lastChapter) : null,
-                  volumes: manga.attributes.lastVolume ? parseInt(manga.attributes.lastVolume) : null,
-                  genres: manga.attributes.tags?.map((tag: any) => tag.attributes.name.en) || [],
-                  type: 'manga'
-                });
-              } catch (err) {
-                console.log('Erreur lors de la sauvegarde du manga:', err);
-              }
-            }
-            mangas = await storage.getMangas(limit);
-          }
-        } catch (apiError) {
-          console.error("Erreur API MangaDx:", apiError);
-        }
-      }
-      
+
+      // Récupérer directement depuis MangaDx API
+      const mangas = await mangaDxService.getPopularManga(limit);
       res.json(mangas);
     } catch (error) {
       console.error("Erreur récupération mangas:", error);
@@ -260,10 +223,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!query) {
         return res.status(400).json({ message: "Paramètre 'q' requis" });
       }
-      
+
       // Rechercher d'abord en local
       let mangas = await storage.searchMangas(query);
-      
+
       // Si pas de résultats locaux, chercher sur MangaDx
       if (mangas.length === 0) {
         try {
@@ -273,7 +236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             mangas = data.data.map((manga: any) => {
               const coverArt = manga.relationships.find((rel: any) => rel.type === 'cover_art');
               const imageUrl = coverArt ? `https://uploads.mangadx.org/covers/${manga.id}/${coverArt.attributes.fileName}` : null;
-              
+
               return {
                 id: manga.id,
                 title: manga.attributes.title.en || manga.attributes.title.fr || Object.values(manga.attributes.title)[0],
@@ -293,7 +256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Erreur API MangaDx:", apiError);
         }
       }
-      
+
       res.json(mangas);
     } catch (error) {
       console.error("Erreur recherche mangas:", error);
@@ -306,7 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mangaId = req.params.id;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
       const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
-      
+
       const chapters = await mangaDxService.getMangaChapters(mangaId, limit, offset);
       res.json(chapters);
     } catch (error) {
@@ -319,18 +282,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const chapterId = req.params.chapterId;
       const pages = await mangaDxService.getChapterPages(chapterId);
-      
+
       if (!pages) {
         return res.status(404).json({ message: "Chapitre non trouvé" });
       }
-      
+
       // Construire les URLs des pages
       const pageUrls = pages.chapter.data.map((page: string, index: number) => ({
         pageNumber: index + 1,
         imageUrl: `${pages.baseUrl}/data/${pages.chapter.hash}/${page}`,
         imageUrlSaver: `${pages.baseUrl}/data-saver/${pages.chapter.hash}/${pages.chapter.dataSaver[index] || page}`
       }));
-      
+
       res.json({
         pages: pageUrls,
         baseUrl: pages.baseUrl,
@@ -387,13 +350,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const chapterId = parseInt(req.params.chapterId);
-      
+
       const download = await storage.createDownload({
         userId,
         chapterId,
         status: 'pending'
       });
-      
+
       res.json(download);
     } catch (error) {
       console.error("Erreur création téléchargement:", error);
@@ -482,7 +445,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the most recent non-auto-generated quiz
       const quizzes = await storage.getQuizzes();
       const featuredQuiz = quizzes.find(q => !q.title.includes('Quiz Anime du Jour'));
-      
+
       if (featuredQuiz) {
         res.json(featuredQuiz);
       } else if (quizzes.length > 0) {
@@ -500,13 +463,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       console.log("Fetching quiz with ID:", id);
-      
+
       const quiz = await storage.getQuiz(id);
       if (!quiz) {
         console.log("Quiz not found for ID:", id);
         return res.status(404).json({ message: "Quiz not found" });
       }
-      
+
       console.log("Returning quiz data:", quiz);
       res.json(quiz);
     } catch (error) {
@@ -557,22 +520,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/quizzes/generate', isAuthenticated, async (req, res) => {
     try {
       const animes = await storage.getAnimes(50);
-      
+
       if (animes.length < 5) {
         return res.status(400).json({ message: "Not enough anime data to generate quiz" });
       }
-      
+
       const selectedAnimes = animes.sort(() => Math.random() - 0.5).slice(0, 10);
       const questions = [];
-      
+
       // Generate different types of questions
       for (let i = 0; i < Math.min(8, selectedAnimes.length); i++) {
         const anime = selectedAnimes[i];
         const questionTypes = ['score', 'episodes', 'year', 'status'];
         const questionType = questionTypes[Math.floor(Math.random() * questionTypes.length)];
-        
+
         let question, options, correctAnswer, explanation;
-        
+
         switch (questionType) {
           case 'score':
             if (anime.score) {
@@ -588,7 +551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               explanation = `${anime.title} a un score de ${anime.score} sur MyAnimeList.`;
             }
             break;
-            
+
           case 'episodes':
             if (anime.episodes) {
               question = `Combien d'épisodes compte "${anime.title}" ?`;
@@ -602,7 +565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               explanation = `${anime.title} compte ${anime.episodes} épisodes.`;
             }
             break;
-            
+
           case 'year':
             if (anime.year) {
               question = `En quelle année "${anime.title}" est-il sorti ?`;
@@ -616,7 +579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               explanation = `${anime.title} est sorti en ${anime.year}.`;
             }
             break;
-            
+
           case 'status':
             if (anime.status) {
               question = `Quel est le statut de "${anime.title}" ?`;
@@ -628,16 +591,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             break;
         }
-        
+
         if (question && options && explanation && correctAnswer !== -1) {
           questions.push({ question, options, correctAnswer, explanation });
         }
       }
-      
+
       if (questions.length < 3) {
         return res.status(400).json({ message: "Could not generate enough valid questions" });
       }
-      
+
       const quiz = await storage.createQuiz({
         title: `Quiz Anime Authentique - ${new Date().toLocaleDateString('fr-FR')}`,
         description: "Quiz généré automatiquement basé sur de vraies données d'anime de MyAnimeList",
@@ -645,7 +608,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         questions: questions.slice(0, 8),
         xpReward: questions.length * 5
       });
-      
+
       res.json(quiz);
     } catch (error) {
       console.error("Error generating quiz:", error);
@@ -786,11 +749,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const query = req.query.q as string;
       const apiKey = process.env.YOUTUBE_API_KEY;
-      
+
       if (!apiKey) {
         return res.status(500).json({ message: "YouTube API key not configured" });
       }
-      
+
       if (!query) {
         return res.status(400).json({ message: "Query parameter 'q' is required" });
       }
@@ -805,7 +768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const data = await response.json();
-      
+
       // Transform YouTube data to match our video format
       const videos = data.items?.map((item: any) => ({
         id: item.id.videoId,
@@ -830,14 +793,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/external/music/openings', async (req, res) => {
     try {
       const anime = req.query.anime as string;
-      
+
       if (!anime) {
         return res.status(400).json({ message: "Anime parameter is required" });
       }
 
       // Search for anime openings on YouTube
       const apiKey = process.env.YOUTUBE_API_KEY;
-      
+
       if (!apiKey) {
         return res.status(500).json({ message: "YouTube API key not configured" });
       }
@@ -852,13 +815,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const data = await response.json();
-      
+
       // Transform YouTube data to match our music format
       const openings = data.items?.map((item: any) => ({
         id: item.id.videoId,
         title: item.snippet.title,
         artist: item.snippet.channelTitle,
-        anime: anime,
+        anime:anime,
         audioUrl: `https://www.youtube.com/watch?v=${item.id.videoId}`,
         thumbnailUrl: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
         duration: "N/A",
@@ -969,7 +932,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const profileData = updateUserProfileSchema.parse(req.body);
-      
+
       // Validate image size if profileImageUrl is provided
       if (profileData.profileImageUrl) {
         const imageData = profileData.profileImageUrl;
@@ -978,7 +941,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const base64Data = imageData.split(',')[1];
           const sizeInBytes = (base64Data.length * 3) / 4;
           const sizeInMB = sizeInBytes / (1024 * 1024);
-          
+
           if (sizeInMB > 5) { // Limit to 5MB
             return res.status(413).json({ 
               message: "L'image est trop volumineuse. Veuillez utiliser une image de moins de 5MB." 
@@ -986,7 +949,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       }
-      
+
       const updatedUser = await storage.updateUserProfile(userId, profileData);
       res.json(updatedUser);
     } catch (error) {
@@ -1045,7 +1008,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = (page - 1) * limit;
-      
+
       // Get users with pagination
       const users = await storage.getUsersPaginated(limit, offset);
       res.json(users);
@@ -1168,7 +1131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const roomId = req.query.roomId ? parseInt(req.query.roomId as string) : undefined;
       const limit = parseInt(req.query.limit as string) || 100;
-      
+
       if (roomId) {
         const messages = await storage.getChatMessages(roomId, limit);
         res.json(messages);
@@ -1196,7 +1159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/system/cleanup', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const type = req.body.type;
-      
+
       switch (type) {
         case 'duplicates':
           await storage.cleanupDuplicateQuizzes();
@@ -1210,7 +1173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         default:
           return res.status(400).json({ message: "Invalid cleanup type" });
       }
-      
+
       res.json({ message: `${type} cleanup completed successfully` });
     } catch (error) {
       console.error("Error during cleanup:", error);
@@ -1338,7 +1301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Import French quiz data
       const { frenchQuizzes } = await import('./french-quiz-data');
-      
+
       const createdQuizzes = [];
       for (const quizData of frenchQuizzes) {
         try {
@@ -1370,7 +1333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const limit = parseInt(req.query.limit as string) || 50; // Réduire la limite par défaut
       const messages = await storage.getChatMessages(1, limit);
-      
+
       // Simplifier le traitement des messages
       const sortedMessages = messages
         .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
@@ -1378,7 +1341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ...message,
           id: `${message.id}-${message.createdAt || Date.now()}-${index}`,
         }));
-      
+
       // Ajouter des headers de cache
       res.set('Cache-Control', 'private, max-age=10');
       res.json(sortedMessages);
@@ -1393,10 +1356,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const { content, message: messageText } = req.body;
-      
+
       // Support both 'content' and 'message' fields
       const messageContent = content || messageText;
-      
+
       if (!messageContent || !messageContent.trim()) {
         return res.status(400).json({ message: "Le contenu du message est requis" });
       }
@@ -1410,14 +1373,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         roomId: 1, // Default room
         userId,
       };
-      
+
       // Créer le message en parallèle avec la récupération de l'utilisateur
       const [newMessage, user] = await Promise.all([
         storage.sendChatMessage(messageData),
         storage.getUser(userId)
       ]);
-      
-      // Return enriched message data immédiatement
+
+      // Return enriched message data immediately
       const enrichedMessage = {
         ...newMessage,
         id: `${newMessage.id}-${Date.now()}`,
@@ -1428,7 +1391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isAdmin: user?.isAdmin || false,
         createdAt: new Date().toISOString(),
       };
-      
+
       res.json(enrichedMessage);
     } catch (error) {
       console.error("Error sending chat message:", error);

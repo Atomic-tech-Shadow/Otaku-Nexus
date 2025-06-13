@@ -1,7 +1,6 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, BookOpen, Download, Eye, Star } from "lucide-react";
+import { Search, BookOpen, Download, Eye, Star, TrendingUp, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,12 +12,51 @@ export default function MangaPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchMode, setSearchMode] = useState<"browse" | "search">("browse");
   const [selectedManga, setSelectedManga] = useState<any>(null);
+  const [mangas, setMangas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // Fetch manga data
-  const { data: mangas = [], isLoading } = useQuery<any[]>({
-    queryKey: searchMode === "search" ? ['/api/manga/search', searchTerm] : ['/api/manga'],
-    enabled: searchMode === "browse" || (searchMode === "search" && searchTerm.length > 0),
+  const { data: searchResults = [] } = useQuery<any[]>({
+    queryKey: searchMode === "search" ? ['/api/manga/search', searchTerm] : [],
+    queryFn: () => mangaApi.search(searchTerm),
+    enabled: searchMode === "search" && searchTerm.length > 0,
   });
+
+  useEffect(() => {
+    const fetchMangas = async () => {
+      setLoading(true);
+      try {
+        const [popular, latest] = await Promise.all([
+          mangaApi.getPopular(10),
+          mangaApi.getLatest(10)
+        ]);
+
+        // Combiner les mangas populaires et récents
+        const combinedMangas = [...popular, ...latest];
+
+        // Supprimer les doublons basés sur l'ID
+        const uniqueMangas = combinedMangas.filter((manga, index, self) => 
+          index === self.findIndex(m => m.id === manga.id)
+        );
+
+        setMangas(uniqueMangas);
+      } catch (error) {
+        console.error("Erreur lors du chargement des mangas:", error);
+        // Fallback vers l'API générale si les nouvelles routes échouent
+        try {
+          const response = await mangaApi.getAll(20);
+          setMangas(response);
+        } catch (fallbackError) {
+          console.error("Erreur fallback:", fallbackError);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMangas();
+  }, []);
+
 
   // Fetch chapters for selected manga
   const { data: chapters = [] } = useQuery<any[]>({
@@ -51,13 +89,43 @@ export default function MangaPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
       </div>
     );
   }
+
+  const MangaCard = ({ manga }: { manga: any }) => (
+    <div key={manga.id} className="bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+      <div className="aspect-[3/4] relative overflow-hidden">
+        <img
+          src={manga.imageUrl || manga.coverArt || "/placeholder-manga.jpg"}
+          alt={manga.title}
+          className="w-full h-full object-cover hover:scale-105 transition-transform"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "/placeholder-manga.jpg";
+          }}
+        />
+      </div>
+      <div className="p-3">
+        <h3 className="text-white font-medium text-sm mb-1 line-clamp-2">
+          {manga.title}
+        </h3>
+        <div className="flex items-center justify-between text-xs text-gray-400">
+          <span>{manga.status}</span>
+          {manga.year && <span>{manga.year}</span>}
+        </div>
+        {manga.score && (
+          <div className="flex items-center mt-1">
+            <Star className="h-3 w-3 text-yellow-400 mr-1" />
+            <span className="text-xs text-gray-300">{manga.score}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -68,7 +136,7 @@ export default function MangaPage() {
             <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               📚 Scan Manga
             </h1>
-            
+
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <Input
@@ -81,60 +149,54 @@ export default function MangaPage() {
             </div>
           </div>
 
-          <div className="space-y-4">
-            {mangas.map((manga, index) => (
-              <motion.div
-                key={manga.id || index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card 
-                  className={`cursor-pointer transition-all hover:shadow-lg ${
-                    selectedManga?.id === manga.id ? 'ring-2 ring-purple-500' : ''
-                  }`}
-                  onClick={() => handleMangaSelect(manga)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex gap-4">
-                      <img
-                        src={manga.imageUrl || '/placeholder-manga.jpg'}
-                        alt={manga.title}
-                        className="w-16 h-20 object-cover rounded-md"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/placeholder-manga.jpg';
-                        }}
-                      />
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg">{manga.title}</h3>
-                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                          {manga.synopsis}
-                        </p>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {manga.score && (
-                            <Badge variant="secondary" className="flex items-center gap-1">
-                              <Star className="h-3 w-3" />
-                              {manga.score}
-                            </Badge>
-                          )}
-                          {manga.status && (
-                            <Badge variant="outline">
-                              {manga.status}
-                            </Badge>
-                          )}
-                          {manga.chapters && (
-                            <Badge variant="secondary">
-                              {manga.chapters} chapitres
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
+          {searchMode === 'search' && searchTerm.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {searchResults.map((manga: any) => (
+                <MangaCard key={manga.id} manga={manga} />
+              ))}
+            </div>
+          ) : (
+            <div>
+              {/* Section Mangas Populaires */}
+              <div className="mb-8">
+                <h2 className="text-xl font-bold mb-4 flex items-center">
+                  <TrendingUp className="h-5 w-5 mr-2 text-red-500" />
+                  Mangas Populaires
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {mangas.slice(0, 10).map((manga: any) => (
+                    <MangaCard key={`popular-${manga.id}`} manga={manga} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Section Derniers Mangas */}
+              <div className="mb-8">
+                <h2 className="text-xl font-bold mb-4 flex items-center">
+                  <Clock className="h-5 w-5 mr-2 text-blue-500" />
+                  Derniers Mangas
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {mangas.slice(10, 20).map((manga: any) => (
+                    <MangaCard key={`latest-${manga.id}`} manga={manga} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Tous les Mangas */}
+              <div>
+                <h2 className="text-xl font-bold mb-4 flex items-center">
+                  <BookOpen className="h-5 w-5 mr-2 text-green-500" />
+                  Tous les Mangas
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {mangas.map((manga: any) => (
+                    <MangaCard key={`all-${manga.id}`} manga={manga} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Détails du manga et chapitres */}

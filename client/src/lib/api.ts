@@ -61,8 +61,17 @@ export const mangaApi = {
     const url = limit ? `/api/manga?limit=${limit}` : "/api/manga";
     return fetch(url).then(res => res.json());
   },
+  getPopular: (limit?: number) => {
+    const url = limit ? `/api/manga/popular?limit=${limit}` : "/api/manga/popular";
+    return fetch(url).then(res => res.json());
+  },
+  getLatest: (limit?: number) => {
+    const url = limit ? `/api/manga/latest?limit=${limit}` : "/api/manga/latest";
+    return fetch(url).then(res => res.json());
+  },
+  getById: (mangaId: string) => fetch(`/api/manga/${mangaId}`).then(res => res.json()),
   search: (query: string) => fetch(`/api/manga/search?q=${encodeURIComponent(query)}`).then(res => res.json()),
-  getChapters: (mangaId: number) => fetch(`/api/manga/${mangaId}/chapters`).then(res => res.json()),
+  getChapters: (mangaId: string) => fetch(`/api/manga/${mangaId}/chapters`).then(res => res.json()),
   getChapterPages: (chapterId: string) => fetch(`/api/manga/chapter/${chapterId}/pages`).then(res => res.json()),
   getProgress: (mangaId?: number) => {
     const url = mangaId ? `/api/manga/progress?mangaId=${mangaId}` : "/api/manga/progress";
