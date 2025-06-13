@@ -11,6 +11,20 @@ import LoadingSpinner from "@/components/ui/loading-spinner";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 
+interface ConsumetSource {
+  url: string;
+  isM3U8: boolean;
+  quality: string;
+}
+
+interface ConsumetStreamingData {
+  headers: {
+    Referer: string;
+  };
+  sources: ConsumetSource[];
+  download: string;
+}
+
 interface ConsumetAnimeInfo {
   id: string;
   title: string;
@@ -236,7 +250,7 @@ interface AnimeVideoPlayerProps {
 function AnimeVideoPlayer({ episodeId, episodeTitle }: AnimeVideoPlayerProps) {
   const [selectedQuality, setSelectedQuality] = useState<string>("");
 
-  const { data: streamingData, isLoading } = useQuery({
+  const { data: streamingData, isLoading } = useQuery<ConsumetStreamingData>({
     queryKey: ['/api/anime/episode', episodeId, 'sources'],
     enabled: !!episodeId,
   });
@@ -279,7 +293,7 @@ function AnimeVideoPlayer({ episodeId, episodeTitle }: AnimeVideoPlayerProps) {
       <CardContent>
         {/* Quality Selector */}
         <div className="flex flex-wrap gap-2 mb-4">
-          {streamingData.sources.map((source) => (
+          {streamingData.sources.map((source: ConsumetSource) => (
             <Button
               key={source.quality}
               variant={selectedQuality === source.quality ? "default" : "outline"}

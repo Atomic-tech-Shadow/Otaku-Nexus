@@ -47,6 +47,16 @@ function Router() {
             <AnimalAnime />
           </ProtectedRoute>
         </Route>
+        <Route path="/anime-streaming">
+          <ProtectedRoute>
+            <AnimeStreaming />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/anime-streaming/:animeId">
+          <ProtectedRoute>
+            <AnimeStreamingDetail />
+          </ProtectedRoute>
+        </Route>
         <Route path="/quiz">
           <ProtectedRoute>
             <Quiz />

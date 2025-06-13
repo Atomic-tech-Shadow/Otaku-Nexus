@@ -1,4 +1,4 @@
-import { Home, Search, Heart, MessageCircle, User, Gamepad2, Play, BookOpen, Brain } from "lucide-react";
+import { Home, Search, Heart, MessageCircle, User, Gamepad2, Play, BookOpen, Brain, Monitor } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from '@/hooks/useAuth';
@@ -17,9 +17,9 @@ export default function BottomNavigation({ currentPath: propCurrentPath }: Botto
   const navItems = [
     { icon: Home, label: "Home", path: "/" },
     { icon: Search, label: "Anime", path: "/anime" },
+    { icon: Monitor, label: "Stream", path: "/anime-streaming" },
     { icon: Brain, label: "Quiz", path: "/quiz" },
     { icon: MessageCircle, label: "Chat", path: "/chat" },
-    { path: "/videos", label: "Vidéos", icon: Play },
     { icon: User, label: "Profil", path: "/profile" },
   ];
 
@@ -27,7 +27,7 @@ export default function BottomNavigation({ currentPath: propCurrentPath }: Botto
     <nav className="fixed bottom-0 left-0 right-0 bg-card-bg/95 backdrop-blur-sm border-t border-border z-50">
       <div className="flex items-center justify-around px-1 py-2 max-w-full">
         {navItems.map(({ path, label, icon: Icon }) => {
-          const isActive = location.pathname === path;
+          const isActive = location === path;
           return (
             <Link
               key={path}
