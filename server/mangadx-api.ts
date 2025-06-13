@@ -35,19 +35,19 @@ export interface MangaDxChapterPages {
 
 class MangaDxService {
   private baseUrl = 'https://api.mangadex.org';
-  
+
   async searchManga(query: string, limit = 20): Promise<MangaDxManga[]> {
     try {
       const response = await fetch(
         `${this.baseUrl}/manga?title=${encodeURIComponent(query)}&limit=${limit}&includes[]=cover_art&includes[]=author&includes[]=artist`
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       return data.data.map((manga: any) => this.formatManga(manga, data.includes));
     } catch (error) {
       console.error('Error searching manga:', error);
@@ -60,14 +60,14 @@ class MangaDxService {
       const response = await fetch(
         `${this.baseUrl}/manga/${mangaId}?includes[]=cover_art&includes[]=author&includes[]=artist`
       );
-      
+
       if (!response.ok) {
         if (response.status === 404) return null;
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       return this.formatManga(data.data, data.includes);
     } catch (error) {
       console.error('Error fetching manga:', error);
@@ -80,13 +80,13 @@ class MangaDxService {
       const response = await fetch(
         `${this.baseUrl}/manga/${mangaId}/feed?limit=${limit}&offset=${offset}&order[chapter]=asc&translatedLanguage[]=fr&translatedLanguage[]=en`
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       return data.data.map((chapter: any) => this.formatChapter(chapter, mangaId));
     } catch (error) {
       console.error('Error fetching chapters:', error);
@@ -97,14 +97,14 @@ class MangaDxService {
   async getChapterPages(chapterId: string): Promise<MangaDxChapterPages | null> {
     try {
       const response = await fetch(`${this.baseUrl}/at-home/server/${chapterId}`);
-      
+
       if (!response.ok) {
         if (response.status === 404) return null;
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       return data;
     } catch (error) {
       console.error('Error fetching chapter pages:', error);
@@ -117,13 +117,13 @@ class MangaDxService {
       const response = await fetch(
         `${this.baseUrl}/manga?limit=${limit}&order[followedCount]=desc&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=safe&contentRating[]=suggestive`
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       return data.data.map((manga: any) => this.formatManga(manga, data.includes));
     } catch (error) {
       console.error('Error fetching popular manga:', error);
@@ -136,13 +136,13 @@ class MangaDxService {
       const response = await fetch(
         `${this.baseUrl}/manga?limit=${limit}&order[createdAt]=desc&includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=safe&contentRating[]=suggestive`
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       return data.data.map((manga: any) => this.formatManga(manga, data.includes));
     } catch (error) {
       console.error('Error fetching latest manga:', error);
@@ -164,15 +164,15 @@ class MangaDxService {
     // Find author and artist
     const authorRelation = manga.relationships?.find((rel: any) => rel.type === 'author');
     const artistRelation = manga.relationships?.find((rel: any) => rel.type === 'artist');
-    
+
     let author = '';
     let artist = '';
-    
+
     if (authorRelation) {
       const authorData = includes.find((inc: any) => inc.id === authorRelation.id);
       author = authorData?.attributes?.name || '';
     }
-    
+
     if (artistRelation) {
       const artistData = includes.find((inc: any) => inc.id === artistRelation.id);
       artist = artistData?.attributes?.name || '';

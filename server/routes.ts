@@ -252,12 +252,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Si pas de résultats locaux, chercher sur MangaDx
       if (mangas.length === 0) {
         try {
-          const response = await fetch(`https://api.mangadx.org/manga?title=${encodeURIComponent(query)}&limit=10&includes[]=cover_art`);
+          const response = await fetch(`https://api.mangadex.org/manga?title=${encodeURIComponent(query)}&limit=10&includes[]=cover_art`);
           if (response.ok) {
             const data = await response.json();
             mangas = data.data.map((manga: any) => {
               const coverArt = manga.relationships.find((rel: any) => rel.type === 'cover_art');
-              const imageUrl = coverArt ? `https://uploads.mangadx.org/covers/${manga.id}/${coverArt.attributes.fileName}` : null;
+              const imageUrl = coverArt ? `https://uploads.mangadex.org/covers/${manga.id}/${coverArt.attributes.fileName}` : null;
 
               return {
                 id: manga.id,
