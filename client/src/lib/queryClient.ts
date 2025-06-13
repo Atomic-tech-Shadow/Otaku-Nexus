@@ -9,34 +9,55 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(endpoint: string, options: RequestInit = {}): Promise<any> {
-  const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint}`;
+export async function apiRequest(
+  url: string,
+  options: {
+    method?: string;
+    body?: any;
+    headers?: Record<string, string>;
+  } = {}
+): Promise<Response> {
+  const { method = "GET", body, headers = {} } = options;
+
+  // Get auth token from localStorage
+  const token = localStorage.getItem("auth_token");
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
 
   const config: RequestInit = {
+    method,
     headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
+      "Content-Type": "application/json",
+      ...headers,
     },
-    credentials: 'include',
-    ...options,
+    credentials: "include",
   };
 
-  if (options.body && typeof options.body === 'object') {
-    config.body = JSON.stringify(options.body);
+  if (body && method !== "GET") {
+    config.body = JSON.stringify(body);
   }
 
-  const response = await fetch(url, config);
+  console.log(`API ${method} ${url}:`, body || {});
 
-  console.log(`API ${(options.method || 'GET').toUpperCase()} ${endpoint}:`, response);
+  try {
+    const response = await fetch(url, config);
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`API Error: ${response.status} - ${error}`);
+    // Log response data for debugging
+    const clonedResponse = response.clone();
+    try {
+      const responseData = await clonedResponse.json();
+      console.log(`API Response data for ${url}:`, responseData);
+    } catch (e) {
+      // Response is not JSON, that's okay
+      console.log(`API Response for ${url}: Non-JSON response`);
+    }
+
+    return response;
+  } catch (networkError) {
+    console.error(`Network error for ${url}:`, networkError);
+    throw new Error(`Erreur réseau: ${networkError.message}`);
   }
-
-  const data = await response.json();
-  console.log(`API Response data for ${endpoint}:`, data);
-  return data;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

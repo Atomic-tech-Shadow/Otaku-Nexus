@@ -30,52 +30,69 @@ export default function AuthPage() {
   const loginMutation = useMutation({
     mutationFn: async (data: typeof loginData) => {
       console.log("Sending login data:", data);
-      const response = await apiRequest("/api/auth/login", {
-        method: "POST",
-        body: {
-          email: data.email,
-          password: data.password,
-        },
-      });
+      
+      try {
+        const response = await apiRequest("/api/auth/login", {
+          method: "POST",
+          body: {
+            email: data.email,
+            password: data.password,
+          },
+        });
 
-      console.log("Login response status:", response.status);
-      console.log("Login response headers:", Object.fromEntries(response.headers.entries()));
+        console.log("Login response status:", response.status);
+        console.log("Login response headers:", Object.fromEntries(response.headers.entries()));
 
-      if (!response.ok) {
-        let errorData;
-        const contentType = response.headers.get("content-type");
+        if (!response.ok) {
+          let errorData;
+          const contentType = response.headers.get("content-type");
 
-        if (contentType && contentType.includes("application/json")) {
-          try {
-            errorData = await response.json();
-          } catch (parseError) {
-            console.error("Failed to parse error JSON:", parseError);
-            errorData = { message: "Erreur de parsing de la réponse du serveur" };
+          if (contentType && contentType.includes("application/json")) {
+            try {
+              errorData = await response.json();
+            } catch (parseError) {
+              console.error("Failed to parse error JSON:", parseError);
+              errorData = { message: "Erreur de parsing de la réponse du serveur" };
+            }
+          } else {
+            // La réponse n'est pas du JSON, probablement du HTML
+            const textResponse = await response.text();
+            console.error("Non-JSON error response:", textResponse);
+            errorData = { message: `Erreur serveur (${response.status}): ${response.statusText}` };
           }
-        } else {
-          // La réponse n'est pas du JSON, probablement du HTML
-          const textResponse = await response.text();
-          console.error("Non-JSON error response:", textResponse);
-          errorData = { message: `Erreur serveur (${response.status}): ${response.statusText}` };
+
+          throw new Error(errorData.message || "Email ou mot de passe incorrect");
         }
 
-        throw new Error(errorData.message || "Email ou mot de passe incorrect");
-      }
-
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        return response.json();
-      } else {
-        throw new Error("La réponse du serveur n'est pas au format JSON");
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const result = await response.json();
+          console.log("Login successful, received data:", result);
+          return result;
+        } else {
+          throw new Error("La réponse du serveur n'est pas au format JSON");
+        }
+      } catch (networkError) {
+        console.error("Network or parsing error:", networkError);
+        throw networkError;
       }
     },
     onSuccess: (data) => {
-      localStorage.setItem("auth_token", data.token);
-      toast({
-        title: "Connexion réussie",
-        description: `Bienvenue ${data.user.firstName} !`,
-      });
-      setLocation("/");
+      if (data && data.token && data.user) {
+        localStorage.setItem("auth_token", data.token);
+        toast({
+          title: "Connexion réussie",
+          description: `Bienvenue ${data.user.firstName} !`,
+        });
+        setLocation("/");
+      } else {
+        console.error("Invalid response data:", data);
+        toast({
+          title: "Erreur de connexion",
+          description: "Réponse invalide du serveur",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: any) => {
       console.error("Login error:", error);
@@ -83,7 +100,10 @@ export default function AuthPage() {
 
       let errorMessage = "Email ou mot de passe incorrect";
 
-      if (error?.message) {
+      // Vérifier si c'est une erreur réseau ou de parsing
+      if (error?.name === 'SyntaxError') {
+        errorMessage = "Erreur de communication avec le serveur";
+      } else if (error?.message) {
         errorMessage = error.message;
       } else if (error?.response?.data?.message) {
         errorMessage = error.response.data.message;
