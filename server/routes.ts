@@ -450,6 +450,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Anime streaming routes
+  app.get("/api/anime/streaming/search", async (req, res) => {
+    try {
+      const { q } = req.query;
+      if (!q || typeof q !== 'string') {
+        return res.status(400).json({ error: "Query parameter 'q' is required" });
+      }
+
+      const { consumetService } = await import("./consumet-api");
+      const results = await consumetService.searchAnime(q);
+      res.json(results);
+    } catch (error) {
+      console.error("Error searching streaming anime:", error);
+      res.status(500).json({ error: "Failed to search streaming anime" });
+    }
+  });
+
+  app.get("/api/anime/streaming/:animeId", async (req, res) => {
+    try {
+      const { animeId } = req.params;
+      const { consumetService } = await import("./consumet-api");
+      const animeInfo = await consumetService.getAnimeInfo(animeId);
+      
+      if (!animeInfo) {
+        return res.status(404).json({ error: "Anime not found" });
+      }
+
+      res.json(animeInfo);
+    } catch (error) {
+      console.error("Error fetching anime info:", error);
+      res.status(500).json({ error: "Failed to fetch anime info" });
+    }
+  });
+
+  app.get("/api/anime/episode/:episodeId/sources", async (req, res) => {
+    try {
+      const { episodeId } = req.params;
+      const { consumetService } = await import("./consumet-api");
+      const streamingData = await consumetService.getStreamingData(episodeId);
+      
+      if (!streamingData) {
+        return res.status(404).json({ error: "Episode not found" });
+      }
+
+      res.json(streamingData);
+    } catch (error) {
+      console.error("Error fetching streaming sources:", error);
+      res.status(500).json({ error: "Failed to fetch streaming sources" });
+    }
+  });
+
+  app.get("/api/anime/:animeId/episodes", async (req, res) => {
+    try {
+      const animeId = parseInt(req.params.animeId);
+      if (isNaN(animeId)) {
+        return res.status(400).json({ error: "Invalid anime ID" });
+      }
+
+      const episodes = await storage.getAnimeEpisodes(animeId);
+      res.json(episodes);
+    } catch (error) {
+      console.error("Error fetching episodes:", error);
+      res.status(500).json({ error: "Failed to fetch episodes" });
+    }
+  });
+
+  app.post("/api/anime/watch-history", isAuthenticated, async (req: any, res) => {
+    try {
+      const { episodeId, watchedDuration, totalDuration } = req.body;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: "User not authenticated" });
+      }
+
+      const history = await storage.markEpisodeWatched(
+        userId,
+        episodeId,
+        watchedDuration,
+        totalDuration
+      );
+
+      res.json(history);
+    } catch (error) {
+      console.error("Error updating watch history:", error);
+      res.status(500).json({ error: "Failed to update watch history" });
+    }
+  });
+
+  app.get("/api/anime/watch-history", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const { animeId } = req.query;
+
+      if (!userId) {
+        return res.status(401).json({ error: "User not authenticated" });
+      }
+
+      const history = await storage.getUserWatchHistory(
+        userId,
+        animeId ? parseInt(animeId as string) : undefined
+      );
+
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching watch history:", error);
+      res.status(500).json({ error: "Failed to fetch watch history" });
+    }
+  });
+
+  app.get("/api/anime/streaming/top-airing", async (req, res) => {
+    try {
+      const { consumetService } = await import("./consumet-api");
+      const results = await consumetService.getTopAiring();
+      res.json(results);
+    } catch (error) {
+      console.error("Error fetching top airing anime:", error);
+      res.status(500).json({ error: "Failed to fetch top airing anime" });
+    }
+  });
+
+  app.get("/api/anime/streaming/recent-episodes", async (req, res) => {
+    try {
+      const { consumetService } = await import("./consumet-api");
+      const results = await consumetService.getRecentEpisodes();
+      res.json(results);
+    } catch (error) {
+      console.error("Error fetching recent episodes:", error);
+      res.status(500).json({ error: "Failed to fetch recent episodes" });
+    }
+  });
+
   // Quiz routes
   app.get('/api/quizzes', async (req, res) => {
     try {

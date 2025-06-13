@@ -9,6 +9,8 @@ import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Anime from "@/pages/anime";
 import AnimalAnime from "@/pages/animal-anime";
+import AnimeStreaming from "@/pages/anime-streaming";
+import AnimeStreamingDetail from "@/pages/anime-streaming-detail";
 import Quiz from "@/pages/quiz";
 import QuizDetail from "@/pages/quiz-detail";
 import Videos from "@/pages/videos";
