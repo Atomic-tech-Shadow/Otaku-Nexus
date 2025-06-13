@@ -13,6 +13,9 @@ import {
   mangaChapters,
   mangaReadingProgress,
   mangaDownloads,
+  animeEpisodes,
+  animeStreamingSources,
+  animeWatchHistory,
   type User,
   type UpsertUser,
   type UpdateUserProfile,
@@ -42,6 +45,12 @@ import {
   type InsertMangaReadingProgress,
   type MangaDownload,
   type InsertMangaDownload,
+  type AnimeEpisode,
+  type InsertAnimeEpisode,
+  type AnimeStreamingSource,
+  type InsertAnimeStreamingSource,
+  type AnimeWatchHistory,
+  type InsertAnimeWatchHistory,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, like, count, sql, and } from "drizzle-orm";
