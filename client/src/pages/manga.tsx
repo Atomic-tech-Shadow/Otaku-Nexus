@@ -37,7 +37,7 @@ export default function MangaPage() {
 
   const handleChapterRead = (chapter: any) => {
     // Navigation vers le lecteur de chapitre
-    window.open(`/manga/chapter/${chapter.mangadxId || chapter.id}/read`, '_blank');
+    window.open(`/manga/chapter/${chapter.id}/read`, '_blank');
   };
 
   const handleChapterDownload = async (chapter: any) => {

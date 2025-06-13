@@ -125,6 +125,17 @@ export interface IStorage {
   updateAdminPost(id: number, updates: Partial<InsertAdminPost>): Promise<AdminPost>;
   deleteAdminPost(id: number): Promise<void>;
   getPublicPosts(): Promise<any[]>;
+  
+  // Extended admin operations
+  getUsersPaginated(limit: number, offset: number): Promise<User[]>;
+  updateUserAdmin(userId: string, updates: any): Promise<User>;
+  deleteUser(userId: string): Promise<void>;
+  deleteQuiz(quizId: number): Promise<void>;
+  deleteAnime(animeId: number): Promise<void>;
+  deleteManga(mangaId: number): Promise<void>;
+  deleteChatMessage(messageId: number): Promise<void>;
+  cleanupOldSessions(): Promise<void>;
+  cleanupUnusedData(): Promise<void>;
 
   // Utility operations
   ensureDefaultChatRoom(): Promise<void>;
@@ -753,6 +764,49 @@ export class DatabaseStorage implements IStorage {
         totalPosts: 0,
       };
     }
+  }
+
+  // Extended admin operations
+  async getUsersPaginated(limit: number, offset: number): Promise<User[]> {
+    return await db.select().from(users).limit(limit).offset(offset).orderBy(desc(users.createdAt));
+  }
+
+  async updateUserAdmin(userId: string, updates: any): Promise<User> {
+    const [updatedUser] = await db.update(users).set(updates).where(eq(users.id, userId)).returning();
+    return updatedUser;
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, userId));
+  }
+
+  async deleteQuiz(quizId: number): Promise<void> {
+    await db.delete(quizzes).where(eq(quizzes.id, quizId));
+  }
+
+  async deleteAnime(animeId: number): Promise<void> {
+    await db.delete(animes).where(eq(animes.id, animeId));
+  }
+
+  async deleteManga(mangaId: number): Promise<void> {
+    await db.delete(mangas).where(eq(mangas.id, mangaId));
+  }
+
+  async deleteChatMessage(messageId: number): Promise<void> {
+    await db.delete(chatMessages).where(eq(chatMessages.id, messageId));
+  }
+
+  async cleanupOldSessions(): Promise<void> {
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    await db.execute(sql`DELETE FROM sessions WHERE expires < ${oneWeekAgo}`);
+  }
+
+  async cleanupUnusedData(): Promise<void> {
+    // Clean up quiz results for deleted quizzes
+    await db.delete(quizResults).where(sql`${quizResults.quizId} NOT IN (SELECT id FROM ${quizzes})`);
+    
+    // Clean up favorites for deleted anime/manga
+    await db.delete(animeFavorites).where(sql`${animeFavorites.animeId} NOT IN (SELECT id FROM ${animes})`);
   }
 }
 
