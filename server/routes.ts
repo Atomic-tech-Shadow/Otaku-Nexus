@@ -1088,6 +1088,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/admin/quizzes', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const quizData = insertQuizSchema.parse(req.body);
+      const quiz = await storage.createQuiz(quizData);
+      res.json(quiz);
+    } catch (error) {
+      console.error("Error creating quiz:", error);
+      res.status(500).json({ message: "Failed to create quiz" });
+    }
+  });
+
+  app.put('/api/admin/quizzes/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const quizId = parseInt(req.params.id);
+      const updates = req.body;
+      const quiz = await storage.updateQuiz(quizId, updates);
+      res.json(quiz);
+    } catch (error) {
+      console.error("Error updating quiz:", error);
+      res.status(500).json({ message: "Failed to update quiz" });
+    }
+  });
+
   app.delete('/api/admin/quizzes/:id', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const quizId = parseInt(req.params.id);

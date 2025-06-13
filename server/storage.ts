@@ -131,6 +131,7 @@ export interface IStorage {
   updateUserAdmin(userId: string, updates: any): Promise<User>;
   deleteUser(userId: string): Promise<void>;
   deleteQuiz(quizId: number): Promise<void>;
+  updateQuiz(quizId: number, updates: any): Promise<Quiz>;
   deleteAnime(animeId: number): Promise<void>;
   deleteManga(mangaId: number): Promise<void>;
   deleteChatMessage(messageId: number): Promise<void>;
@@ -782,6 +783,11 @@ export class DatabaseStorage implements IStorage {
 
   async deleteQuiz(quizId: number): Promise<void> {
     await db.delete(quizzes).where(eq(quizzes.id, quizId));
+  }
+
+  async updateQuiz(quizId: number, updates: any): Promise<Quiz> {
+    const [updatedQuiz] = await db.update(quizzes).set(updates).where(eq(quizzes.id, quizId)).returning();
+    return updatedQuiz;
   }
 
   async deleteAnime(animeId: number): Promise<void> {

@@ -20,6 +20,7 @@ import AuthPage from "@/pages/auth";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import MangaPage from "@/pages/manga";
 import MangaReaderPage from "@/pages/manga-reader";
+import AdminQuizCreator from "@/pages/admin-quiz-creator";
 
 
 function Router() {
@@ -87,6 +88,11 @@ function Router() {
         <Route path="/admin">
           <ProtectedRoute>
             <Admin />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/quiz-creator">
+          <ProtectedRoute>
+            <AdminQuizCreator />
           </ProtectedRoute>
         </Route>
 
