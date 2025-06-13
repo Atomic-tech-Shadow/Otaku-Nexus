@@ -1,4 +1,4 @@
-import { Home, Search, Heart, MessageCircle, User, Gamepad2, Play, BookOpen } from "lucide-react";
+import { Home, Search, Heart, MessageCircle, User, Gamepad2, Play, BookOpen, Brain } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from '@/hooks/useAuth';
