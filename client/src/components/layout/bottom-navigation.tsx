@@ -23,28 +23,24 @@ export default function BottomNavigation({ currentPath: propCurrentPath }: Botto
   ];
 
   return (
-    <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-card-bg border-t border-gray-800">
-      <div className="flex items-center justify-around py-2 px-2">
-        {navItems.map((item) => {
-          const isActive = currentPath === item.path;
+    <nav className="fixed bottom-0 left-0 right-0 bg-card-bg/95 backdrop-blur-sm border-t border-border z-50">
+      <div className="flex items-center justify-around px-1 py-2 max-w-full">
+        {navItems.map(({ path, label, icon: Icon }) => {
+          const isActive = location.pathname === path;
           return (
-            <Link key={item.path} href={item.path}>
-              <button className="flex flex-col items-center py-2 px-2 min-w-0 flex-1">
-                <item.icon 
-                  className={cn(
-                    "w-5 h-5 mb-1",
-                    isActive ? "electric-blue" : "text-gray-400"
-                  )} 
-                />
-                <span 
-                  className={cn(
-                    "text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-full",
-                    isActive ? "electric-blue" : "text-gray-400"
-                  )}
-                >
-                  {item.label}
-                </span>
-              </button>
+            <Link
+              key={path}
+              to={path}
+              className={`flex flex-col items-center justify-center p-1 min-w-0 flex-1 transition-colors ${
+                isActive
+                  ? "text-accent-primary"
+                  : "text-text-secondary hover:text-text-primary"
+              }`}
+            >
+              <Icon className="w-4 h-4 mb-1" />
+              <span className="text-[10px] font-medium truncate max-w-full leading-tight">
+                {label}
+              </span>
             </Link>
           );
         })}

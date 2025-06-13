@@ -103,29 +103,29 @@ export default function Videos() {
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex space-x-2 mb-6">
+            <div className="flex space-x-1 mb-6">
               <Button
                 variant={activeTab === "local" ? "default" : "outline"}
                 onClick={() => setActiveTab("local")}
-                className="flex-1"
+                className="flex-1 text-xs px-2 py-2 h-auto"
               >
-                <Play className="w-4 h-4 mr-2" />
-                Vidéos Locales
+                <Play className="w-3 h-3 mr-1" />
+                <span className="hidden sm:inline">Vidéos </span>Locales
               </Button>
               <Button
                 variant={activeTab === "youtube" ? "default" : "outline"}
                 onClick={() => setActiveTab("youtube")}
-                className="flex-1"
+                className="flex-1 text-xs px-2 py-2 h-auto"
               >
-                <Youtube className="w-4 h-4 mr-2" />
+                <Youtube className="w-3 h-3 mr-1" />
                 YouTube
               </Button>
               <Button
                 variant={activeTab === "music" ? "default" : "outline"}
                 onClick={() => setActiveTab("music")}
-                className="flex-1"
+                className="flex-1 text-xs px-2 py-2 h-auto"
               >
-                <Music className="w-4 h-4 mr-2" />
+                <Music className="w-3 h-3 mr-1" />
                 Openings
               </Button>
             </div>
