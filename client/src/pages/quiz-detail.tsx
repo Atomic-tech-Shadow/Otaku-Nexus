@@ -38,11 +38,16 @@ export default function QuizDetail() {
 
   const quizId = params?.id ? parseInt(params.id) : null;
 
-  const { data: quiz, isLoading: quizLoading } = useQuery({
+  const { data: quiz, isLoading: quizLoading, error: quizError } = useQuery({
     queryKey: ["/api/quizzes", quizId],
-    queryFn: () => apiRequest(`/api/quizzes/${quizId}`),
+    queryFn: async () => {
+      console.log("Fetching quiz data for ID:", quizId);
+      const data = await apiRequest(`/api/quizzes/${quizId}`);
+      console.log("Raw quiz data received:", data);
+      return data;
+    },
     enabled: !!quizId,
-    retry: false,
+    retry: 2,
   });
 
   const submitResultMutation = useMutation({
@@ -306,7 +311,14 @@ export default function QuizDetail() {
       <div className="min-h-screen bg-dark-bg text-white flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-bold mb-4">Quiz introuvable</h2>
-          <p className="text-gray-400 mb-4">Le quiz demandé n'existe pas ou a été supprimé.</p>
+          <p className="text-gray-400 mb-4">
+            {quizError ? "Erreur de chargement du quiz" : "Le quiz demandé n'existe pas ou a été supprimé."}
+          </p>
+          {quizError && (
+            <p className="text-red-400 text-sm mb-4">
+              Erreur: {(quizError as any)?.message || "Erreur inconnue"}
+            </p>
+          )}
           <Link href="/quiz">
             <Button>Retour aux Quiz</Button>
           </Link>

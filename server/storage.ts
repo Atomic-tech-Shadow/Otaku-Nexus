@@ -206,8 +206,36 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getQuiz(id: number): Promise<Quiz | undefined> {
-    const [quiz] = await db.select().from(quizzes).where(eq(quizzes.id, id));
-    return quiz;
+    try {
+      const quiz = await db
+        .select()
+        .from(quizzes)
+        .where(eq(quizzes.id, id))
+        .limit(1);
+
+      if (!quiz[0]) {
+        return null;
+      }
+
+      const quizData = quiz[0];
+      console.log("Raw quiz data from DB:", quizData);
+
+      // Parse questions if they're stored as JSON string
+      if (typeof quizData.questions === 'string') {
+        try {
+          quizData.questions = JSON.parse(quizData.questions);
+        } catch (parseError) {
+          console.error("Error parsing questions JSON:", parseError);
+          quizData.questions = [];
+        }
+      }
+
+      console.log("Processed quiz data:", quizData);
+      return quizData;
+    } catch (error) {
+      console.error("Error getting quiz:", error);
+      throw error;
+    }
   }
 
   async createQuiz(quiz: InsertQuiz): Promise<Quiz> {

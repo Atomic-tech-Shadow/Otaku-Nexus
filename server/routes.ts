@@ -270,10 +270,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/quizzes/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      console.log("Fetching quiz with ID:", id);
+      
       const quiz = await storage.getQuiz(id);
       if (!quiz) {
+        console.log("Quiz not found for ID:", id);
         return res.status(404).json({ message: "Quiz not found" });
       }
+      
+      console.log("Returning quiz data:", quiz);
       res.json(quiz);
     } catch (error) {
       console.error("Error fetching quiz:", error);
