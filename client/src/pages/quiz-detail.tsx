@@ -43,18 +43,21 @@ export default function QuizDetail() {
     queryFn: async () => {
       console.log("Fetching quiz data for ID:", quizId);
       const response = await fetch(`/api/quizzes/${quizId}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        credentials: 'include'
       });
       
+      console.log("Response status:", response.status);
+      console.log("Response headers:", response.headers.get('content-type'));
+      
       if (!response.ok) {
-        throw new Error(`Failed to fetch quiz: ${response.status}`);
+        throw new Error(`Failed to fetch quiz: ${response.status} ${response.statusText}`);
       }
       
-      const data = await response.json();
-      console.log("Raw quiz data received:", data);
+      const text = await response.text();
+      console.log("Raw response text:", text);
+      
+      const data = JSON.parse(text);
+      console.log("Parsed quiz data:", data);
       return data;
     },
     enabled: !!quizId,
