@@ -18,6 +18,7 @@ export default function BottomNavigation({ currentPath: propCurrentPath }: Botto
     { icon: Home, label: "Home", path: "/" },
     { icon: Search, label: "Anime", path: "/anime" },
     { icon: Brain, label: "Quiz", path: "/quiz" },
+    { icon: MessageCircle, label: "Chat", path: "/chat" },
     { path: "/videos", label: "Vidéos", icon: Play },
     { icon: User, label: "Profil", path: "/profile" },
   ];
