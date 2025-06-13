@@ -9,6 +9,10 @@ import {
   chatMessages,
   chatRoomMembers,
   adminPosts,
+  mangas,
+  mangaChapters,
+  mangaReadingProgress,
+  mangaDownloads,
   type User,
   type UpsertUser,
   type UpdateUserProfile,
@@ -30,6 +34,14 @@ import {
   type InsertChatRoomMember,
   type AdminPost,
   type InsertAdminPost,
+  type Manga,
+  type InsertManga,
+  type MangaChapter,
+  type InsertMangaChapter,
+  type MangaReadingProgress,
+  type InsertMangaReadingProgress,
+  type MangaDownload,
+  type InsertMangaDownload,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, like, count, sql, and } from "drizzle-orm";
@@ -57,6 +69,15 @@ export interface IStorage {
   createManga(manga: InsertManga): Promise<Manga>;
   getTrendingMangas(): Promise<Manga[]>;
   searchMangas(query: string): Promise<Manga[]>;
+  getMangaChapters(mangaId: number, limit?: number): Promise<MangaChapter[]>;
+  getChapterById(id: number): Promise<MangaChapter | undefined>;
+  createMangaChapter(chapter: InsertMangaChapter): Promise<MangaChapter>;
+  getUserReadingProgress(userId: string, mangaId?: number): Promise<MangaReadingProgress[]>;
+  updateReadingProgress(progress: InsertMangaReadingProgress): Promise<MangaReadingProgress>;
+  getUserDownloads(userId: string): Promise<MangaDownload[]>;
+  createDownload(download: InsertMangaDownload): Promise<MangaDownload>;
+  updateDownloadStatus(id: number, status: string, downloadUrl?: string): Promise<MangaDownload>;
+  updateMangaChapter(id: number, updates: Partial<InsertMangaChapter>): Promise<MangaChapter>;
 
   // Anime favorites operations
   getUserFavorites(userId: string): Promise<AnimeFavorite[]>;
@@ -189,7 +210,115 @@ export class DatabaseStorage implements IStorage {
       .limit(20);
   }
 
+  // Manga operations
+  async getMangas(limit = 20): Promise<Manga[]> {
+    return await db.select().from(mangas).orderBy(desc(mangas.createdAt)).limit(limit);
+  }
 
+  async getMangaByMalId(malId: number): Promise<Manga | undefined> {
+    const [manga] = await db.select().from(mangas).where(eq(mangas.malId, malId));
+    return manga;
+  }
+
+  async createManga(manga: InsertManga): Promise<Manga> {
+    const [newManga] = await db.insert(mangas).values(manga).returning();
+    return newManga;
+  }
+
+  async getTrendingMangas(): Promise<Manga[]> {
+    return await db.select().from(mangas).orderBy(desc(mangas.score)).limit(10);
+  }
+
+  async searchMangas(query: string): Promise<Manga[]> {
+    return await db
+      .select()
+      .from(mangas)
+      .where(sql`${mangas.title} ILIKE ${'%' + query + '%'}`)
+      .limit(20);
+  }
+
+  async getMangaChapters(mangaId: number, limit = 50): Promise<MangaChapter[]> {
+    return await db
+      .select()
+      .from(mangaChapters)
+      .where(eq(mangaChapters.mangaId, mangaId))
+      .orderBy(mangaChapters.chapterNumber)
+      .limit(limit);
+  }
+
+  async getChapterById(id: number): Promise<MangaChapter | undefined> {
+    const [chapter] = await db.select().from(mangaChapters).where(eq(mangaChapters.id, id));
+    return chapter;
+  }
+
+  async createMangaChapter(chapter: InsertMangaChapter): Promise<MangaChapter> {
+    const [newChapter] = await db.insert(mangaChapters).values(chapter).returning();
+    return newChapter;
+  }
+
+  async updateMangaChapter(id: number, updates: Partial<InsertMangaChapter>): Promise<MangaChapter> {
+    const [updatedChapter] = await db
+      .update(mangaChapters)
+      .set(updates)
+      .where(eq(mangaChapters.id, id))
+      .returning();
+    return updatedChapter;
+  }
+
+  async getUserReadingProgress(userId: string, mangaId?: number): Promise<MangaReadingProgress[]> {
+    const query = db.select().from(mangaReadingProgress).where(eq(mangaReadingProgress.userId, userId));
+
+    if (mangaId) {
+      query.where(eq(mangaReadingProgress.mangaId, mangaId));
+    }
+
+    return await query.orderBy(desc(mangaReadingProgress.updatedAt));
+  }
+
+  async updateReadingProgress(progress: InsertMangaReadingProgress): Promise<MangaReadingProgress> {
+    const [updatedProgress] = await db
+      .insert(mangaReadingProgress)
+      .values(progress)
+      .onConflictDoUpdate({
+        target: [mangaReadingProgress.userId, mangaReadingProgress.mangaId],
+        set: {
+          lastChapterId: progress.lastChapterId,
+          lastPageNumber: progress.lastPageNumber,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return updatedProgress;
+  }
+
+  // Download operations
+  async getUserDownloads(userId: string): Promise<MangaDownload[]> {
+    return await db
+      .select()
+      .from(mangaDownloads)
+      .where(eq(mangaDownloads.userId, userId))
+      .orderBy(desc(mangaDownloads.createdAt));
+  }
+
+  async createDownload(download: InsertMangaDownload): Promise<MangaDownload> {
+    const [newDownload] = await db.insert(mangaDownloads).values(download).returning();
+    return newDownload;
+  }
+
+  async updateDownloadStatus(id: number, status: string, downloadUrl?: string): Promise<MangaDownload> {
+    const updateData: any = { 
+      status, 
+      ...(downloadUrl && { downloadUrl }),
+      ...(status === 'completed' && { downloadedAt: new Date() })
+    };
+
+    const [updatedDownload] = await db
+      .update(mangaDownloads)
+      .set(updateData)
+      .where(eq(mangaDownloads.id, id))
+      .returning();
+    return updatedDownload;
+  }
 
   // Anime favorites operations
   async getUserFavorites(userId: string): Promise<AnimeFavorite[]> {

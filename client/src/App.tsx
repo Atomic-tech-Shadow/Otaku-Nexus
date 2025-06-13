@@ -18,6 +18,8 @@ import EditProfile from "@/pages/edit-profile";
 import Admin from "@/pages/admin";
 import AuthPage from "@/pages/auth";
 import { ProtectedRoute } from "@/components/auth/protected-route";
+import MangaPage from "@/pages/manga";
+import MangaReaderPage from "@/pages/manga-reader";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();

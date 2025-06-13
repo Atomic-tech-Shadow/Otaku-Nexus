@@ -55,6 +55,24 @@ export const userApi = {
   },
 };
 
+// Manga API functions
+export const mangaApi = {
+  getAll: (limit?: number) => {
+    const url = limit ? `/api/manga?limit=${limit}` : "/api/manga";
+    return fetch(url).then(res => res.json());
+  },
+  search: (query: string) => fetch(`/api/manga/search?q=${encodeURIComponent(query)}`).then(res => res.json()),
+  getChapters: (mangaId: number) => fetch(`/api/manga/${mangaId}/chapters`).then(res => res.json()),
+  getChapterPages: (chapterId: string) => fetch(`/api/manga/chapter/${chapterId}/pages`).then(res => res.json()),
+  getProgress: (mangaId?: number) => {
+    const url = mangaId ? `/api/manga/progress?mangaId=${mangaId}` : "/api/manga/progress";
+    return fetch(url).then(res => res.json());
+  },
+  updateProgress: (progress: any) => apiRequest("POST", "/api/manga/progress", progress),
+  getDownloads: () => fetch("/api/manga/downloads").then(res => res.json()),
+  downloadChapter: (chapterId: number) => apiRequest("POST", `/api/manga/download/${chapterId}`, {}),
+};
+
 // External APIs (for real-time data)
 export const externalApi = {
   searchJikan: async (query: string) => {

@@ -4,6 +4,11 @@ import { storage } from "./storage";
 import {
   insertAnimeSchema,
   insertAnimeFavoriteSchema,
+  insertMangaSchema,
+  insertMangaFavoriteSchema,
+  insertMangaChapterSchema,
+  insertMangaReadingProgressSchema,
+  insertMangaDownloadSchema,
   insertQuizSchema,
   insertQuizResultSchema,
   insertVideoSchema,
@@ -194,6 +199,272 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating anime:", error);
       res.status(500).json({ message: "Failed to create anime" });
+    }
+  });
+
+  // Manga routes avec intégration MangaDx
+  app.get('/api/manga', async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      let mangas = await storage.getMangas(limit);
+      
+      // Si pas de données locales, récupérer depuis MangaDx
+      if (mangas.length === 0) {
+        try {
+          const response = await fetch('https://api.mangadex.org/manga?limit=20&order[createdAt]=desc&includes[]=cover_art&includes[]=author&includes[]=artist');
+          if (response.ok) {
+            const data = await response.json();
+            const mangaDxMangas = data.data;
+            
+            // Sauvegarder en base de données
+            for (const manga of mangaDxMangas) {
+              try {
+                const coverArt = manga.relationships.find((rel: any) => rel.type === 'cover_art');
+                const imageUrl = coverArt ? `https://uploads.mangadx.org/covers/${manga.id}/${coverArt.attributes.fileName}` : null;
+                
+                await storage.createManga({
+                  malId: 0, // MangaDx n'utilise pas MAL ID
+                  title: manga.attributes.title.en || manga.attributes.title.fr || Object.values(manga.attributes.title)[0],
+                  synopsis: manga.attributes.description.en || manga.attributes.description.fr || '',
+                  imageUrl,
+                  score: manga.attributes.rating?.toString() || '0',
+                  year: manga.attributes.year,
+                  status: manga.attributes.status,
+                  chapters: manga.attributes.lastChapter ? parseInt(manga.attributes.lastChapter) : null,
+                  volumes: manga.attributes.lastVolume ? parseInt(manga.attributes.lastVolume) : null,
+                  genres: manga.attributes.tags?.map((tag: any) => tag.attributes.name.en) || [],
+                  type: 'manga'
+                });
+              } catch (err) {
+                console.log('Erreur lors de la sauvegarde du manga:', err);
+              }
+            }
+            mangas = await storage.getMangas(limit);
+          }
+        } catch (apiError) {
+          console.error("Erreur API MangaDx:", apiError);
+        }
+      }
+      
+      res.json(mangas);
+    } catch (error) {
+      console.error("Erreur récupération mangas:", error);
+      res.status(500).json({ message: "Échec de récupération des mangas" });
+    }
+  });
+
+  app.get('/api/manga/search', async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      if (!query) {
+        return res.status(400).json({ message: "Paramètre 'q' requis" });
+      }
+      
+      // Rechercher d'abord en local
+      let mangas = await storage.searchMangas(query);
+      
+      // Si pas de résultats locaux, chercher sur MangaDx
+      if (mangas.length === 0) {
+        try {
+          const response = await fetch(`https://api.mangadx.org/manga?title=${encodeURIComponent(query)}&limit=10&includes[]=cover_art`);
+          if (response.ok) {
+            const data = await response.json();
+            mangas = data.data.map((manga: any) => {
+              const coverArt = manga.relationships.find((rel: any) => rel.type === 'cover_art');
+              const imageUrl = coverArt ? `https://uploads.mangadx.org/covers/${manga.id}/${coverArt.attributes.fileName}` : null;
+              
+              return {
+                id: manga.id,
+                title: manga.attributes.title.en || manga.attributes.title.fr || Object.values(manga.attributes.title)[0],
+                synopsis: manga.attributes.description.en || manga.attributes.description.fr || '',
+                imageUrl,
+                score: manga.attributes.rating?.toString() || '0',
+                year: manga.attributes.year,
+                status: manga.attributes.status,
+                chapters: manga.attributes.lastChapter ? parseInt(manga.attributes.lastChapter) : null,
+                volumes: manga.attributes.lastVolume ? parseInt(manga.attributes.lastVolume) : null,
+                type: 'manga',
+                mangaDxId: manga.id
+              };
+            });
+          }
+        } catch (apiError) {
+          console.error("Erreur API MangaDx:", apiError);
+        }
+      }
+      
+      res.json(mangas);
+    } catch (error) {
+      console.error("Erreur recherche mangas:", error);
+      res.status(500).json({ message: "Échec de recherche des mangas" });
+    }
+  });
+
+  app.get('/api/manga/:id/chapters', async (req, res) => {
+    try {
+      const mangaId = parseInt(req.params.id);
+      let chapters = await storage.getMangaChapters(mangaId);
+      
+      // Si pas de chapitres locaux, récupérer depuis MangaDx
+      if (chapters.length === 0) {
+        try {
+          const response = await fetch(`https://api.mangadx.org/manga/${req.params.id}/feed?limit=500&order[chapter]=asc&translatedLanguage[]=fr&translatedLanguage[]=en`);
+          if (response.ok) {
+            const data = await response.json();
+            
+            for (const chapter of data.data) {
+              try {
+                await storage.createMangaChapter({
+                  mangadxId: chapter.id,
+                  mangaId: mangaId,
+                  chapterNumber: chapter.attributes.chapter || '0',
+                  title: chapter.attributes.title || '',
+                  volume: chapter.attributes.volume,
+                  pages: chapter.attributes.pages || 0,
+                  translatedLanguage: chapter.attributes.translatedLanguage,
+                  scanlationGroup: chapter.relationships.find((rel: any) => rel.type === 'scanlation_group')?.attributes?.name || '',
+                  publishAt: new Date(chapter.attributes.publishAt),
+                  readableAt: new Date(chapter.attributes.readableAt),
+                  version: chapter.attributes.version
+                });
+              } catch (err) {
+                console.log('Erreur sauvegarde chapitre:', err);
+              }
+            }
+            chapters = await storage.getMangaChapters(mangaId);
+          }
+        } catch (apiError) {
+          console.error("Erreur API MangaDx chapitres:", apiError);
+        }
+      }
+      
+      res.json(chapters);
+    } catch (error) {
+      console.error("Erreur récupération chapitres:", error);
+      res.status(500).json({ message: "Échec de récupération des chapitres" });
+    }
+  });
+
+  app.get('/api/manga/chapter/:chapterId/pages', async (req, res) => {
+    try {
+      const chapterId = req.params.chapterId;
+      let chapter = await storage.getChapterByMangaDxId(chapterId);
+      
+      if (!chapter || !chapter.hash || !chapter.data) {
+        // Récupérer les pages depuis MangaDx
+        try {
+          const response = await fetch(`https://api.mangadx.org/at-home/server/${chapterId}`);
+          if (response.ok) {
+            const data = await response.json();
+            const baseUrl = data.baseUrl;
+            const hash = data.chapter.hash;
+            const pages = data.chapter.data;
+            const pagesSaver = data.chapter.dataSaver;
+            
+            // Mettre à jour le chapitre avec les données des pages
+            if (chapter) {
+              chapter = await storage.updateMangaChapter(chapter.id, {
+                hash,
+                data: pages,
+                dataSaver: pagesSaver
+              });
+            }
+            
+            // Construire les URLs des pages
+            const pageUrls = pages.map((page: string, index: number) => ({
+              pageNumber: index + 1,
+              imageUrl: `${baseUrl}/data/${hash}/${page}`,
+              imageUrlSaver: `${baseUrl}/data-saver/${hash}/${pagesSaver[index] || page}`
+            }));
+            
+            res.json({
+              chapter: chapter,
+              pages: pageUrls,
+              baseUrl,
+              hash
+            });
+          } else {
+            res.status(404).json({ message: "Chapitre non trouvé sur MangaDx" });
+          }
+        } catch (apiError) {
+          console.error("Erreur API MangaDx pages:", apiError);
+          res.status(500).json({ message: "Erreur récupération pages depuis MangaDx" });
+        }
+      } else {
+        // Utiliser les données en cache
+        const baseUrl = `https://uploads.mangadx.org/data/${chapter.hash}`;
+        const pageUrls = chapter.data.map((page: string, index: number) => ({
+          pageNumber: index + 1,
+          imageUrl: `${baseUrl}/${page}`,
+          imageUrlSaver: chapter.dataSaver ? `https://uploads.mangadx.org/data-saver/${chapter.hash}/${chapter.dataSaver[index]}` : null
+        }));
+        
+        res.json({
+          chapter: chapter,
+          pages: pageUrls
+        });
+      }
+    } catch (error) {
+      console.error("Erreur récupération pages:", error);
+      res.status(500).json({ message: "Échec de récupération des pages" });
+    }
+  });
+
+  // Progression de lecture
+  app.get('/api/manga/progress', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const mangaId = req.query.mangaId ? parseInt(req.query.mangaId as string) : undefined;
+      const progress = await storage.getUserReadingProgress(userId, mangaId);
+      res.json(progress);
+    } catch (error) {
+      console.error("Erreur récupération progression:", error);
+      res.status(500).json({ message: "Échec de récupération de la progression" });
+    }
+  });
+
+  app.post('/api/manga/progress', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const progressData = insertMangaReadingProgressSchema.parse({
+        ...req.body,
+        userId,
+      });
+      const progress = await storage.updateReadingProgress(progressData);
+      res.json(progress);
+    } catch (error) {
+      console.error("Erreur mise à jour progression:", error);
+      res.status(500).json({ message: "Échec de mise à jour de la progression" });
+    }
+  });
+
+  // Téléchargements
+  app.get('/api/manga/downloads', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const downloads = await storage.getUserDownloads(userId);
+      res.json(downloads);
+    } catch (error) {
+      console.error("Erreur récupération téléchargements:", error);
+      res.status(500).json({ message: "Échec de récupération des téléchargements" });
+    }
+  });
+
+  app.post('/api/manga/download/:chapterId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const chapterId = parseInt(req.params.chapterId);
+      
+      const download = await storage.createDownload({
+        userId,
+        chapterId,
+        status: 'pending'
+      });
+      
+      res.json(download);
+    } catch (error) {
+      console.error("Erreur création téléchargement:", error);
+      res.status(500).json({ message: "Échec de création du téléchargement" });
     }
   });
 
