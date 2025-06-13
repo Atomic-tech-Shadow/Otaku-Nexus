@@ -7,37 +7,34 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(url: string, options?: {
-  method?: string;
-  body?: any;
-  headers?: Record<string, string>;
-}) {
-  const token = localStorage.getItem("auth_token");
-  const method = options?.method || "GET";
+export async function apiRequest(endpoint: string, options: RequestInit = {}): Promise<any> {
+  const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint}`;
 
   const config: RequestInit = {
-    method,
     headers: {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options?.headers,
+      'Content-Type': 'application/json',
+      ...options.headers,
     },
+    credentials: 'include',
+    ...options,
   };
 
-  if (options?.body) {
+  if (options.body && typeof options.body === 'object') {
     config.body = JSON.stringify(options.body);
   }
 
   const response = await fetch(url, config);
 
-  // Log pour débogage
-  console.log(`API ${method} ${url}:`, {
-    status: response.status,
-    statusText: response.statusText,
-    headers: Object.fromEntries(response.headers.entries())
-  });
+  console.log(`API ${(options.method || 'GET').toUpperCase()} ${endpoint}:`, response);
 
-  return response;
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`API Error: ${response.status} - ${error}`);
+  }
+
+  const data = await response.json();
+  console.log(`API Response data for ${endpoint}:`, data);
+  return data;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
