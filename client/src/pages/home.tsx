@@ -8,7 +8,7 @@ import QuizCard from "@/components/quiz/quiz-card";
 import VideoCard from "@/components/video/video-card";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
-import { Brain, Search } from "lucide-react";
+import { Brain, Search, PawPrint, Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import { PostCard } from "@/components/ui/post-card";
 

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AnimeCard } from "@/components/anime/anime-card";
+import AnimeCard from "@/components/anime/anime-card";
 import { motion } from "framer-motion";
 
 export default function AnimalAnimePage() {
@@ -13,7 +13,7 @@ export default function AnimalAnimePage() {
   const [searchMode, setSearchMode] = useState<"browse" | "search">("browse");
 
   // Fetch animal anime data
-  const { data: animes = [], isLoading } = useQuery({
+  const { data: animes = [], isLoading } = useQuery<any[]>({
     queryKey: searchMode === "search" ? ['/api/anime/animals/search', searchTerm] : ['/api/anime/animals'],
     enabled: searchMode === "browse" || (searchMode === "search" && searchTerm.length > 0),
   });
@@ -54,7 +54,7 @@ export default function AnimalAnimePage() {
             <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-pink-500/30 to-purple-500/30 rounded-full opacity-50"></div>
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 bg-gradient-to-br from-pink-500 to-purple-500 rounded-xl">
-                <Paw className="w-6 h-6 text-white" />
+                <PawPrint className="w-6 h-6 text-white" />
               </div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
                 Anime Animaliers
@@ -150,7 +150,7 @@ export default function AnimalAnimePage() {
           <Card className="glass-morphism border-gray-700">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
-                <Paw className="w-5 h-5 text-pink-400" />
+                <PawPrint className="w-5 h-5 text-pink-400" />
                 Types d'Animaux Populaires
               </CardTitle>
             </CardHeader>
@@ -226,13 +226,13 @@ export default function AnimalAnimePage() {
                   {/* Animal Icon */}
                   <div className="absolute top-2 right-2 z-10">
                     <div className="p-1 bg-pink-500/80 rounded-full">
-                      <Paw className="w-3 h-3 text-white" />
+                      <PawPrint className="w-3 h-3 text-white" />
                     </div>
                   </div>
                 </div>
               </motion.div>
             ))}
-          </animes>
+          </motion.div>
         )}
 
         {/* Empty State */}
@@ -243,7 +243,7 @@ export default function AnimalAnimePage() {
             className="text-center py-16"
           >
             <div className="mb-4">
-              <Paw className="w-16 h-16 text-gray-600 mx-auto" />
+              <PawPrint className="w-16 h-16 text-gray-600 mx-auto" />
             </div>
             <h3 className="text-xl font-semibold text-gray-400 mb-2">
               Aucun anime trouvé

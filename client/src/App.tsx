@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Anime from "@/pages/anime";
+import AnimalAnime from "@/pages/animal-anime";
 import Quiz from "@/pages/quiz";
 import QuizDetail from "@/pages/quiz-detail";
 import Videos from "@/pages/videos";
@@ -33,6 +34,11 @@ function Router() {
         <Route path="/anime">
           <ProtectedRoute>
             <Anime />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/anime/animals">
+          <ProtectedRoute>
+            <AnimalAnime />
           </ProtectedRoute>
         </Route>
         <Route path="/quiz">
