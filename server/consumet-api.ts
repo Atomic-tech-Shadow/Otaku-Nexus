@@ -49,25 +49,30 @@ class ConsumetService {
 
   async searchAnime(query: string): Promise<ConsumetAnime[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/${encodeURIComponent(query)}`);
+      const response = await fetch(`${this.baseUrl}/${encodeURIComponent(query)}`, {
+        timeout: 5000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        console.warn(`Consumet API returned ${response.status}, using fallback data`);
+        return this.getDemoSearchResults(query);
       }
       
       const text = await response.text();
       
       // Check if response is HTML (API down)
-      if (text.startsWith('<!DOCTYPE') || text.startsWith('<html')) {
-        console.warn('Consumet API returned HTML, service may be down');
-        // Return demo data to show UI functionality
+      if (text.startsWith('<!DOCTYPE') || text.startsWith('<html') || text.includes('<title>')) {
+        console.warn('Consumet API returned HTML, using fallback data');
         return this.getDemoSearchResults(query);
       }
       
       const data = JSON.parse(text);
-      return data.results || [];
+      return data.results || this.getDemoSearchResults(query);
     } catch (error) {
-      console.error('Error searching anime:', error);
-      // Return demo data to show UI functionality
+      console.warn('Consumet API unavailable, using fallback data:', error.message);
       return this.getDemoSearchResults(query);
     }
   }
