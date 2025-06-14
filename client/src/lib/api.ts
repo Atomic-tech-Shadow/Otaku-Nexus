@@ -77,9 +77,9 @@ export const mangaApi = {
     const url = mangaId ? `/api/manga/progress?mangaId=${mangaId}` : "/api/manga/progress";
     return fetch(url).then(res => res.json());
   },
-  updateProgress: (progress: any) => apiRequest("/api/manga/progress", { method: "POST", body: progress }),
+  updateProgress: (progress: any) => apiRequest("/api/manga/progress", { method: "POST", body: progress }).then(res => res.json()),
   getDownloads: () => fetch("/api/manga/downloads").then(res => res.json()),
-  downloadChapter: (chapterId: number) => apiRequest(`/api/manga/download/${chapterId}`, { method: "POST", body: {} }),
+  downloadChapter: (chapterId: number) => apiRequest(`/api/manga/download/${chapterId}`, { method: "POST", body: {} }).then(res => res.json()),
 };
 
 // External APIs (for real-time data)

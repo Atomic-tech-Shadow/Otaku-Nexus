@@ -47,34 +47,29 @@ export interface ConsumetSource {
 class ConsumetService {
   private baseUrl = 'https://api.consumet.org/anime/gogoanime';
 
+  // Configuration pour différentes sources
+  switchProvider(provider: string = 'gogoanime') {
+    this.baseUrl = `https://api.consumet.org/anime/${provider}`;
+  }
+
   // 1️⃣ Rechercher un anime par nom - GET /anime/gogoanime/{query}
   async searchAnime(query: string): Promise<ConsumetAnime[]> {
     try {
       const response = await fetch(`${this.baseUrl}/${encodeURIComponent(query)}`, {
-        timeout: 5000,
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
       });
       
       if (!response.ok) {
-        console.warn(`Consumet API returned ${response.status}, using fallback data`);
-        return this.getDemoSearchResults(query);
+        throw new Error(`Consumet API returned ${response.status}`);
       }
       
-      const text = await response.text();
-      
-      // Check if response is HTML (API down)
-      if (text.startsWith('<!DOCTYPE') || text.startsWith('<html') || text.includes('<title>')) {
-        console.warn('Consumet API returned HTML, using fallback data');
-        return this.getDemoSearchResults(query);
-      }
-      
-      const data = JSON.parse(text);
-      return data.results || this.getDemoSearchResults(query);
+      const data = await response.json();
+      return Array.isArray(data) ? data : data.results || [];
     } catch (error) {
-      console.warn('Consumet API unavailable, using fallback data:', error.message);
-      return this.getDemoSearchResults(query);
+      console.error('Consumet API error:', error instanceof Error ? error.message : 'Unknown error');
+      throw new Error('Veuillez configurer une clé API Consumet valide pour accéder au streaming');
     }
   }
 
@@ -112,23 +107,24 @@ class ConsumetService {
     );
   }
 
+  // 2️⃣ Récupérer la liste des épisodes - GET /anime/gogoanime/info/{animeId}
   async getAnimeInfo(animeId: string): Promise<ConsumetAnimeInfo | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/info/${animeId}`);
+      const response = await fetch(`${this.baseUrl}/info/${animeId}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Consumet API returned ${response.status}`);
       }
       
-      const text = await response.text();
-      if (text.startsWith('<!DOCTYPE') || text.startsWith('<html')) {
-        return this.getDemoAnimeInfo(animeId);
-      }
-      
-      const data = JSON.parse(text);
+      const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error getting anime info:', error);
-      return this.getDemoAnimeInfo(animeId);
+      console.error('Consumet API error:', error instanceof Error ? error.message : 'Unknown error');
+      throw new Error('Veuillez configurer une clé API Consumet valide pour accéder aux détails des animes');
     }
   }
 
