@@ -6,7 +6,7 @@ export const animeApi = {
   search: (query: string) => fetch(`/api/anime/search?q=${encodeURIComponent(query)}`).then(res => res.json()),
   getExternal: (query: string) => fetch(`/api/external/anime/search?q=${encodeURIComponent(query)}`).then(res => res.json()),
   getTopExternal: () => fetch("/api/external/anime/top").then(res => res.json()),
-  create: (anime: any) => apiRequest("POST", "/api/anime", anime),
+  create: (anime: any) => apiRequest("/api/anime", { method: "POST", body: anime }),
 };
 
 // Quiz API functions
@@ -14,8 +14,8 @@ export const quizApi = {
   getAll: () => fetch("/api/quizzes").then(res => res.json()),
   getFeatured: () => fetch("/api/quizzes/featured").then(res => res.json()),
   getById: (id: number) => fetch(`/api/quizzes/${id}`).then(res => res.json()),
-  create: (quiz: any) => apiRequest("POST", "/api/quizzes", quiz),
-  submitResult: (result: any) => apiRequest("POST", "/api/quiz-results", result),
+  create: (quiz: any) => apiRequest("/api/quizzes", { method: "POST", body: quiz }),
+  submitResult: (result: any) => apiRequest("/api/quiz-results", { method: "POST", body: result }),
   getResults: () => fetch("/api/quiz-results").then(res => res.json()),
 };
 
@@ -27,14 +27,14 @@ export const videoApi = {
   },
   getPopular: () => fetch("/api/videos/popular").then(res => res.json()),
   getById: (id: number) => fetch(`/api/videos/${id}`).then(res => res.json()),
-  create: (video: any) => apiRequest("POST", "/api/videos", video),
+  create: (video: any) => apiRequest("/api/videos", { method: "POST", body: video }).then(res => res.json()),
 };
 
 // Favorites API functions
 export const favoritesApi = {
   getAll: () => fetch("/api/favorites").then(res => res.json()),
-  add: (animeId: number, rating?: number) => apiRequest("POST", "/api/favorites", { animeId, rating }),
-  remove: (animeId: number) => apiRequest("DELETE", `/api/favorites/${animeId}`),
+  add: (animeId: number, rating?: number) => apiRequest("/api/favorites", { method: "POST", body: { animeId, rating } }).then(res => res.json()),
+  remove: (animeId: number) => apiRequest(`/api/favorites/${animeId}`, { method: "DELETE" }).then(res => res.json()),
 };
 
 // User API functions
@@ -77,9 +77,9 @@ export const mangaApi = {
     const url = mangaId ? `/api/manga/progress?mangaId=${mangaId}` : "/api/manga/progress";
     return fetch(url).then(res => res.json());
   },
-  updateProgress: (progress: any) => apiRequest("POST", "/api/manga/progress", progress),
+  updateProgress: (progress: any) => apiRequest("/api/manga/progress", { method: "POST", body: progress }),
   getDownloads: () => fetch("/api/manga/downloads").then(res => res.json()),
-  downloadChapter: (chapterId: number) => apiRequest("POST", `/api/manga/download/${chapterId}`, {}),
+  downloadChapter: (chapterId: number) => apiRequest(`/api/manga/download/${chapterId}`, { method: "POST", body: {} }),
 };
 
 // External APIs (for real-time data)
@@ -106,5 +106,30 @@ export const externalApi = {
       // Fallback to our internal API
       return await fetch("/api/external/anime/top").then(res => res.json());
     }
+  }
+};
+
+// Main API object for general HTTP requests
+export const api = {
+  get: async (url: string) => {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return { data: await response.json() };
+  },
+  
+  post: async (url: string, data: any) => {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return { data: await response.json() };
   }
 };

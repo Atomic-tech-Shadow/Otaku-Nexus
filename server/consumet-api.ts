@@ -47,6 +47,7 @@ export interface ConsumetSource {
 class ConsumetService {
   private baseUrl = 'https://api.consumet.org/anime/gogoanime';
 
+  // 1️⃣ Rechercher un anime par nom - GET /anime/gogoanime/{query}
   async searchAnime(query: string): Promise<ConsumetAnime[]> {
     try {
       const response = await fetch(`${this.baseUrl}/${encodeURIComponent(query)}`, {
