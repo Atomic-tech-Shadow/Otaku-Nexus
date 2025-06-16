@@ -161,7 +161,7 @@ export default function AnimeStreamingPage() {
 
   // Navigation Header Component
   const NavigationHeader = () => (
-    <header className="bg-streaming-bg/95 backdrop-blur-md border-b border-streaming-steel/30 sticky top-0 z-50">
+    <header className="bg-gray-900/95 backdrop-blur-md border-b border-gray-600/30 sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
@@ -170,10 +170,10 @@ export default function AnimeStreamingPage() {
             whileHover={{ scale: 1.05 }}
             onClick={() => setLocation('/')}
           >
-            <div className="w-10 h-10 bg-gradient-to-r from-streaming-purple to-streaming-cyan rounded-lg flex items-center justify-center animate-neon-glow">
+            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-lg flex items-center justify-center">
               <Tv className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-streaming-purple to-streaming-cyan bg-clip-text text-transparent">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-purple-500 to-cyan-500 bg-clip-text text-transparent">
               Otaku Nexus
             </h1>
           </motion.div>
@@ -291,7 +291,7 @@ export default function AnimeStreamingPage() {
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setSearchFocused(false)}
                 placeholder={placeholderTexts[currentPlaceholder]}
-                className="w-full pl-12 pr-4 py-4 text-lg bg-streaming-card/50 border-streaming-steel/50 rounded-2xl backdrop-blur-sm focus:border-streaming-purple focus:ring-2 focus:ring-streaming-purple/20 transition-all duration-300"
+                className="w-full pl-12 pr-4 py-4 text-lg bg-gray-800/50 border-gray-600/50 rounded-2xl backdrop-blur-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300"
               />
               {isSearching && (
                 <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
@@ -305,7 +305,7 @@ export default function AnimeStreamingPage() {
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="absolute top-full mt-2 w-full bg-streaming-card/95 backdrop-blur-md border border-streaming-steel/30 rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto custom-scroll"
+                className="absolute top-full mt-2 w-full bg-gray-900/95 backdrop-blur-md border border-gray-600/30 rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto"
               >
                 {searchResults.slice(0, 8).map((anime, index) => (
                   <motion.div
@@ -313,7 +313,7 @@ export default function AnimeStreamingPage() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="flex items-center p-4 hover:bg-streaming-steel/30 cursor-pointer transition-colors border-b border-streaming-steel/20 last:border-b-0"
+                    className="flex items-center p-4 hover:bg-gray-700/30 cursor-pointer transition-colors border-b border-gray-600/20 last:border-b-0"
                     onClick={() => handleAnimeSelect(anime.id)}
                   >
                     <img 
