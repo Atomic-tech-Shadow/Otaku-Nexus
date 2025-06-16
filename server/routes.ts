@@ -982,6 +982,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Posts routes for admin announcements
+  app.get('/api/posts', async (req, res) => {
+    try {
+      const posts = await storage.getPublishedPosts();
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      res.status(500).json({ message: "Failed to fetch posts" });
+    }
+  });
+
+  app.get('/api/posts/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const post = await storage.getPost(id);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+      res.json(post);
+    } catch (error) {
+      console.error("Error fetching post:", error);
+      res.status(500).json({ message: "Failed to fetch post" });
+    }
+  });
+
+  app.post('/api/posts', isAuthenticated, async (req: any, res) => {
+    try {
+      const postData = insertAdminPostSchema.parse({
+        ...req.body,
+        authorId: req.user.id,
+      });
+      const post = await storage.createPost(postData);
+      res.json(post);
+    } catch (error) {
+      console.error("Error creating post:", error);
+      res.status(500).json({ message: "Failed to create post" });
+    }
+  });
+
   // External API integration for anime data (Jikan API)
   app.get('/api/external/anime/search', async (req, res) => {
     try {

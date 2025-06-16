@@ -146,6 +146,15 @@ export interface IStorage {
   deleteAdminPost(id: number): Promise<void>;
   getPublicPosts(): Promise<any[]>;
   
+  // Posts operations for frontend
+  getPublishedPosts(): Promise<AdminPost[]>;
+  getPost(id: number): Promise<AdminPost | undefined>;
+  createPost(post: InsertAdminPost): Promise<AdminPost>;
+  
+  // Animal anime operations
+  getAnimalAnimes(limit?: number): Promise<Anime[]>;
+  searchAnimalAnimes(query: string): Promise<Anime[]>;
+  
   // Extended admin operations
   getUsersPaginated(limit: number, offset: number): Promise<User[]>;
   updateUserAdmin(userId: string, updates: any): Promise<User>;
@@ -953,6 +962,43 @@ export class DatabaseStorage implements IStorage {
     
     // Clean up favorites for deleted anime/manga
     await db.delete(animeFavorites).where(sql`${animeFavorites.animeId} NOT IN (SELECT id FROM ${animes})`);
+  }
+
+  // Posts operations for frontend
+  async getPublishedPosts(): Promise<AdminPost[]> {
+    return await db.select().from(adminPosts).where(eq(adminPosts.isPublished, true)).orderBy(desc(adminPosts.createdAt));
+  }
+
+  async getPost(id: number): Promise<AdminPost | undefined> {
+    const [post] = await db.select().from(adminPosts).where(eq(adminPosts.id, id));
+    return post;
+  }
+
+  async createPost(postData: InsertAdminPost): Promise<AdminPost> {
+    const [post] = await db.insert(adminPosts).values(postData).returning();
+    return post;
+  }
+
+  // Animal anime operations
+  async getAnimalAnimes(limit: number = 20): Promise<Anime[]> {
+    // Get animes with animal themes or characters
+    return await db.select()
+      .from(animes)
+      .where(sql`${animes.title} ILIKE '%animal%' OR ${animes.title} ILIKE '%cat%' OR ${animes.title} ILIKE '%dog%' OR ${animes.synopsis} ILIKE '%animal%'`)
+      .limit(limit)
+      .orderBy(desc(animes.createdAt));
+  }
+
+  async searchAnimalAnimes(query: string): Promise<Anime[]> {
+    return await db.select()
+      .from(animes)
+      .where(
+        and(
+          like(animes.title, `%${query}%`),
+          sql`(${animes.title} ILIKE '%animal%' OR ${animes.title} ILIKE '%cat%' OR ${animes.title} ILIKE '%dog%' OR ${animes.synopsis} ILIKE '%animal%')`
+        )
+      )
+      .limit(20);
   }
 }
 
