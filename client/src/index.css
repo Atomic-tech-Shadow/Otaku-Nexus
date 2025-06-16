@@ -33,6 +33,13 @@
   --card-bg: hsl(0, 0%, 10%);
   --secondary-bg: hsl(0, 0%, 15%);
   
+  /* Streaming page specific colors */
+  --streaming-bg: hsl(0, 0%, 5%);
+  --streaming-card: hsl(0, 0%, 11%);
+  --streaming-steel: hsl(210, 10%, 17%);
+  --streaming-purple: hsl(270, 80%, 62%);
+  --streaming-cyan: hsl(180, 100%, 50%);
+  
   /* App-specific theme colors */
   --app-bg: hsl(0, 0%, 6%);
   --text-primary: hsl(0, 0%, 98%);
@@ -222,6 +229,35 @@
 
 .bg-accent-hover {
   background-color: var(--accent-hover);
+}
+
+/* Streaming page utility classes */
+.bg-streaming-bg {
+  background-color: var(--streaming-bg);
+}
+
+.bg-streaming-card {
+  background-color: var(--streaming-card);
+}
+
+.bg-streaming-steel {
+  background-color: var(--streaming-steel);
+}
+
+.text-streaming-purple {
+  color: var(--streaming-purple);
+}
+
+.bg-streaming-purple {
+  background-color: var(--streaming-purple);
+}
+
+.text-streaming-cyan {
+  color: var(--streaming-cyan);
+}
+
+.bg-streaming-cyan {
+  background-color: var(--streaming-cyan);
 }
 
 .border-border {
@@ -454,6 +490,61 @@
 
 .animate-electric-pulse {
   animation: electric-pulse 2s ease-in-out infinite;
+}
+
+/* Streaming page specific animations */
+@keyframes neon-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px var(--streaming-purple), 0 0 20px var(--streaming-purple), 0 0 30px var(--streaming-purple);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--streaming-cyan), 0 0 30px var(--streaming-cyan), 0 0 40px var(--streaming-cyan);
+  }
+}
+
+@keyframes search-focus {
+  0% {
+    box-shadow: 0 0 0 rgba(159, 90, 253, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(159, 90, 253, 0.1), 0 0 20px rgba(159, 90, 253, 0.3);
+  }
+}
+
+@keyframes card-hover-neon {
+  0% {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+  100% {
+    box-shadow: 0 8px 30px rgba(0, 255, 255, 0.3), 0 0 20px rgba(159, 90, 253, 0.2);
+  }
+}
+
+@keyframes skeleton-wave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-neon-glow {
+  animation: neon-glow 3s ease-in-out infinite;
+}
+
+.animate-search-focus {
+  animation: search-focus 0.3s ease-out forwards;
+}
+
+.animate-card-hover-neon {
+  animation: card-hover-neon 0.3s ease-out forwards;
+}
+
+.animate-skeleton-wave {
+  animation: skeleton-wave 2s linear infinite;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background-size: 200% 100%;
 }
 
 /* Mobile-first responsive design */
