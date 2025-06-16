@@ -49,11 +49,15 @@ class AnimeSamaService {
         throw new Error(`API returned ${response.status}`);
       }
       const data = await response.json();
-      // Handle different response structures from the API
-      if (data.data && Array.isArray(data.data)) return data.data;
-      if (data.results && Array.isArray(data.results)) return data.results;
-      if (data.items && Array.isArray(data.items)) return data.items;
-      if (Array.isArray(data)) return data;
+      // Handle search response structure: data array
+      if (data.success && data.data && Array.isArray(data.data)) {
+        return data.data.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          image: item.image,
+          language: 'VF+VOSTFR' // Default for anime-sama
+        }));
+      }
       return [];
     } catch (error) {
       console.error('Error searching anime:', error);
@@ -214,7 +218,25 @@ class AnimeSamaService {
         throw new Error(`API returned ${response.status}`);
       }
       const data = await response.json();
-      return data.data || data.results || [];
+      // Handle trending response structure: data array
+      if (data.success && data.data && Array.isArray(data.data)) {
+        return data.data.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          image: item.image,
+          language: 'VF+VOSTFR' // Default for anime-sama
+        }));
+      }
+      // If trending returns direct array format
+      if (Array.isArray(data)) {
+        return data.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          image: item.image,
+          language: 'VF+VOSTFR'
+        }));
+      }
+      return [];
     } catch (error) {
       console.error('Error fetching trending anime:', error);
       return [];
@@ -258,11 +280,15 @@ class AnimeSamaService {
         throw new Error(`API returned ${response.status}`);
       }
       const data = await response.json();
-      // Handle different response structures from the API
-      if (data.data && Array.isArray(data.data)) return data.data;
-      if (data.results && Array.isArray(data.results)) return data.results;
-      if (data.items && Array.isArray(data.items)) return data.items;
-      if (Array.isArray(data)) return data;
+      // Handle catalogue response structure: data.items
+      if (data.success && data.data && data.data.items && Array.isArray(data.data.items)) {
+        return data.data.items.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          image: item.image,
+          language: 'VF+VOSTFR' // Default for anime-sama
+        }));
+      }
       return [];
     } catch (error) {
       console.error('Error fetching catalogue:', error);
