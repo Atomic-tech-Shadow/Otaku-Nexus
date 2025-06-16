@@ -1,4 +1,4 @@
-import { Home, Search, Heart, MessageCircle, User, Gamepad2, Play, BookOpen, Brain, Monitor } from "lucide-react";
+import { Home, MessageCircle, User, BookOpen, Brain, Monitor } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from '@/hooks/useAuth';
@@ -10,17 +10,14 @@ interface BottomNavigationProps {
 export default function BottomNavigation({ currentPath: propCurrentPath }: BottomNavigationProps) {
   const [location] = useLocation();
   const currentPath = propCurrentPath || location;
-  const { user } = useAuth();
-  const ADMIN_USER_ID = "43652320";
-  const isAdmin = user?.id === ADMIN_USER_ID;
 
   const navItems = [
     { icon: Home, label: "Home", path: "/" },
-    { icon: Search, label: "Anime", path: "/anime" },
+    { icon: MessageCircle, label: "Chat", path: "/chat" },
+    { icon: Monitor, label: "Streaming", path: "/anime-streaming" },
+    { icon: User, label: "Profil", path: "/profile" },
     { icon: BookOpen, label: "Manga", path: "/manga" },
     { icon: Brain, label: "Quiz", path: "/quiz" },
-    { icon: Play, label: "Videos", path: "/videos" },
-    { icon: User, label: "Profil", path: "/profile" },
   ];
 
   return (
