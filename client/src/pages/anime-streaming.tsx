@@ -687,7 +687,7 @@ export default function AnimeStreamingPage() {
               <TabsContent value="vf">
                 <div className="space-y-4">
                   {streamingLinks.vf.map((link, index) => (
-                    <Card key={index} className="bg-streaming-card border-streaming-steel/30">
+                    <Card key={index} className="bg-gray-800 border-gray-600/30">
                       <CardContent className="p-6">
                         <div className="aspect-video bg-black rounded-lg overflow-hidden">
                           <iframe
