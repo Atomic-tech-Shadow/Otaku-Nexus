@@ -408,8 +408,8 @@ export default function AnimeStreamingPage() {
                 <SelectValue placeholder="Genre" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tous les genres</SelectItem>
-                {genres.map((genre) => (
+                <SelectItem value="all">Tous les genres</SelectItem>
+                {genres?.map((genre) => (
                   <SelectItem key={genre.slug} value={genre.slug}>
                     {genre.name}
                   </SelectItem>
@@ -422,7 +422,7 @@ export default function AnimeStreamingPage() {
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Tous les types</SelectItem>
+              <SelectItem value="all">Tous les types</SelectItem>
               <SelectItem value="anime">Anime</SelectItem>
               <SelectItem value="film">Film</SelectItem>
               <SelectItem value="ova">OVA</SelectItem>
