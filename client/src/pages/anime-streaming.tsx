@@ -524,7 +524,7 @@ export default function AnimeStreamingPage() {
                               <h4 className="text-white font-medium">{season.title}</h4>
                               <p className="text-gray-400 text-sm">{season.episodes.length} épisodes</p>
                             </div>
-                            <ChevronDown className="w-5 h-5 text-streaming-purple transform rotate-[-90deg]" />
+                            <ChevronDown className="w-5 h-5 text-purple-400 transform rotate-[-90deg]" />
                           </div>
                         </CardContent>
                       </Card>
@@ -553,7 +553,7 @@ export default function AnimeStreamingPage() {
         <div className="flex items-center justify-between mb-8">
           <Button
             variant="ghost"
-            className="text-gray-300 hover:text-streaming-cyan"
+            className="text-gray-300 hover:text-cyan-400"
             onClick={() => setCurrentView('anime-details')}
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
@@ -576,16 +576,16 @@ export default function AnimeStreamingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="group bg-streaming-card rounded-xl overflow-hidden cursor-pointer hover:animate-card-hover-neon transition-all duration-300"
+              className="group bg-gray-800 rounded-xl overflow-hidden cursor-pointer hover:scale-105 hover:shadow-xl transition-all duration-300"
               onClick={() => handleEpisodeSelect(episode)}
             >
               <div className="p-6">
                 <div className="flex items-center space-x-4 mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-streaming-purple to-streaming-cyan rounded-full flex items-center justify-center text-white font-bold">
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold">
                     {episode.number}
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-white font-medium group-hover:text-streaming-cyan transition-colors">
+                    <h3 className="text-white font-medium group-hover:text-cyan-400 transition-colors">
                       Épisode {episode.number}
                     </h3>
                     {episode.title && (
@@ -603,8 +603,8 @@ export default function AnimeStreamingPage() {
                       <Badge className="bg-blue-500 text-white text-xs">VOSTFR</Badge>
                     )}
                   </div>
-                  <div className="w-8 h-8 bg-streaming-purple/20 rounded-full flex items-center justify-center group-hover:bg-streaming-purple transition-colors">
-                    <Play className="w-4 h-4 text-streaming-purple group-hover:text-white ml-0.5" />
+                  <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center group-hover:bg-purple-500 transition-colors">
+                    <Play className="w-4 h-4 text-purple-400 group-hover:text-white ml-0.5" />
                   </div>
                 </div>
               </div>
@@ -629,7 +629,7 @@ export default function AnimeStreamingPage() {
         <div className="flex items-center justify-between mb-8">
           <Button
             variant="ghost"
-            className="text-gray-300 hover:text-streaming-cyan"
+            className="text-gray-300 hover:text-cyan-400"
             onClick={() => setCurrentView('episodes')}
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
@@ -647,15 +647,15 @@ export default function AnimeStreamingPage() {
         {/* Video Player */}
         <div className="max-w-6xl mx-auto">
           <Tabs defaultValue="vostfr" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-streaming-card mb-6">
+            <TabsList className="grid w-full grid-cols-2 bg-gray-800 mb-6">
               {streamingLinks.vostfr && (
-                <TabsTrigger value="vostfr" className="data-[state=active]:bg-streaming-purple">
+                <TabsTrigger value="vostfr" className="data-[state=active]:bg-purple-500">
                   <Languages className="w-4 h-4 mr-2" />
                   VOSTFR
                 </TabsTrigger>
               )}
               {streamingLinks.vf && (
-                <TabsTrigger value="vf" className="data-[state=active]:bg-streaming-purple">
+                <TabsTrigger value="vf" className="data-[state=active]:bg-purple-500">
                   <Globe className="w-4 h-4 mr-2" />
                   VF
                 </TabsTrigger>
@@ -666,7 +666,7 @@ export default function AnimeStreamingPage() {
               <TabsContent value="vostfr">
                 <div className="space-y-4">
                   {streamingLinks.vostfr.map((link, index) => (
-                    <Card key={index} className="bg-streaming-card border-streaming-steel/30">
+                    <Card key={index} className="bg-gray-800 border-gray-600/30">
                       <CardContent className="p-6">
                         <div className="aspect-video bg-black rounded-lg overflow-hidden">
                           <iframe
