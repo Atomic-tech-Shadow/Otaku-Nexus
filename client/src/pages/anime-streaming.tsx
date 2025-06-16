@@ -180,19 +180,19 @@ export default function AnimeStreamingPage() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <Button variant="ghost" className="text-gray-300 hover:text-streaming-cyan transition-colors">
+            <Button variant="ghost" className="text-gray-300 hover:text-cyan-400 transition-colors">
               <Home className="w-4 h-4 mr-2" />
               Accueil
             </Button>
-            <Button variant="ghost" className="text-gray-300 hover:text-streaming-cyan transition-colors">
+            <Button variant="ghost" className="text-gray-300 hover:text-cyan-400 transition-colors">
               <Grid className="w-4 h-4 mr-2" />
               Catalogue
             </Button>
-            <Button variant="ghost" className="text-streaming-purple font-medium border-b-2 border-streaming-purple">
+            <Button variant="ghost" className="text-purple-400 font-medium border-b-2 border-purple-400">
               <Tv className="w-4 h-4 mr-2" />
               Streaming
             </Button>
-            <Button variant="ghost" className="text-gray-300 hover:text-streaming-cyan transition-colors">
+            <Button variant="ghost" className="text-gray-300 hover:text-cyan-400 transition-colors">
               <TrendingUp className="w-4 h-4 mr-2" />
               Tendances
             </Button>
@@ -200,7 +200,7 @@ export default function AnimeStreamingPage() {
 
           {/* User Menu */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="outline" size="sm" className="border-streaming-steel text-gray-300 hover:border-streaming-cyan">
+            <Button variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:border-cyan-400">
               <User className="w-4 h-4 mr-2" />
               Compte
             </Button>
@@ -222,26 +222,26 @@ export default function AnimeStreamingPage() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden mt-4 pb-4 border-t border-streaming-steel/30 pt-4"
+            className="md:hidden mt-4 pb-4 border-t border-gray-600/30 pt-4"
           >
             <nav className="flex flex-col space-y-3">
-              <Button variant="ghost" className="justify-start text-gray-300 hover:text-streaming-cyan">
+              <Button variant="ghost" className="justify-start text-gray-300 hover:text-cyan-400">
                 <Home className="w-4 h-4 mr-3" />
                 Accueil
               </Button>
-              <Button variant="ghost" className="justify-start text-gray-300 hover:text-streaming-cyan">
+              <Button variant="ghost" className="justify-start text-gray-300 hover:text-cyan-400">
                 <Grid className="w-4 h-4 mr-3" />
                 Catalogue
               </Button>
-              <Button variant="ghost" className="justify-start text-streaming-purple font-medium">
+              <Button variant="ghost" className="justify-start text-purple-400 font-medium">
                 <Tv className="w-4 h-4 mr-3" />
                 Streaming
               </Button>
-              <Button variant="ghost" className="justify-start text-gray-300 hover:text-streaming-cyan">
+              <Button variant="ghost" className="justify-start text-gray-300 hover:text-cyan-400">
                 <TrendingUp className="w-4 h-4 mr-3" />
                 Tendances
               </Button>
-              <Button variant="outline" className="justify-start border-streaming-steel text-gray-300">
+              <Button variant="outline" className="justify-start border-gray-600 text-gray-300">
                 <User className="w-4 h-4 mr-3" />
                 Compte
               </Button>
@@ -256,9 +256,9 @@ export default function AnimeStreamingPage() {
   const HeroSearchSection = () => (
     <section className="relative py-16 md:py-24 overflow-hidden">
       {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-to-br from-streaming-purple/10 via-transparent to-streaming-cyan/10" />
-      <div className="absolute top-20 left-10 w-32 h-32 bg-streaming-purple/20 rounded-full blur-3xl animate-pulse-slow" />
-      <div className="absolute bottom-20 right-10 w-40 h-40 bg-streaming-cyan/20 rounded-full blur-3xl animate-pulse-slow" />
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-cyan-500/10" />
+      <div className="absolute top-20 left-10 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-20 right-10 w-40 h-40 bg-cyan-500/20 rounded-full blur-3xl animate-pulse" />
       
       <div className="container mx-auto px-4 text-center relative z-10">
         <motion.div
@@ -266,12 +266,12 @@ export default function AnimeStreamingPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-streaming-purple to-streaming-cyan mb-8 animate-neon-glow">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 mb-8">
             <Play className="w-10 h-10 text-white" />
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold mb-6">
-            <span className="bg-gradient-to-r from-streaming-purple via-streaming-cyan to-white bg-clip-text text-transparent animate-glow">
+            <span className="bg-gradient-to-r from-purple-500 via-cyan-500 to-white bg-clip-text text-transparent">
               Streaming
             </span>
           </h1>
@@ -282,7 +282,7 @@ export default function AnimeStreamingPage() {
 
           {/* Search Bar */}
           <div className="max-w-2xl mx-auto relative">
-            <div className={`relative transition-all duration-300 ${searchFocused ? 'animate-search-focus' : ''}`}>
+            <div className="relative transition-all duration-300">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
                 type="text"
@@ -328,7 +328,7 @@ export default function AnimeStreamingPage() {
                         className={`mt-1 text-xs ${
                           anime.language === 'VF' ? 'border-green-500 text-green-400' :
                           anime.language === 'VOSTFR' ? 'border-blue-500 text-blue-400' :
-                          'border-streaming-purple text-streaming-purple'
+                          'border-purple-500 text-purple-400'
                         }`}
                       >
                         {anime.language}
@@ -360,7 +360,7 @@ export default function AnimeStreamingPage() {
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-white">Tendances</h2>
           </div>
-          <Button variant="outline" size="sm" className="border-streaming-steel text-gray-300 hover:border-streaming-cyan">
+          <Button variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:border-cyan-400">
             Voir tout
           </Button>
         </motion.div>
