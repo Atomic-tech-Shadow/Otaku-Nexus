@@ -604,6 +604,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Routes AnimeSama avec préfixe spécifique
+  app.get("/api/anime-sama/search", async (req, res) => {
+    try {
+      const { q } = req.query;
+      if (!q || typeof q !== 'string') {
+        return res.status(400).json({ error: "Query parameter 'q' is required" });
+      }
+
+      const { animeSamaService } = await import("./anime-sama-api");
+      const results = await animeSamaService.searchAnime(q);
+      res.json(results);
+    } catch (error) {
+      console.error("Error searching anime:", error);
+      res.status(500).json({ error: "Failed to search anime" });
+    }
+  });
+
+  app.get("/api/anime-sama/anime/:animeId", async (req, res) => {
+    try {
+      const { animeId } = req.params;
+      const { animeSamaService } = await import("./anime-sama-api");
+      const animeInfo = await animeSamaService.getAnimeDetails(animeId);
+      
+      if (!animeInfo) {
+        return res.status(404).json({ error: "Anime not found" });
+      }
+
+      res.json(animeInfo);
+    } catch (error) {
+      console.error("Error fetching anime details:", error);
+      res.status(500).json({ error: "Failed to fetch anime details" });
+    }
+  });
+
+  app.get("/api/anime-sama/episode/:episodeId/streaming", async (req, res) => {
+    try {
+      const { episodeId } = req.params;
+      const { animeSamaService } = await import("./anime-sama-api");
+      const streamingLinks = await animeSamaService.getEpisodeStreaming(episodeId);
+      
+      if (!streamingLinks) {
+        return res.status(404).json({ error: "Episode streaming links not found" });
+      }
+
+      res.json(streamingLinks);
+    } catch (error) {
+      console.error("Error fetching episode streaming:", error);
+      res.status(500).json({ error: "Failed to fetch episode streaming links" });
+    }
+  });
+
   app.get("/api/anime/episode/:episodeId/sources", async (req, res) => {
     try {
       const { episodeId } = req.params;

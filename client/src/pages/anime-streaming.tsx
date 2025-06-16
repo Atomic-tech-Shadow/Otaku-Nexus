@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import BottomNavigation from '@/components/layout/bottom-navigation';
+import AppHeader from '@/components/layout/app-header';
 
 interface AnimeSamaAnime {
   id: string;
@@ -69,18 +71,24 @@ export default function AnimeStreamingPage() {
   const [searchFocused, setSearchFocused] = useState(false);
 
   // Fetch trending anime
-  const { data: trendingAnime, isLoading: isLoadingTrending } = useQuery<AnimeSamaSearchResult[]>({
+  const { data: trendingAnime = [], isLoading: isLoadingTrending } = useQuery<AnimeSamaSearchResult[]>({
     queryKey: ['/api/trending'],
+    retry: 1,
+    staleTime: 10 * 60 * 1000,
   });
 
   // Fetch genres
-  const { data: genres } = useQuery<AnimeSamaGenre[]>({
+  const { data: genres = [] } = useQuery<AnimeSamaGenre[]>({
     queryKey: ['/api/genres'],
+    retry: 1,
+    staleTime: 30 * 60 * 1000,
   });
 
   // Fetch catalogue
-  const { data: catalogueAnime, isLoading: isLoadingCatalogue } = useQuery<AnimeSamaSearchResult[]>({
+  const { data: catalogueAnime = [], isLoading: isLoadingCatalogue } = useQuery<AnimeSamaSearchResult[]>({
     queryKey: ['/api/catalogue', cataloguePage, selectedGenre, selectedType],
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Search function
@@ -92,9 +100,12 @@ export default function AnimeStreamingPage() {
 
     setIsSearching(true);
     try {
-      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`/api/anime-sama/search?q=${encodeURIComponent(query)}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
-      setSearchResults(data || []);
+      setSearchResults(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Search error:', error);
       setSearchResults([]);
@@ -114,7 +125,10 @@ export default function AnimeStreamingPage() {
   // Get anime details
   const handleAnimeSelect = async (animeId: string) => {
     try {
-      const response = await fetch(`/api/anime/${animeId}`);
+      const response = await fetch(`/api/anime-sama/anime/${animeId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const animeData = await response.json();
       setSelectedAnime(animeData);
       setCurrentView('anime-details');
@@ -133,12 +147,18 @@ export default function AnimeStreamingPage() {
   const handleEpisodeSelect = async (episode: AnimeSamaEpisode) => {
     setSelectedEpisode(episode);
     try {
-      const response = await fetch(`/api/episode/${episode.id}/streaming`);
+      const response = await fetch(`/api/anime-sama/episode/${episode.id}/streaming`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const links = await response.json();
       setStreamingLinks(links);
       setCurrentView('streaming');
     } catch (error) {
       console.error('Error fetching streaming links:', error);
+      // Use demo links from the episode object
+      setStreamingLinks(episode.links);
+      setCurrentView('streaming');
     }
   };
 
@@ -710,8 +730,8 @@ export default function AnimeStreamingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-streaming-bg text-white">
-      <NavigationHeader />
+    <div className="min-h-screen bg-dark-bg text-white pb-20">
+      <AppHeader />
       
       {currentView === 'search' && (
         <>
@@ -722,6 +742,8 @@ export default function AnimeStreamingPage() {
       {currentView === 'anime-details' && <AnimeDetailsView />}
       {currentView === 'episodes' && <EpisodesView />}
       {currentView === 'streaming' && <StreamingView />}
+      
+      <BottomNavigation />
     </div>
   );
 }
