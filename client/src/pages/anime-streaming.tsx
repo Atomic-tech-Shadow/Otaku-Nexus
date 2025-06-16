@@ -355,7 +355,7 @@ export default function AnimeStreamingPage() {
           className="flex items-center justify-between mb-8"
         >
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-streaming-purple to-streaming-cyan rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-lg flex items-center justify-center">
               <TrendingUp className="w-5 h-5 text-white" />
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-white">Tendances</h2>
@@ -368,7 +368,7 @@ export default function AnimeStreamingPage() {
         {isLoadingTrending ? (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-streaming-card rounded-xl overflow-hidden animate-skeleton-wave h-80" />
+              <div key={i} className="bg-gray-800 rounded-xl overflow-hidden animate-pulse h-80" />
             ))}
           </div>
         ) : (
@@ -391,7 +391,7 @@ export default function AnimeStreamingPage() {
                   hidden: { opacity: 0, y: 30 },
                   show: { opacity: 1, y: 0 }
                 }}
-                className="group relative bg-streaming-card rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:animate-card-hover-neon"
+                className="group relative bg-gray-800 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl"
                 onClick={() => handleAnimeSelect(anime.id)}
               >
                 <div className="aspect-[3/4] relative overflow-hidden">
@@ -404,7 +404,7 @@ export default function AnimeStreamingPage() {
                   
                   {/* Play Button */}
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-12 h-12 bg-streaming-purple/90 rounded-full flex items-center justify-center backdrop-blur-sm">
+                    <div className="w-12 h-12 bg-purple-500/90 rounded-full flex items-center justify-center backdrop-blur-sm">
                       <Play className="w-6 h-6 text-white ml-1" />
                     </div>
                   </div>
@@ -414,7 +414,7 @@ export default function AnimeStreamingPage() {
                     className={`absolute top-2 right-2 text-xs ${
                       anime.language === 'VF' ? 'bg-green-500' :
                       anime.language === 'VOSTFR' ? 'bg-blue-500' :
-                      'bg-streaming-purple'
+                      'bg-purple-500'
                     }`}
                   >
                     {anime.language}
@@ -422,7 +422,7 @@ export default function AnimeStreamingPage() {
                 </div>
                 
                 <div className="p-3">
-                  <h3 className="text-white font-medium text-sm line-clamp-2 group-hover:text-streaming-cyan transition-colors">
+                  <h3 className="text-white font-medium text-sm line-clamp-2 group-hover:text-cyan-400 transition-colors">
                     {anime.title}
                   </h3>
                 </div>
@@ -451,7 +451,7 @@ export default function AnimeStreamingPage() {
             alt={selectedAnime.title}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-streaming-bg via-streaming-bg/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent" />
           
           {/* Back Button */}
           <Button
@@ -494,11 +494,11 @@ export default function AnimeStreamingPage() {
               
               <div className="flex flex-wrap gap-2 mb-6">
                 {selectedAnime.genres?.map((genre) => (
-                  <Badge key={genre} variant="outline" className="border-streaming-purple text-streaming-purple">
+                  <Badge key={genre} variant="outline" className="border-purple-500 text-purple-400">
                     {genre}
                   </Badge>
                 ))}
-                <Badge className="bg-streaming-cyan text-black">
+                <Badge className="bg-cyan-500 text-black">
                   {selectedAnime.language}
                 </Badge>
               </div>
@@ -515,7 +515,7 @@ export default function AnimeStreamingPage() {
                     {selectedAnime.seasons.map((season) => (
                       <Card 
                         key={season.seasonNumber}
-                        className="bg-streaming-card/50 border-streaming-steel/30 cursor-pointer hover:border-streaming-purple transition-all duration-300"
+                        className="bg-gray-800/50 border-gray-600/30 cursor-pointer hover:border-purple-500 transition-all duration-300"
                         onClick={() => handleSeasonSelect(season)}
                       >
                         <CardContent className="p-4">
