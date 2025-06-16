@@ -49,7 +49,12 @@ class AnimeSamaService {
         throw new Error(`API returned ${response.status}`);
       }
       const data = await response.json();
-      return data.data || data.results || [];
+      // Handle different response structures from the API
+      if (data.data && Array.isArray(data.data)) return data.data;
+      if (data.results && Array.isArray(data.results)) return data.results;
+      if (data.items && Array.isArray(data.items)) return data.items;
+      if (Array.isArray(data)) return data;
+      return [];
     } catch (error) {
       console.error('Error searching anime:', error);
       return [];
@@ -155,16 +160,15 @@ class AnimeSamaService {
   // 3. Épisodes d'une saison
   async getSeasonEpisodes(animeId: string, seasonNum: number): Promise<AnimeSamaEpisode[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/anime/${animeId}/season/${seasonNum}/episodes`);
+      const response = await fetch(`${this.baseUrl}/api/anime/${animeId}/season/${seasonNum}/episodes`);
       if (!response.ok) {
-        console.warn(`Anime-sama API returned ${response.status}, using demo data`);
-        return this.getDemoSeasonEpisodes(animeId, seasonNum);
+        throw new Error(`API returned ${response.status}`);
       }
       const data = await response.json();
-      return data.episodes || [];
+      return data.data || data.episodes || [];
     } catch (error) {
-      console.warn('Anime-sama API unavailable, using demo data:', error);
-      return this.getDemoSeasonEpisodes(animeId, seasonNum);
+      console.error('Error fetching season episodes:', error);
+      return [];
     }
   }
 
@@ -183,16 +187,15 @@ class AnimeSamaService {
   // 4. Liens de streaming d'un épisode
   async getEpisodeStreaming(episodeId: string): Promise<{ vf?: string[]; vostfr?: string[] } | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/episode/${episodeId}`);
+      const response = await fetch(`${this.baseUrl}/api/episode/${episodeId}`);
       if (!response.ok) {
-        console.warn(`Anime-sama API returned ${response.status}, using demo data`);
-        return this.getDemoStreamingLinks(episodeId);
+        throw new Error(`API returned ${response.status}`);
       }
       const data = await response.json();
-      return data.links || null;
+      return data.data || data.links || null;
     } catch (error) {
-      console.warn('Anime-sama API unavailable, using demo data:', error);
-      return this.getDemoStreamingLinks(episodeId);
+      console.error('Error fetching episode streaming:', error);
+      return null;
     }
   }
 
@@ -206,16 +209,15 @@ class AnimeSamaService {
   // 5. Animés tendances
   async getTrendingAnime(): Promise<AnimeSamaSearchResult[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/trending`);
+      const response = await fetch(`${this.baseUrl}/api/trending`);
       if (!response.ok) {
-        console.warn(`Anime-sama API returned ${response.status}, using demo data`);
-        return this.getDemoTrendingAnime();
+        throw new Error(`API returned ${response.status}`);
       }
       const data = await response.json();
-      return data.results || [];
+      return data.data || data.results || [];
     } catch (error) {
-      console.warn('Anime-sama API unavailable, using demo data:', error);
-      return this.getDemoTrendingAnime();
+      console.error('Error fetching trending anime:', error);
+      return [];
     }
   }
 
@@ -251,16 +253,20 @@ class AnimeSamaService {
         ...(type && type !== 'all' && { type })
       });
       
-      const response = await fetch(`${this.baseUrl}/catalogue?${params}`);
+      const response = await fetch(`${this.baseUrl}/api/catalogue?${params}`);
       if (!response.ok) {
-        console.warn(`Anime-sama API returned ${response.status}, using demo data`);
-        return this.getDemoCatalogue(page, genre, type);
+        throw new Error(`API returned ${response.status}`);
       }
       const data = await response.json();
-      return data.results || [];
+      // Handle different response structures from the API
+      if (data.data && Array.isArray(data.data)) return data.data;
+      if (data.results && Array.isArray(data.results)) return data.results;
+      if (data.items && Array.isArray(data.items)) return data.items;
+      if (Array.isArray(data)) return data;
+      return [];
     } catch (error) {
-      console.warn('Anime-sama API unavailable, using demo data:', error);
-      return this.getDemoCatalogue(page, genre, type);
+      console.error('Error fetching catalogue:', error);
+      return [];
     }
   }
 
@@ -289,16 +295,15 @@ class AnimeSamaService {
   // 7. Animé aléatoire
   async getRandomAnime(): Promise<AnimeSamaAnime | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/random`);
+      const response = await fetch(`${this.baseUrl}/api/random`);
       if (!response.ok) {
-        console.warn(`Anime-sama API returned ${response.status}, using demo data`);
-        return this.getDemoRandomAnime();
+        throw new Error(`API returned ${response.status}`);
       }
       const data = await response.json();
-      return data;
+      return data.data || data;
     } catch (error) {
-      console.warn('Anime-sama API unavailable, using demo data:', error);
-      return this.getDemoRandomAnime();
+      console.error('Error fetching random anime:', error);
+      return null;
     }
   }
 
@@ -317,49 +322,31 @@ class AnimeSamaService {
         ...(type && type !== 'all' && { type })
       });
       
-      const response = await fetch(`${this.baseUrl}/search/advanced?${params}`);
+      const response = await fetch(`${this.baseUrl}/api/search/advanced?${params}`);
       if (!response.ok) {
-        console.warn(`Anime-sama API returned ${response.status}, using demo data`);
-        return this.getDemoAdvancedSearch(genre, year, type);
+        throw new Error(`API returned ${response.status}`);
       }
       const data = await response.json();
-      return data.results || [];
+      return data.data || data.results || [];
     } catch (error) {
-      console.warn('Anime-sama API unavailable, using demo data:', error);
-      return this.getDemoAdvancedSearch(genre, year, type);
+      console.error('Error in advanced search:', error);
+      return [];
     }
-  }
-
-  private getDemoAdvancedSearch(genre?: string, year?: string, type?: string): AnimeSamaSearchResult[] {
-    return this.getDemoSearchResults('').filter(() => Math.random() > 0.4);
   }
 
   // 9. Liste des genres
   async getGenres(): Promise<AnimeSamaGenre[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/genres`);
+      const response = await fetch(`${this.baseUrl}/api/genres`);
       if (!response.ok) {
-        console.warn(`Anime-sama API returned ${response.status}, using demo data`);
-        return this.getDemoGenres();
+        throw new Error(`API returned ${response.status}`);
       }
       const data = await response.json();
-      return data.genres || [];
+      return data.data || data.genres || [];
     } catch (error) {
-      console.warn('Anime-sama API unavailable, using demo data:', error);
-      return this.getDemoGenres();
+      console.error('Error fetching genres:', error);
+      return [];
     }
-  }
-
-  private getDemoGenres(): AnimeSamaGenre[] {
-    return [
-      { name: 'Action', slug: 'action' },
-      { name: 'Aventure', slug: 'aventure' },
-      { name: 'Comédie', slug: 'comedie' },
-      { name: 'Drame', slug: 'drame' },
-      { name: 'Romance', slug: 'romance' },
-      { name: 'Fantastique', slug: 'fantastique' },
-      { name: 'Science-fiction', slug: 'sci-fi' }
-    ];
   }
 }
 
