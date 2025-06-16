@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
 import { TwitterVerificationBadge, FacebookVerificationBadge } from "@/components/ui/verification-badges";
 import { ModernAvatar } from "@/components/ui/modern-avatar";
+import MainNavigation from "./main-navigation";
 
 export default function AppHeader() {
   const { user } = useAuth();
@@ -14,6 +15,7 @@ export default function AppHeader() {
 
   return (
     <header className="relative z-10 p-4 bg-gradient-to-r from-card-bg to-secondary-bg">
+      <MainNavigation />
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           {/* Profile image */}

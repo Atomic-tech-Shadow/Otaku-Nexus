@@ -301,7 +301,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserWatchHistory(userId: string, animeId?: number): Promise<AnimeWatchHistory[]> {
-    const query = db
+    const whereConditions = animeId 
+      ? and(eq(animeWatchHistory.userId, userId), eq(animes.id, animeId))
+      : eq(animeWatchHistory.userId, userId);
+
+    const result = await db
       .select({
         id: animeWatchHistory.id,
         userId: animeWatchHistory.userId,
@@ -318,13 +322,10 @@ export class DatabaseStorage implements IStorage {
       .from(animeWatchHistory)
       .innerJoin(animeEpisodes, eq(animeWatchHistory.episodeId, animeEpisodes.id))
       .innerJoin(animes, eq(animeEpisodes.animeId, animes.id))
-      .where(eq(animeWatchHistory.userId, userId));
+      .where(whereConditions)
+      .orderBy(desc(animeWatchHistory.watchedAt));
 
-    if (animeId) {
-      query = query.where(eq(animes.id, animeId));
-    }
-
-    return await query.orderBy(desc(animeWatchHistory.watchedAt)) as any[];
+    return result as any[];
   }
 
   async updateWatchHistory(history: InsertAnimeWatchHistory): Promise<AnimeWatchHistory> {
@@ -427,13 +428,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserReadingProgress(userId: string, mangaId?: number): Promise<MangaReadingProgress[]> {
-    const query = db.select().from(mangaReadingProgress).where(eq(mangaReadingProgress.userId, userId));
+    const whereConditions = mangaId 
+      ? and(eq(mangaReadingProgress.userId, userId), eq(mangaReadingProgress.mangaId, mangaId))
+      : eq(mangaReadingProgress.userId, userId);
 
-    if (mangaId) {
-      query.where(eq(mangaReadingProgress.mangaId, mangaId));
-    }
+    const result = await db
+      .select()
+      .from(mangaReadingProgress)
+      .where(whereConditions)
+      .orderBy(desc(mangaReadingProgress.updatedAt));
 
-    return await query.orderBy(desc(mangaReadingProgress.updatedAt));
+    return result;
   }
 
   async updateReadingProgress(progress: InsertMangaReadingProgress): Promise<MangaReadingProgress> {
