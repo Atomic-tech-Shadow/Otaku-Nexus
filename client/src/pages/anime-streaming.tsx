@@ -235,10 +235,10 @@ export default function AnimeStreamingPage() {
                   <div>
                     <h3 className="text-white text-lg font-semibold mb-2">Saisons</h3>
                     <div className="flex flex-wrap gap-2">
-                      {selectedAnime.seasons.map((season) => (
+                      {selectedAnime.seasons.map((season, index) => (
                         <Button
-                          key={season.seasonNumber}
-                          onClick={() => handleSeasonSelect(selectedAnime.id, season.seasonNumber)}
+                          key={`season-${season.seasonNumber || index}`}
+                          onClick={() => handleSeasonSelect(selectedAnime.id, season.seasonNumber || index + 1)}
                           className="bg-purple-600 hover:bg-purple-700"
                         >
                           {season.title} - Voir les épisodes
