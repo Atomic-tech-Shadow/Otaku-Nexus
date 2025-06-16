@@ -321,7 +321,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(animeWatchHistory.userId, userId));
 
     if (animeId) {
-      query.where(eq(animes.id, animeId));
+      query = query.where(eq(animes.id, animeId));
     }
 
     return await query.orderBy(desc(animeWatchHistory.watchedAt)) as any[];

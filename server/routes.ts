@@ -1613,10 +1613,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/create-french-quizzes', isAuthenticated, isAdmin, async (req, res) => {
     try {
       // Import French quiz data
-      const { frenchQuizzes } = await import('./french-quiz-data');
+      const { frenchAnimeQuizzes } = await import('./french-quiz-data');
 
       const createdQuizzes = [];
-      for (const quizData of frenchQuizzes) {
+      for (const quizData of frenchAnimeQuizzes) {
         try {
           const quiz = await storage.createQuiz({
             title: quizData.title,
