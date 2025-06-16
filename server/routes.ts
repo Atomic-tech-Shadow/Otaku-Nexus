@@ -450,28 +450,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Anime streaming routes
-  app.get("/api/anime/streaming/search", async (req, res) => {
+  // Anime-sama API routes
+  // 1. Recherche d'animés
+  app.get("/api/search", async (req, res) => {
     try {
-      const { q } = req.query;
-      if (!q || typeof q !== 'string') {
-        return res.status(400).json({ error: "Query parameter 'q' is required" });
+      const { query } = req.query;
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ error: "Query parameter is required" });
       }
 
-      const { consumetService } = await import("./consumet-api");
-      const results = await consumetService.searchAnime(q);
+      const { animeSamaService } = await import("./anime-sama-api");
+      const results = await animeSamaService.searchAnime(query);
       res.json(results);
     } catch (error) {
-      console.error("Error searching streaming anime:", error);
-      res.status(500).json({ error: "Failed to search streaming anime" });
+      console.error("Error searching anime:", error);
+      res.status(500).json({ error: "Failed to search anime" });
     }
   });
 
-  app.get("/api/anime/streaming/:animeId", async (req, res) => {
+  // 2. Détails d'un animé
+  app.get("/api/anime/:animeId", async (req, res) => {
     try {
       const { animeId } = req.params;
-      const { consumetService } = await import("./consumet-api");
-      const animeInfo = await consumetService.getAnimeInfo(animeId);
+      const { animeSamaService } = await import("./anime-sama-api");
+      const animeInfo = await animeSamaService.getAnimeDetails(animeId);
       
       if (!animeInfo) {
         return res.status(404).json({ error: "Anime not found" });
@@ -479,8 +481,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(animeInfo);
     } catch (error) {
-      console.error("Error fetching anime info:", error);
-      res.status(500).json({ error: "Failed to fetch anime info" });
+      console.error("Error fetching anime details:", error);
+      res.status(500).json({ error: "Failed to fetch anime details" });
+    }
+  });
+
+  // 3. Épisodes d'une saison
+  app.get("/api/anime/:animeId/season/:seasonNum/episodes", async (req, res) => {
+    try {
+      const { animeId, seasonNum } = req.params;
+      const season = parseInt(seasonNum);
+      
+      if (isNaN(season)) {
+        return res.status(400).json({ error: "Invalid season number" });
+      }
+
+      const { animeSamaService } = await import("./anime-sama-api");
+      const episodes = await animeSamaService.getSeasonEpisodes(animeId, season);
+      res.json(episodes);
+    } catch (error) {
+      console.error("Error fetching season episodes:", error);
+      res.status(500).json({ error: "Failed to fetch season episodes" });
+    }
+  });
+
+  // 4. Liens de streaming d'un épisode
+  app.get("/api/episode/:episodeId", async (req, res) => {
+    try {
+      const { episodeId } = req.params;
+      const { animeSamaService } = await import("./anime-sama-api");
+      const streamingLinks = await animeSamaService.getEpisodeStreaming(episodeId);
+      
+      if (!streamingLinks) {
+        return res.status(404).json({ error: "Episode streaming links not found" });
+      }
+
+      res.json(streamingLinks);
+    } catch (error) {
+      console.error("Error fetching episode streaming:", error);
+      res.status(500).json({ error: "Failed to fetch episode streaming links" });
+    }
+  });
+
+  // 5. Animés tendances
+  app.get("/api/trending", async (req, res) => {
+    try {
+      const { animeSamaService } = await import("./anime-sama-api");
+      const trending = await animeSamaService.getTrendingAnime();
+      res.json(trending);
+    } catch (error) {
+      console.error("Error fetching trending anime:", error);
+      res.status(500).json({ error: "Failed to fetch trending anime" });
+    }
+  });
+
+  // 6. Catalogue avec filtres
+  app.get("/api/catalogue", async (req, res) => {
+    try {
+      const { page = '1', genre, type } = req.query;
+      const pageNum = parseInt(page as string);
+      
+      if (isNaN(pageNum) || pageNum < 1) {
+        return res.status(400).json({ error: "Invalid page number" });
+      }
+
+      const { animeSamaService } = await import("./anime-sama-api");
+      const catalogue = await animeSamaService.getCatalogue(
+        pageNum, 
+        genre as string, 
+        type as string
+      );
+      res.json(catalogue);
+    } catch (error) {
+      console.error("Error fetching catalogue:", error);
+      res.status(500).json({ error: "Failed to fetch catalogue" });
+    }
+  });
+
+  // 7. Animé aléatoire
+  app.get("/api/random", async (req, res) => {
+    try {
+      const { animeSamaService } = await import("./anime-sama-api");
+      const randomAnime = await animeSamaService.getRandomAnime();
+      
+      if (!randomAnime) {
+        return res.status(404).json({ error: "No random anime found" });
+      }
+
+      res.json(randomAnime);
+    } catch (error) {
+      console.error("Error fetching random anime:", error);
+      res.status(500).json({ error: "Failed to fetch random anime" });
+    }
+  });
+
+  // 8. Recherche avancée
+  app.get("/api/search/advanced", async (req, res) => {
+    try {
+      const { genre, year, type } = req.query;
+      const { animeSamaService } = await import("./anime-sama-api");
+      const results = await animeSamaService.searchAdvanced(
+        genre as string,
+        year as string,
+        type as string
+      );
+      res.json(results);
+    } catch (error) {
+      console.error("Error in advanced search:", error);
+      res.status(500).json({ error: "Failed to perform advanced search" });
+    }
+  });
+
+  // 9. Liste des genres
+  app.get("/api/genres", async (req, res) => {
+    try {
+      const { animeSamaService } = await import("./anime-sama-api");
+      const genres = await animeSamaService.getGenres();
+      res.json(genres);
+    } catch (error) {
+      console.error("Error fetching genres:", error);
+      res.status(500).json({ error: "Failed to fetch genres" });
     }
   });
 

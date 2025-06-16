@@ -1,87 +1,94 @@
-
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Search, Play, Star, Calendar, Clock, Users, Eye, TrendingUp } from 'lucide-react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Play, Search, TrendingUp, Clock, Star, Filter, Eye, ChevronDown, ChevronUp, Shuffle } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
-import { api } from '@/lib/api';
+import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useQuery } from '@tanstack/react-query';
 
-interface AnimeInfo {
+interface AnimeSamaAnime {
   id: string;
-  title: {
-    romaji: string;
-    english?: string;
-    native?: string;
-  };
+  title: string;
   image: string;
-  cover?: string;
-  description?: string;
+  language: 'VF' | 'VOSTFR' | 'VF+VOSTFR';
+  synopsis?: string;
   genres?: string[];
-  status?: string;
-  totalEpisodes?: number;
-  currentEpisode?: number;
-  rating?: number;
-  releaseDate?: number;
   type?: string;
-  studios?: string[];
+  status?: string;
+  seasons?: AnimeSamaSeason[];
+}
+
+interface AnimeSamaSeason {
+  seasonNumber: number;
+  title: string;
+  episodes: AnimeSamaEpisode[];
+}
+
+interface AnimeSamaEpisode {
+  id: string;
+  number: number;
+  title?: string;
+  links: {
+    vf?: string[];
+    vostfr?: string[];
+  };
+}
+
+interface AnimeSamaSearchResult {
+  id: string;
+  title: string;
+  image: string;
+  language: 'VF' | 'VOSTFR' | 'VF+VOSTFR';
+}
+
+interface AnimeSamaGenre {
+  name: string;
+  slug: string;
 }
 
 export default function AnimeStreamingPage() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<AnimeInfo[]>([]);
-  const [topAiring, setTopAiring] = useState<AnimeInfo[]>([]);
-  const [recentEpisodes, setRecentEpisodes] = useState<AnimeInfo[]>([]);
+  const [searchResults, setSearchResults] = useState<AnimeSamaSearchResult[]>([]);
+  const [selectedAnime, setSelectedAnime] = useState<AnimeSamaAnime | null>(null);
+  const [selectedSeason, setSelectedSeason] = useState<AnimeSamaSeason | null>(null);
+  const [selectedEpisode, setSelectedEpisode] = useState<AnimeSamaEpisode | null>(null);
+  const [streamingLinks, setStreamingLinks] = useState<{ vf?: string[]; vostfr?: string[] } | null>(null);
+  const [currentView, setCurrentView] = useState<'search' | 'anime-details' | 'episodes' | 'streaming'>('search');
   const [isSearching, setIsSearching] = useState(false);
-  const [isLoadingAiring, setIsLoadingAiring] = useState(true);
-  const [isLoadingRecent, setIsLoadingRecent] = useState(true);
+  const [cataloguePage, setCataloguePage] = useState(1);
+  const [selectedGenre, setSelectedGenre] = useState<string>('');
+  const [selectedType, setSelectedType] = useState<string>('');
 
-  useEffect(() => {
-    fetchTopAiring();
-    fetchRecentEpisodes();
-  }, []);
+  // Fetch trending anime
+  const { data: trendingAnime, isLoading: isLoadingTrending } = useQuery<AnimeSamaSearchResult[]>({
+    queryKey: ['/api/trending'],
+  });
 
-  const fetchTopAiring = async () => {
-    try {
-      setIsLoadingAiring(true);
-      const response = await api.get('/api/anime/streaming/top-airing');
-      if (response.data && Array.isArray(response.data)) {
-        setTopAiring(response.data.slice(0, 12));
-      }
-    } catch (error) {
-      console.error('Error fetching top airing anime:', error);
-      setTopAiring([]);
-    } finally {
-      setIsLoadingAiring(false);
-    }
-  };
+  // Fetch genres
+  const { data: genres } = useQuery<AnimeSamaGenre[]>({
+    queryKey: ['/api/genres'],
+  });
 
-  const fetchRecentEpisodes = async () => {
-    try {
-      setIsLoadingRecent(true);
-      const response = await api.get('/api/anime/streaming/recent-episodes');
-      if (response.data && Array.isArray(response.data)) {
-        setRecentEpisodes(response.data.slice(0, 12));
-      }
-    } catch (error) {
-      console.error('Error fetching recent episodes:', error);
-      setRecentEpisodes([]);
-    } finally {
-      setIsLoadingRecent(false);
-    }
-  };
+  // Fetch catalogue
+  const { data: catalogueAnime, isLoading: isLoadingCatalogue } = useQuery<AnimeSamaSearchResult[]>({
+    queryKey: ['/api/catalogue', cataloguePage, selectedGenre, selectedType],
+  });
 
+  // 1. Fonctionnalité de recherche
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     
     try {
       setIsSearching(true);
-      const response = await api.get(`/api/anime/streaming/search?q=${encodeURIComponent(searchQuery)}`);
-      if (response.data && Array.isArray(response.data)) {
-        setSearchResults(response.data);
+      const response = await fetch(`/api/search?query=${encodeURIComponent(searchQuery)}`);
+      if (response.ok) {
+        const results = await response.json();
+        setSearchResults(results);
+        setCurrentView('search');
       }
     } catch (error) {
       console.error('Error searching anime:', error);
@@ -91,108 +98,388 @@ export default function AnimeStreamingPage() {
     }
   };
 
-  const handleAnimeClick = (animeId: string) => {
-    setLocation(`/anime-streaming/${animeId}`);
+  // 2. Détail d'un anime sélectionné
+  const handleAnimeSelect = async (animeId: string) => {
+    try {
+      const response = await fetch(`/api/anime/${animeId}`);
+      if (response.ok) {
+        const animeDetails = await response.json();
+        setSelectedAnime(animeDetails);
+        setCurrentView('anime-details');
+      }
+    } catch (error) {
+      console.error('Error fetching anime details:', error);
+    }
   };
 
-  const AnimeCard = ({ anime }: { anime: AnimeInfo }) => (
-    <Card 
-      className="group relative overflow-hidden bg-gradient-to-br from-card-bg/80 to-secondary-bg/60 backdrop-blur-sm border-border/50 hover:border-electric-blue/30 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-electric-blue/20 cursor-pointer"
-      onClick={() => handleAnimeClick(anime.id)}
-    >
-      <div className="relative">
-        <div className="aspect-[3/4] overflow-hidden">
-          <img
-            src={anime.image}
-            alt={anime.title.romaji}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = '/placeholder-anime.jpg';
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        </div>
-        
-        <div className="absolute top-2 right-2 flex flex-col gap-1">
-          {anime.rating && (
-            <Badge className="bg-electric-blue/90 text-white backdrop-blur-sm">
-              <Star className="w-3 h-3 mr-1" />
-              {anime.rating}
-            </Badge>
-          )}
-          {anime.status && (
-            <Badge 
-              className={`backdrop-blur-sm ${
-                anime.status === 'RELEASING' 
-                  ? 'bg-green-500/90' 
-                  : anime.status === 'FINISHED' 
-                  ? 'bg-gray-500/90' 
-                  : 'bg-hot-pink/90'
-              } text-white`}
-            >
-              {anime.status}
-            </Badge>
-          )}
-        </div>
+  // 3. Épisodes d'une saison
+  const handleSeasonSelect = async (animeId: string, seasonNum: number) => {
+    try {
+      const response = await fetch(`/api/anime/${animeId}/season/${seasonNum}/episodes`);
+      if (response.ok) {
+        const episodes = await response.json();
+        const seasonData = { seasonNumber: seasonNum, title: `Saison ${seasonNum}`, episodes };
+        setSelectedSeason(seasonData);
+        setCurrentView('episodes');
+      }
+    } catch (error) {
+      console.error('Error fetching season episodes:', error);
+    }
+  };
 
-        <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-          <Button className="w-full bg-electric-blue hover:bg-electric-blue/80 text-white">
-            <Play className="w-4 h-4 mr-2" />
-            Regarder
-          </Button>
-        </div>
+  // 4. Lien de streaming d'un épisode
+  const handleEpisodeSelect = async (episodeId: string, episode: AnimeSamaEpisode) => {
+    try {
+      const response = await fetch(`/api/episode/${episodeId}`);
+      if (response.ok) {
+        const links = await response.json();
+        setStreamingLinks(links);
+        setSelectedEpisode(episode);
+        setCurrentView('streaming');
+      }
+    } catch (error) {
+      console.error('Error fetching episode streaming:', error);
+    }
+  };
+
+  // 7. Anime aléatoire
+  const handleRandomAnime = async () => {
+    try {
+      const response = await fetch('/api/random');
+      if (response.ok) {
+        const randomAnime = await response.json();
+        setSelectedAnime(randomAnime);
+        setCurrentView('anime-details');
+      }
+    } catch (error) {
+      console.error('Error fetching random anime:', error);
+    }
+  };
+
+  const renderSearchSection = () => (
+    <div id="search-section" className="mb-8">
+      <div className="flex gap-4 mb-6">
+        <Input
+          placeholder="Rechercher un anime..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+          className="flex-1 bg-gray-800/50 border-gray-700 text-white"
+        />
+        <Button onClick={handleSearch} disabled={isSearching} className="bg-purple-600 hover:bg-purple-700">
+          <Search className="w-4 h-4 mr-2" />
+          {isSearching ? 'Recherche...' : 'Rechercher'}
+        </Button>
+        <Button onClick={handleRandomAnime} variant="outline" className="border-gray-700">
+          <Shuffle className="w-4 h-4 mr-2" />
+          Aléatoire
+        </Button>
       </div>
 
-      <CardContent className="p-4">
-        <h3 className="font-semibold text-text-primary text-sm leading-tight line-clamp-2 mb-2">
-          {anime.title.english || anime.title.romaji}
-        </h3>
-        
-        <div className="flex items-center justify-between text-xs text-text-secondary mb-2">
-          {anime.totalEpisodes && (
-            <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              {anime.totalEpisodes} épisodes
-            </span>
-          )}
-          {anime.releaseDate && (
-            <span className="flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              {anime.releaseDate}
-            </span>
-          )}
+      {searchResults.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {searchResults.map((anime) => (
+            <Card key={anime.id} className="bg-gray-800/50 border-gray-700 cursor-pointer hover:bg-gray-700/50 transition-colors">
+              <div onClick={() => handleAnimeSelect(anime.id)}>
+                <img src={anime.image} alt={anime.title} className="w-full h-48 object-cover rounded-t-lg" />
+                <CardContent className="p-4">
+                  <h3 className="text-white font-semibold text-sm truncate">{anime.title}</h3>
+                  <Badge variant="secondary" className="mt-2">
+                    {anime.language}
+                  </Badge>
+                  <Button size="sm" className="w-full mt-2 bg-purple-600 hover:bg-purple-700">
+                    Voir détails
+                  </Button>
+                </CardContent>
+              </div>
+            </Card>
+          ))}
         </div>
-
-        {anime.genres && (
-          <div className="flex flex-wrap gap-1">
-            {anime.genres.slice(0, 2).map((genre, index) => (
-              <Badge 
-                key={index} 
-                variant="secondary" 
-                className="text-xs bg-secondary-bg/60 text-text-secondary"
-              >
-                {genre}
-              </Badge>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 
-  const LoadingSkeleton = () => (
-    <Card className="overflow-hidden">
-      <Skeleton className="aspect-[3/4] w-full" />
-      <CardContent className="p-4">
-        <Skeleton className="h-4 w-3/4 mb-2" />
-        <Skeleton className="h-3 w-1/2 mb-2" />
-        <div className="flex gap-1">
-          <Skeleton className="h-5 w-12" />
-          <Skeleton className="h-5 w-16" />
+  const renderAnimeDetails = () => (
+    <div id="anime-details-section">
+      {selectedAnime && (
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardHeader>
+            <Button 
+              onClick={() => setCurrentView('search')} 
+              variant="outline" 
+              size="sm"
+              className="w-fit mb-4"
+            >
+              ← Retour
+            </Button>
+            <div className="flex gap-6">
+              <img src={selectedAnime.image} alt={selectedAnime.title} className="w-48 h-64 object-cover rounded-lg" />
+              <div className="flex-1">
+                <CardTitle className="text-white text-2xl mb-4">{selectedAnime.title}</CardTitle>
+                <div className="flex gap-2 mb-4">
+                  <Badge>{selectedAnime.language}</Badge>
+                  {selectedAnime.type && <Badge variant="secondary">{selectedAnime.type}</Badge>}
+                  {selectedAnime.status && <Badge variant="outline">{selectedAnime.status}</Badge>}
+                </div>
+                {selectedAnime.genres && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {selectedAnime.genres.map((genre) => (
+                      <Badge key={genre} variant="secondary">{genre}</Badge>
+                    ))}
+                  </div>
+                )}
+                {selectedAnime.synopsis && (
+                  <p className="text-gray-300 mb-4">{selectedAnime.synopsis}</p>
+                )}
+                {selectedAnime.seasons && selectedAnime.seasons.length > 0 && (
+                  <div>
+                    <h3 className="text-white text-lg font-semibold mb-2">Saisons</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedAnime.seasons.map((season) => (
+                        <Button
+                          key={season.seasonNumber}
+                          onClick={() => handleSeasonSelect(selectedAnime.id, season.seasonNumber)}
+                          className="bg-purple-600 hover:bg-purple-700"
+                        >
+                          {season.title} - Voir les épisodes
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+      )}
+    </div>
+  );
+
+  const renderEpisodes = () => (
+    <div id="episodes-section">
+      {selectedSeason && (
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardHeader>
+            <Button 
+              onClick={() => setCurrentView('anime-details')} 
+              variant="outline" 
+              size="sm"
+              className="w-fit mb-4"
+            >
+              ← Retour aux détails
+            </Button>
+            <CardTitle className="text-white">{selectedSeason.title}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4">
+              {selectedSeason.episodes.map((episode) => (
+                <Card key={episode.id} className="bg-gray-700/50 border-gray-600">
+                  <CardContent className="p-4 flex justify-between items-center">
+                    <div>
+                      <h4 className="text-white font-semibold">Épisode {episode.number}</h4>
+                      {episode.title && <p className="text-gray-300">{episode.title}</p>}
+                    </div>
+                    <Button
+                      onClick={() => handleEpisodeSelect(episode.id, episode)}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      Regarder
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+
+  const renderStreaming = () => (
+    <div id="streaming-section">
+      {selectedEpisode && streamingLinks && (
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardHeader>
+            <Button 
+              onClick={() => setCurrentView('episodes')} 
+              variant="outline" 
+              size="sm"
+              className="w-fit mb-4"
+            >
+              ← Retour aux épisodes
+            </Button>
+            <CardTitle className="text-white">
+              Épisode {selectedEpisode.number}
+              {selectedEpisode.title && ` - ${selectedEpisode.title}`}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {streamingLinks.vf && streamingLinks.vf.length > 0 && (
+                <div>
+                  <h3 className="text-white font-semibold mb-2">Version Française (VF)</h3>
+                  <div className="space-y-2">
+                    {streamingLinks.vf.map((link, index) => (
+                      <div key={index} className="bg-black rounded-lg overflow-hidden">
+                        <iframe
+                          src={link}
+                          className="w-full h-96"
+                          allowFullScreen
+                          title={`VF Episode ${selectedEpisode.number} - Source ${index + 1}`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {streamingLinks.vostfr && streamingLinks.vostfr.length > 0 && (
+                <div>
+                  <h3 className="text-white font-semibold mb-2">Version Sous-titrée (VOSTFR)</h3>
+                  <div className="space-y-2">
+                    {streamingLinks.vostfr.map((link, index) => (
+                      <div key={index} className="bg-black rounded-lg overflow-hidden">
+                        <iframe
+                          src={link}
+                          className="w-full h-96"
+                          allowFullScreen
+                          title={`VOSTFR Episode ${selectedEpisode.number} - Source ${index + 1}`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+
+  const renderTrending = () => (
+    <div id="trending-section" className="mb-8">
+      <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+        <TrendingUp className="w-6 h-6 mr-2 text-purple-400" />
+        Tendances
+      </h2>
+      {isLoadingTrending ? (
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="bg-gray-800/50 rounded-lg p-4">
+              <div className="w-full h-48 bg-gray-700 rounded mb-2"></div>
+              <div className="h-4 bg-gray-700 rounded mb-2"></div>
+              <div className="h-3 bg-gray-700 rounded"></div>
+            </div>
+          ))}
         </div>
-      </CardContent>
-    </Card>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {trendingAnime?.slice(0, 12).map((anime) => (
+            <Card key={anime.id} className="bg-gray-800/50 border-gray-700 cursor-pointer hover:bg-gray-700/50 transition-colors">
+              <div onClick={() => handleAnimeSelect(anime.id)}>
+                <img src={anime.image} alt={anime.title} className="w-full h-48 object-cover rounded-t-lg" />
+                <CardContent className="p-4">
+                  <h3 className="text-white font-semibold text-sm truncate">{anime.title}</h3>
+                  <Badge variant="secondary" className="mt-2">
+                    {anime.language}
+                  </Badge>
+                </CardContent>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderCatalogue = () => (
+    <div id="catalogue-section" className="mb-8">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold text-white flex items-center">
+          <Filter className="w-6 h-6 mr-2 text-purple-400" />
+          Catalogue
+        </h2>
+        <div className="flex gap-4">
+          {genres && (
+            <Select value={selectedGenre} onValueChange={setSelectedGenre}>
+              <SelectTrigger className="w-40 bg-gray-800/50 border-gray-700">
+                <SelectValue placeholder="Genre" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Tous les genres</SelectItem>
+                {genres.map((genre) => (
+                  <SelectItem key={genre.slug} value={genre.slug}>
+                    {genre.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Select value={selectedType} onValueChange={setSelectedType}>
+            <SelectTrigger className="w-40 bg-gray-800/50 border-gray-700">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Tous les types</SelectItem>
+              <SelectItem value="anime">Anime</SelectItem>
+              <SelectItem value="film">Film</SelectItem>
+              <SelectItem value="ova">OVA</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      {isLoadingCatalogue ? (
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="bg-gray-800/50 rounded-lg p-4">
+              <div className="w-full h-48 bg-gray-700 rounded mb-2"></div>
+              <div className="h-4 bg-gray-700 rounded mb-2"></div>
+              <div className="h-3 bg-gray-700 rounded"></div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+            {catalogueAnime?.map((anime) => (
+              <Card key={anime.id} className="bg-gray-800/50 border-gray-700 cursor-pointer hover:bg-gray-700/50 transition-colors">
+                <div onClick={() => handleAnimeSelect(anime.id)}>
+                  <img src={anime.image} alt={anime.title} className="w-full h-48 object-cover rounded-t-lg" />
+                  <CardContent className="p-4">
+                    <h3 className="text-white font-semibold text-sm truncate">{anime.title}</h3>
+                    <Badge variant="secondary" className="mt-2">
+                      {anime.language}
+                    </Badge>
+                  </CardContent>
+                </div>
+              </Card>
+            ))}
+          </div>
+          
+          <div className="flex justify-center gap-2">
+            <Button
+              onClick={() => setCataloguePage(Math.max(1, cataloguePage - 1))}
+              disabled={cataloguePage === 1}
+              variant="outline"
+              className="border-gray-700"
+            >
+              Précédent
+            </Button>
+            <span className="flex items-center px-4 text-white">Page {cataloguePage}</span>
+            <Button
+              onClick={() => setCataloguePage(cataloguePage + 1)}
+              variant="outline"
+              className="border-gray-700"
+            >
+              Suivant
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
   );
 
   return (
@@ -212,121 +499,21 @@ export default function AnimeStreamingPage() {
           <p className="text-lg text-text-secondary mb-8 max-w-2xl mx-auto">
             Regardez vos anime préférés en streaming gratuit avec la meilleure qualité
           </p>
-
-          {/* Search Bar */}
-          <div className="max-w-2xl mx-auto">
-            <div className="relative flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-text-secondary" />
-                <Input
-                  type="text"
-                  placeholder="Rechercher un anime à regarder..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="pl-10 h-14 text-lg bg-card-bg/80 backdrop-blur-sm border-border/50 focus:border-electric-blue"
-                />
-              </div>
-              <Button 
-                onClick={handleSearch}
-                disabled={isSearching || !searchQuery.trim()}
-                className="h-14 px-8 bg-gradient-to-r from-electric-blue to-hot-pink hover:from-electric-blue/80 hover:to-hot-pink/80"
-              >
-                {isSearching ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <Search className="w-5 h-5" />
-                )}
-              </Button>
-            </div>
-          </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 pb-16">
-        {/* Search Results */}
-        {searchResults.length > 0 && (
-          <section className="mb-12">
-            <div className="flex items-center gap-3 mb-6">
-              <Search className="w-6 h-6 text-electric-blue" />
-              <h2 className="text-2xl font-bold text-text-primary">
-                Résultats de recherche
-              </h2>
-              <Badge className="bg-electric-blue/20 text-electric-blue">
-                {searchResults.length} résultats
-              </Badge>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {searchResults.map((anime) => (
-                <AnimeCard key={anime.id} anime={anime} />
-              ))}
-            </div>
-          </section>
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8">
+        {currentView === 'search' && (
+          <>
+            {renderSearchSection()}
+            {renderTrending()}
+            {renderCatalogue()}
+          </>
         )}
-
-        {/* Top Airing */}
-        <section className="mb-12">
-          <div className="flex items-center gap-3 mb-6">
-            <TrendingUp className="w-6 h-6 text-hot-pink" />
-            <h2 className="text-2xl font-bold text-text-primary">
-              En cours de diffusion
-            </h2>
-            <Badge className="bg-hot-pink/20 text-hot-pink">
-              Populaire
-            </Badge>
-          </div>
-          
-          {isLoadingAiring ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {Array.from({ length: 12 }).map((_, index) => (
-                <LoadingSkeleton key={index} />
-              ))}
-            </div>
-          ) : topAiring.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {topAiring.map((anime) => (
-                <AnimeCard key={anime.id} anime={anime} />
-              ))}
-            </div>
-          ) : (
-            <Card className="p-8 text-center bg-card-bg/50 border-border/30">
-              <TrendingUp className="w-12 h-12 text-text-secondary mx-auto mb-4" />
-              <p className="text-text-secondary">Aucun anime en cours de diffusion disponible</p>
-            </Card>
-          )}
-        </section>
-
-        {/* Recent Episodes */}
-        <section>
-          <div className="flex items-center gap-3 mb-6">
-            <Clock className="w-6 h-6 text-otaku-purple" />
-            <h2 className="text-2xl font-bold text-text-primary">
-              Épisodes récents
-            </h2>
-            <Badge className="bg-otaku-purple/20 text-otaku-purple">
-              Nouveau
-            </Badge>
-          </div>
-          
-          {isLoadingRecent ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {Array.from({ length: 12 }).map((_, index) => (
-                <LoadingSkeleton key={index} />
-              ))}
-            </div>
-          ) : recentEpisodes.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {recentEpisodes.map((anime) => (
-                <AnimeCard key={anime.id} anime={anime} />
-              ))}
-            </div>
-          ) : (
-            <Card className="p-8 text-center bg-card-bg/50 border-border/30">
-              <Clock className="w-12 h-12 text-text-secondary mx-auto mb-4" />
-              <p className="text-text-secondary">Aucun épisode récent disponible</p>
-            </Card>
-          )}
-        </section>
+        {currentView === 'anime-details' && renderAnimeDetails()}
+        {currentView === 'episodes' && renderEpisodes()}
+        {currentView === 'streaming' && renderStreaming()}
       </div>
     </div>
   );
