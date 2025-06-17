@@ -44,7 +44,7 @@ export default function Admin() {
     difficulty: "facile",
     category: "anime",
     imageUrl: "",
-    questions: []
+    questions: [] as any[]
   });
   const [editingQuiz, setEditingQuiz] = useState<any>(null);
   const [currentQuestion, setCurrentQuestion] = useState({
@@ -177,6 +177,61 @@ export default function Admin() {
       toast({ title: "Quiz supprimé" });
     },
   });
+
+  // Quiz management functions
+  const resetQuizForm = () => {
+    setNewQuiz({
+      title: "",
+      description: "",
+      difficulty: "facile",
+      category: "anime", 
+      imageUrl: "",
+      questions: [] as any[]
+    });
+    setShowQuizForm(false);
+  };
+
+  const resetQuestionForm = () => {
+    setCurrentQuestion({
+      question: "",
+      options: ["", "", "", ""],
+      correctAnswer: 0,
+      explanation: ""
+    });
+    setShowQuestionForm(false);
+  };
+
+  const addQuestionToQuiz = () => {
+    if (!currentQuestion.question || currentQuestion.options.some(opt => !opt.trim())) {
+      toast({ title: "Erreur", description: "Question et toutes les options requises", variant: "destructive" });
+      return;
+    }
+
+    const updatedQuestions = [...(newQuiz.questions as any[]), { ...currentQuestion }];
+    setNewQuiz({ ...newQuiz, questions: updatedQuestions });
+    resetQuestionForm();
+    toast({ title: "Question ajoutée au quiz" });
+  };
+
+  const removeQuestionFromQuiz = (index: number) => {
+    const updatedQuestions = (newQuiz.questions as any[]).filter((_, i) => i !== index);
+    setNewQuiz({ ...newQuiz, questions: updatedQuestions });
+    toast({ title: "Question supprimée" });
+  };
+
+  const handleCreateQuiz = () => {
+    if (!newQuiz.title || !newQuiz.description || (newQuiz.questions as any[]).length === 0) {
+      toast({ title: "Erreur", description: "Titre, description et au moins une question requis", variant: "destructive" });
+      return;
+    }
+    createQuizMutation.mutate(newQuiz);
+  };
+
+  const handleUpdateOption = (optionIndex: number, value: string) => {
+    const updatedOptions = [...currentQuestion.options];
+    updatedOptions[optionIndex] = value;
+    setCurrentQuestion({ ...currentQuestion, options: updatedOptions });
+  };
 
   if (!user?.isAdmin) {
     return (
@@ -434,28 +489,308 @@ export default function Admin() {
 
           {/* Quizzes Tab */}
           <TabsContent value="quizzes" className="space-y-4">
-            <div className="space-y-3">
-              {quizzes.map((quiz: any) => (
-                <Card key={quiz.id} className="bg-gray-800/50 border-gray-700">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-white">{quiz.title}</h3>
-                        <p className="text-gray-400 text-sm">{quiz.description}</p>
-                        <div className="flex gap-2 mt-2">
-                          <Badge variant="outline" className="border-gray-600 text-gray-300">
-                            {quiz.difficulty}
-                          </Badge>
-                          <Badge variant="outline" className="border-gray-600 text-gray-300">
-                            {quiz.questions?.length || 0} questions
-                          </Badge>
-                        </div>
+            {/* Create New Quiz Button */}
+            {!showQuizForm && (
+              <Card className="bg-gray-800/50 border-gray-700">
+                <CardContent className="p-4 text-center">
+                  <Button 
+                    onClick={() => setShowQuizForm(true)}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Créer un nouveau quiz
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Quiz Creation Form */}
+            {showQuizForm && (
+              <Card className="bg-gray-800/50 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Brain className="w-5 h-5" />
+                      Nouveau Quiz
+                    </span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={resetQuizForm}
+                      className="text-gray-400 hover:text-white"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Basic Quiz Info */}
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <Label className="text-gray-300">Titre du quiz</Label>
+                      <Input
+                        placeholder="Ex: Quiz Anime Débutant"
+                        value={newQuiz.title}
+                        onChange={(e) => setNewQuiz({ ...newQuiz, title: e.target.value })}
+                        className="bg-gray-900 border-gray-600 text-white"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label className="text-gray-300">Description</Label>
+                      <Textarea
+                        placeholder="Description du quiz..."
+                        value={newQuiz.description}
+                        onChange={(e) => setNewQuiz({ ...newQuiz, description: e.target.value })}
+                        className="bg-gray-900 border-gray-600 text-white"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-gray-300">Difficulté</Label>
+                        <Select 
+                          value={newQuiz.difficulty} 
+                          onValueChange={(value) => setNewQuiz({ ...newQuiz, difficulty: value })}
+                        >
+                          <SelectTrigger className="bg-gray-900 border-gray-600 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="facile">Facile</SelectItem>
+                            <SelectItem value="moyen">Moyen</SelectItem>
+                            <SelectItem value="difficile">Difficile</SelectItem>
+                            <SelectItem value="expert">Expert</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-gray-300">Catégorie</Label>
+                        <Select 
+                          value={newQuiz.category} 
+                          onValueChange={(value) => setNewQuiz({ ...newQuiz, category: value })}
+                        >
+                          <SelectTrigger className="bg-gray-900 border-gray-600 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="anime">Anime</SelectItem>
+                            <SelectItem value="manga">Manga</SelectItem>
+                            <SelectItem value="general">Général</SelectItem>
+                            <SelectItem value="culture">Culture Otaku</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+
+                    <div>
+                      <Label className="text-gray-300">Image (URL optionnel)</Label>
+                      <Input
+                        placeholder="https://exemple.com/image.jpg"
+                        value={newQuiz.imageUrl}
+                        onChange={(e) => setNewQuiz({ ...newQuiz, imageUrl: e.target.value })}
+                        className="bg-gray-900 border-gray-600 text-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Questions Management */}
+                  <div className="border-t border-gray-600 pt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-white font-medium">
+                        Questions ({(newQuiz.questions as any[]).length})
+                      </h4>
+                      <Button 
+                        onClick={() => setShowQuestionForm(true)}
+                        size="sm"
+                        variant="outline"
+                        className="border-gray-600 text-gray-300 hover:text-white"
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Ajouter une question
+                      </Button>
+                    </div>
+
+                    {/* Questions List */}
+                    {(newQuiz.questions as any[]).length > 0 && (
+                      <div className="space-y-2 mb-4">
+                        {(newQuiz.questions as any[]).map((q: any, index: number) => (
+                          <div key={index} className="bg-gray-900 p-3 rounded-lg border border-gray-600">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <p className="text-white font-medium text-sm">
+                                  {index + 1}. {q.question}
+                                </p>
+                                <div className="grid grid-cols-2 gap-1 mt-2">
+                                  {q.options.map((option: string, optIndex: number) => (
+                                    <p key={optIndex} className={`text-xs px-2 py-1 rounded ${
+                                      optIndex === q.correctAnswer 
+                                        ? 'bg-green-600/20 text-green-400' 
+                                        : 'text-gray-400'
+                                    }`}>
+                                      {String.fromCharCode(65 + optIndex)}. {option}
+                                    </p>
+                                  ))}
+                                </div>
+                              </div>
+                              <Button
+                                onClick={() => removeQuestionFromQuiz(index)}
+                                size="sm"
+                                variant="ghost"
+                                className="text-red-400 hover:text-red-300 ml-2"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Question Form */}
+                    {showQuestionForm && (
+                      <div className="bg-gray-900 p-4 rounded-lg border border-gray-600 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h5 className="text-white font-medium">Nouvelle Question</h5>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={resetQuestionForm}
+                            className="text-gray-400 hover:text-white"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-gray-300 text-sm">Question</Label>
+                          <Input
+                            placeholder="Tapez votre question..."
+                            value={currentQuestion.question}
+                            onChange={(e) => setCurrentQuestion({ ...currentQuestion, question: e.target.value })}
+                            className="bg-gray-800 border-gray-600 text-white"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-gray-300 text-sm">Options de réponse</Label>
+                          {currentQuestion.options.map((option, index) => (
+                            <div key={index} className="flex items-center space-x-2">
+                              <span className="text-gray-400 text-sm w-6">
+                                {String.fromCharCode(65 + index)}.
+                              </span>
+                              <Input
+                                placeholder={`Option ${index + 1}`}
+                                value={option}
+                                onChange={(e) => handleUpdateOption(index, e.target.value)}
+                                className="bg-gray-800 border-gray-600 text-white"
+                              />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setCurrentQuestion({ ...currentQuestion, correctAnswer: index })}
+                                className={`text-xs ${
+                                  currentQuestion.correctAnswer === index 
+                                    ? 'text-green-400 bg-green-600/20' 
+                                    : 'text-gray-400'
+                                }`}
+                              >
+                                <Check className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div>
+                          <Label className="text-gray-300 text-sm">Explication (optionnel)</Label>
+                          <Textarea
+                            placeholder="Explication de la bonne réponse..."
+                            value={currentQuestion.explanation}
+                            onChange={(e) => setCurrentQuestion({ ...currentQuestion, explanation: e.target.value })}
+                            className="bg-gray-800 border-gray-600 text-white"
+                            rows={2}
+                          />
+                        </div>
+
+                        <Button 
+                          onClick={addQuestionToQuiz}
+                          className="w-full bg-blue-600 hover:bg-blue-700"
+                        >
+                          Ajouter la question
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Create Quiz Button */}
+                  <Button 
+                    onClick={handleCreateQuiz}
+                    disabled={createQuizMutation.isPending || (newQuiz.questions as any[]).length === 0}
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  >
+                    {createQuizMutation.isPending ? "Création..." : "Créer le quiz"}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Existing Quizzes List */}
+            {!showQuizForm && (
+              <div className="space-y-3">
+                {Array.isArray(quizzes) && quizzes.map((quiz: any) => (
+                  <Card key={quiz.id} className="bg-gray-800/50 border-gray-700">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-white">{quiz.title}</h3>
+                          <p className="text-gray-400 text-sm">{quiz.description}</p>
+                          <div className="flex gap-2 mt-2">
+                            <Badge variant="outline" className="border-gray-600 text-gray-300">
+                              {quiz.difficulty}
+                            </Badge>
+                            <Badge variant="outline" className="border-gray-600 text-gray-300">
+                              {quiz.category}
+                            </Badge>
+                            <Badge variant="outline" className="border-gray-600 text-gray-300">
+                              {quiz.questions?.length || 0} questions
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            onClick={() => setEditingQuiz(quiz)}
+                            size="sm"
+                            variant="ghost"
+                            className="text-blue-400 hover:text-blue-300"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => deleteQuizMutation.mutate(quiz.id)}
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-400 hover:text-red-300"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                
+                {(!quizzes || !Array.isArray(quizzes) || quizzes.length === 0) && !showQuizForm && (
+                  <Card className="bg-gray-800/50 border-gray-700">
+                    <CardContent className="p-8 text-center">
+                      <Brain className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                      <p className="text-gray-400">Aucun quiz créé pour le moment</p>
+                      <p className="text-gray-500 text-sm">Créez votre premier quiz pour commencer</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </main>
