@@ -148,13 +148,29 @@ export default function Chat() {
                 </Button>
               </Link>
 
-              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-electric-blue">
+              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-electric-blue relative">
                 {user?.profileImageUrl ? (
-                  <img 
-                    src={user.profileImageUrl} 
-                    alt="Profile" 
-                    className="w-full h-full object-cover"
-                  />
+                  <>
+                    <img 
+                      src={user.profileImageUrl} 
+                      alt="Profile" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.style.display = 'none';
+                        const fallback = target.nextElementSibling as HTMLElement;
+                        if (fallback) {
+                          fallback.classList.remove('hidden');
+                          fallback.classList.add('flex');
+                        }
+                      }}
+                    />
+                    <div className="hidden absolute inset-0 w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink items-center justify-center">
+                      <span className="text-sm font-bold text-white">
+                        {(user?.firstName || user?.username || 'O').charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  </>
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink flex items-center justify-center">
                     <span className="text-sm font-bold text-white">
@@ -199,25 +215,29 @@ export default function Chat() {
               <div key={message.id} className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}>
                 <div className={`flex gap-3 max-w-xs lg:max-w-md ${message.isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
                   {!message.isOwn && (
-                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 relative">
                       {message.userProfileImageUrl ? (
-                        <img 
-                          src={message.userProfileImageUrl} 
-                          alt="Profile" 
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            // Fallback to initials if image fails to load
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            const parent = target.parentElement;
-                            if (parent && !parent.querySelector('.fallback-avatar')) {
-                              const fallback = document.createElement('div');
-                              fallback.className = 'fallback-avatar w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink flex items-center justify-center';
-                              fallback.innerHTML = `<span class="text-xs font-bold text-white">${(message.userFirstName || message.username || 'A').charAt(0).toUpperCase()}</span>`;
-                              parent.appendChild(fallback);
-                            }
-                          }}
-                        />
+                        <>
+                          <img 
+                            src={message.userProfileImageUrl} 
+                            alt="Profile" 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              target.style.display = 'none';
+                              const fallback = target.nextElementSibling as HTMLElement;
+                              if (fallback) {
+                                fallback.classList.remove('hidden');
+                                fallback.classList.add('flex');
+                              }
+                            }}
+                          />
+                          <div className="hidden absolute inset-0 w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink items-center justify-center">
+                            <span className="text-xs font-bold text-white">
+                              {(message.userFirstName || message.username || 'A').charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        </>
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink flex items-center justify-center">
                           <span className="text-xs font-bold text-white">

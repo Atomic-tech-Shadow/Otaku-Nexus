@@ -99,13 +99,29 @@ export default function Profile() {
           {/* Profile Header */}
           <section className="mb-6">
             <div className="glass-morphism rounded-2xl p-6 text-center">
-              <div className="w-20 h-20 rounded-full border-4 border-electric-blue mx-auto mb-4 overflow-hidden">
+              <div className="w-20 h-20 rounded-full border-4 border-electric-blue mx-auto mb-4 overflow-hidden relative">
                 {user?.profileImageUrl ? (
-                  <img 
-                    src={user.profileImageUrl} 
-                    alt="Profile" 
-                    className="w-full h-full object-cover"
-                  />
+                  <>
+                    <img 
+                      src={user.profileImageUrl} 
+                      alt="Profile" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.style.display = 'none';
+                        const fallback = target.nextElementSibling as HTMLElement;
+                        if (fallback) {
+                          fallback.classList.remove('hidden');
+                          fallback.classList.add('flex');
+                        }
+                      }}
+                    />
+                    <div className="hidden absolute inset-0 w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink items-center justify-center">
+                      <span className="text-2xl font-bold text-white">
+                        {(user?.firstName || user?.username || 'O').charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  </>
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink flex items-center justify-center">
                     <span className="text-2xl font-bold text-white">

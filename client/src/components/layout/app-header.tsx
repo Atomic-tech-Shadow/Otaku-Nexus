@@ -60,29 +60,14 @@ export default function AppHeader() {
             <motion.div 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="relative w-10 h-10 rounded-full border-2 border-nexus-cyan/50 overflow-hidden bg-gradient-to-br from-nexus-cyan/20 to-nexus-purple/20 flex-shrink-0"
+              className="flex-shrink-0"
             >
-              {user?.profileImageUrl ? (
-                <img 
-                  src={user.profileImageUrl} 
-                  alt="Profile" 
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                  }}
-                />
-              ) : null}
-              
-              {/* Fallback Avatar */}
-              <div className={`w-full h-full bg-gradient-to-br from-nexus-cyan to-nexus-purple flex items-center justify-center ${user?.profileImageUrl ? 'hidden' : ''}`}>
-                <span className="text-sm font-bold text-white">
-                  {(user?.firstName || user?.username || 'O').charAt(0).toUpperCase()}
-                </span>
-              </div>
-              
-              {/* Active indicator */}
-              <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-nexus-surface"></div>
+              <ProfileAvatar 
+                imageUrl={user?.profileImageUrl}
+                name={user?.firstName || user?.username || 'Otaku'}
+                size="md"
+                showOnlineIndicator={true}
+              />
             </motion.div>
 
             {/* User Info */}
