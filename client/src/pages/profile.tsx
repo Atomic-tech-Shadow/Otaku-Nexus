@@ -271,7 +271,7 @@ export default function Profile() {
           </section>
         </main>
 
-        <BottomNavigation />
+
       </div>
     </div>
   );

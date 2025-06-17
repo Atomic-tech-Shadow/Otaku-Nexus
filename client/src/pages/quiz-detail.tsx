@@ -375,7 +375,6 @@ export default function QuizDetail() {
               onStart={handleStartQuiz}
             />
           </main>
-          <BottomNavigation currentPath="/quiz" />
         </div>
       </div>
     );
@@ -453,7 +452,6 @@ export default function QuizDetail() {
               </Link>
             </div>
           </main>
-          <BottomNavigation currentPath="/quiz" />
         </div>
       </div>
     );
@@ -550,7 +548,6 @@ export default function QuizDetail() {
             {currentQuestion === questions.length - 1 ? "Finish Quiz" : "Next Question"}
           </Button>
         </main>
-        <BottomNavigation currentPath="/quiz" />
       </div>
     </div>
   );

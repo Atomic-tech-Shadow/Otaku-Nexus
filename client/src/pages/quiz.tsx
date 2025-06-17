@@ -131,7 +131,7 @@ export default function Quiz() {
           )}
         </main>
 
-        <BottomNavigation />
+
       </div>
     </div>
   );

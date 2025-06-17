@@ -171,10 +171,11 @@
 }
 
 .text-gradient {
-  background: linear-gradient(45deg, var(--electric-blue), var(--hot-pink));
+  background: linear-gradient(45deg, var(--nexus-cyan), var(--nexus-purple), var(--nexus-pink));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  animation: nexus-glow 3s ease-in-out infinite alternate;
 }
 
 .glass-morphism {

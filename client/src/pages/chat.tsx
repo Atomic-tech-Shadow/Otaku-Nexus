@@ -6,7 +6,7 @@ import { Send, Phone, Video, MoreVertical, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import AppHeader from "@/components/layout/app-header";
-import BottomNavigation from "@/components/layout/bottom-navigation";
+
 import { Link } from "wouter";
 import { TwitterVerificationBadge } from "@/components/ui/verification-badges";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
