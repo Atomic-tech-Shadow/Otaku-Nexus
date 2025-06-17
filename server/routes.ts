@@ -37,27 +37,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Anime routes
-  app.get('/api/anime', async (req, res) => {
-    try {
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
-      let animes = await storage.getAnimes(limit);
-      res.json(animes);
-    } catch (error) {
-      console.error("Error fetching animes:", error);
-      res.status(500).json({ message: "Failed to fetch animes" });
-    }
-  });
 
-  app.get('/api/anime/trending', async (req, res) => {
-    try {
-      let animes = await storage.getTrendingAnimes();
-      res.json(animes);
-    } catch (error) {
-      console.error("Error fetching trending animes:", error);
-      res.status(500).json({ message: "Failed to fetch trending animes" });
-    }
-  });
 
   // AnimeSama API routes
   app.get("/api/anime-sama/search", async (req, res) => {

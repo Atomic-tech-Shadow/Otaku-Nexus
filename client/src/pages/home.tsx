@@ -8,7 +8,7 @@ import QuizCard from "@/components/quiz/quiz-card";
 import VideoCard from "@/components/video/video-card";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
-import { Brain, Search, BookOpen, Sparkles } from "lucide-react";
+import { Brain, Search, BookOpen, Sparkles, Video } from "lucide-react";
 import { Link } from "wouter";
 import { PostCard } from "@/components/ui/post-card";
 
@@ -23,11 +23,7 @@ export default function Home() {
     retry: 2,
   });
 
-  const { data: trendingAnimes = [], isLoading: animesLoading } = useQuery({
-    queryKey: ["/api/anime/trending"],
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    retry: 2,
-  });
+
 
   const { data: featuredQuiz, isLoading: quizLoading } = useQuery({
     queryKey: ["/api/quizzes/featured"],
@@ -78,8 +74,8 @@ export default function Home() {
               <p className="text-gray-300 text-sm mb-4">Ready to explore the anime universe?</p>
               <div className="flex items-center space-x-4">
                 <div className="text-center">
-                  <div className="text-lg font-bold text-hot-pink">{(userStats as any)?.totalAnime || 0}</div>
-                  <div className="text-xs text-gray-400">Anime</div>
+                  <div className="text-lg font-bold text-hot-pink">{(userStats as any)?.totalVideos || 0}</div>
+                  <div className="text-xs text-gray-400">Videos</div>
                 </div>
                 <div className="text-center">
                   <div className="text-lg font-bold text-electric-blue">{(userStats as any)?.totalQuizzes || 0}</div>
@@ -116,32 +112,7 @@ export default function Home() {
 
           </section>
 
-          {/* Trending Anime */}
-          <section className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold">Trending Anime</h3>
-              <Link href="/anime">
-                <Button variant="ghost" size="sm" className="electric-blue text-sm">
-                  View All
-                </Button>
-              </Link>
-            </div>
-            <div className="flex space-x-3 overflow-x-auto pb-2 custom-scroll">
-              {animesLoading ? (
-                <div className="flex space-x-3">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="flex-shrink-0 w-32 h-32 bg-card-bg rounded-xl animate-pulse"></div>
-                  ))}
-                </div>
-              ) : Array.isArray(trendingAnimes) && trendingAnimes.length > 0 ? (
-                trendingAnimes.map((anime: any) => (
-                  <AnimeCard key={anime.id} anime={anime} compact />
-                ))
-              ) : (
-                <p className="text-gray-400 text-sm">No trending anime available</p>
-              )}
-            </div>
-          </section>
+
 
           {/* Featured Quiz */}
           {featuredQuiz && (
