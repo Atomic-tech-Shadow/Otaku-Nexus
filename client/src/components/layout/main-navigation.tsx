@@ -12,12 +12,7 @@ export default function MainNavigation() {
 
   const navigationItems = [
     { icon: Home, label: "Accueil", path: "/" },
-    { icon: Search, label: "Animes", path: "/anime" },
-    { icon: Heart, label: "Animes Animaux", path: "/anime/animals" },
-    { icon: Monitor, label: "Streaming", path: "/anime-streaming" },
-    { icon: BookOpen, label: "Manga", path: "/manga" },
     { icon: Brain, label: "Quiz", path: "/quiz" },
-    { icon: Play, label: "Vidéos", path: "/videos" },
     { icon: MessageCircle, label: "Chat", path: "/chat" },
     { icon: User, label: "Profil", path: "/profile" },
     { icon: Settings, label: "Modifier Profil", path: "/edit-profile" },
@@ -66,8 +61,8 @@ export default function MainNavigation() {
               <div className="p-6">
                 {/* Header */}
                 <div className="mb-8 mt-12">
-                  <h2 className="text-2xl font-bold text-text-primary mb-2">Otaku App</h2>
-                  <p className="text-text-secondary text-sm">Navigation</p>
+                  <h2 className="text-2xl font-bold text-gradient mb-2">Otaku Nexus</h2>
+                  <p className="text-text-secondary text-sm">Votre plateforme otaku ultime</p>
                 </div>
 
                 {/* User Info */}

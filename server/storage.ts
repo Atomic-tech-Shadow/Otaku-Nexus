@@ -4,7 +4,6 @@ import {
   animeFavorites,
   quizzes,
   quizResults,
-  videos,
   chatRooms,
   chatMessages,
   chatRoomMembers,
@@ -27,8 +26,7 @@ import {
   type InsertQuiz,
   type QuizResult,
   type InsertQuizResult,
-  type Video,
-  type InsertVideo,
+
   type ChatRoom,
   type InsertChatRoom,
   type ChatMessage,

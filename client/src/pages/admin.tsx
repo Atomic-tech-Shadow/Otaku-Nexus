@@ -441,29 +441,7 @@ export default function Admin() {
 
 
 
-                {/* Video Content */}
-                <Card className="bg-gradient-to-br from-orange-600/30 to-red-600/30 border-orange-500/50 hover:shadow-xl transition-all">
-                  <CardContent className="p-6">
-                    <div className="text-center">
-                      <Video className="h-12 w-12 text-orange-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-white mb-2">Vidéos</h3>
-                      <p className="text-gray-300 text-sm mb-4">Gérez les vidéos et contenus multimédia</p>
-                      <div className="space-y-2">
-                        <Button 
-                          onClick={() => window.location.href = '/videos'}
-                          variant="outline"
-                          className="w-full border-orange-500/50 text-orange-400 hover:bg-orange-600/20"
-                        >
-                          <Video className="h-4 w-4 mr-2" />
-                          Voir les Vidéos
-                        </Button>
-                        <div className="text-xs text-gray-400">
-                          Contenu multimédia
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+
 
                 {/* Chat Management */}
                 <Card className="bg-gradient-to-br from-blue-600/30 to-cyan-600/30 border-blue-500/50 hover:shadow-xl transition-all">

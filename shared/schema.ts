@@ -224,17 +224,7 @@ export const quizResults = pgTable("quiz_results", {
   completedAt: timestamp("completed_at").defaultNow(),
 });
 
-export const videos = pgTable("videos", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  description: text("description"),
-  videoUrl: text("video_url").notNull(),
-  thumbnailUrl: text("thumbnail_url"),
-  duration: text("duration"),
-  views: integer("views").default(0),
-  category: text("category"), // amv, opening, trailer, etc.
-  createdAt: timestamp("created_at").defaultNow(),
-});
+
 
 // Chat system tables
 export const chatRooms = pgTable("chat_rooms", {
@@ -344,10 +334,7 @@ export const insertQuizResultSchema = createInsertSchema(quizResults).omit({
   completedAt: true,
 });
 
-export const insertVideoSchema = createInsertSchema(videos).omit({
-  id: true,
-  createdAt: true,
-});
+
 
 export const insertChatRoomSchema = createInsertSchema(chatRooms).omit({
   id: true,
@@ -406,8 +393,7 @@ export type Quiz = typeof quizzes.$inferSelect;
 export type InsertQuiz = z.infer<typeof insertQuizSchema>;
 export type QuizResult = typeof quizResults.$inferSelect;
 export type InsertQuizResult = z.infer<typeof insertQuizResultSchema>;
-export type Video = typeof videos.$inferSelect;
-export type InsertVideo = z.infer<typeof insertVideoSchema>;
+
 export type ChatRoom = typeof chatRooms.$inferSelect;
 export type InsertChatRoom = z.infer<typeof insertChatRoomSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
