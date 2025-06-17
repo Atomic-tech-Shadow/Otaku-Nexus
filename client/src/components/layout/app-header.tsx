@@ -22,13 +22,13 @@ export default function AppHeader() {
   if (isLoading) {
     return (
       <header className="relative z-10 bg-nexus-surface/95 backdrop-blur-lg border-b border-nexus-cyan/20">
-        <div className="max-w-md mx-auto p-4">
+        <div className="max-w-md mx-auto p-2">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-700 rounded-md mb-4"></div>
-            <div className="flex items-center space-x-3">
-              <div className="w-14 h-14 bg-gray-700 rounded-full"></div>
+            <div className="h-6 bg-gray-700 rounded-md mb-2"></div>
+            <div className="flex items-center space-x-2">
+              <div className="w-10 h-10 bg-gray-700 rounded-full"></div>
               <div className="flex-1">
-                <div className="h-4 bg-gray-700 rounded mb-2"></div>
+                <div className="h-3 bg-gray-700 rounded mb-1"></div>
                 <div className="h-2 bg-gray-700 rounded"></div>
               </div>
             </div>
@@ -40,14 +40,14 @@ export default function AppHeader() {
 
   return (
     <header className="relative z-10 bg-nexus-surface/95 backdrop-blur-lg border-b border-nexus-cyan/20">
-      <div className="max-w-md mx-auto p-4">
+      <div className="max-w-md mx-auto p-2">
         {/* Logo Section */}
-        <div className="flex items-center justify-center mb-4">
+        <div className="flex items-center justify-center mb-2">
           <motion.h1 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-3xl font-bold bg-gradient-to-r from-nexus-cyan to-nexus-purple bg-clip-text text-transparent"
+            className="text-xl font-bold bg-gradient-to-r from-nexus-cyan to-nexus-purple bg-clip-text text-transparent"
           >
             Otaku Nexus
           </motion.h1>
@@ -55,12 +55,12 @@ export default function AppHeader() {
 
         {/* User Profile Section */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3 flex-1">
+          <div className="flex items-center space-x-2 flex-1">
             {/* Modern Profile Avatar */}
             <motion.div 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="relative w-14 h-14 rounded-full border-2 border-nexus-cyan/50 overflow-hidden bg-gradient-to-br from-nexus-cyan/20 to-nexus-purple/20 flex-shrink-0"
+              className="relative w-10 h-10 rounded-full border-2 border-nexus-cyan/50 overflow-hidden bg-gradient-to-br from-nexus-cyan/20 to-nexus-purple/20 flex-shrink-0"
             >
               {user?.profileImageUrl ? (
                 <img 
@@ -76,19 +76,19 @@ export default function AppHeader() {
               
               {/* Fallback Avatar */}
               <div className={`w-full h-full bg-gradient-to-br from-nexus-cyan to-nexus-purple flex items-center justify-center ${user?.profileImageUrl ? 'hidden' : ''}`}>
-                <span className="text-lg font-bold text-white">
+                <span className="text-sm font-bold text-white">
                   {(user?.firstName || user?.username || 'O').charAt(0).toUpperCase()}
                 </span>
               </div>
               
               {/* Active indicator */}
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-nexus-surface"></div>
+              <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-nexus-surface"></div>
             </motion.div>
 
             {/* User Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-sm font-semibold text-white truncate">
+              <div className="flex items-center gap-1 mb-0.5">
+                <h2 className="text-xs font-semibold text-white truncate">
                   {user?.firstName || user?.username || 'Anonymous Otaku'}
                 </h2>
                 {user?.isAdmin && (
@@ -100,11 +100,11 @@ export default function AppHeader() {
               </div>
               
               {/* Level and XP Bar */}
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1">
                 <span className="text-xs text-nexus-cyan font-medium whitespace-nowrap">
-                  Niveau {currentLevel}
+                  Niv {currentLevel}
                 </span>
-                <div className="flex-1 max-w-20 h-2 bg-nexus-surface rounded-full overflow-hidden border border-nexus-cyan/20">
+                <div className="flex-1 max-w-16 h-1.5 bg-nexus-surface rounded-full overflow-hidden border border-nexus-cyan/20">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${xpProgress}%` }}
@@ -112,7 +112,7 @@ export default function AppHeader() {
                     className="h-full bg-gradient-to-r from-nexus-cyan to-nexus-purple rounded-full"
                   />
                 </div>
-                <span className="text-xs text-gray-400 whitespace-nowrap">{currentXP} XP</span>
+                <span className="text-xs text-gray-400 whitespace-nowrap">{currentXP}</span>
               </div>
             </div>
           </div>
