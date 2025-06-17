@@ -9,7 +9,7 @@ import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Quiz from "@/pages/quiz";
 import QuizDetail from "@/pages/quiz-detail";
-import Videos from "@/pages/videos";
+
 import Profile from "@/pages/profile";
 import Chat from "@/pages/chat";
 import EditProfile from "@/pages/edit-profile";
@@ -42,11 +42,7 @@ function Router() {
             <QuizDetail />
           </ProtectedRoute>
         </Route>
-        <Route path="/videos">
-          <ProtectedRoute>
-            <Videos />
-          </ProtectedRoute>
-        </Route>
+
         <Route path="/profile">
           <ProtectedRoute>
             <Profile />

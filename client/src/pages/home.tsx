@@ -5,10 +5,10 @@ import AppHeader from "@/components/layout/app-header";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 
 import QuizCard from "@/components/quiz/quiz-card";
-import VideoCard from "@/components/video/video-card";
+
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
-import { Brain, Search, BookOpen, Sparkles, Video } from "lucide-react";
+import { Brain, Search, BookOpen, Sparkles, MessageSquare } from "lucide-react";
 import { Link } from "wouter";
 import { PostCard } from "@/components/ui/post-card";
 
@@ -31,11 +31,7 @@ export default function Home() {
     retry: 2,
   });
 
-  const { data: popularVideos = [], isLoading: videosLoading } = useQuery({
-    queryKey: ["/api/videos/popular"],
-    staleTime: 15 * 60 * 1000, // 15 minutes
-    retry: 2,
-  });
+
 
   const { data: posts = [], isLoading: postsLoading } = useQuery({
     queryKey: ["/api/posts"],
@@ -92,11 +88,11 @@ export default function Home() {
           {/* Quick Actions */}
           <section className="mb-6">
             <div className="grid grid-cols-2 gap-3 mb-3">
-              <Link href="/videos">
+              <Link href="/chat">
                 <div>
                   <Button className="w-full bg-gradient-to-r from-electric-blue to-hot-pink hover:from-electric-blue/80 hover:to-hot-pink/80 btn-hover">
-                    <Video className="w-4 h-4 mr-2" />
-                    Watch Videos
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Chat
                   </Button>
                 </div>
               </Link>
@@ -122,32 +118,7 @@ export default function Home() {
             </section>
           )}
 
-          {/* Popular Videos */}
-          <section className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold">Popular AMVs</h3>
-              <Link href="/videos">
-                <Button variant="ghost" size="sm" className="electric-blue text-sm">
-                  View All
-                </Button>
-              </Link>
-            </div>
-            <div className="space-y-3">
-              {videosLoading ? (
-                <div className="space-y-3">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="h-16 bg-card-bg rounded-xl animate-pulse"></div>
-                  ))}
-                </div>
-              ) : Array.isArray(popularVideos) && popularVideos.length > 0 ? (
-                popularVideos.slice(0, 3).map((video: any) => (
-                  <VideoCard key={video.id} video={video} compact />
-                ))
-              ) : (
-                <p className="text-gray-400 text-sm">No popular videos available</p>
-              )}
-            </div>
-          </section>
+
 
           {/* User Progress */}
           <section className="mb-6">
