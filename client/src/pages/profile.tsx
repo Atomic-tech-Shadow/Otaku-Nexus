@@ -272,7 +272,7 @@ export default function Profile() {
           </section>
         </main>
 
-
+        <BottomNav />
       </div>
     </div>
   );
