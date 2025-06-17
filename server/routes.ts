@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import {
   insertQuizSchema,
   insertQuizResultSchema,
-  insertVideoSchema,
+  insertAnimeSchema,
   insertChatRoomSchema,
   insertChatMessageSchema,
   insertChatRoomMemberSchema,
@@ -69,11 +69,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const messageData = {
-        content: req.body.content,
+        message: req.body.content,
         userId,
         roomId: 1 // Global chat room
       };
-      const message = await storage.addChatMessage(messageData);
+      const message = await storage.sendChatMessage(messageData);
       res.json(message);
     } catch (error) {
       console.error("Error creating message:", error);
