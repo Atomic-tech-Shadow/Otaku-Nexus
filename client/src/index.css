@@ -24,14 +24,15 @@
   --ring: hsl(240, 4.9%, 83.9%);
   --radius: 0.5rem;
 
-  /* Otaku-specific colors */
-  --electric-blue: hsl(195, 100%, 50%);
-  --hot-pink: hsl(328, 100%, 54%);
-  --otaku-purple: hsl(258, 90%, 66%);
-  --anime-red: hsl(0, 84%, 60%);
-  --dark-bg: hsl(0, 0%, 6%);
-  --card-bg: hsl(0, 0%, 10%);
-  --secondary-bg: hsl(0, 0%, 15%);
+  /* Otaku Nexus colors */
+  --nexus-cyan: hsl(185, 100%, 50%);
+  --nexus-purple: hsl(270, 100%, 65%);
+  --nexus-pink: hsl(320, 100%, 60%);
+  --nexus-orange: hsl(25, 100%, 60%);
+  --nexus-blue: hsl(230, 100%, 65%);
+  --nexus-dark: hsl(240, 15%, 8%);
+  --nexus-surface: hsl(240, 12%, 12%);
+  --nexus-elevated: hsl(240, 10%, 16%);
   
   /* Streaming page specific colors */
   --streaming-bg: hsl(0, 0%, 5%);
@@ -40,13 +41,13 @@
   --streaming-purple: hsl(270, 80%, 62%);
   --streaming-cyan: hsl(180, 100%, 50%);
   
-  /* App-specific theme colors */
-  --app-bg: hsl(0, 0%, 6%);
+  /* Otaku Nexus theme colors */
+  --app-bg: var(--nexus-dark);
   --text-primary: hsl(0, 0%, 98%);
-  --text-secondary: hsl(240, 5%, 64.9%);
-  --accent-primary: hsl(195, 100%, 50%);
-  --accent-hover: hsl(328, 100%, 54%);
-  --border: hsl(240, 3.7%, 15.9%);
+  --text-secondary: hsl(240, 8%, 70%);
+  --accent-primary: var(--nexus-cyan);
+  --accent-hover: var(--nexus-purple);
+  --border: hsl(240, 8%, 20%);
 }
 
 /* Missing utility classes */
@@ -94,7 +95,8 @@
 }
 
 .bg-animated {
-  background: linear-gradient(135deg, var(--dark-bg) 0%, var(--card-bg) 100%);
+  background: linear-gradient(135deg, var(--nexus-dark) 0%, var(--nexus-surface) 50%, var(--nexus-elevated) 100%);
+  animation: nexus-shift 12s ease-in-out infinite;
 }
 
 .light {
@@ -218,10 +220,19 @@
   animation: gradient 15s ease infinite;
 }
 
-@keyframes gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+@keyframes nexus-shift {
+  0%, 100% { 
+    background: linear-gradient(135deg, var(--nexus-dark) 0%, var(--nexus-surface) 50%, var(--nexus-elevated) 100%);
+  }
+  25% { 
+    background: linear-gradient(225deg, var(--nexus-dark) 0%, rgba(0, 255, 255, 0.1) 50%, var(--nexus-elevated) 100%);
+  }
+  50% { 
+    background: linear-gradient(315deg, var(--nexus-dark) 0%, rgba(255, 0, 255, 0.1) 50%, var(--nexus-elevated) 100%);
+  }
+  75% { 
+    background: linear-gradient(45deg, var(--nexus-dark) 0%, rgba(255, 165, 0, 0.1) 50%, var(--nexus-elevated) 100%);
+  }
 }
 
 .mobile-container {

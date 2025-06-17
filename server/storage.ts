@@ -118,11 +118,7 @@ export interface IStorage {
     rank: number;
   }>;
 
-  // Video operations
-  getVideos(limit?: number): Promise<Video[]>;
-  getVideo(id: number): Promise<Video | undefined>;
-  createVideo(video: InsertVideo): Promise<Video>;
-  getPopularVideos(): Promise<Video[]>;
+
 
   // Profile operations
   updateUserProfile(userId: string, profile: UpdateUserProfile): Promise<User>;
@@ -628,24 +624,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  // Video operations
-  async getVideos(limit = 20): Promise<Video[]> {
-    return await db.select().from(videos).orderBy(desc(videos.createdAt)).limit(limit);
-  }
 
-  async getVideo(id: number): Promise<Video | undefined> {
-    const [video] = await db.select().from(videos).where(eq(videos.id, id));
-    return video;
-  }
-
-  async createVideo(video: InsertVideo): Promise<Video> {
-    const [newVideo] = await db.insert(videos).values(video).returning();
-    return newVideo;
-  }
-
-  async getPopularVideos(): Promise<Video[]> {
-    return await db.select().from(videos).orderBy(desc(videos.views)).limit(10);
-  }
 
   // Profile operations
   async updateUserProfile(userId: string, profile: UpdateUserProfile): Promise<User> {

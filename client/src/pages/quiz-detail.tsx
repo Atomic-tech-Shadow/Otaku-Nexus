@@ -6,7 +6,7 @@ import { useRoute } from "wouter";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
 import AppHeader from "@/components/layout/app-header";
-import BottomNavigation from "@/components/layout/bottom-navigation";
+
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

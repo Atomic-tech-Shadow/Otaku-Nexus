@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import AppHeader from "@/components/layout/app-header";
-import BottomNavigation from "@/components/layout/bottom-navigation";
+
 import QuizCard from "@/components/quiz/quiz-card";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { Brain, Trophy, Target } from "lucide-react";
