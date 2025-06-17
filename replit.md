@@ -111,6 +111,7 @@ This is a full-stack otaku community platform called "Otaku App" built with mode
 # Changelog
 - June 13, 2025. Initial setup
 - June 17, 2025. Suppression des pages anime et manga conformément à la demande utilisateur
+- June 17, 2025. Transformation complète vers "Otaku Nexus" - Suppression de la bottom navigation et de toutes les références vidéos, création d'un style unique avec animations et couleurs nexus
 
 # User Preferences
 

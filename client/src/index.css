@@ -34,6 +34,15 @@
   --nexus-surface: hsl(240, 12%, 12%);
   --nexus-elevated: hsl(240, 10%, 16%);
   
+  /* Legacy support */
+  --electric-blue: var(--nexus-cyan);
+  --hot-pink: var(--nexus-pink);
+  --otaku-purple: var(--nexus-purple);
+  --anime-red: var(--nexus-orange);
+  --dark-bg: var(--nexus-dark);
+  --card-bg: var(--nexus-surface);
+  --secondary-bg: var(--nexus-elevated);
+  
   /* Streaming page specific colors */
   --streaming-bg: hsl(0, 0%, 5%);
   --streaming-card: hsl(0, 0%, 11%);
@@ -353,12 +362,24 @@
   }
 }
 
-@keyframes glow {
-  from {
-    box-shadow: 0 0 20px var(--electric-blue);
+@keyframes nexus-glow {
+  0% {
+    text-shadow: 0 0 10px var(--nexus-cyan), 0 0 20px var(--nexus-cyan);
   }
-  to {
-    box-shadow: 0 0 30px var(--electric-blue), 0 0 40px var(--electric-blue);
+  50% {
+    text-shadow: 0 0 20px var(--nexus-purple), 0 0 30px var(--nexus-purple), 0 0 40px var(--nexus-pink);
+  }
+  100% {
+    text-shadow: 0 0 10px var(--nexus-cyan), 0 0 20px var(--nexus-cyan);
+  }
+}
+
+@keyframes nexus-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px var(--nexus-cyan), 0 0 40px var(--nexus-purple);
+  }
+  50% {
+    box-shadow: 0 0 40px var(--nexus-pink), 0 0 60px var(--nexus-orange);
   }
 }
 
@@ -622,18 +643,22 @@
   animation: gradient 15s ease infinite;
 }
 
-/* Card hover effects */
+/* Otaku Nexus Card Effects */
 .card-hover {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  border: 1px solid transparent;
+  background: linear-gradient(var(--nexus-surface), var(--nexus-surface)) padding-box,
+              linear-gradient(45deg, var(--nexus-cyan), var(--nexus-purple), var(--nexus-pink)) border-box;
 }
 
 .card-hover:hover {
   transform: translateY(-8px) scale(1.02);
   box-shadow: 
-    0 20px 40px rgba(0, 247, 255, 0.15),
-    0 10px 20px rgba(255, 20, 147, 0.1),
-    0 0 0 1px rgba(0, 247, 255, 0.1);
+    0 20px 40px rgba(0, 255, 255, 0.2),
+    0 10px 20px rgba(255, 0, 255, 0.15),
+    0 0 0 1px var(--nexus-cyan);
+  animation: nexus-pulse 2s ease-in-out infinite;
 }
 
 .card-hover::before {
@@ -654,19 +679,22 @@
   opacity: 1;
 }
 
-/* Button hover effects */
+/* Otaku Nexus Button Effects */
 .btn-hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  background: linear-gradient(45deg, var(--nexus-cyan), var(--nexus-purple));
+  border: 1px solid transparent;
 }
 
 .btn-hover:hover {
   transform: translateY(-2px) scale(1.05);
   box-shadow: 
-    0 10px 25px rgba(0, 247, 255, 0.4),
-    0 5px 15px rgba(255, 20, 147, 0.3),
+    0 10px 25px var(--nexus-cyan),
+    0 5px 15px var(--nexus-purple),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  background: linear-gradient(45deg, var(--nexus-purple), var(--nexus-pink));
 }
 
 .btn-hover::after {

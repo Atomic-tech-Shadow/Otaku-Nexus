@@ -542,7 +542,7 @@ export default function EditProfile() {
           </div>
         </div>
 
-        <BottomNavigation currentPath="/edit-profile" />
+
       </div>
     </div>
   );
