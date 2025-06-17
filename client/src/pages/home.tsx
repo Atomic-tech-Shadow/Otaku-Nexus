@@ -3,7 +3,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import AppHeader from "@/components/layout/app-header";
 import BottomNavigation from "@/components/layout/bottom-navigation";
-import AnimeCard from "@/components/anime/anime-card";
+
 import QuizCard from "@/components/quiz/quiz-card";
 import VideoCard from "@/components/video/video-card";
 import LoadingSpinner from "@/components/ui/loading-spinner";
@@ -96,11 +96,11 @@ export default function Home() {
           {/* Quick Actions */}
           <section className="mb-6">
             <div className="grid grid-cols-2 gap-3 mb-3">
-              <Link href="/anime">
+              <Link href="/videos">
                 <div>
                   <Button className="w-full bg-gradient-to-r from-electric-blue to-hot-pink hover:from-electric-blue/80 hover:to-hot-pink/80 btn-hover">
-                    <Search className="w-4 h-4 mr-2" />
-                    Explore Anime
+                    <Video className="w-4 h-4 mr-2" />
+                    Watch Videos
                   </Button>
                 </div>
               </Link>
@@ -113,19 +113,7 @@ export default function Home() {
                 </div>
               </Link>
             </div>
-            {/* Special Manga Section */}
-            <Link href="/manga">
-              <div>
-                <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 btn-hover relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 animate-pulse"></div>
-                  <div className="relative flex items-center justify-center">
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    <span className="font-semibold">Explorer les Mangas</span>
-                    <Sparkles className="w-4 h-4 ml-2 animate-pulse" />
-                  </div>
-                </Button>
-              </div>
-            </Link>
+
           </section>
 
           {/* Trending Anime */}

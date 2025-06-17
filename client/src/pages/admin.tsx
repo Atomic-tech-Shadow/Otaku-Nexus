@@ -439,53 +439,7 @@ export default function Admin() {
                   </CardContent>
                 </Card>
 
-                {/* Manga Management */}
-                <Card className="bg-gradient-to-br from-green-600/30 to-teal-600/30 border-green-500/50 hover:shadow-xl transition-all">
-                  <CardContent className="p-6">
-                    <div className="text-center">
-                      <BookOpen className="h-12 w-12 text-green-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-white mb-2">Manga Scans</h3>
-                      <p className="text-gray-300 text-sm mb-4">Gérez les scans via l'API MangaDx intégrée</p>
-                      <div className="space-y-2">
-                        <Button 
-                          onClick={() => window.location.href = '/manga'}
-                          variant="outline"
-                          className="w-full border-green-500/50 text-green-400 hover:bg-green-600/20"
-                        >
-                          <BookOpen className="h-4 w-4 mr-2" />
-                          Voir les Manga
-                        </Button>
-                        <div className="text-xs text-gray-400">
-                          API MangaDx connectée
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
 
-                {/* Anime Content */}
-                <Card className="bg-gradient-to-br from-pink-600/30 to-purple-600/30 border-pink-500/50 hover:shadow-xl transition-all">
-                  <CardContent className="p-6">
-                    <div className="text-center">
-                      <Star className="h-12 w-12 text-pink-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-white mb-2">Anime</h3>
-                      <p className="text-gray-300 text-sm mb-4">Gérez le contenu anime et les recommandations</p>
-                      <div className="space-y-2">
-                        <Button 
-                          onClick={() => window.location.href = '/anime'}
-                          variant="outline"
-                          className="w-full border-pink-500/50 text-pink-400 hover:bg-pink-600/20"
-                        >
-                          <Star className="h-4 w-4 mr-2" />
-                          Voir les Anime
-                        </Button>
-                        <div className="text-xs text-gray-400">
-                          {stats?.totalAnime || 0} anime référencés
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
 
                 {/* Video Content */}
                 <Card className="bg-gradient-to-br from-orange-600/30 to-red-600/30 border-orange-500/50 hover:shadow-xl transition-all">
@@ -584,13 +538,7 @@ export default function Admin() {
                       <FileText className="h-4 w-4 mr-2" />
                       Nouvelle Publication
                     </Button>
-                    <Button 
-                      onClick={() => window.location.href = '/manga'}
-                      className="bg-green-600/20 border border-green-500/30 text-green-400 hover:bg-green-600/30"
-                    >
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      Parcourir Manga
-                    </Button>
+
                     <Button 
                       onClick={() => window.location.href = '/chat'}
                       className="bg-orange-600/20 border border-orange-500/30 text-orange-400 hover:bg-orange-600/30"
