@@ -1,6 +1,6 @@
 # Overview
 
-This is a full-stack anime/otaku community platform called "Otaku App" built with modern web technologies. The application serves as a comprehensive platform for anime enthusiasts to discover content, take quizzes, watch videos, chat with other users, and engage with the anime community.
+This is a full-stack otaku community platform called "Otaku App" built with modern web technologies. The application serves as a comprehensive platform for users to take quizzes, watch videos, chat with other users, and engage with the community.
 
 # System Architecture
 
@@ -34,10 +34,8 @@ This is a full-stack anime/otaku community platform called "Otaku App" built wit
 - **Session Persistence**: Secure session management across devices
 
 ## Content Management
-- **Anime Database**: Integration with external APIs (Jikan, MangaDX) for anime data
-- **Favorites System**: Users can favorite anime and track their preferences
-- **Animal Anime**: Specialized section for anime featuring animals
-- **Video Content**: AMVs, openings, and anime-related video content
+- **Video Content**: AMVs, openings, and community video content
+- **Quiz System**: Interactive quizzes with scoring and difficulty levels
 
 ## Interactive Features
 - **Quiz System**: Multilevel quizzes with XP rewards and difficulty ratings
@@ -112,6 +110,7 @@ This is a full-stack anime/otaku community platform called "Otaku App" built wit
 
 # Changelog
 - June 13, 2025. Initial setup
+- June 17, 2025. Suppression des pages anime et manga conformément à la demande utilisateur
 
 # User Preferences
 

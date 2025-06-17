@@ -2,13 +2,6 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import {
-  insertAnimeSchema,
-  insertAnimeFavoriteSchema,
-  insertMangaSchema,
-  insertMangaFavoriteSchema,
-  insertMangaChapterSchema,
-  insertMangaReadingProgressSchema,
-  insertMangaDownloadSchema,
   insertQuizSchema,
   insertQuizResultSchema,
   insertVideoSchema,
@@ -19,7 +12,6 @@ import {
   updateUserProfileSchema,
 } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
-import { mangaDxService } from "./mangadx-api";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -39,100 +31,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  // AnimeSama API routes
-  app.get("/api/anime-sama/search", async (req, res) => {
-    try {
-      const { q } = req.query;
-      if (!q || typeof q !== 'string') {
-        return res.status(400).json({ error: "Query parameter 'q' is required" });
-      }
 
-      const { animeSamaService } = await import("./anime-sama-api");
-      const results = await animeSamaService.searchAnime(q);
-      res.json(results);
-    } catch (error) {
-      console.error("Error searching anime:", error);
-      res.status(500).json({ error: "Failed to search anime" });
-    }
-  });
-
-  app.get("/api/anime-sama/anime/:animeId", async (req, res) => {
-    try {
-      const { animeId } = req.params;
-      const { animeSamaService } = await import("./anime-sama-api");
-      const animeInfo = await animeSamaService.getAnimeDetails(animeId);
-      
-      if (!animeInfo) {
-        return res.status(404).json({ error: "Anime not found" });
-      }
-
-      res.json(animeInfo);
-    } catch (error) {
-      console.error("Error fetching anime details:", error);
-      res.status(500).json({ error: "Failed to fetch anime details" });
-    }
-  });
-
-  app.get("/api/anime-sama/episode/:episodeId/streaming", async (req, res) => {
-    try {
-      const { episodeId } = req.params;
-      const { animeSamaService } = await import("./anime-sama-api");
-      const streamingLinks = await animeSamaService.getEpisodeStreaming(episodeId);
-      
-      if (!streamingLinks) {
-        return res.status(404).json({ error: "Episode streaming links not found" });
-      }
-
-      res.json(streamingLinks);
-    } catch (error) {
-      console.error("Error fetching episode streaming:", error);
-      res.status(500).json({ error: "Failed to fetch episode streaming links" });
-    }
-  });
-
-  app.get("/api/trending", async (req, res) => {
-    try {
-      const { animeSamaService } = await import("./anime-sama-api");
-      const trending = await animeSamaService.getTrendingAnime();
-      res.json(trending);
-    } catch (error) {
-      console.error("Error fetching trending anime:", error);
-      res.status(500).json({ error: "Failed to fetch trending anime" });
-    }
-  });
-
-  app.get("/api/catalogue", async (req, res) => {
-    try {
-      const { page = '1', genre, type } = req.query;
-      const pageNum = parseInt(page as string);
-      
-      if (isNaN(pageNum) || pageNum < 1) {
-        return res.status(400).json({ error: "Invalid page number" });
-      }
-
-      const { animeSamaService } = await import("./anime-sama-api");
-      const catalogue = await animeSamaService.getCatalogue(
-        pageNum, 
-        genre as string, 
-        type as string
-      );
-      res.json(catalogue);
-    } catch (error) {
-      console.error("Error fetching catalogue:", error);
-      res.status(500).json({ error: "Failed to fetch catalogue" });
-    }
-  });
-
-  app.get("/api/genres", async (req, res) => {
-    try {
-      const { animeSamaService } = await import("./anime-sama-api");
-      const genres = await animeSamaService.getGenres();
-      res.json(genres);
-    } catch (error) {
-      console.error("Error fetching genres:", error);
-      res.status(500).json({ error: "Failed to fetch genres" });
-    }
-  });
 
   // Quiz routes
   app.get('/api/quizzes', async (req, res) => {
@@ -158,7 +57,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat routes
   app.get('/api/chat/messages', isAuthenticated, async (req: any, res) => {
     try {
-      const messages = await storage.getGlobalChatMessages();
+      const messages = await storage.getChatMessages();
       res.json(messages);
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -174,7 +73,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId,
         roomId: 1 // Global chat room
       };
-      const message = await storage.createChatMessage(messageData);
+      const message = await storage.addChatMessage(messageData);
       res.json(message);
     } catch (error) {
       console.error("Error creating message:", error);
