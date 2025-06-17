@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import AppHeader from "@/components/layout/app-header";
-import BottomNavigation from "@/components/layout/bottom-navigation";
+
 
 import QuizCard from "@/components/quiz/quiz-card";
 
@@ -162,7 +162,7 @@ export default function Home() {
           )}
         </main>
 
-        <BottomNavigation />
+
       </div>
     </div>
   );
