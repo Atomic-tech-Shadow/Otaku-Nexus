@@ -234,33 +234,57 @@
   background-color: var(--secondary-bg);
 }
 
-/* App-specific utility classes */
-.bg-app-bg {
-  background-color: var(--app-bg);
+/* Nexus-specific utility classes */
+.bg-nexus-dark {
+  background-color: var(--nexus-dark);
 }
 
-.text-text-primary {
-  color: var(--text-primary);
+.bg-nexus-surface {
+  background-color: var(--nexus-surface);
 }
 
-.text-text-secondary {
-  color: var(--text-secondary);
+.bg-nexus-elevated {
+  background-color: var(--nexus-elevated);
 }
 
-.text-accent-primary {
-  color: var(--accent-primary);
+.text-nexus-cyan {
+  color: var(--nexus-cyan);
 }
 
-.text-accent-hover {
-  color: var(--accent-hover);
+.text-nexus-purple {
+  color: var(--nexus-purple);
 }
 
-.bg-accent-primary {
-  background-color: var(--accent-primary);
+.text-nexus-pink {
+  color: var(--nexus-pink);
 }
 
-.bg-accent-hover {
-  background-color: var(--accent-hover);
+.text-nexus-orange {
+  color: var(--nexus-orange);
+}
+
+.text-nexus-blue {
+  color: var(--nexus-blue);
+}
+
+.bg-nexus-cyan {
+  background-color: var(--nexus-cyan);
+}
+
+.bg-nexus-purple {
+  background-color: var(--nexus-purple);
+}
+
+.bg-nexus-pink {
+  background-color: var(--nexus-pink);
+}
+
+.bg-nexus-orange {
+  background-color: var(--nexus-orange);
+}
+
+.bg-nexus-blue {
+  background-color: var(--nexus-blue);
 }
 
 /* Streaming page utility classes */

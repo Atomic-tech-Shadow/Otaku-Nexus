@@ -57,7 +57,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat routes
   app.get('/api/chat/messages', isAuthenticated, async (req: any, res) => {
     try {
-      const messages = await storage.getChatMessages();
+      const messages = await storage.getChatMessages(1);
       res.json(messages);
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -137,6 +137,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating quiz:", error);
       res.status(500).json({ message: "Failed to create quiz" });
+    }
+  });
+
+  app.put('/api/admin/quizzes/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const quizId = parseInt(req.params.id);
+      const updates = req.body;
+      const quiz = await storage.updateQuiz(quizId, updates);
+      res.json(quiz);
+    } catch (error) {
+      console.error("Error updating quiz:", error);
+      res.status(500).json({ message: "Failed to update quiz" });
     }
   });
 
