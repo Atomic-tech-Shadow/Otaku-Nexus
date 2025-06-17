@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { 
   Shield, 
   Users, 
@@ -22,7 +24,9 @@ import {
   Edit,
   Trash2,
   Save,
-  X
+  X,
+  Copy,
+  Check
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -32,6 +36,25 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [newPost, setNewPost] = useState({ title: "", content: "", imageUrl: "" });
   const [editingPost, setEditingPost] = useState<any>(null);
+  
+  // Quiz management states
+  const [newQuiz, setNewQuiz] = useState({
+    title: "",
+    description: "",
+    difficulty: "facile",
+    category: "anime",
+    imageUrl: "",
+    questions: []
+  });
+  const [editingQuiz, setEditingQuiz] = useState<any>(null);
+  const [currentQuestion, setCurrentQuestion] = useState({
+    question: "",
+    options: ["", "", "", ""],
+    correctAnswer: 0,
+    explanation: ""
+  });
+  const [showQuizForm, setShowQuizForm] = useState(false);
+  const [showQuestionForm, setShowQuestionForm] = useState(false);
 
   // Queries
   const { data: stats } = useQuery({
@@ -101,6 +124,57 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
       toast({ title: "Publication supprimée" });
+    },
+  });
+
+  // Quiz mutations
+  const createQuizMutation = useMutation({
+    mutationFn: async (quizData: any) => {
+      const response = await fetch("/api/admin/quizzes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(quizData),
+      });
+      if (!response.ok) throw new Error("Failed to create quiz");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/quizzes"] });
+      resetQuizForm();
+      toast({ title: "Quiz créé avec succès" });
+    },
+  });
+
+  const updateQuizMutation = useMutation({
+    mutationFn: async ({ id, ...quizData }: any) => {
+      const response = await fetch(`/api/admin/quizzes/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(quizData),
+      });
+      if (!response.ok) throw new Error("Failed to update quiz");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/quizzes"] });
+      setEditingQuiz(null);
+      toast({ title: "Quiz mis à jour" });
+    },
+  });
+
+  const deleteQuizMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/admin/quizzes/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to delete quiz");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/quizzes"] });
+      toast({ title: "Quiz supprimé" });
     },
   });
 

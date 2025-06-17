@@ -260,20 +260,20 @@ export default function Chat() {
         </div>
 
         {/* Message Input */}
-        <div className="fixed bottom-16 left-0 right-0 bg-card-bg border-t border-gray-800 p-4">
-          <div className="flex items-center space-x-2 max-w-md mx-auto">
+        <div className="fixed bottom-16 left-0 right-0 bg-nexus-surface/95 backdrop-blur-lg border-t border-nexus-cyan/20 p-4">
+          <div className="flex items-center space-x-2 max-w-sm mx-auto">
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Écrivez un message..."
-              className="flex-1 bg-gray-700 border-none text-white placeholder-gray-400"
+              className="flex-1 bg-nexus-surface border border-nexus-cyan/30 text-white placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-nexus-cyan focus:border-transparent"
               disabled={sendMessageMutation.isPending}
             />
             <Button 
               onClick={handleSendMessage}
               disabled={!newMessage.trim() || sendMessageMutation.isPending}
-              className="bg-gradient-to-r from-electric-blue to-hot-pink hover:opacity-90"
+              className="bg-gradient-to-r from-nexus-cyan to-nexus-purple hover:from-nexus-purple hover:to-nexus-pink transition-all duration-300 rounded-lg"
             >
               {sendMessageMutation.isPending ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>

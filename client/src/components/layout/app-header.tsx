@@ -22,7 +22,7 @@ export default function AppHeader() {
   if (isLoading) {
     return (
       <header className="relative z-10 bg-nexus-surface/95 backdrop-blur-lg border-b border-nexus-cyan/20">
-        <div className="max-w-md mx-auto p-2">
+        <div className="max-w-sm mx-auto px-3 py-2">
           <div className="animate-pulse">
             <div className="h-6 bg-gray-700 rounded-md mb-2"></div>
             <div className="flex items-center space-x-2">
@@ -40,7 +40,7 @@ export default function AppHeader() {
 
   return (
     <header className="relative z-10 bg-nexus-surface/95 backdrop-blur-lg border-b border-nexus-cyan/20">
-      <div className="max-w-md mx-auto p-2">
+      <div className="max-w-sm mx-auto px-3 py-2">
         {/* Logo Section */}
         <div className="flex items-center justify-center mb-2">
           <motion.h1 
