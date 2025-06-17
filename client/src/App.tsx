@@ -14,6 +14,7 @@ import Profile from "@/pages/profile";
 import Chat from "@/pages/chat";
 import EditProfile from "@/pages/edit-profile";
 import AuthPage from "@/pages/auth";
+import Admin from "@/pages/admin";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 
 
@@ -58,6 +59,11 @@ function Router() {
           </ProtectedRoute>
         </Route>
 
+        <Route path="/admin">
+          <ProtectedRoute>
+            <Admin />
+          </ProtectedRoute>
+        </Route>
 
         <Route component={NotFound} />
       </Switch>

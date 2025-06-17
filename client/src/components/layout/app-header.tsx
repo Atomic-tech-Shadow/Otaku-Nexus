@@ -1,5 +1,5 @@
 
-import { Bell, Settings, LogOut } from "lucide-react";
+import { Bell, Settings, Shield, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
@@ -119,6 +119,19 @@ export default function AppHeader() {
 
           {/* Action Buttons */}
           <div className="flex items-center space-x-1 ml-2">
+            {user?.isAdmin && (
+              <Link href="/admin">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-300 p-2"
+                  title="Administration"
+                >
+                  <Shield className="w-4 h-4" />
+                </Button>
+              </Link>
+            )}
+            
             <Button 
               variant="ghost" 
               size="sm" 
