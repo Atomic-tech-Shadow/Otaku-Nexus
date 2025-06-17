@@ -6,6 +6,7 @@ import { Send, Phone, Video, MoreVertical, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import AppHeader from "@/components/layout/app-header";
+import BottomNav from "@/components/layout/bottom-nav";
 
 import { Link } from "wouter";
 import { TwitterVerificationBadge } from "@/components/ui/verification-badges";
@@ -283,7 +284,7 @@ export default function Chat() {
           </div>
         </div>
 
-
+        <BottomNav />
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import AppHeader from "@/components/layout/app-header";
+import BottomNav from "@/components/layout/bottom-nav";
 
 
 import QuizCard from "@/components/quiz/quiz-card";
@@ -162,7 +163,7 @@ export default function Home() {
           )}
         </main>
 
-
+        <BottomNav />
       </div>
     </div>
   );
