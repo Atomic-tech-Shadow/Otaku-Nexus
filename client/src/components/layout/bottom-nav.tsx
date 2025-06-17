@@ -1,35 +1,29 @@
-import { Home, Brain, MessageCircle, User, Settings } from "lucide-react";
+import { Home, Brain, MessageCircle, User } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   path: string;
-  adminOnly?: boolean;
 }
 
 export default function BottomNav() {
   const [location] = useLocation();
-  const { user } = useAuth();
 
   const navItems: NavItem[] = [
     { icon: Home, label: "Accueil", path: "/" },
     { icon: Brain, label: "Quiz", path: "/quiz" },
     { icon: MessageCircle, label: "Chat", path: "/chat" },
     { icon: User, label: "Profil", path: "/profile" },
-    { icon: Settings, label: "Admin", path: "/admin", adminOnly: true },
   ];
-
-  const filteredItems = navItems.filter(item => !item.adminOnly || user?.isAdmin);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50">
       <div className="max-w-md mx-auto">
         <nav className="bg-nexus-surface/95 backdrop-blur-lg border-t border-nexus-cyan/20 px-2 py-2">
           <div className="flex items-center justify-around">
-            {filteredItems.map(({ icon: Icon, label, path }) => {
+            {navItems.map(({ icon: Icon, label, path }) => {
               const isActive = location === path;
               return (
                 <Link key={path} to={path}>

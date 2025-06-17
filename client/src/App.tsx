@@ -13,10 +13,8 @@ import QuizDetail from "@/pages/quiz-detail";
 import Profile from "@/pages/profile";
 import Chat from "@/pages/chat";
 import EditProfile from "@/pages/edit-profile";
-import Admin from "@/pages/admin";
 import AuthPage from "@/pages/auth";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import AdminQuizCreator from "@/pages/admin-quiz-creator";
 
 
 function Router() {
@@ -59,16 +57,7 @@ function Router() {
             <Chat />
           </ProtectedRoute>
         </Route>
-        <Route path="/admin">
-          <ProtectedRoute>
-            <Admin />
-          </ProtectedRoute>
-        </Route>
-        <Route path="/admin/quiz-creator">
-          <ProtectedRoute>
-            <AdminQuizCreator />
-          </ProtectedRoute>
-        </Route>
+
 
         <Route component={NotFound} />
       </Switch>
