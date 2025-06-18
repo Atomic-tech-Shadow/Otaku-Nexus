@@ -640,7 +640,11 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(users.xp), desc(users.level))
       .limit(limit);
 
-    return topUsers;
+    // Ensure profile image URLs are properly returned
+    return topUsers.map(user => ({
+      ...user,
+      profileImageUrl: user.profileImageUrl || null
+    }));
   }
 
 

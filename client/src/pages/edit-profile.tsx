@@ -86,15 +86,18 @@ export default function EditProfile() {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users/leaderboard"] });
 
       // Forcer la mise à jour immédiate du cache utilisateur avec les nouvelles données
-      queryClient.setQueryData(["/api/auth/user"], {
-        ...updatedUser,
-        profileImageUrl: updatedUser.profileImageUrl || imagePreview
-      });
+      queryClient.setQueryData(["/api/auth/user"], updatedUser);
 
       // Mettre à jour aussi l'aperçu local
       setImagePreview(updatedUser.profileImageUrl || "");
+
+      // Forcer un refresh de la page pour s'assurer que toutes les photos sont mises à jour
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
 
       toast({
         title: "Profil mis à jour",
