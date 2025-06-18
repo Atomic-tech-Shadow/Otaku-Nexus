@@ -53,7 +53,14 @@ class AnimeSamaService {
       const data = await response.json();
       
       if (data.success && data.data && Array.isArray(data.data)) {
-        return data.data;
+        return data.data.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          image: item.image || 'https://via.placeholder.com/300x400',
+          type: item.type || 'anime',
+          status: item.status || 'Disponible',
+          url: item.url || ''
+        }));
       }
       
       return [];
@@ -73,14 +80,23 @@ class AnimeSamaService {
       const data = await response.json();
       
       if (data.success && data.data) {
-        return data.data;
+        return {
+          id: data.data.id,
+          title: data.data.title,
+          description: data.data.description || 'Description non disponible',
+          image: data.data.image || 'https://via.placeholder.com/300x400',
+          genres: data.data.genres || [],
+          status: data.data.status || 'Inconnu',
+          year: data.data.year || '2024',
+          seasons: data.data.seasons || [],
+          url: data.data.url || ''
+        };
       }
       
       return null;
     } catch (error) {
       console.error('Error fetching anime details:', error);
-      // Return demo data for testing when API fails
-      return this.getDemoAnimeDetails(animeId);
+      return null;
     }
   }
 
