@@ -12,7 +12,7 @@ import {
   updateUserProfileSchema,
 } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
-import { animeSamaService } from "./anime-sama-fixed";
+import { animeSamaService } from "./anime-sama-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -290,11 +290,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/anime/episode/:episodeId/streaming', async (req, res) => {
     try {
       const episodeId = req.params.episodeId;
-      const streamingLinks = await animeSamaService.getEpisodeStreaming(episodeId);
-      if (!streamingLinks) {
+      const streamingData = await animeSamaService.getEpisodeStreaming(episodeId);
+      if (!streamingData) {
         return res.status(404).json({ message: "Episode streaming links not found" });
       }
-      res.json(streamingLinks);
+      res.json(streamingData);
     } catch (error) {
       console.error("Error fetching episode streaming:", error);
       res.status(500).json({ message: "Failed to fetch episode streaming" });
