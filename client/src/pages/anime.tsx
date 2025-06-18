@@ -68,36 +68,70 @@ export default function AnimePage() {
   // Recherche d'animes
   const { data: searchResults = [], isLoading: searchLoading } = useQuery<AnimeSamaSearchResult[]>({
     queryKey: ['/api/anime/search', searchQuery],
+    queryFn: async () => {
+      const response = await fetch(`/api/anime/search?query=${encodeURIComponent(searchQuery)}`);
+      if (!response.ok) throw new Error('Erreur lors de la recherche');
+      return response.json();
+    },
     enabled: searchQuery.length > 2,
   });
 
   // Catalogue d'animes (affichés par défaut)
   const { data: catalogueAnimes = [], isLoading: catalogueLoading } = useQuery<AnimeSamaSearchResult[]>({
-    queryKey: ['/api/anime/catalogue', selectedGenre === "all" ? undefined : selectedGenre, selectedType === "all" ? undefined : selectedType],
+    queryKey: ['/api/anime/catalogue', selectedGenre, selectedType],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedGenre !== "all") params.append('genre', selectedGenre);
+      if (selectedType !== "all") params.append('type', selectedType);
+      
+      const response = await fetch(`/api/anime/catalogue?${params.toString()}`);
+      if (!response.ok) throw new Error('Erreur lors du chargement du catalogue');
+      return response.json();
+    },
     enabled: !searchQuery && !match,
   });
 
   // Animes tendances
   const { data: trendingAnimes = [], isLoading: trendingLoading } = useQuery<AnimeSamaSearchResult[]>({
     queryKey: ['/api/anime/trending'],
+    queryFn: async () => {
+      const response = await fetch('/api/anime/trending');
+      if (!response.ok) throw new Error('Erreur lors du chargement des tendances');
+      return response.json();
+    },
     enabled: !searchQuery && !match,
   });
 
   // Détails de l'anime sélectionné
   const { data: animeDetails, isLoading: animeLoading } = useQuery<AnimeSamaAnime>({
     queryKey: ['/api/anime', params?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/anime/${params?.id}`);
+      if (!response.ok) throw new Error('Erreur lors du chargement des détails');
+      return response.json();
+    },
     enabled: !!params?.id,
   });
 
   // Episodes de la saison sélectionnée
   const { data: seasonEpisodes = [], isLoading: episodesLoading } = useQuery<AnimeSamaEpisode[]>({
     queryKey: ['/api/anime', params?.id, 'season', selectedSeason, 'episodes'],
+    queryFn: async () => {
+      const response = await fetch(`/api/anime/${params?.id}/season/${selectedSeason}/episodes`);
+      if (!response.ok) throw new Error('Erreur lors du chargement des épisodes');
+      return response.json();
+    },
     enabled: !!params?.id && !!selectedSeason,
   });
 
   // Liens de streaming
   const { data: streamingLinks, isLoading: streamingLoading } = useQuery<StreamingLinks>({
     queryKey: ['/api/anime/episode', selectedEpisode?.id, 'streaming'],
+    queryFn: async () => {
+      const response = await fetch(`/api/anime/episode/${selectedEpisode?.id}/streaming`);
+      if (!response.ok) throw new Error('Erreur lors du chargement des liens');
+      return response.json();
+    },
     enabled: !!selectedEpisode?.id,
   });
 
