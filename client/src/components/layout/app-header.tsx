@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
 import { TwitterVerificationBadge, FacebookVerificationBadge } from "@/components/ui/verification-badges";
+import ProfileAvatar from "@/components/ui/profile-avatar";
 import { motion } from "framer-motion";
 
 export default function AppHeader() {
