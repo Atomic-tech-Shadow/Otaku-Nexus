@@ -24,18 +24,20 @@ interface AnimeSamaAnime {
   id: string;
   title: string;
   image: string;
-  language: 'VF' | 'VOSTFR' | 'VF+VOSTFR';
-  synopsis?: string;
-  genres?: string[];
-  type?: string;
-  status?: string;
-  seasons?: AnimeSamaSeason[];
+  description: string;
+  genres: string[];
+  status: string;
+  year: string;
+  seasons: AnimeSamaSeason[];
+  url: string;
 }
 
 interface AnimeSamaSeason {
-  seasonNumber: number;
-  title: string;
-  episodes: AnimeSamaEpisode[];
+  number: number;
+  name: string;
+  languages: string[];
+  episodeCount: number;
+  url: string;
 }
 
 interface AnimeSamaEpisode {
