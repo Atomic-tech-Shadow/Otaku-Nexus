@@ -1,4 +1,4 @@
-import { Home, Brain, MessageCircle, User, Play } from "lucide-react";
+import { Home, Brain, MessageCircle, User } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 
@@ -14,7 +14,6 @@ export default function BottomNav() {
   const navItems: NavItem[] = [
     { icon: Home, label: "Accueil", path: "/" },
     { icon: Brain, label: "Quiz", path: "/quiz" },
-    { icon: Play, label: "Anime", path: "/anime" },
     { icon: MessageCircle, label: "Chat", path: "/chat" },
   ];
 
@@ -43,7 +42,7 @@ export default function BottomNav() {
                         transition={{ type: "spring", damping: 25, stiffness: 300 }}
                       />
                     )}
-                    
+
                     <Icon 
                       className={`w-6 h-6 mb-1 transition-all duration-300 ${
                         isActive ? "text-nexus-cyan scale-110" : ""
@@ -56,7 +55,7 @@ export default function BottomNav() {
                     >
                       {label}
                     </span>
-                    
+
                     {/* Glow effect for active item */}
                     {isActive && (
                       <div className="absolute inset-0 rounded-xl bg-nexus-cyan/10 animate-pulse" />
