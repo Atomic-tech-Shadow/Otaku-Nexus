@@ -109,9 +109,7 @@ export interface IStorage {
   getPost(id: number): Promise<AdminPost | undefined>;
   createPost(post: InsertAdminPost): Promise<AdminPost>;
   
-  // Animal anime operations
-  getAnimalAnimes(limit?: number): Promise<Anime[]>;
-  searchAnimalAnimes(query: string): Promise<Anime[]>;
+
   
   // Extended admin operations
   getUsersPaginated(limit: number, offset: number): Promise<User[]>;
@@ -131,7 +129,6 @@ export interface IStorage {
   getPlatformStats(): Promise<{
     totalUsers: number;
     totalQuizzes: number;
-    totalAnime: number;
     totalMessages: number;
     totalPosts: number;
   }>;
@@ -674,7 +671,6 @@ export class DatabaseStorage implements IStorage {
   async getPlatformStats(): Promise<{
     totalUsers: number;
     totalQuizzes: number;
-    totalAnime: number;
     totalMessages: number;
     totalPosts: number;
   }> {
@@ -687,10 +683,6 @@ export class DatabaseStorage implements IStorage {
         .select({ count: sql<number>`count(*)` })
         .from(quizzes);
 
-      const [animeCount] = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(animes);
-
       const [messagesCount] = await db
         .select({ count: sql<number>`count(*)` })
         .from(chatMessages);
@@ -702,7 +694,6 @@ export class DatabaseStorage implements IStorage {
       return {
         totalUsers: usersCount?.count || 0,
         totalQuizzes: quizzesCount?.count || 0,
-        totalAnime: animeCount?.count || 0,
         totalMessages: messagesCount?.count || 0,
         totalPosts: postsCount?.count || 0,
       };
@@ -711,7 +702,6 @@ export class DatabaseStorage implements IStorage {
       return {
         totalUsers: 0,
         totalQuizzes: 0,
-        totalAnime: 0,
         totalMessages: 0,
         totalPosts: 0,
       };
@@ -741,9 +731,7 @@ export class DatabaseStorage implements IStorage {
     return updatedQuiz;
   }
 
-  async deleteAnime(animeId: number): Promise<void> {
-    await db.delete(animes).where(eq(animes.id, animeId));
-  }
+
 
   async deleteManga(mangaId: number): Promise<void> {
     await db.delete(mangas).where(eq(mangas.id, mangaId));
@@ -762,8 +750,7 @@ export class DatabaseStorage implements IStorage {
     // Clean up quiz results for deleted quizzes
     await db.delete(quizResults).where(sql`${quizResults.quizId} NOT IN (SELECT id FROM ${quizzes})`);
     
-    // Clean up favorites for deleted anime/manga
-    await db.delete(animeFavorites).where(sql`${animeFavorites.animeId} NOT IN (SELECT id FROM ${animes})`);
+
   }
 
   // Posts operations for frontend
@@ -781,27 +768,7 @@ export class DatabaseStorage implements IStorage {
     return post;
   }
 
-  // Animal anime operations
-  async getAnimalAnimes(limit: number = 20): Promise<Anime[]> {
-    // Get animes with animal themes or characters
-    return await db.select()
-      .from(animes)
-      .where(sql`${animes.title} ILIKE '%animal%' OR ${animes.title} ILIKE '%cat%' OR ${animes.title} ILIKE '%dog%' OR ${animes.synopsis} ILIKE '%animal%'`)
-      .limit(limit)
-      .orderBy(desc(animes.createdAt));
-  }
 
-  async searchAnimalAnimes(query: string): Promise<Anime[]> {
-    return await db.select()
-      .from(animes)
-      .where(
-        and(
-          like(animes.title, `%${query}%`),
-          sql`(${animes.title} ILIKE '%animal%' OR ${animes.title} ILIKE '%cat%' OR ${animes.title} ILIKE '%dog%' OR ${animes.synopsis} ILIKE '%animal%')`
-        )
-      )
-      .limit(20);
-  }
 }
 
 export const storage = new DatabaseStorage();
