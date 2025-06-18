@@ -6,9 +6,13 @@ import { Link } from "wouter";
 import { TwitterVerificationBadge, FacebookVerificationBadge } from "@/components/ui/verification-badges";
 import ProfileAvatar from "@/components/ui/profile-avatar";
 import { motion } from "framer-motion";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AppHeader() {
   const { user, logout, isLoading } = useAuth();
+  const { toast } = useToast();
+  const [hasNewNotifications, setHasNewNotifications] = useState(true);
 
   // Calculs sécurisés avec valeurs par défaut
   const currentLevel = user?.level ?? 1;
@@ -18,6 +22,14 @@ export default function AppHeader() {
 
   const handleLogout = () => {
     logout();
+  };
+
+  const handleNotifications = () => {
+    setHasNewNotifications(false);
+    toast({
+      title: "Notifications",
+      description: "Aucune nouvelle notification pour le moment.",
+    });
   };
 
   if (isLoading) {
@@ -121,15 +133,18 @@ export default function AppHeader() {
             <Button 
               variant="ghost" 
               size="sm" 
+              onClick={handleNotifications}
               className="relative text-gray-300 hover:text-nexus-cyan hover:bg-nexus-cyan/10 transition-all duration-300 p-2"
               title="Notifications"
             >
               <Bell className="w-4 h-4" />
-              <motion.span 
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="absolute -top-1 -right-1 w-2 h-2 bg-gradient-to-r from-red-500 to-pink-500 rounded-full"
-              />
+              {hasNewNotifications && (
+                <motion.span 
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                  className="absolute -top-1 -right-1 w-2 h-2 bg-gradient-to-r from-red-500 to-pink-500 rounded-full"
+                />
+              )}
             </Button>
             
             <Link href="/profile">
