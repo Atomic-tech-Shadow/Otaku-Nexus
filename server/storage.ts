@@ -1,7 +1,5 @@
 import {
   users,
-  animes,
-  animeFavorites,
   quizzes,
   quizResults,
   chatRooms,
@@ -12,21 +10,13 @@ import {
   mangaChapters,
   mangaReadingProgress,
   mangaDownloads,
-  animeEpisodes,
-  animeStreamingSources,
-  animeWatchHistory,
   type User,
   type UpsertUser,
   type UpdateUserProfile,
-  type Anime,
-  type InsertAnime,
-  type AnimeFavorite,
-  type InsertAnimeFavorite,
   type Quiz,
   type InsertQuiz,
   type QuizResult,
   type InsertQuizResult,
-
   type ChatRoom,
   type InsertChatRoom,
   type ChatMessage,
@@ -43,12 +33,6 @@ import {
   type InsertMangaReadingProgress,
   type MangaDownload,
   type InsertMangaDownload,
-  type AnimeEpisode,
-  type InsertAnimeEpisode,
-  type AnimeStreamingSource,
-  type InsertAnimeStreamingSource,
-  type AnimeWatchHistory,
-  type InsertAnimeWatchHistory,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, like, count, sql, and } from "drizzle-orm";

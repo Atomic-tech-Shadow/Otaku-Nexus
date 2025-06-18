@@ -14,9 +14,7 @@ import Chat from "@/pages/chat";
 import EditProfile from "@/pages/edit-profile";
 import AuthPage from "@/pages/auth";
 import Admin from "@/pages/admin";
-import Anime from "@/pages/anime";
-import AnimeDetail from "@/pages/anime-detail";
-import AnimeEpisode from "@/pages/anime-episode";
+
 import { ProtectedRoute } from "@/components/auth/protected-route";
 
 
@@ -67,21 +65,7 @@ function Router() {
           </ProtectedRoute>
         </Route>
 
-        <Route path="/anime">
-          <ProtectedRoute>
-            <Anime />
-          </ProtectedRoute>
-        </Route>
-        <Route path="/anime/:id">
-          <ProtectedRoute>
-            <AnimeDetail />
-          </ProtectedRoute>
-        </Route>
-        <Route path="/anime/:id/season/:seasonNumber/episode/:episodeId">
-          <ProtectedRoute>
-            <AnimeEpisode />
-          </ProtectedRoute>
-        </Route>
+
 
         <Route component={NotFound} />
       </Switch>

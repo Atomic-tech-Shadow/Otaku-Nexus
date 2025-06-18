@@ -81,56 +81,7 @@ export const authTokens = pgTable("auth_tokens", {
   unique().on(table.token),
 ]);
 
-export const animes = pgTable("animes", {
-  id: serial("id").primaryKey(),
-  malId: integer("mal_id").unique().notNull(),
-  title: text("title").notNull(),
-  synopsis: text("synopsis"),
-  imageUrl: text("image_url"),
-  score: text("score"),
-  year: integer("year"),
-  status: text("status"),
-  episodes: integer("episodes"),
-  genres: text("genres").array(),
-  gogoAnimeId: text("gogo_anime_id"), // For streaming integration
-  createdAt: timestamp("created_at").defaultNow(),
-});
 
-// Anime episodes table for streaming
-export const animeEpisodes = pgTable("anime_episodes", {
-  id: serial("id").primaryKey(),
-  animeId: integer("anime_id").notNull().references(() => animes.id),
-  gogoEpisodeId: text("gogo_episode_id").unique().notNull(),
-  episodeNumber: integer("episode_number").notNull(),
-  title: text("title"),
-  description: text("description"),
-  thumbnailUrl: text("thumbnail_url"),
-  duration: text("duration"),
-  language: text("language").default("sub"), // sub, dub
-  isAvailable: boolean("is_available").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Anime streaming sources for episodes
-export const animeStreamingSources = pgTable("anime_streaming_sources", {
-  id: serial("id").primaryKey(),
-  episodeId: integer("episode_id").notNull().references(() => animeEpisodes.id),
-  quality: text("quality").notNull(), // 480p, 720p, 1080p
-  url: text("url").notNull(),
-  isDefault: boolean("is_default").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// User watch history
-export const animeWatchHistory = pgTable("anime_watch_history", {
-  id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  episodeId: integer("episode_id").notNull().references(() => animeEpisodes.id),
-  watchedAt: timestamp("watched_at").defaultNow(),
-  watchedDuration: integer("watched_duration").default(0), // seconds
-  totalDuration: integer("total_duration").default(0), // seconds
-  isCompleted: boolean("is_completed").default(false),
-});
 
 export const mangas = pgTable("mangas", {
   id: serial("id").primaryKey(),
@@ -150,13 +101,7 @@ export const mangas = pgTable("mangas", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const animeFavorites = pgTable("anime_favorites", {
-  id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  animeId: integer("anime_id").notNull().references(() => animes.id),
-  rating: integer("rating"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+
 
 export const mangaFavorites = pgTable("manga_favorites", {
   id: serial("id").primaryKey(),
@@ -273,30 +218,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   xp: true,
 });
 
-export const insertAnimeSchema = createInsertSchema(animes).omit({
-  id: true,
-  createdAt: true,
-});
 
-export const insertAnimeEpisodeSchema = createInsertSchema(animeEpisodes).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertAnimeStreamingSourceSchema = createInsertSchema(animeStreamingSources).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertAnimeWatchHistorySchema = createInsertSchema(animeWatchHistory).omit({
-  id: true,
-  watchedAt: true,
-});
-
-export const insertAnimeFavoriteSchema = createInsertSchema(animeFavorites).omit({
-  id: true,
-  createdAt: true,
-});
 
 export const insertMangaSchema = createInsertSchema(mangas).omit({
   id: true,
@@ -369,16 +291,7 @@ export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
-export type Anime = typeof animes.$inferSelect;
-export type InsertAnime = z.infer<typeof insertAnimeSchema>;
-export type AnimeEpisode = typeof animeEpisodes.$inferSelect;
-export type InsertAnimeEpisode = z.infer<typeof insertAnimeEpisodeSchema>;
-export type AnimeStreamingSource = typeof animeStreamingSources.$inferSelect;
-export type InsertAnimeStreamingSource = z.infer<typeof insertAnimeStreamingSourceSchema>;
-export type AnimeWatchHistory = typeof animeWatchHistory.$inferSelect;
-export type InsertAnimeWatchHistory = z.infer<typeof insertAnimeWatchHistorySchema>;
-export type AnimeFavorite = typeof animeFavorites.$inferSelect;
-export type InsertAnimeFavorite = z.infer<typeof insertAnimeFavoriteSchema>;
+
 export type Manga = typeof mangas.$inferSelect;
 export type InsertManga = z.infer<typeof insertMangaSchema>;
 export type MangaFavorite = typeof mangaFavorites.$inferSelect;
