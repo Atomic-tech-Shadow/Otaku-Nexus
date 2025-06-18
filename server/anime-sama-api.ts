@@ -39,12 +39,12 @@ export interface AnimeSamaGenre {
 }
 
 class AnimeSamaService {
-  private baseUrl = 'https://api-anime-sama.onrender.com';
+  private baseUrl = 'https://api-anime-sama.onrender.com/api';
 
   // 1. Recherche d'animés
   async searchAnime(query: string): Promise<AnimeSamaSearchResult[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/search?query=${encodeURIComponent(query)}`);
+      const response = await fetch(`${this.baseUrl}/search?query=${encodeURIComponent(query)}`);
       if (!response.ok) {
         throw new Error(`API returned ${response.status}`);
       }
@@ -101,7 +101,7 @@ class AnimeSamaService {
   // 2. Détails d'un animé
   async getAnimeDetails(animeId: string): Promise<AnimeSamaAnime | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/anime/${animeId}`);
+      const response = await fetch(`${this.baseUrl}/anime/${animeId}`);
       if (!response.ok) {
         throw new Error(`API returned ${response.status}`);
       }
@@ -164,7 +164,7 @@ class AnimeSamaService {
   // 3. Épisodes d'une saison
   async getSeasonEpisodes(animeId: string, seasonNum: number): Promise<AnimeSamaEpisode[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/anime/${animeId}/season/${seasonNum}/episodes`);
+      const response = await fetch(`${this.baseUrl}/anime/${animeId}`);
       if (!response.ok) {
         throw new Error(`API returned ${response.status}`);
       }
