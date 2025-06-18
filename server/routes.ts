@@ -278,6 +278,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/anime/episode/:episodeId/streaming', async (req, res) => {
+    try {
+      const episodeId = req.params.episodeId;
+      const streamingLinks = await animeSamaService.getEpisodeStreaming(episodeId);
+      if (!streamingLinks) {
+        return res.status(404).json({ message: "Episode streaming links not found" });
+      }
+      res.json(streamingLinks);
+    } catch (error) {
+      console.error("Error fetching episode streaming:", error);
+      res.status(500).json({ message: "Failed to fetch episode streaming" });
+    }
+  });
+
   app.get('/api/catalogue', async (req, res) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
