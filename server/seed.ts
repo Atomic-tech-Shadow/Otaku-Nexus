@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { animes, quizzes, videos } from "@shared/schema";
+import { animes, quizzes } from "@shared/schema";
 import { mangaQuizzes } from "./quiz-data.js";
 
 async function seedDatabase() {
