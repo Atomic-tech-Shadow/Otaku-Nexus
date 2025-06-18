@@ -9,7 +9,7 @@ import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Quiz from "@/pages/quiz";
 import QuizDetail from "@/pages/quiz-detail";
-
+import AnimePage from "@/pages/anime";
 import Profile from "@/pages/profile";
 import Chat from "@/pages/chat";
 import EditProfile from "@/pages/edit-profile";
@@ -39,6 +39,17 @@ function Router() {
         <Route path="/quiz/:id">
           <ProtectedRoute>
             <QuizDetail />
+          </ProtectedRoute>
+        </Route>
+
+        <Route path="/anime">
+          <ProtectedRoute>
+            <AnimePage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/anime/:id">
+          <ProtectedRoute>
+            <AnimePage />
           </ProtectedRoute>
         </Route>
 
