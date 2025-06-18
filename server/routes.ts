@@ -211,7 +211,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Query parameter is required" });
       }
       const results = await animeSamaService.searchAnime(query);
-      res.json(results);
+      
+      // S'assurer que la réponse est toujours un tableau
+      const result = Array.isArray(results) ? results : [results].filter(Boolean);
+      res.json(result);
     } catch (error) {
       console.error("Error searching anime:", error);
       res.status(500).json({ message: "Failed to search anime" });
@@ -231,7 +234,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/anime/trending', async (req, res) => {
     try {
       const trendingAnime = await animeSamaService.getTrendingAnime();
-      res.json(trendingAnime);
+      
+      // S'assurer que la réponse est toujours un tableau
+      const result = Array.isArray(trendingAnime) ? trendingAnime : [trendingAnime].filter(Boolean);
+      res.json(result);
     } catch (error) {
       console.error("Error fetching trending anime:", error);
       res.status(500).json({ message: "Failed to fetch trending anime" });
@@ -257,7 +263,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const animeId = req.params.id;
       const seasonNumber = parseInt(req.params.seasonNumber);
       const episodes = await animeSamaService.getSeasonEpisodes(animeId, seasonNumber);
-      res.json(episodes);
+      
+      // S'assurer que la réponse est toujours un tableau
+      const result = Array.isArray(episodes) ? episodes : [episodes].filter(Boolean);
+      res.json(result);
     } catch (error) {
       console.error("Error fetching season episodes:", error);
       res.status(500).json({ message: "Failed to fetch season episodes" });
@@ -311,7 +320,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const genre = req.query.genre as string;
       const type = req.query.type as string;
       const catalogue = await animeSamaService.getCatalogue(page, genre, type);
-      res.json(catalogue);
+      
+      // S'assurer que la réponse est toujours un tableau
+      const result = Array.isArray(catalogue) ? catalogue : [catalogue].filter(Boolean);
+      res.json(result);
     } catch (error) {
       console.error("Error fetching anime catalogue:", error);
       res.status(500).json({ message: "Failed to fetch anime catalogue" });
