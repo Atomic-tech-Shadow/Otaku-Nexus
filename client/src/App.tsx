@@ -9,7 +9,7 @@ import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Quiz from "@/pages/quiz";
 import QuizDetail from "@/pages/quiz-detail";
-import AnimePage from "@/pages/anime";
+import AnimePage from "@/pages/anime-fixed";
 import Profile from "@/pages/profile";
 import Chat from "@/pages/chat";
 import EditProfile from "@/pages/edit-profile";
