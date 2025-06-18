@@ -243,7 +243,7 @@ export default function AnimePage() {
                 </Button>
                 <h1 className="text-4xl font-bold mb-2">{animeDetails.title}</h1>
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {animeDetails.genres.map((genre) => (
+                  {animeDetails.genres.map((genre: string) => (
                     <Badge key={genre} variant="secondary" className="bg-purple-500/80">
                       {genre}
                     </Badge>
@@ -425,7 +425,7 @@ export default function AnimePage() {
                                 Lecteur vidéo pour {selectedLanguage.toUpperCase()}
                               </div>
                               <div className="text-white/40 text-sm mt-2">
-                                {(streamingLinks as StreamingLinks)[selectedLanguage]?.length || 0} liens disponibles
+                                {streamingLinks[selectedLanguage]?.length || 0} liens disponibles
                               </div>
                             </div>
                           </div>
