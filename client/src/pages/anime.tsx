@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Search, ChevronLeft, Play, Star, Calendar, Languages } from "lucide-react";
-import { AppHeader } from "@/components/AppHeader";
+import AppHeader from "@/components/layout/app-header";
 
 // Interfaces pour l'API Anime-Sama (version corrigée)
 interface AnimeSamaSearchResult {
@@ -63,31 +63,31 @@ export default function AnimePage() {
   const [showPlayer, setShowPlayer] = useState(false);
 
   // Recherche d'animes
-  const { data: searchResults, isLoading: searchLoading } = useQuery({
+  const { data: searchResults = [], isLoading: searchLoading } = useQuery<AnimeSamaSearchResult[]>({
     queryKey: ['/api/anime/search', searchQuery],
     enabled: searchQuery.length > 2,
   });
 
   // Animes tendances (affichés par défaut)
-  const { data: trendingAnimes, isLoading: trendingLoading } = useQuery({
+  const { data: trendingAnimes = [], isLoading: trendingLoading } = useQuery<AnimeSamaSearchResult[]>({
     queryKey: ['/api/anime/trending'],
     enabled: !searchQuery && !match,
   });
 
   // Détails de l'anime sélectionné
-  const { data: animeDetails, isLoading: animeLoading } = useQuery({
+  const { data: animeDetails, isLoading: animeLoading } = useQuery<AnimeSamaAnime>({
     queryKey: ['/api/anime', params?.id],
     enabled: !!params?.id,
   });
 
   // Episodes de la saison sélectionnée
-  const { data: seasonEpisodes, isLoading: episodesLoading } = useQuery({
+  const { data: seasonEpisodes = [], isLoading: episodesLoading } = useQuery<AnimeSamaEpisode[]>({
     queryKey: ['/api/anime', params?.id, 'season', selectedSeason, 'episodes'],
     enabled: !!params?.id && !!selectedSeason,
   });
 
   // Liens de streaming pour l'épisode sélectionné
-  const { data: streamingLinks, isLoading: streamingLoading } = useQuery({
+  const { data: streamingLinks, isLoading: streamingLoading } = useQuery<StreamingLinks>({
     queryKey: ['/api/episode', selectedEpisode?.id],
     enabled: !!selectedEpisode?.id,
   });
