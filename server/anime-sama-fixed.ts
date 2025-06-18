@@ -100,83 +100,7 @@ class AnimeSamaService {
     }
   }
 
-  private getDemoAnimeDetails(animeId: string): AnimeSamaAnime {
-    const demoDetails: { [key: string]: AnimeSamaAnime } = {
-      "attack-on-titan": {
-        id: "attack-on-titan",
-        title: "L'Attaque des Titans",
-        description: "L'humanité se bat pour sa survie contre des titans géants qui ont poussé la civilisation au bord de l'extinction.",
-        image: "https://cdn.myanimelist.net/images/anime/10/47347.jpg",
-        genres: ["Action", "Drame", "Fantasy"],
-        status: "Terminé",
-        year: "2013",
-        seasons: [
-          {
-            number: 1,
-            name: "Saison 1",
-            languages: ["VF", "VOSTFR"],
-            episodeCount: 25,
-            url: "https://anime-sama.fr/catalogue/anime/attack-on-titan/saison-1"
-          },
-          {
-            number: 2,
-            name: "Saison 2",
-            languages: ["VF", "VOSTFR"],
-            episodeCount: 12,
-            url: "https://anime-sama.fr/catalogue/anime/attack-on-titan/saison-2"
-          }
-        ],
-        url: "https://anime-sama.fr/catalogue/anime/attack-on-titan"
-      },
-      "demon-slayer": {
-        id: "demon-slayer",
-        title: "Demon Slayer",
-        description: "Une famille est attaquée par des démons et seuls deux membres survivent - Tanjiro et sa sœur Nezuko, qui se transforme lentement en démon.",
-        image: "https://cdn.myanimelist.net/images/anime/1286/99889.jpg",
-        genres: ["Action", "Surnaturel", "Historique"],
-        status: "Terminé",
-        year: "2019",
-        seasons: [
-          {
-            number: 1,
-            name: "Saison 1",
-            languages: ["VF", "VOSTFR"],
-            episodeCount: 26,
-            url: "https://anime-sama.fr/catalogue/anime/demon-slayer/saison-1"
-          }
-        ],
-        url: "https://anime-sama.fr/catalogue/anime/demon-slayer"
-      },
-      "one-piece": {
-        id: "one-piece",
-        title: "One Piece",
-        description: "Monkey D. Luffy se lance dans une aventure avec son équipage de pirates dans l'espoir de trouver le plus grand trésor jamais découvert.",
-        image: "https://cdn.myanimelist.net/images/anime/6/73245.jpg",
-        genres: ["Action", "Aventure", "Comédie"],
-        status: "En cours",
-        year: "1999",
-        seasons: [
-          {
-            number: 1,
-            name: "East Blue",
-            languages: ["VF", "VOSTFR"],
-            episodeCount: 61,
-            url: "https://anime-sama.fr/catalogue/anime/one-piece/east-blue"
-          },
-          {
-            number: 2,
-            name: "Alabasta",
-            languages: ["VF", "VOSTFR"],
-            episodeCount: 78,
-            url: "https://anime-sama.fr/catalogue/anime/one-piece/alabasta"
-          }
-        ],
-        url: "https://anime-sama.fr/catalogue/anime/one-piece"
-      }
-    };
 
-    return demoDetails[animeId] || demoDetails["attack-on-titan"];
-  }
 
   // 3. Épisodes d'une saison (générer une liste basée sur episodeCount)
   async getSeasonEpisodes(animeId: string, seasonNum: number): Promise<AnimeSamaEpisode[]> {
@@ -218,7 +142,7 @@ class AnimeSamaService {
       if (!response.ok) {
         // Si l'endpoint n'existe pas, retourner des liens de démonstration
         console.warn(`Episode endpoint not available for ${episodeId}`);
-        return this.generateDemoStreamingLinks(episodeId);
+        return null;
       }
       const data = await response.json();
       
@@ -226,34 +150,20 @@ class AnimeSamaService {
         return data.data;
       }
       
-      return this.generateDemoStreamingLinks(episodeId);
+      return null;
     } catch (error) {
       console.error('Error fetching episode streaming:', error);
-      return this.generateDemoStreamingLinks(episodeId);
+      return null;
     }
   }
 
-  private generateDemoStreamingLinks(episodeId: string): StreamingLinks {
-    return {
-      vf: [`https://vidmoly.to/embed/demo-vf-${episodeId}`],
-      vostfr: [`https://vidmoly.to/embed/demo-vostfr-${episodeId}`]
-    };
-  }
+
 
   // 5. Animés tendances
   async getTrendingAnime(): Promise<AnimeSamaSearchResult[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/trending`);
-      if (!response.ok) {
-        throw new Error(`API returned ${response.status}`);
-      }
-      const data = await response.json();
-      
-      if (data.success && data.data && Array.isArray(data.data)) {
-        return data.data;
-      }
-      
-      return [];
+      // Utiliser le catalogue pour obtenir des animes populaires
+      return this.getCatalogue(1);
     } catch (error) {
       console.error('Error fetching trending anime:', error);
       return [];
@@ -285,66 +195,15 @@ class AnimeSamaService {
         }));
       }
       
-      // Si l'API ne retourne pas de données, retourner des données de démonstration
-      return this.getDemoCatalogueData();
+      // Si l'API ne retourne pas de données, retourner un tableau vide
+      return [];
     } catch (error) {
       console.error('Error fetching anime catalogue:', error);
-      return this.getDemoCatalogueData();
+      return [];
     }
   }
 
-  private getDemoCatalogueData(): AnimeSamaSearchResult[] {
-    return [
-      {
-        id: "attack-on-titan",
-        title: "L'Attaque des Titans",
-        image: "https://cdn.myanimelist.net/images/anime/10/47347.jpg",
-        type: "TV",
-        status: "Terminé",
-        url: "https://anime-sama.fr/catalogue/anime/attack-on-titan"
-      },
-      {
-        id: "demon-slayer",
-        title: "Demon Slayer",
-        image: "https://cdn.myanimelist.net/images/anime/1286/99889.jpg",
-        type: "TV",
-        status: "Terminé",
-        url: "https://anime-sama.fr/catalogue/anime/demon-slayer"
-      },
-      {
-        id: "one-piece",
-        title: "One Piece",
-        image: "https://cdn.myanimelist.net/images/anime/6/73245.jpg",
-        type: "TV",
-        status: "En cours",
-        url: "https://anime-sama.fr/catalogue/anime/one-piece"
-      },
-      {
-        id: "naruto",
-        title: "Naruto",
-        image: "https://cdn.myanimelist.net/images/anime/13/17405.jpg",
-        type: "TV",
-        status: "Terminé",
-        url: "https://anime-sama.fr/catalogue/anime/naruto"
-      },
-      {
-        id: "jujutsu-kaisen",
-        title: "Jujutsu Kaisen",
-        image: "https://cdn.myanimelist.net/images/anime/1171/109222.jpg",
-        type: "TV",
-        status: "Terminé",
-        url: "https://anime-sama.fr/catalogue/anime/jujutsu-kaisen"
-      },
-      {
-        id: "my-hero-academia",
-        title: "My Hero Academia",
-        image: "https://cdn.myanimelist.net/images/anime/10/78745.jpg",
-        type: "TV",
-        status: "En cours",
-        url: "https://anime-sama.fr/catalogue/anime/my-hero-academia"
-      }
-    ];
-  }
+
 
   // 7. Animé aléatoire
   async getRandomAnime(): Promise<AnimeSamaAnime | null> {
