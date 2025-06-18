@@ -190,6 +190,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Anime routes - using Anime-Sama API
+  app.get('/api/search', async (req, res) => {
+    try {
+      const query = req.query.query as string;
+      if (!query || query.trim().length === 0) {
+        return res.status(400).json({ message: "Query parameter is required" });
+      }
+      const results = await animeSamaService.searchAnime(query);
+      res.json(results);
+    } catch (error) {
+      console.error("Error searching anime:", error);
+      res.status(500).json({ message: "Failed to search anime" });
+    }
+  });
+
   app.get('/api/anime/search', async (req, res) => {
     try {
       const query = req.query.query as string;
@@ -201,6 +215,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error searching anime:", error);
       res.status(500).json({ message: "Failed to search anime" });
+    }
+  });
+
+  app.get('/api/trending', async (req, res) => {
+    try {
+      const trendingAnime = await animeSamaService.getTrendingAnime();
+      res.json(trendingAnime);
+    } catch (error) {
+      console.error("Error fetching trending anime:", error);
+      res.status(500).json({ message: "Failed to fetch trending anime" });
     }
   });
 
@@ -254,6 +278,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/catalogue', async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const genre = req.query.genre as string;
+      const type = req.query.type as string;
+      const catalogue = await animeSamaService.getCatalogue(page, genre, type);
+      res.json(catalogue);
+    } catch (error) {
+      console.error("Error fetching anime catalogue:", error);
+      res.status(500).json({ message: "Failed to fetch anime catalogue" });
+    }
+  });
+
   app.get('/api/anime/catalogue', async (req, res) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
@@ -267,6 +304,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/random', async (req, res) => {
+    try {
+      const randomAnime = await animeSamaService.getRandomAnime();
+      if (!randomAnime) {
+        return res.status(404).json({ message: "No random anime available" });
+      }
+      res.json(randomAnime);
+    } catch (error) {
+      console.error("Error fetching random anime:", error);
+      res.status(500).json({ message: "Failed to fetch random anime" });
+    }
+  });
+
   app.get('/api/anime/random', async (req, res) => {
     try {
       const randomAnime = await animeSamaService.getRandomAnime();
@@ -277,6 +327,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching random anime:", error);
       res.status(500).json({ message: "Failed to fetch random anime" });
+    }
+  });
+
+  app.get('/api/genres', async (req, res) => {
+    try {
+      const genres = await animeSamaService.getGenres();
+      res.json(genres);
+    } catch (error) {
+      console.error("Error fetching anime genres:", error);
+      res.status(500).json({ message: "Failed to fetch anime genres" });
     }
   });
 
