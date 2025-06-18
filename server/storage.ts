@@ -624,6 +624,25 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
+  async getLeaderboard(limit: number = 10): Promise<any[]> {
+    const topUsers = await db
+      .select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        username: users.email, // Using email as username fallback
+        profileImageUrl: users.profileImageUrl,
+        xp: users.xp,
+        level: users.level,
+        isAdmin: users.isAdmin
+      })
+      .from(users)
+      .orderBy(desc(users.xp), desc(users.level))
+      .limit(limit);
+
+    return topUsers;
+  }
+
 
 
   // Profile operations
@@ -690,11 +709,11 @@ export class DatabaseStorage implements IStorage {
       .from(chatMessages)
       .leftJoin(users, eq(chatMessages.userId, users.id))
       .where(eq(chatMessages.roomId, roomId))
-      .orderBy(chatMessages.createdAt) // Ordre chronologique direct
+      .orderBy(desc(chatMessages.createdAt)) // Messages les plus récents en dernier
       .limit(limit);
 
-    // Retourner les messages dans l'ordre chronologique
-    return results.map(result => ({
+    // Retourner les messages dans l'ordre chronologique (inverser car on a trié par desc)
+    return results.reverse().map(result => ({
       ...result,
       timestamp: result.createdAt, // Assurer la compatibilité
       username: result.userFirstName || 'Utilisateur' // Fallback pour le nom

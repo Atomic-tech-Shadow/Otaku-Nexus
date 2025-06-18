@@ -9,7 +9,7 @@ import QuizCard from "@/components/quiz/quiz-card";
 
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
-import { Brain, Search, BookOpen, Sparkles, MessageSquare } from "lucide-react";
+import { Brain, Search, BookOpen, Sparkles, MessageSquare, Trophy, Crown, Medal } from "lucide-react";
 import { Link } from "wouter";
 import { PostCard } from "@/components/ui/post-card";
 
@@ -37,6 +37,12 @@ export default function Home() {
   const { data: posts = [], isLoading: postsLoading } = useQuery({
     queryKey: ["/api/posts"],
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+  });
+
+  const { data: topUsers = [], isLoading: leaderboardLoading } = useQuery({
+    queryKey: ["/api/users/leaderboard"],
+    staleTime: 10 * 60 * 1000, // 10 minutes
     retry: 2,
   });
 
@@ -120,6 +126,84 @@ export default function Home() {
           )}
 
 
+
+          {/* Leaderboard */}
+          <section className="mb-6">
+            <div className="glass-morphism rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Trophy className="w-5 h-5 text-nexus-cyan" />
+                <h3 className="text-lg font-semibold">Top Otakus</h3>
+              </div>
+              {leaderboardLoading ? (
+                <div className="flex justify-center py-4">
+                  <LoadingSpinner size="sm" />
+                </div>
+              ) : Array.isArray(topUsers) && topUsers.length > 0 ? (
+                <div className="space-y-3">
+                  {topUsers.slice(0, 5).map((topUser: any, index: number) => (
+                    <div key={topUser.id} className="flex items-center space-x-3 p-3 rounded-xl bg-nexus-surface/30 hover:bg-nexus-surface/50 transition-colors">
+                      <div className="flex items-center justify-center w-8 h-8">
+                        {index === 0 && <Crown className="w-5 h-5 text-yellow-400" />}
+                        {index === 1 && <Medal className="w-5 h-5 text-gray-400" />}
+                        {index === 2 && <Medal className="w-5 h-5 text-amber-600" />}
+                        {index > 2 && <span className="text-sm font-semibold text-gray-400">#{index + 1}</span>}
+                      </div>
+                      <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-nexus-cyan/50 flex-shrink-0">
+                        {topUser.profileImageUrl ? (
+                          <>
+                            <img 
+                              src={topUser.profileImageUrl} 
+                              alt={`${topUser.firstName || topUser.username} profile`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.currentTarget;
+                                target.style.display = 'none';
+                                const fallback = target.nextElementSibling as HTMLElement;
+                                if (fallback) {
+                                  fallback.classList.remove('hidden');
+                                  fallback.classList.add('flex');
+                                }
+                              }}
+                            />
+                            <div className="hidden absolute inset-0 w-full h-full bg-gradient-to-br from-nexus-cyan to-nexus-purple items-center justify-center">
+                              <span className="text-xs font-bold text-white">
+                                {(topUser.firstName || topUser.username || 'U').charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-nexus-cyan to-nexus-purple flex items-center justify-center">
+                            <span className="text-xs font-bold text-white">
+                              {(topUser.firstName || topUser.username || 'U').charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-white truncate">
+                          {topUser.firstName ? `${topUser.firstName} ${topUser.lastName || ''}`.trim() : topUser.username || 'Otaku'}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          Niveau {topUser.level || 1} • {topUser.xp || 0} XP
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-nexus-cyan">
+                          {topUser.xp || 0}
+                        </div>
+                        <div className="text-xs text-gray-400">XP</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-gray-400 py-4">
+                  <Trophy className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Aucun classement disponible</p>
+                </div>
+              )}
+            </div>
+          </section>
 
           {/* User Progress */}
           <section className="mb-6">
