@@ -4,7 +4,6 @@ import { storage } from "./storage";
 import {
   insertQuizSchema,
   insertQuizResultSchema,
-  insertAnimeSchema,
   insertChatRoomSchema,
   insertChatMessageSchema,
   insertChatRoomMemberSchema,
@@ -12,7 +11,6 @@ import {
   updateUserProfileSchema,
 } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
-import { animeSamaService } from "./anime-sama-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware

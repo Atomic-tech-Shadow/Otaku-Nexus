@@ -47,23 +47,7 @@ export interface IStorage {
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserXP(userId: string, xpToAdd: number): Promise<User>;
 
-  // Anime operations
-  getAnimes(limit?: number): Promise<Anime[]>;
-  getAnimeByMalId(malId: number): Promise<Anime | undefined>;
-  createAnime(anime: InsertAnime): Promise<Anime>;
-  getTrendingAnimes(): Promise<Anime[]>;
-  searchAnimes(query: string): Promise<Anime[]>;
-  updateAnimeGogoId(animeId: number, gogoAnimeId: string): Promise<Anime>;
 
-  // Anime streaming operations
-  getAnimeEpisodes(animeId: number): Promise<AnimeEpisode[]>;
-  getAnimeEpisode(episodeId: number): Promise<AnimeEpisode | undefined>;
-  createAnimeEpisode(episode: InsertAnimeEpisode): Promise<AnimeEpisode>;
-  getEpisodeStreamingSources(episodeId: number): Promise<AnimeStreamingSource[]>;
-  createStreamingSource(source: InsertAnimeStreamingSource): Promise<AnimeStreamingSource>;
-  getUserWatchHistory(userId: string, animeId?: number): Promise<AnimeWatchHistory[]>;
-  updateWatchHistory(history: InsertAnimeWatchHistory): Promise<AnimeWatchHistory>;
-  markEpisodeWatched(userId: string, episodeId: number, watchedDuration: number, totalDuration: number): Promise<AnimeWatchHistory>;
 
   // Manga operations
   getMangas(limit?: number): Promise<Manga[]>;
@@ -81,10 +65,7 @@ export interface IStorage {
   updateDownloadStatus(id: number, status: string, downloadUrl?: string): Promise<MangaDownload>;
   updateMangaChapter(id: number, updates: Partial<InsertMangaChapter>): Promise<MangaChapter>;
 
-  // Anime favorites operations
-  getUserFavorites(userId: string): Promise<AnimeFavorite[]>;
-  addToFavorites(favorite: InsertAnimeFavorite): Promise<AnimeFavorite>;
-  removeFromFavorites(userId: string, animeId: number): Promise<void>;
+
 
   // Quiz operations
   getQuizzes(): Promise<Quiz[]>;
@@ -97,7 +78,6 @@ export interface IStorage {
   createQuizResult(result: InsertQuizResult): Promise<QuizResult>;
   getUserStats(userId: string): Promise<{
     totalQuizzes: number;
-    totalAnime: number;
     totalXP: number;
     rank: number;
   }>;
@@ -202,153 +182,9 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  // Anime operations
-  async getAnimes(limit = 20): Promise<Anime[]> {
-    return await db.select().from(animes).orderBy(desc(animes.createdAt)).limit(limit);
-  }
 
-  async getAnimeByMalId(malId: number): Promise<Anime | undefined> {
-    const [anime] = await db.select().from(animes).where(eq(animes.malId, malId));
-    return anime;
-  }
 
-  async createAnime(anime: InsertAnime): Promise<Anime> {
-    const [newAnime] = await db.insert(animes).values(anime).returning();
-    return newAnime;
-  }
 
-  async getTrendingAnimes(): Promise<Anime[]> {
-    return await db.select().from(animes).orderBy(desc(animes.score)).limit(10);
-  }
-
-  async searchAnimes(query: string): Promise<Anime[]> {
-    return await db
-      .select()
-      .from(animes)
-      .where(sql`${animes.title} ILIKE ${'%' + query + '%'}`)
-      .limit(20);
-  }
-
-  async updateAnimeGogoId(animeId: number, gogoAnimeId: string): Promise<Anime> {
-    const [result] = await db
-      .update(animes)
-      .set({ gogoAnimeId })
-      .where(eq(animes.id, animeId))
-      .returning();
-    return result;
-  }
-
-  async getAnimeEpisodes(animeId: number): Promise<AnimeEpisode[]> {
-    return await db
-      .select()
-      .from(animeEpisodes)
-      .where(eq(animeEpisodes.animeId, animeId))
-      .orderBy(animeEpisodes.episodeNumber);
-  }
-
-  async getAnimeEpisode(episodeId: number): Promise<AnimeEpisode | undefined> {
-    const [result] = await db
-      .select()
-      .from(animeEpisodes)
-      .where(eq(animeEpisodes.id, episodeId));
-    return result;
-  }
-
-  async createAnimeEpisode(episode: InsertAnimeEpisode): Promise<AnimeEpisode> {
-    const [result] = await db
-      .insert(animeEpisodes)
-      .values(episode)
-      .returning();
-    return result;
-  }
-
-  async getEpisodeStreamingSources(episodeId: number): Promise<AnimeStreamingSource[]> {
-    return await db
-      .select()
-      .from(animeStreamingSources)
-      .where(eq(animeStreamingSources.episodeId, episodeId))
-      .orderBy(desc(animeStreamingSources.isDefault));
-  }
-
-  async createStreamingSource(source: InsertAnimeStreamingSource): Promise<AnimeStreamingSource> {
-    const [result] = await db
-      .insert(animeStreamingSources)
-      .values(source)
-      .returning();
-    return result;
-  }
-
-  async getUserWatchHistory(userId: string, animeId?: number): Promise<AnimeWatchHistory[]> {
-    const whereConditions = animeId 
-      ? and(eq(animeWatchHistory.userId, userId), eq(animes.id, animeId))
-      : eq(animeWatchHistory.userId, userId);
-
-    const result = await db
-      .select({
-        id: animeWatchHistory.id,
-        userId: animeWatchHistory.userId,
-        episodeId: animeWatchHistory.episodeId,
-        watchedAt: animeWatchHistory.watchedAt,
-        watchedDuration: animeWatchHistory.watchedDuration,
-        totalDuration: animeWatchHistory.totalDuration,
-        isCompleted: animeWatchHistory.isCompleted,
-        episodeNumber: animeEpisodes.episodeNumber,
-        episodeTitle: animeEpisodes.title,
-        animeTitle: animes.title,
-        animeId: animes.id,
-      })
-      .from(animeWatchHistory)
-      .innerJoin(animeEpisodes, eq(animeWatchHistory.episodeId, animeEpisodes.id))
-      .innerJoin(animes, eq(animeEpisodes.animeId, animes.id))
-      .where(whereConditions)
-      .orderBy(desc(animeWatchHistory.watchedAt));
-
-    return result as any[];
-  }
-
-  async updateWatchHistory(history: InsertAnimeWatchHistory): Promise<AnimeWatchHistory> {
-    const existing = await db
-      .select()
-      .from(animeWatchHistory)
-      .where(
-        and(
-          eq(animeWatchHistory.userId, history.userId),
-          eq(animeWatchHistory.episodeId, history.episodeId)
-        )
-      );
-
-    if (existing.length > 0) {
-      const [result] = await db
-        .update(animeWatchHistory)
-        .set({
-          watchedDuration: history.watchedDuration,
-          totalDuration: history.totalDuration,
-          isCompleted: history.isCompleted,
-          watchedAt: new Date(),
-        })
-        .where(eq(animeWatchHistory.id, existing[0].id))
-        .returning();
-      return result;
-    } else {
-      const [result] = await db
-        .insert(animeWatchHistory)
-        .values(history)
-        .returning();
-      return result;
-    }
-  }
-
-  async markEpisodeWatched(userId: string, episodeId: number, watchedDuration: number, totalDuration: number): Promise<AnimeWatchHistory> {
-    const isCompleted = watchedDuration >= totalDuration * 0.9;
-    
-    return this.updateWatchHistory({
-      userId,
-      episodeId,
-      watchedDuration,
-      totalDuration,
-      isCompleted,
-    });
-  }
 
   // Manga operations
   async getMangas(limit = 20): Promise<Manga[]> {
@@ -464,23 +300,7 @@ export class DatabaseStorage implements IStorage {
     return updatedDownload;
   }
 
-  // Anime favorites operations
-  async getUserFavorites(userId: string): Promise<AnimeFavorite[]> {
-    return await db.select().from(animeFavorites).where(eq(animeFavorites.userId, userId));
-  }
 
-  async addToFavorites(favorite: InsertAnimeFavorite): Promise<AnimeFavorite> {
-    const [newFavorite] = await db.insert(animeFavorites).values(favorite).returning();
-    return newFavorite;
-  }
-
-  async removeFromFavorites(userId: string, animeId: number): Promise<void> {
-    await db
-      .delete(animeFavorites)
-      .where(
-        sql`${animeFavorites.userId} = ${userId} AND ${animeFavorites.animeId} = ${animeId}`
-      );
-  }
 
   // Quiz operations
   async getQuizzes(): Promise<Quiz[]> {
@@ -579,7 +399,6 @@ export class DatabaseStorage implements IStorage {
 
   async getUserStats(userId: string): Promise<{
     totalQuizzes: number;
-    totalAnime: number;
     totalXP: number;
     rank: number;
   }> {
@@ -587,11 +406,6 @@ export class DatabaseStorage implements IStorage {
       .select({ count: sql<number>`count(*)` })
       .from(quizResults)
       .where(eq(quizResults.userId, userId));
-
-    const [animeCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(animeFavorites)
-      .where(eq(animeFavorites.userId, userId));
 
     const [user] = await db.select().from(users).where(eq(users.id, userId));
 
@@ -602,7 +416,6 @@ export class DatabaseStorage implements IStorage {
 
     return {
       totalQuizzes: quizCount?.count || 0,
-      totalAnime: animeCount?.count || 0,
       totalXP: user?.xp || 0,
       rank: rankResult?.rank || 1,
     };
