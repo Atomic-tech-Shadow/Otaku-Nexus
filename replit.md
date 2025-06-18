@@ -1,6 +1,6 @@
 # Overview
 
-This is a full-stack otaku community platform called "Otaku App" built with modern web technologies. The application serves as a comprehensive platform for users to take quizzes, watch videos, chat with other users, and engage with the community.
+This is a full-stack otaku community platform called "Otaku Nexus" built with modern web technologies. The platform focuses on interactive quizzes, community chat, and user engagement without video content or anime pages.
 
 # System Architecture
 
@@ -34,8 +34,8 @@ This is a full-stack otaku community platform called "Otaku App" built with mode
 - **Session Persistence**: Secure session management across devices
 
 ## Content Management
-- **Video Content**: AMVs, openings, and community video content
 - **Quiz System**: Interactive quizzes with scoring and difficulty levels
+- **User Profiles**: Customizable profiles with XP progression
 
 ## Interactive Features
 - **Quiz System**: Multilevel quizzes with XP rewards and difficulty ratings
@@ -58,11 +58,10 @@ This is a full-stack otaku community platform called "Otaku App" built with mode
 6. Protected routes verify token before serving content
 
 ## Content Discovery Flow
-1. Frontend requests anime data from API
-2. Server checks local database for cached content  
-3. If not found, fetches from external APIs (Jikan/MangaDX)
-4. Data normalized and stored in PostgreSQL
-5. Processed data returned to frontend with caching headers
+1. Frontend requests quiz data from API
+2. Server retrieves quiz content from PostgreSQL
+3. Quiz data returned to frontend with user progress
+4. Results and progress tracked in database
 
 ## Real-time Chat Flow
 1. WebSocket connection established on chat page load
@@ -79,8 +78,7 @@ This is a full-stack otaku community platform called "Otaku App" built with mode
 - **HTTP Client**: Native fetch API with custom wrapper
 
 ## External APIs
-- **Jikan API**: MyAnimeList data for anime information
-- **MangaDX API**: Manga content and chapter data
+- **MangaDX API**: Manga content and chapter data (if needed)
 - **Image Storage**: URL-based image hosting for avatars and media
 
 ## Development Tools

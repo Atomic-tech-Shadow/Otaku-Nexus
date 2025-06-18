@@ -117,7 +117,7 @@ export interface IStorage {
   deleteUser(userId: string): Promise<void>;
   deleteQuiz(quizId: number): Promise<void>;
   updateQuiz(quizId: number, updates: any): Promise<Quiz>;
-  deleteAnime(animeId: number): Promise<void>;
+
   deleteManga(mangaId: number): Promise<void>;
   deleteChatMessage(messageId: number): Promise<void>;
   cleanupOldSessions(): Promise<void>;
