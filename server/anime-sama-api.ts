@@ -2,18 +2,20 @@ export interface AnimeSamaAnime {
   id: string;
   title: string;
   image: string;
-  language: 'VF' | 'VOSTFR' | 'VF+VOSTFR';
-  synopsis?: string;
+  description?: string;
   genres?: string[];
-  type?: string;
   status?: string;
+  year?: string;
   seasons?: AnimeSamaSeason[];
+  url?: string;
 }
 
 export interface AnimeSamaSeason {
-  seasonNumber: number;
-  title: string;
-  episodes: AnimeSamaEpisode[];
+  number: number;
+  name: string;
+  languages: string[];
+  episodeCount: number;
+  url: string;
 }
 
 export interface AnimeSamaEpisode {
@@ -191,7 +193,7 @@ class AnimeSamaService {
   // 4. Liens de streaming d'un épisode
   async getEpisodeStreaming(episodeId: string): Promise<{ vf?: string[]; vostfr?: string[] } | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/episode/${episodeId}`);
+      const response = await fetch(`${this.baseUrl}/episode/${episodeId}`);
       if (!response.ok) {
         throw new Error(`API returned ${response.status}`);
       }
@@ -213,7 +215,7 @@ class AnimeSamaService {
   // 5. Animés tendances
   async getTrendingAnime(): Promise<AnimeSamaSearchResult[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/trending`);
+      const response = await fetch(`${this.baseUrl}/trending`);
       if (!response.ok) {
         throw new Error(`API returned ${response.status}`);
       }

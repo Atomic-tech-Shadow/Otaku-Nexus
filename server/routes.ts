@@ -12,7 +12,7 @@ import {
   updateUserProfileSchema,
 } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
-import { animeSamaService } from "./anime-sama-api";
+import { animeSamaService } from "./anime-sama-fixed";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
