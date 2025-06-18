@@ -189,63 +189,7 @@ async function seedDatabase() {
     },
   ];
 
-  // Sample video data
-  const sampleVideos = [
-    {
-      title: "Attack on Titan - Opening 1 'Guren no Yumiya'",
-      description: "Epic opening theme that perfectly captures the intensity of humanity's fight for survival.",
-      videoUrl: "https://www.youtube.com/watch?v=8OkpRK2_gVs",
-      thumbnailUrl: "https://img.youtube.com/vi/8OkpRK2_gVs/maxresdefault.jpg",
-      duration: "1:30",
-      views: 52000000,
-      category: "opening"
-    },
-    {
-      title: "Demon Slayer AMV - 'Legends Never Die'",
-      description: "An incredible AMV showcasing the best moments from Demon Slayer with epic music.",
-      videoUrl: "https://www.youtube.com/watch?v=r6zIGXun57U",
-      thumbnailUrl: "https://img.youtube.com/vi/r6zIGXun57U/maxresdefault.jpg",
-      duration: "3:45",
-      views: 8500000,
-      category: "amv"
-    },
-    {
-      title: "Naruto vs Sasuke Final Battle AMV",
-      description: "The most epic final battle in anime history set to amazing music.",
-      videoUrl: "https://www.youtube.com/watch?v=NSX7c6mfM8o",
-      thumbnailUrl: "https://img.youtube.com/vi/NSX7c6mfM8o/maxresdefault.jpg",
-      duration: "4:12",
-      views: 15000000,
-      category: "amv"
-    },
-    {
-      title: "One Piece - Opening 1 'We Are!'",
-      description: "The classic opening that started the greatest pirate adventure of all time.",
-      videoUrl: "https://www.youtube.com/watch?v=BcZKDMDc4_Y",
-      thumbnailUrl: "https://img.youtube.com/vi/BcZKDMDc4_Y/maxresdefault.jpg",
-      duration: "2:58",
-      views: 28000000,
-      category: "opening"
-    },
-    {
-      title: "Hunter x Hunter - Gon vs Pitou AMV",
-      description: "One of the most emotional and powerful moments in anime history.",
-      videoUrl: "https://www.youtube.com/watch?v=HSNH_0ANwF8",
-      thumbnailUrl: "https://img.youtube.com/vi/HSNH_0ANwF8/maxresdefault.jpg",
-      duration: "3:20",
-      views: 6200000,
-      category: "amv"
-    },
-    {
-      title: "Jujutsu Kaisen - Opening 1 'Kaikai Kitan'",
-      description: "The catchy opening that introduced us to the world of cursed spirits.",
-      videoUrl: "https://www.youtube.com/watch?v=ym5tT7Oqm2Y",
-      thumbnailUrl: "https://img.youtube.com/vi/ym5tT7Oqm2Y/maxresdefault.jpg",
-      duration: "1:29",
-      views: 45000000,
-      category: "opening"
-    }
-  ];
+
 
   try {
     // Insert anime data
@@ -256,14 +200,9 @@ async function seedDatabase() {
     console.log("🧠 Adding sample quiz data...");
     await db.insert(quizzes).values(sampleQuizzes);
 
-    // Insert video data
-    console.log("🎬 Adding sample video data...");
-    await db.insert(videos).values(sampleVideos);
-
     console.log("✅ Database seeded successfully!");
     console.log(`   - ${sampleAnimes.length} anime entries`);
     console.log(`   - ${sampleQuizzes.length} quiz entries`);
-    console.log(`   - ${sampleVideos.length} video entries`);
 
   } catch (error) {
     console.error("❌ Error seeding database:", error);
