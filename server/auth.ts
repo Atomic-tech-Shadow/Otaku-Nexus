@@ -214,6 +214,8 @@ export async function setupAuth(app: Express) {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        profileImageUrl: user.profileImageUrl,
+        bio: user.bio,
         isAdmin: user.isAdmin,
         level: user.level,
         xp: user.xp,

@@ -96,10 +96,7 @@ export default function EditProfile() {
         setImagePreview((updatedUser as any).profileImageUrl || "");
       }
 
-      // Forcer un refresh de la page pour s'assurer que toutes les photos sont mises à jour
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      // Pas de refresh automatique, laisser React Query gérer les mises à jour
 
       toast({
         title: "Profil mis à jour",

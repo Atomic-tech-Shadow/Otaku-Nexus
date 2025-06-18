@@ -177,7 +177,7 @@ export default function Home() {
                           {topUser.firstName ? `${topUser.firstName} ${topUser.lastName || ''}`.trim() : topUser.username || 'Otaku'}
                         </div>
                         <div className="text-xs text-gray-400">
-                          Niveau {String(topUser.level || 1)} • {String(topUser.xp || 0)} XP
+                          Niveau {topUser.level || 1} • {topUser.xp || 0} XP
                         </div>
                       </div>
                       <div className="text-right">
