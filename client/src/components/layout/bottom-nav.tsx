@@ -1,4 +1,4 @@
-import { Home, Brain, MessageCircle, User } from "lucide-react";
+import { Home, Brain, MessageCircle, User, Play } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 
@@ -14,6 +14,7 @@ export default function BottomNav() {
   const navItems: NavItem[] = [
     { icon: Home, label: "Accueil", path: "/" },
     { icon: Brain, label: "Quiz", path: "/quiz" },
+    { icon: Play, label: "Anime", path: "/anime" },
     { icon: MessageCircle, label: "Chat", path: "/chat" },
   ];
 

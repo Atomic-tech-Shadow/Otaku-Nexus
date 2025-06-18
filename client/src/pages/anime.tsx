@@ -103,7 +103,8 @@ export default function AnimePage() {
   // Fonction pour obtenir l'URL de streaming
   const getStreamingUrl = () => {
     if (!streamingLinks || !selectedEpisode) return null;
-    const links = (streamingLinks as any)[selectedLanguage];
+    const typedLinks = streamingLinks as { vf?: string[]; vostfr?: string[] };
+    const links = typedLinks[selectedLanguage];
     return links && links.length > 0 ? links[0] : null;
   };
 
@@ -203,7 +204,7 @@ export default function AnimePage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {trendingAnimes?.map((anime: AnimeSamaSearchResult) => (
+                  {Array.isArray(trendingAnimes) && trendingAnimes.map((anime: AnimeSamaSearchResult) => (
                     <Card 
                       key={anime.id} 
                       className="bg-white/10 border-white/20 hover:bg-white/20 transition-all cursor-pointer group"
@@ -256,8 +257,8 @@ export default function AnimePage() {
           {/* Bannière de l'anime */}
           <div className="relative h-96 overflow-hidden">
             <img
-              src={animeDetails.image}
-              alt={animeDetails.title}
+              src={(animeDetails as AnimeSamaAnime).image}
+              alt={(animeDetails as AnimeSamaAnime).title}
               className="w-full h-full object-cover blur-sm scale-110"
             />
             <div className="absolute inset-0 bg-black/60" />
@@ -272,19 +273,19 @@ export default function AnimePage() {
                   <ChevronLeft className="w-4 h-4 mr-2" />
                   Retour
                 </Button>
-                <h1 className="text-4xl font-bold mb-2">{animeDetails.title}</h1>
+                <h1 className="text-4xl font-bold mb-2">{(animeDetails as AnimeSamaAnime).title}</h1>
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {animeDetails.genres?.map((genre) => (
+                  {(animeDetails as AnimeSamaAnime).genres?.map((genre: string) => (
                     <Badge key={genre} variant="secondary">
                       {genre}
                     </Badge>
                   ))}
                   <Badge variant="outline" className="text-white border-white">
-                    {animeDetails.language}
+                    {(animeDetails as AnimeSamaAnime).language}
                   </Badge>
-                  {animeDetails.status && (
+                  {(animeDetails as AnimeSamaAnime).status && (
                     <Badge variant="outline" className="text-white border-white">
-                      {animeDetails.status}
+                      {(animeDetails as AnimeSamaAnime).status}
                     </Badge>
                   )}
                 </div>
@@ -309,7 +310,7 @@ export default function AnimePage() {
                     </CardHeader>
                     <CardContent>
                       <p className="text-gray-300 leading-relaxed">
-                        {animeDetails.synopsis || "Aucun synopsis disponible."}
+                        {(animeDetails as AnimeSamaAnime).synopsis || "Aucun synopsis disponible."}
                       </p>
                     </CardContent>
                   </Card>
@@ -375,10 +376,10 @@ export default function AnimePage() {
                       <CardTitle className="text-white">Épisodes</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {animeDetails.seasons && animeDetails.seasons.length > 1 && (
+                      {(animeDetails as AnimeSamaAnime).seasons && (animeDetails as AnimeSamaAnime).seasons!.length > 1 && (
                         <Tabs value={selectedSeason.toString()} className="mb-4">
                           <TabsList className="grid w-full grid-cols-2 bg-white/10">
-                            {animeDetails.seasons.map((season) => (
+                            {(animeDetails as AnimeSamaAnime).seasons!.map((season: AnimeSamaSeason) => (
                               <TabsTrigger
                                 key={season.seasonNumber}
                                 value={season.seasonNumber.toString()}
@@ -401,7 +402,7 @@ export default function AnimePage() {
                           </div>
                         ) : (
                           <div className="space-y-2">
-                            {seasonEpisodes?.map((episode: AnimeSamaEpisode) => (
+                            {Array.isArray(seasonEpisodes) && seasonEpisodes.map((episode: AnimeSamaEpisode) => (
                               <Button
                                 key={episode.id}
                                 variant="ghost"
