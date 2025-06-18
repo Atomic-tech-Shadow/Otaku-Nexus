@@ -91,8 +91,10 @@ export default function EditProfile() {
       // Forcer la mise à jour immédiate du cache utilisateur avec les nouvelles données
       queryClient.setQueryData(["/api/auth/user"], updatedUser);
 
-      // Mettre à jour aussi l'aperçu local
-      setImagePreview(updatedUser.profileImageUrl || "");
+      // Mettre à jour l'aperçu local avec les nouvelles données
+      if (updatedUser && typeof updatedUser === 'object' && 'profileImageUrl' in updatedUser) {
+        setImagePreview((updatedUser as any).profileImageUrl || "");
+      }
 
       // Forcer un refresh de la page pour s'assurer que toutes les photos sont mises à jour
       setTimeout(() => {

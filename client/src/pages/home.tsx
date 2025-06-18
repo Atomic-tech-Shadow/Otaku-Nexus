@@ -42,8 +42,9 @@ export default function Home() {
 
   const { data: topUsers = [], isLoading: leaderboardLoading } = useQuery({
     queryKey: ["/api/users/leaderboard"],
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 30 * 1000, // 30 seconds pour forcer la mise à jour fréquente
     retry: 2,
+    refetchInterval: 60 * 1000, // Actualise toutes les minutes
   });
 
   if (isLoading) {
@@ -148,36 +149,28 @@ export default function Home() {
                         {index === 2 && <Medal className="w-5 h-5 text-amber-600" />}
                         {index > 2 && <span className="text-sm font-semibold text-gray-400">#{index + 1}</span>}
                       </div>
-                      <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-nexus-cyan/50 flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-nexus-cyan/50 flex-shrink-0 relative">
                         {topUser.profileImageUrl ? (
-                          <>
-                            <img 
-                              src={topUser.profileImageUrl} 
-                              alt={`${topUser.firstName || topUser.username} profile`}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                const target = e.currentTarget;
+                          <img 
+                            src={topUser.profileImageUrl} 
+                            alt={`${topUser.firstName || topUser.username} profile`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.log('Image failed to load:', topUser.profileImageUrl);
+                              const target = e.currentTarget;
+                              const fallback = target.parentElement?.querySelector('.fallback-avatar') as HTMLElement;
+                              if (fallback) {
                                 target.style.display = 'none';
-                                const fallback = target.nextElementSibling as HTMLElement;
-                                if (fallback) {
-                                  fallback.classList.remove('hidden');
-                                  fallback.classList.add('flex');
-                                }
-                              }}
-                            />
-                            <div className="hidden absolute inset-0 w-full h-full bg-gradient-to-br from-nexus-cyan to-nexus-purple items-center justify-center">
-                              <span className="text-xs font-bold text-white">
-                                {(topUser.firstName || topUser.username || 'U').charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-nexus-cyan to-nexus-purple flex items-center justify-center">
-                            <span className="text-xs font-bold text-white">
-                              {(topUser.firstName || topUser.username || 'U').charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                        )}
+                                fallback.style.display = 'flex';
+                              }
+                            }}
+                          />
+                        ) : null}
+                        <div className={`fallback-avatar w-full h-full bg-gradient-to-br from-nexus-cyan to-nexus-purple items-center justify-center ${topUser.profileImageUrl ? 'hidden' : 'flex'}`}>
+                          <span className="text-xs font-bold text-white">
+                            {(topUser.firstName || topUser.username || 'U').charAt(0).toUpperCase()}
+                          </span>
+                        </div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-semibold text-white truncate">

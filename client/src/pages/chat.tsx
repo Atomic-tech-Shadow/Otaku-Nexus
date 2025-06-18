@@ -216,7 +216,7 @@ export default function Chat() {
                 <div className={`flex gap-3 max-w-xs lg:max-w-md ${message.isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
                   {!message.isOwn && (
                     <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 relative">
-                      {message.userProfileImageUrl ? (
+                      {message.userProfileImageUrl && message.userProfileImageUrl.trim() !== '' ? (
                         <>
                           <img 
                             src={message.userProfileImageUrl} 
