@@ -77,15 +77,15 @@ export default function Home() {
               <p className="text-gray-300 text-sm mb-4">Ready to explore the anime universe?</p>
               <div className="flex items-center space-x-4">
                 <div className="text-center">
-                  <div className="text-lg font-bold text-nexus-pink">{(userStats as any)?.totalAnime || 0}</div>
+                  <div className="text-lg font-bold text-nexus-pink">{String((userStats as any)?.totalAnime || 0)}</div>
                   <div className="text-xs text-gray-400">Anime</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-nexus-cyan">{(userStats as any)?.totalQuizzes || 0}</div>
+                  <div className="text-lg font-bold text-nexus-cyan">{String((userStats as any)?.totalQuizzes || 0)}</div>
                   <div className="text-xs text-gray-400">Quizzes</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-nexus-purple">{(userStats as any)?.totalXP || 0}</div>
+                  <div className="text-lg font-bold text-nexus-purple">{String((userStats as any)?.totalXP || 0)}</div>
                   <div className="text-xs text-gray-400">XP</div>
                 </div>
               </div>
@@ -184,12 +184,12 @@ export default function Home() {
                           {topUser.firstName ? `${topUser.firstName} ${topUser.lastName || ''}`.trim() : topUser.username || 'Otaku'}
                         </div>
                         <div className="text-xs text-gray-400">
-                          Niveau {topUser.level || 1} • {topUser.xp || 0} XP
+                          Niveau {String(topUser.level || 1)} • {String(topUser.xp || 0)} XP
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-bold text-nexus-cyan">
-                          {topUser.xp || 0}
+                          {String(topUser.xp || 0)}
                         </div>
                         <div className="text-xs text-gray-400">XP</div>
                       </div>
@@ -213,7 +213,7 @@ export default function Home() {
                 <div>
                   <div className="flex justify-between text-sm mb-2">
                     <span>Quizzes Completed</span>
-                    <span className="text-nexus-cyan">{(userStats as any)?.totalQuizzes || 0}</span>
+                    <span className="text-nexus-cyan">{String((userStats as any)?.totalQuizzes || 0)}</span>
                   </div>
                   <div className="w-full bg-nexus-surface rounded-full h-2">
                     <div className="bg-gradient-to-r from-nexus-cyan to-nexus-pink h-2 rounded-full" style={{ width: '65%' }}></div>
@@ -222,7 +222,7 @@ export default function Home() {
                 <div>
                   <div className="flex justify-between text-sm mb-2">
                     <span>Rank</span>
-                    <span className="text-nexus-pink">#{(userStats as any)?.rank || 'Unranked'}</span>
+                    <span className="text-nexus-pink">#{String((userStats as any)?.rank || 'Unranked')}</span>
                   </div>
                   <div className="w-full bg-nexus-surface rounded-full h-2">
                     <div className="bg-gradient-to-r from-nexus-pink to-nexus-purple h-2 rounded-full" style={{ width: '45%' }}></div>
