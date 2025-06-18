@@ -57,8 +57,8 @@ export default function AnimePage() {
   const [, setLocation] = useLocation();
   const [match, params] = useRoute("/anime/:id");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedGenre, setSelectedGenre] = useState<string>("");
-  const [selectedType, setSelectedType] = useState<string>("");
+  const [selectedGenre, setSelectedGenre] = useState<string>("all");
+  const [selectedType, setSelectedType] = useState<string>("all");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedSeason, setSelectedSeason] = useState(1);
   const [selectedEpisode, setSelectedEpisode] = useState<AnimeSamaEpisode | null>(null);
@@ -73,7 +73,7 @@ export default function AnimePage() {
 
   // Catalogue d'animes (affichés par défaut)
   const { data: catalogueAnimes = [], isLoading: catalogueLoading } = useQuery<AnimeSamaSearchResult[]>({
-    queryKey: ['/api/anime/catalogue', selectedGenre, selectedType],
+    queryKey: ['/api/anime/catalogue', selectedGenre === "all" ? undefined : selectedGenre, selectedType === "all" ? undefined : selectedType],
     enabled: !searchQuery && !match,
   });
 
@@ -424,7 +424,7 @@ export default function AnimePage() {
                 <SelectValue placeholder="Tous les genres" />
               </SelectTrigger>
               <SelectContent className="bg-gray-900 border-gray-700">
-                <SelectItem value="">Tous les genres</SelectItem>
+                <SelectItem value="all">Tous les genres</SelectItem>
                 <SelectItem value="action">Action</SelectItem>
                 <SelectItem value="adventure">Aventure</SelectItem>
                 <SelectItem value="comedy">Comédie</SelectItem>
@@ -440,7 +440,7 @@ export default function AnimePage() {
                 <SelectValue placeholder="Tous les types" />
               </SelectTrigger>
               <SelectContent className="bg-gray-900 border-gray-700">
-                <SelectItem value="">Tous les types</SelectItem>
+                <SelectItem value="all">Tous les types</SelectItem>
                 <SelectItem value="tv">Série TV</SelectItem>
                 <SelectItem value="movie">Film</SelectItem>
                 <SelectItem value="ova">OVA</SelectItem>
