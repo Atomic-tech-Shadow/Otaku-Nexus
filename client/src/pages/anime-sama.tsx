@@ -73,6 +73,7 @@ const AnimeSamaPage: React.FC = () => {
   const [selectedAnime, setSelectedAnime] = useState<AnimeDetails | null>(null);
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<'VF' | 'VOSTFR'>('VOSTFR');
+  const [availableLanguages, setAvailableLanguages] = useState<string[]>(['VOSTFR']);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
   const [episodeDetails, setEpisodeDetails] = useState<EpisodeDetails | null>(null);
@@ -135,6 +136,35 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
+  // Détecter les langues disponibles pour une saison
+  const detectAvailableLanguages = async (animeId: string, seasonNumber: number) => {
+    const languages = [];
+    
+    // Tester VF
+    try {
+      const vfResponse = await fetch(`${API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vf`);
+      const vfData = await vfResponse.json();
+      if (vfData.success && vfData.data.episodes.length > 0) {
+        languages.push('VF');
+      }
+    } catch (err) {
+      console.log('VF non disponible');
+    }
+    
+    // Tester VOSTFR
+    try {
+      const vostfrResponse = await fetch(`${API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vostfr`);
+      const vostfrData = await vostfrResponse.json();
+      if (vostfrData.success && vostfrData.data.episodes.length > 0) {
+        languages.push('VOSTFR');
+      }
+    } catch (err) {
+      console.log('VOSTFR non disponible');
+    }
+    
+    return languages;
+  };
+
   // Charger les épisodes d'une saison
   const loadSeasonEpisodes = async (season: Season) => {
     if (!selectedAnime) return;
@@ -144,7 +174,21 @@ const AnimeSamaPage: React.FC = () => {
     setCurrentView('player');
     
     try {
-      const language = selectedLanguage.toLowerCase();
+      // Détecter les langues disponibles
+      const availLangs = await detectAvailableLanguages(selectedAnime.id, season.number);
+      setAvailableLanguages(availLangs);
+      console.log('Langues disponibles:', availLangs);
+      
+      // Ajuster la langue sélectionnée si nécessaire
+      let languageToUse = selectedLanguage;
+      if (!availLangs.includes(selectedLanguage)) {
+        languageToUse = availLangs[0] as 'VF' | 'VOSTFR';
+        setSelectedLanguage(languageToUse);
+      }
+      
+      const language = languageToUse.toLowerCase();
+      console.log(`Chargement épisodes ${selectedAnime.id} saison ${season.number} langue ${language}`);
+      
       const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${language}`);
       const apiResponse: ApiResponse<{
         animeId: string;
@@ -153,6 +197,8 @@ const AnimeSamaPage: React.FC = () => {
         episodes: Episode[];
         episodeCount: number;
       }> = await response.json();
+      
+      console.log('Réponse épisodes:', apiResponse);
       
       if (!apiResponse.success) {
         throw new Error('Erreur lors du chargement des épisodes');
@@ -474,31 +520,24 @@ const AnimeSamaPage: React.FC = () => {
 
           {/* Interface de contrôle */}
           <div className="p-4 space-y-4">
-            {/* Drapeaux VF/VOSTFR */}
+            {/* Drapeaux VF/VOSTFR basés sur les langues disponibles */}
             <div className="flex gap-2">
-              {/* Bouton VOSTFR (toujours affiché) */}
-              <button
-                onClick={() => changeLanguage('VOSTFR')}
-                className="flex items-center justify-center w-12 h-10 rounded border-2"
-                style={{
-                  backgroundColor: selectedLanguage === 'VOSTFR' ? '#dc2626' : '#374151',
-                  borderColor: selectedLanguage === 'VOSTFR' ? '#ffffff' : '#6b7280'
-                }}
-              >
-                <span className="text-white font-bold text-xs">🇯🇵</span>
-              </button>
-
-              {/* Bouton VF (toujours affiché) */}
-              <button
-                onClick={() => changeLanguage('VF')}
-                className="flex items-center justify-center w-12 h-10 rounded border-2"
-                style={{
-                  backgroundColor: selectedLanguage === 'VF' ? '#1e40af' : '#374151',
-                  borderColor: selectedLanguage === 'VF' ? '#ffffff' : '#6b7280'
-                }}
-              >
-                <span className="text-white font-bold text-xs">🇫🇷</span>
-              </button>
+              {availableLanguages.map((lang) => (
+                <button
+                  key={lang}
+                  onClick={() => changeLanguage(lang as 'VF' | 'VOSTFR')}
+                  className="flex items-center justify-center w-12 h-10 rounded border-2"
+                  style={{
+                    backgroundColor: selectedLanguage === lang ? 
+                      (lang === 'VF' ? '#1e40af' : '#dc2626') : '#374151',
+                    borderColor: selectedLanguage === lang ? '#ffffff' : '#6b7280'
+                  }}
+                >
+                  <span className="text-white font-bold text-xs">
+                    {lang === 'VF' ? '🇫🇷' : '🇯🇵'}
+                  </span>
+                </button>
+              ))}
             </div>
 
             {/* Dropdowns */}
