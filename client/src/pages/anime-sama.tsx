@@ -516,7 +516,7 @@ const AnimeSamaPage: React.FC = () => {
                   }}
                 >
                   <span className="text-white font-bold text-xs">
-                    🇹🇬
+                    {lang === 'VF' ? '🇫🇷' : '🇯🇵'}
                   </span>
                 </button>
               ))}
