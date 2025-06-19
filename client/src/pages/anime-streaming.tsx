@@ -399,90 +399,100 @@ const AnimeStreamingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Interface de lecture style anime-sama */}
+          {/* Interface de lecture exacte anime-sama */}
           {selectedSeason && (
-            <div className="space-y-6">
-              {/* Titre saison */}
-              <div className="text-center">
-                <h2 className="text-2xl font-bold text-white mb-2">{selectedAnime.title}</h2>
-                <h3 className="text-lg text-gray-400 uppercase tracking-wider">{selectedSeason.name}</h3>
+            <div className="space-y-4">
+              {/* Image anime en haut */}
+              <div className="relative">
+                <img
+                  src={selectedAnime.image}
+                  alt={selectedAnime.title}
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+                <div className="absolute bottom-4 left-4">
+                  <h1 className="text-2xl font-bold text-white drop-shadow-lg">{selectedAnime.title}</h1>
+                  <h2 className="text-lg text-gray-300 uppercase tracking-wider drop-shadow-lg">{selectedSeason.name}</h2>
+                </div>
               </div>
 
-              {/* Drapeaux VF/VOSTFR */}
-              {selectedSeason.languages.length > 1 && (
-                <div className="flex justify-center gap-4">
-                  {selectedSeason.languages.map((lang) => (
-                    <button
-                      key={lang}
-                      onClick={() => changeLanguage(lang as 'VF' | 'VOSTFR')}
-                      className={`flex items-center justify-center w-12 h-8 rounded border-2 text-xs font-bold ${
-                        selectedLanguage === lang
-                          ? 'bg-white text-black border-white'
-                          : 'bg-gray-800 text-white border-gray-600 hover:border-gray-500'
-                      }`}
-                    >
-                      {lang === 'VF' ? '🇫🇷' : '🇯🇵'} {lang}
-                    </button>
-                  ))}
-                </div>
-              )}
+              {/* Drapeaux VF/VOSTFR exactes */}
+              <div className="flex gap-2">
+                {selectedSeason.languages.map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => changeLanguage(lang as 'VF' | 'VOSTFR')}
+                    className={`flex items-center justify-center w-12 h-10 rounded ${
+                      selectedLanguage === lang
+                        ? lang === 'VF' 
+                          ? 'bg-blue-600 border-2 border-white'
+                          : 'bg-red-600 border-2 border-white'
+                        : 'bg-gray-700 border border-gray-600'
+                    }`}
+                  >
+                    <span className="text-white font-bold text-xs">
+                      {lang === 'VF' ? '🇫🇷' : '🇯🇵'}
+                    </span>
+                    <span className="text-white font-bold text-xs ml-1">{lang}</span>
+                  </button>
+                ))}
+              </div>
 
-              {/* Sélecteurs épisode et lecteur */}
+              {/* Sélecteurs style anime-sama */}
               {episodes.length > 0 && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-                    {/* Sélecteur épisode */}
-                    <div>
-                      <select
-                        onChange={(e) => {
-                          const episode = episodes.find(ep => ep.id === e.target.value);
-                          if (episode) {
-                            loadEpisodeSources(episode);
-                          }
-                        }}
-                        className="w-full p-3 bg-blue-900 text-white rounded border border-blue-700 text-center font-medium"
-                        defaultValue=""
-                      >
-                        <option value="" disabled>EPISODE 1</option>
-                        {episodes.map((episode) => (
-                          <option key={episode.id} value={episode.id}>
-                            EPISODE {episode.episodeNumber}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    {/* Dropdown épisode */}
+                    <select
+                      onChange={(e) => {
+                        const episode = episodes.find(ep => ep.id === e.target.value);
+                        if (episode) {
+                          loadEpisodeSources(episode);
+                        }
+                      }}
+                      className="w-full p-3 bg-blue-900 text-white rounded border border-blue-700 text-sm font-medium appearance-none"
+                      defaultValue=""
+                    >
+                      <option value="" disabled>EPISODE 1</option>
+                      {episodes.map((episode) => (
+                        <option key={episode.id} value={episode.id}>
+                          EPISODE {episode.episodeNumber}
+                        </option>
+                      ))}
+                    </select>
 
-                    {/* Sélecteur lecteur */}
-                    <div>
-                      <select
-                        value={selectedServer}
-                        onChange={(e) => setSelectedServer(Number(e.target.value))}
-                        className="w-full p-3 bg-blue-900 text-white rounded border border-blue-700 text-center font-medium"
-                      >
-                        {filteredSources.map((source, index) => (
+                    {/* Dropdown lecteur */}
+                    <select
+                      value={selectedServer}
+                      onChange={(e) => setSelectedServer(Number(e.target.value))}
+                      className="w-full p-3 bg-blue-900 text-white rounded border border-blue-700 text-sm font-medium appearance-none"
+                    >
+                      {filteredSources.length > 0 ? (
+                        filteredSources.map((source, index) => (
                           <option key={index} value={index}>
                             LECTEUR {index + 1}
                           </option>
-                        ))}
-                      </select>
-                    </div>
+                        ))
+                      ) : (
+                        <option value={0}>LECTEUR 1</option>
+                      )}
+                    </select>
                   </div>
 
                   {/* Dernière sélection */}
-                  {selectedEpisode && (
-                    <div className="text-center text-gray-400 text-sm">
-                      DERNIÈRE SÉLECTION : <span className="text-white">EPISODE {selectedEpisode.episodeNumber}</span>
-                    </div>
-                  )}
+                  <div className="text-gray-400 text-sm">
+                    DERNIÈRE SÉLECTION : <span className="text-white italic">
+                      {selectedEpisode ? `EPISODE ${selectedEpisode.episodeNumber}` : 'EPISODE 1'}
+                    </span>
+                  </div>
 
-                  {/* Navigation épisodes */}
+                  {/* Boutons navigation */}
                   <div className="flex justify-center gap-4">
                     <button
                       onClick={() => navigateEpisode('prev')}
                       disabled={!selectedEpisode || episodes.findIndex(ep => ep.id === selectedEpisode.id) === 0}
-                      className="flex items-center justify-center w-12 h-12 bg-blue-800 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700"
+                      className="flex items-center justify-center w-14 h-14 bg-blue-800 text-white rounded-lg disabled:opacity-50 hover:bg-blue-700 transition-colors"
                     >
-                      <ChevronLeft size={20} />
+                      <ChevronLeft size={24} />
                     </button>
                     
                     <button
@@ -491,7 +501,7 @@ const AnimeStreamingPage: React.FC = () => {
                           loadEpisodeSources(selectedEpisode);
                         }
                       }}
-                      className="flex items-center justify-center w-12 h-12 bg-gray-800 text-white rounded-full hover:bg-gray-700"
+                      className="flex items-center justify-center w-14 h-14 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
                     >
                       <RotateCcw size={20} />
                     </button>
@@ -499,34 +509,34 @@ const AnimeStreamingPage: React.FC = () => {
                     <button
                       onClick={() => navigateEpisode('next')}
                       disabled={!selectedEpisode || episodes.findIndex(ep => ep.id === selectedEpisode.id) === episodes.length - 1}
-                      className="flex items-center justify-center w-12 h-12 bg-blue-800 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700"
+                      className="flex items-center justify-center w-14 h-14 bg-blue-800 text-white rounded-lg disabled:opacity-50 hover:bg-blue-700 transition-colors"
                     >
-                      <ChevronRight size={20} />
+                      <ChevronRight size={24} />
                     </button>
                   </div>
 
-                  {/* Message changement de lecteur */}
-                  <div className="text-center">
-                    <p className="text-white text-sm italic">
-                      Pub insistante ou vidéo indisponible ?<br />
+                  {/* Message exact anime-sama */}
+                  <div className="text-center py-4">
+                    <p className="text-white text-sm">
+                      <span className="italic">Pub insistante ou vidéo indisponible ?</span><br />
                       <span className="font-bold">Changez de lecteur.</span>
                     </p>
                   </div>
 
                   {/* Lecteur vidéo */}
                   {currentSource && (
-                    <div className="relative bg-gray-900 rounded-lg overflow-hidden">
+                    <div className="relative bg-black rounded-lg overflow-hidden">
                       <iframe
                         src={currentSource.url}
-                        className="w-full h-64 md:h-96 lg:h-[480px]"
+                        className="w-full h-64 md:h-80 lg:h-96"
                         allowFullScreen
                         frameBorder="0"
                         title={`${episodeDetails?.title} - ${currentSource.server}`}
                       />
-                      {/* Overlay de loading/play */}
+                      {/* Bouton play central */}
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                          <div className="w-0 h-0 border-l-[8px] border-l-white border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent ml-1"></div>
+                        <div className="w-16 h-16 bg-blue-600/80 rounded-full flex items-center justify-center">
+                          <div className="w-0 h-0 border-l-[12px] border-l-white border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent ml-1"></div>
                         </div>
                       </div>
                     </div>
