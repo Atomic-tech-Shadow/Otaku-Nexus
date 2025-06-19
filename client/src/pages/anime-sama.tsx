@@ -422,22 +422,29 @@ const AnimeSamaPage: React.FC = () => {
           <div className="p-4 space-y-4">
             {/* Drapeaux VF/VOSTFR */}
             <div className="flex gap-2">
-              {selectedSeason.languages.map((lang) => (
-                <button
-                  key={lang}
-                  onClick={() => changeLanguage(lang as 'VF' | 'VOSTFR')}
-                  className="flex items-center justify-center w-12 h-10 rounded border-2"
-                  style={{
-                    backgroundColor: selectedLanguage === lang ? 
-                      (lang === 'VF' ? '#1e40af' : '#dc2626') : '#374151',
-                    borderColor: selectedLanguage === lang ? '#ffffff' : '#6b7280'
-                  }}
-                >
-                  <span className="text-white font-bold text-xs">
-                    {lang === 'VF' ? '🇫🇷' : '🇯🇵'}
-                  </span>
-                </button>
-              ))}
+              {/* Bouton VOSTFR (toujours affiché) */}
+              <button
+                onClick={() => changeLanguage('VOSTFR')}
+                className="flex items-center justify-center w-12 h-10 rounded border-2"
+                style={{
+                  backgroundColor: selectedLanguage === 'VOSTFR' ? '#dc2626' : '#374151',
+                  borderColor: selectedLanguage === 'VOSTFR' ? '#ffffff' : '#6b7280'
+                }}
+              >
+                <span className="text-white font-bold text-xs">🇯🇵</span>
+              </button>
+
+              {/* Bouton VF (toujours affiché) */}
+              <button
+                onClick={() => changeLanguage('VF')}
+                className="flex items-center justify-center w-12 h-10 rounded border-2"
+                style={{
+                  backgroundColor: selectedLanguage === 'VF' ? '#1e40af' : '#374151',
+                  borderColor: selectedLanguage === 'VF' ? '#ffffff' : '#6b7280'
+                }}
+              >
+                <span className="text-white font-bold text-xs">🇫🇷</span>
+              </button>
             </div>
 
             {/* Dropdowns */}
