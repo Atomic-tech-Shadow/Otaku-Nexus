@@ -6,44 +6,74 @@ import { Link } from 'wouter';
 
 interface Episode {
   id: string;
-  number: number;
   title: string;
-  sources: VideoSource[];
+  episodeNumber: number;
+  url: string;
+  language: string;
+  available: boolean;
 }
 
 interface VideoSource {
-  id: string;
-  name: string;
   url: string;
-  language: 'vf' | 'vo';
+  server: string;
+  quality: string;
+  language: string;
+  type: string;
+  serverIndex: number;
 }
 
 interface Season {
   number: number;
-  episodes: Episode[];
+  name: string;
+  languages: string[];
+  episodeCount: number;
+  url: string;
 }
 
 interface AnimeData {
   id: string;
   title: string;
-  coverImage: string;
+  description: string;
+  image: string;
+  genres: string[];
+  status: string;
+  year: string;
   seasons: Season[];
+  url: string;
+}
+
+interface EpisodeDetails {
+  id: string;
+  title: string;
+  animeTitle: string;
+  episodeNumber: number;
+  sources: VideoSource[];
+  availableServers: string[];
+  url: string;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  timestamp: string;
+  meta?: any;
 }
 
 const AnimePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [animeData, setAnimeData] = useState<AnimeData | null>(null);
-  const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState<'vf' | 'vo'>('vf');
+  const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<'VF' | 'VOSTFR'>('VOSTFR');
   const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<number>(0);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
+  const [episodeDetails, setEpisodeDetails] = useState<EpisodeDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [episodeLoading, setEpisodeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // URL de base de votre API hébergée sur Render
-  const API_BASE = 'https://your-api-url.onrender.com';
+  const API_BASE = 'https://api-anime-sama.onrender.com';
 
   // Charger les données de l'anime
   useEffect(() => {
@@ -52,26 +82,17 @@ const AnimePage: React.FC = () => {
     const loadAnimeData = async () => {
       try {
         const response = await fetch(`${API_BASE}/api/anime/${id}`);
-        if (!response.ok) throw new Error('Erreur lors du chargement de l\'anime');
+        const apiResponse: ApiResponse<AnimeData> = await response.json();
         
-        const data = await response.json();
-        setAnimeData(data);
+        if (!apiResponse.success) {
+          throw new Error('Erreur lors du chargement de l\'anime');
+        }
+        
+        setAnimeData(apiResponse.data);
         setLoading(false);
       } catch (err) {
         console.error('Erreur API:', err);
-        // Données de test pour la démonstration
-        const mockData: AnimeData = {
-          id: id || '1',
-          title: 'One Piece',
-          coverImage: 'https://cdn.myanimelist.net/images/anime/6/73245l.jpg',
-          seasons: [
-            { number: 1, episodes: [] },
-            { number: 2, episodes: [] },
-            { number: 3, episodes: [] }
-          ]
-        };
-        setAnimeData(mockData);
-        setError('Utilisation des données de test - Configurez votre API Render');
+        setError('Impossible de charger les données de l\'anime. Vérifiez votre connexion.');
         setLoading(false);
       }
     };
@@ -80,49 +101,37 @@ const AnimePage: React.FC = () => {
   }, [id]);
 
   // Charger les épisodes d'une saison
-  const loadSeasonEpisodes = async (seasonNumber: number) => {
+  const loadSeasonEpisodes = async (season: Season) => {
     if (!id) return;
     
     setEpisodeLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/api/anime/${id}/season/${seasonNumber}/episodes`);
-      if (!response.ok) throw new Error('Erreur lors du chargement des épisodes');
+      const language = selectedLanguage.toLowerCase();
+      const response = await fetch(`${API_BASE}/api/seasons?animeId=${id}&season=${season.number}&language=${language}`);
+      const apiResponse: ApiResponse<{
+        animeId: string;
+        season: number;
+        language: string;
+        episodes: Episode[];
+        episodeCount: number;
+      }> = await response.json();
       
-      const episodesData = await response.json();
-      setEpisodes(episodesData);
-      setSelectedSeason(seasonNumber);
+      if (!apiResponse.success) {
+        throw new Error('Erreur lors du chargement des épisodes');
+      }
       
-      if (episodesData.length > 0) {
-        await loadEpisodeSources(episodesData[0].id);
+      setEpisodes(apiResponse.data.episodes);
+      setSelectedSeason(season);
+      
+      // Sélectionner automatiquement le premier épisode
+      if (apiResponse.data.episodes.length > 0) {
+        const firstEpisode = apiResponse.data.episodes[0];
+        setSelectedEpisode(firstEpisode);
+        await loadEpisodeSources(firstEpisode.id);
       }
     } catch (err) {
       console.error('Erreur chargement épisodes:', err);
-      // Données de test pour les épisodes
-      const mockEpisodes: Episode[] = [
-        {
-          id: `ep-${seasonNumber}-1`,
-          number: 1,
-          title: `Épisode 1 de la saison ${seasonNumber}`,
-          sources: [
-            { id: '1', name: 'Lecteur 1', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ', language: 'vf' },
-            { id: '2', name: 'Lecteur 2', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ', language: 'vf' },
-            { id: '3', name: 'Lecteur 1', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ', language: 'vo' }
-          ]
-        },
-        {
-          id: `ep-${seasonNumber}-2`,
-          number: 2,
-          title: `Épisode 2 de la saison ${seasonNumber}`,
-          sources: [
-            { id: '4', name: 'Lecteur 1', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ', language: 'vf' },
-            { id: '5', name: 'Lecteur 2', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ', language: 'vo' }
-          ]
-        }
-      ];
-      
-      setEpisodes(mockEpisodes);
-      setSelectedSeason(seasonNumber);
-      setSelectedEpisode(mockEpisodes[0]);
+      setError('Impossible de charger les épisodes de cette saison.');
     } finally {
       setEpisodeLoading(false);
     }
@@ -132,52 +141,74 @@ const AnimePage: React.FC = () => {
   const loadEpisodeSources = async (episodeId: string) => {
     try {
       const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
-      if (!response.ok) throw new Error('Erreur lors du chargement des sources');
+      const apiResponse: ApiResponse<EpisodeDetails> = await response.json();
       
-      const episodeData = await response.json();
-      setSelectedEpisode(episodeData);
-      setSelectedPlayer(0);
+      if (!apiResponse.success) {
+        throw new Error('Erreur lors du chargement des sources');
+      }
+      
+      setEpisodeDetails(apiResponse.data);
+      setSelectedPlayer(0); // Reset au premier lecteur
     } catch (err) {
       console.error('Erreur sources vidéo:', err);
-      // Utiliser l'épisode existant dans la liste
-      const episode = episodes.find(ep => ep.id === episodeId);
-      if (episode) {
-        setSelectedEpisode(episode);
-        setSelectedPlayer(0);
-      }
+      setError('Impossible de charger les sources vidéo pour cet épisode.');
     }
   };
 
   // Filtrer les épisodes par langue
   const filteredEpisodes = episodes.filter(episode => 
-    episode.sources.some(source => source.language === selectedLanguage)
+    episode.language.toUpperCase() === selectedLanguage
   );
 
   // Obtenir les sources du lecteur sélectionné
   const getCurrentSources = () => {
-    if (!selectedEpisode) return [];
-    return selectedEpisode.sources.filter(source => source.language === selectedLanguage);
+    if (!episodeDetails) return [];
+    return episodeDetails.sources.filter(source => 
+      source.language.toUpperCase() === selectedLanguage
+    );
   };
 
   const currentSources = getCurrentSources();
   const currentSource = currentSources[selectedPlayer];
 
   // Navigation entre épisodes
-  const navigateEpisode = (direction: 'prev' | 'next') => {
+  const navigateEpisode = async (direction: 'prev' | 'next') => {
     if (!selectedEpisode) return;
     
     const currentIndex = filteredEpisodes.findIndex(ep => ep.id === selectedEpisode.id);
     let newIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
     
     if (newIndex >= 0 && newIndex < filteredEpisodes.length) {
-      loadEpisodeSources(filteredEpisodes[newIndex].id);
+      const newEpisode = filteredEpisodes[newIndex];
+      setSelectedEpisode(newEpisode);
+      await loadEpisodeSources(newEpisode.id);
+    }
+  };
+
+  // Changer de langue
+  const changeLanguage = (newLanguage: 'VF' | 'VOSTFR') => {
+    setSelectedLanguage(newLanguage);
+    // Recharger les épisodes si une saison est sélectionnée
+    if (selectedSeason) {
+      loadSeasonEpisodes(selectedSeason);
     }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">Chargement...</div>
+        <div className="animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  if (error && !animeData) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-red-500 text-xl flex items-center gap-2">
+          <AlertCircle size={24} />
+          {error}
+        </div>
       </div>
     );
   }
@@ -212,7 +243,7 @@ const AnimePage: React.FC = () => {
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/70 to-transparent z-10" />
         <img 
-          src={animeData.coverImage} 
+          src={animeData.image} 
           alt={animeData.title}
           className="w-full h-48 sm:h-64 object-cover"
           onError={(e) => {
@@ -222,6 +253,14 @@ const AnimePage: React.FC = () => {
         />
         <div className="absolute bottom-0 left-0 right-0 p-4 z-20">
           <h2 className="text-xl sm:text-2xl font-bold">{animeData.title}</h2>
+          <p className="text-gray-300 text-sm mt-1">{animeData.description}</p>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {animeData.genres.map((genre, index) => (
+              <span key={index} className="px-2 py-1 bg-gray-800/80 rounded text-xs">
+                {genre}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -236,23 +275,40 @@ const AnimePage: React.FC = () => {
           </div>
         )}
 
+        {/* Informations de l'anime */}
+        <div className="bg-gray-800/50 rounded-lg p-4">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-gray-400">Statut:</span>
+              <span className="ml-2 text-white">{animeData.status}</span>
+            </div>
+            <div>
+              <span className="text-gray-400">Année:</span>
+              <span className="ml-2 text-white">{animeData.year}</span>
+            </div>
+          </div>
+        </div>
+
         {/* Sélection des saisons */}
         <div>
-          <h3 className="text-lg font-semibold mb-3">Saisons</h3>
+          <h3 className="text-lg font-semibold mb-3">Saisons et Films</h3>
           <div className="flex flex-wrap gap-2">
             {animeData.seasons.map((season) => (
               <motion.button
                 key={season.number}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => loadSeasonEpisodes(season.number)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors min-h-[44px] ${
-                  selectedSeason === season.number
+                onClick={() => loadSeasonEpisodes(season)}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors min-h-[44px] text-center ${
+                  selectedSeason?.number === season.number
                     ? 'bg-cyan-500 text-white'
                     : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                 }`}
               >
-                Saison {season.number}
+                <div className="text-sm">{season.name}</div>
+                <div className="text-xs opacity-75">
+                  {season.languages.join(' / ')}
+                </div>
               </motion.button>
             ))}
           </div>
@@ -268,35 +324,28 @@ const AnimePage: React.FC = () => {
               className="space-y-4"
             >
               {/* Boutons VO/VF */}
-              <div>
-                <h4 className="text-md font-semibold mb-3">Langue</h4>
-                <div className="flex gap-2">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setSelectedLanguage('vf')}
-                    className={`px-6 py-2 rounded-lg font-medium transition-colors min-h-[44px] ${
-                      selectedLanguage === 'vf'
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                    }`}
-                  >
-                    VF
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setSelectedLanguage('vo')}
-                    className={`px-6 py-2 rounded-lg font-medium transition-colors min-h-[44px] ${
-                      selectedLanguage === 'vo'
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                    }`}
-                  >
-                    VO
-                  </motion.button>
+              {selectedSeason.languages.length > 1 && (
+                <div>
+                  <h4 className="text-md font-semibold mb-3">Langue</h4>
+                  <div className="flex gap-2">
+                    {selectedSeason.languages.map((lang) => (
+                      <motion.button
+                        key={lang}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => changeLanguage(lang as 'VF' | 'VOSTFR')}
+                        className={`px-6 py-2 rounded-lg font-medium transition-colors min-h-[44px] ${
+                          selectedLanguage === lang
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        }`}
+                      >
+                        {lang}
+                      </motion.button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Sélecteurs */}
               {filteredEpisodes.length > 0 && (
@@ -307,12 +356,18 @@ const AnimePage: React.FC = () => {
                     <div className="relative">
                       <select
                         value={selectedEpisode?.id || ''}
-                        onChange={(e) => loadEpisodeSources(e.target.value)}
+                        onChange={(e) => {
+                          const episode = filteredEpisodes.find(ep => ep.id === e.target.value);
+                          if (episode) {
+                            setSelectedEpisode(episode);
+                            loadEpisodeSources(episode.id);
+                          }
+                        }}
                         className="w-full bg-gray-800 text-white px-4 py-3 rounded-lg appearance-none cursor-pointer min-h-[44px] pr-10 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                       >
                         {filteredEpisodes.map((episode) => (
                           <option key={episode.id} value={episode.id}>
-                            Épisode {episode.number} - {episode.title}
+                            Épisode {episode.episodeNumber} - {episode.title}
                           </option>
                         ))}
                       </select>
@@ -323,7 +378,7 @@ const AnimePage: React.FC = () => {
                   {/* Sélecteur de lecteur */}
                   {currentSources.length > 0 && (
                     <div>
-                      <label className="block text-sm font-medium mb-2">Lecteur</label>
+                      <label className="block text-sm font-medium mb-2">Serveur</label>
                       <div className="relative">
                         <select
                           value={selectedPlayer}
@@ -332,7 +387,7 @@ const AnimePage: React.FC = () => {
                         >
                           {currentSources.map((source, index) => (
                             <option key={index} value={index}>
-                              Lecteur {index + 1} - {source.name}
+                              {source.server} - {source.quality}
                             </option>
                           ))}
                         </select>
@@ -356,7 +411,7 @@ const AnimePage: React.FC = () => {
                       className="w-full h-64 sm:h-80 md:h-96"
                       allowFullScreen
                       frameBorder="0"
-                      title={`${selectedEpisode?.title} - ${currentSource.name}`}
+                      title={`${episodeDetails?.title} - ${currentSource.server}`}
                     />
                   </div>
                   
@@ -364,7 +419,7 @@ const AnimePage: React.FC = () => {
                   <div className="bg-yellow-600/20 border border-yellow-600/30 rounded-lg p-3">
                     <p className="text-yellow-200 text-sm flex items-center">
                       <AlertCircle className="mr-2 flex-shrink-0" size={16} />
-                      Pub insistante ou vidéo indisponible ? Changez de lecteur.
+                      Pub insistante ou vidéo indisponible ? Changez de serveur.
                     </p>
                   </div>
 
@@ -383,7 +438,7 @@ const AnimePage: React.FC = () => {
                     <div className="text-center">
                       <Play className="mx-auto mb-1 text-cyan-400" size={24} />
                       <p className="text-sm text-gray-400">
-                        {selectedEpisode && `Épisode ${selectedEpisode.number}`}
+                        {selectedEpisode && `Épisode ${selectedEpisode.episodeNumber}`}
                       </p>
                     </div>
                     

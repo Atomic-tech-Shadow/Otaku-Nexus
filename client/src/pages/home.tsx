@@ -114,15 +114,34 @@ export default function Home() {
               </Link>
             </div>
             
-            {/* Test Anime Page */}
+            {/* Anime Search */}
             <div className="mt-3">
-              <Link href="/anime/1">
+              <Link href="/anime-search">
                 <div>
-                  <Button className="w-full bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 transition-all duration-300 transform hover:scale-105">
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    Test Anime Streaming
+                  <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all duration-300 transform hover:scale-105">
+                    <Search className="w-4 h-4 mr-2" />
+                    Rechercher un Anime
                   </Button>
                 </div>
+              </Link>
+            </div>
+
+            {/* Animes populaires - Test direct */}
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <Link href="/anime/naruto">
+                <Button variant="outline" className="text-xs p-2 h-auto">
+                  Naruto
+                </Button>
+              </Link>
+              <Link href="/anime/one-piece">
+                <Button variant="outline" className="text-xs p-2 h-auto">
+                  One Piece
+                </Button>
+              </Link>
+              <Link href="/anime/demon-slayer">
+                <Button variant="outline" className="text-xs p-2 h-auto">
+                  Demon Slayer
+                </Button>
               </Link>
             </div>
 

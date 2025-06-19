@@ -15,6 +15,7 @@ import EditProfile from "@/pages/edit-profile";
 import AuthPage from "@/pages/auth";
 import Admin from "@/pages/admin";
 import AnimePage from "@/pages/anime";
+import AnimeSearchPage from "@/pages/anime-search";
 
 import { ProtectedRoute } from "@/components/auth/protected-route";
 
@@ -69,6 +70,12 @@ function Router() {
         <Route path="/anime/:id">
           <ProtectedRoute>
             <AnimePage />
+          </ProtectedRoute>
+        </Route>
+
+        <Route path="/anime-search">
+          <ProtectedRoute>
+            <AnimeSearchPage />
           </ProtectedRoute>
         </Route>
 
