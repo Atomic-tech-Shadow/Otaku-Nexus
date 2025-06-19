@@ -313,27 +313,11 @@ const AnimeSamaPage: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
-  // Obtenir les sources filtrées par langue
-  const getFilteredSources = () => {
-    if (!episodeDetails) return [];
-    
-    // Si pas de sources pour la langue sélectionnée, retourner toutes les sources
-    const languageFiltered = episodeDetails.sources.filter(source => 
-      source.language.toUpperCase() === selectedLanguage
-    );
-    
-    if (languageFiltered.length === 0) {
-      console.log('Aucune source pour', selectedLanguage, '- utilisation de toutes les sources');
-      return episodeDetails.sources;
-    }
-    
-    return languageFiltered;
-  };
+  // Les sources viennent directement de l'API avec la bonne langue
+  const currentSources = episodeDetails?.sources || [];
+  const currentSource = currentSources[selectedServer];
 
-  const filteredSources = getFilteredSources();
-  const currentSource = filteredSources[selectedServer];
-
-  console.log('Sources filtrées:', filteredSources);
+  console.log('Sources chargées:', currentSources);
   console.log('Source actuelle:', currentSource);
   console.log('Serveur sélectionné:', selectedServer);
 
@@ -568,8 +552,8 @@ const AnimeSamaPage: React.FC = () => {
                 className="w-full p-3 text-white rounded text-sm font-medium"
                 style={{ backgroundColor: '#1e40af', border: '1px solid #3b82f6' }}
               >
-                {filteredSources.length > 0 ? (
-                  filteredSources.map((source, index) => (
+                {currentSources.length > 0 ? (
+                  currentSources.map((source, index) => (
                     <option key={index} value={index}>
                       LECTEUR {index + 1} - {source.server}
                     </option>
@@ -588,7 +572,7 @@ const AnimeSamaPage: React.FC = () => {
             </div>
 
             {/* Message d'information sur la langue */}
-            {filteredSources.length > 0 && episodeDetails && (
+            {currentSources.length > 0 && episodeDetails && (
               <div className="text-center">
                 {episodeDetails.sources.every(s => s.language.toUpperCase() !== selectedLanguage) ? (
                   <div className="bg-yellow-600/20 border border-yellow-600/30 rounded-lg p-2">
