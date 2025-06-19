@@ -178,8 +178,11 @@ const AnimeSamaPage: React.FC = () => {
   // Charger les sources d'un épisode
   const loadEpisodeSources = async (episodeId: string) => {
     try {
+      console.log('Chargement des sources pour épisode:', episodeId);
       const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
       const apiResponse: ApiResponse<EpisodeDetails> = await response.json();
+      
+      console.log('Réponse API sources:', apiResponse);
       
       if (!apiResponse.success) {
         throw new Error('Erreur lors du chargement des sources');
@@ -187,9 +190,47 @@ const AnimeSamaPage: React.FC = () => {
       
       setEpisodeDetails(apiResponse.data);
       setSelectedServer(0);
+      console.log('Sources chargées:', apiResponse.data.sources);
     } catch (err) {
       console.error('Erreur sources:', err);
-      setError('Impossible de charger les sources vidéo.');
+      // Créer des sources de test pour le développement
+      const mockSources: EpisodeDetails = {
+        id: episodeId,
+        title: `Episode ${selectedEpisode?.episodeNumber || 1}`,
+        animeTitle: selectedAnime?.title || '',
+        episodeNumber: selectedEpisode?.episodeNumber || 1,
+        sources: [
+          {
+            url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+            server: 'Vidmoly',
+            quality: 'HD',
+            language: selectedLanguage,
+            type: 'iframe',
+            serverIndex: 1
+          },
+          {
+            url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+            server: 'SendVid',
+            quality: 'HD',
+            language: selectedLanguage,
+            type: 'iframe',
+            serverIndex: 2
+          },
+          {
+            url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+            server: 'Sibnet',
+            quality: 'HD',
+            language: selectedLanguage,
+            type: 'iframe',
+            serverIndex: 3
+          }
+        ],
+        availableServers: ['Vidmoly', 'SendVid', 'Sibnet'],
+        url: ''
+      };
+      setEpisodeDetails(mockSources);
+      setSelectedServer(0);
+      setError('Utilisation des sources de test - Vérifiez votre API.');
     }
   };
 
@@ -229,13 +270,26 @@ const AnimeSamaPage: React.FC = () => {
   // Obtenir les sources filtrées par langue
   const getFilteredSources = () => {
     if (!episodeDetails) return [];
-    return episodeDetails.sources.filter(source => 
+    
+    // Si pas de sources pour la langue sélectionnée, retourner toutes les sources
+    const languageFiltered = episodeDetails.sources.filter(source => 
       source.language.toUpperCase() === selectedLanguage
     );
+    
+    if (languageFiltered.length === 0) {
+      console.log('Aucune source pour', selectedLanguage, '- utilisation de toutes les sources');
+      return episodeDetails.sources;
+    }
+    
+    return languageFiltered;
   };
 
   const filteredSources = getFilteredSources();
   const currentSource = filteredSources[selectedServer];
+
+  console.log('Sources filtrées:', filteredSources);
+  console.log('Source actuelle:', currentSource);
+  console.log('Serveur sélectionné:', selectedServer);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#000000' }}>
@@ -478,7 +532,7 @@ const AnimeSamaPage: React.FC = () => {
                 {filteredSources.length > 0 ? (
                   filteredSources.map((source, index) => (
                     <option key={index} value={index}>
-                      LECTEUR {index + 1}
+                      LECTEUR {index + 1} - {source.server}
                     </option>
                   ))
                 ) : (
@@ -493,6 +547,19 @@ const AnimeSamaPage: React.FC = () => {
                 {selectedEpisode ? `EPISODE ${selectedEpisode.episodeNumber}` : 'EPISODE 1'}
               </span>
             </div>
+
+            {/* Message d'information sur la langue */}
+            {filteredSources.length > 0 && episodeDetails && (
+              <div className="text-center">
+                {episodeDetails.sources.every(s => s.language.toUpperCase() !== selectedLanguage) ? (
+                  <div className="bg-yellow-600/20 border border-yellow-600/30 rounded-lg p-2">
+                    <p className="text-yellow-200 text-xs">
+                      Aucune source {selectedLanguage} disponible. Affichage des sources {episodeDetails.sources[0]?.language || 'disponibles'}.
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            )}
 
             {/* Boutons navigation */}
             <div className="flex justify-center gap-4">
