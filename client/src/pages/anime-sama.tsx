@@ -323,27 +323,40 @@ const AnimeSamaPage: React.FC = () => {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#000000' }}>
-      {/* Header exact anime-sama */}
+      {/* Header exact anime-sama avec recherche intégrée */}
       <div className="sticky top-0 z-50" style={{ backgroundColor: '#000000', borderBottom: '1px solid #333' }}>
         <div className="flex items-center justify-between p-3">
-          <div className="flex items-center">
+          <div className="flex items-center flex-1">
             <Link href="/" className="mr-3">
               <button className="p-2 rounded" style={{ backgroundColor: '#1a1a1a' }}>
                 <ArrowLeft size={18} className="text-white" />
               </button>
             </Link>
-            <div className="flex items-center">
-              <div className="text-white font-bold text-lg mr-2">🔍</div>
-              <span className="text-white font-medium text-sm uppercase tracking-wide">
-                {currentView === 'search' ? 'RECHERCHER...' : 
-                 currentView === 'anime' ? 'APERÇU' : 
-                 selectedAnime?.title || 'ANIME'}
-              </span>
-            </div>
+            
+            {currentView === 'search' ? (
+              <div className="flex items-center flex-1">
+                <div className="text-white font-bold text-lg mr-2">🔍</div>
+                <input
+                  type="text"
+                  placeholder="Rechercher un anime..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 bg-gray-800 text-white px-3 py-2 rounded text-sm border border-gray-700 focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+            ) : (
+              <div className="flex items-center">
+                <div className="text-white font-bold text-lg mr-2">🔍</div>
+                <span className="text-white font-medium text-sm uppercase tracking-wide">
+                  {currentView === 'anime' ? 'APERÇU' : 
+                   selectedAnime?.title || 'ANIME'}
+                </span>
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            <div className="text-white text-xl">🇯🇵</div>
-            <div className="text-red-500 text-xl">🇵🇸</div>
+          <div className="flex items-center gap-2 ml-3">
+            <div className="text-white text-xl">🇹🇬</div>
+            <div className="text-white text-xl">🇹🇬</div>
           </div>
         </div>
       </div>
@@ -351,22 +364,7 @@ const AnimeSamaPage: React.FC = () => {
       {/* Page de recherche */}
       {currentView === 'search' && (
         <div className="p-4">
-          {/* Barre de recherche style anime-sama */}
-          <div className="relative mb-6">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher un anime..."
-              className="w-full p-4 text-white text-lg rounded-lg border-0 outline-0"
-              style={{ backgroundColor: '#1a1a1a' }}
-            />
-            {loading && (
-              <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            )}
-          </div>
+
 
           {/* Résultats de recherche */}
           {searchResults.length > 0 && (
@@ -518,7 +516,7 @@ const AnimeSamaPage: React.FC = () => {
                   }}
                 >
                   <span className="text-white font-bold text-xs">
-                    {lang === 'VF' ? '🇫🇷' : '🇯🇵'}
+                    🇹🇬
                   </span>
                 </button>
               ))}
@@ -635,15 +633,7 @@ const AnimeSamaPage: React.FC = () => {
                   frameBorder="0"
                   title={`${episodeDetails?.title} - ${currentSource.server}`}
                 />
-                {/* Bouton play central */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div 
-                    className="w-16 h-16 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: 'rgba(59, 130, 246, 0.8)' }}
-                  >
-                    <div className="w-0 h-0 border-l-[12px] border-l-white border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent ml-1"></div>
-                  </div>
-                </div>
+
               </div>
             )}
           </div>
