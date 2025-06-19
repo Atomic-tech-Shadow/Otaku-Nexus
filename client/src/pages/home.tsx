@@ -114,13 +114,13 @@ export default function Home() {
               </Link>
             </div>
             
-            {/* Anime Streaming */}
+            {/* Anime Sama */}
             <div className="mt-3">
-              <Link href="/streaming">
+              <Link href="/anime-sama">
                 <div>
-                  <Button className="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 transition-all duration-300 transform hover:scale-105">
+                  <Button className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 transition-all duration-300 transform hover:scale-105">
                     <BookOpen className="w-4 h-4 mr-2" />
-                    Anime Streaming
+                    Anime-Sama Streaming
                   </Button>
                 </div>
               </Link>
