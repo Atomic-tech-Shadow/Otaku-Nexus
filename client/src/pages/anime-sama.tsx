@@ -295,10 +295,44 @@ const AnimeSamaPage: React.FC = () => {
   };
 
   // Changer de langue
-  const changeLanguage = (newLanguage: 'VF' | 'VOSTFR') => {
+  const changeLanguage = async (newLanguage: 'VF' | 'VOSTFR') => {
+    if (!selectedSeason || !selectedAnime || selectedLanguage === newLanguage) return;
+    
     setSelectedLanguage(newLanguage);
-    if (selectedSeason) {
-      loadSeasonEpisodes(selectedSeason);
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const language = newLanguage.toLowerCase();
+      console.log(`Changement vers ${newLanguage} pour ${selectedAnime.id} saison ${selectedSeason.number}`);
+      
+      const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`);
+      const apiResponse: ApiResponse<{
+        animeId: string;
+        season: number;
+        language: string;
+        episodes: Episode[];
+        episodeCount: number;
+      }> = await response.json();
+      
+      if (!apiResponse.success || apiResponse.data.episodes.length === 0) {
+        throw new Error(`Aucun épisode ${newLanguage} disponible`);
+      }
+      
+      setEpisodes(apiResponse.data.episodes);
+      
+      // Recharger le premier épisode avec la nouvelle langue
+      const firstEpisode = apiResponse.data.episodes[0];
+      setSelectedEpisode(firstEpisode);
+      await loadEpisodeSources(firstEpisode.id);
+      
+    } catch (err) {
+      console.error('Erreur changement langue:', err);
+      setError(`Impossible de charger les épisodes ${newLanguage}.`);
+      // Revenir à la langue précédente si échec
+      setSelectedLanguage(selectedLanguage === 'VF' ? 'VOSTFR' : 'VF');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -355,7 +389,6 @@ const AnimeSamaPage: React.FC = () => {
             )}
           </div>
           <div className="flex items-center gap-2 ml-3">
-            <div className="text-white text-xl">🇹🇬</div>
             <div className="text-white text-xl">🇹🇬</div>
           </div>
         </div>
@@ -427,7 +460,9 @@ const AnimeSamaPage: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-white font-medium">Correspondance :</span>
-                  <span className="text-gray-300 ml-2">Episode 1122 → Chapitre 1088</span>
+                  <span className="text-gray-300 ml-2">
+                    {selectedEpisode ? `Episode ${selectedEpisode.episodeNumber}` : 'Episode 1'}
+                  </span>
                 </div>
               </div>
             </div>
