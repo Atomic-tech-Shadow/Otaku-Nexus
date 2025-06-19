@@ -16,6 +16,7 @@ import AuthPage from "@/pages/auth";
 import Admin from "@/pages/admin";
 import AnimePage from "@/pages/anime";
 import AnimeSearchPage from "@/pages/anime-search";
+import AnimeStreamingPage from "@/pages/anime-streaming";
 
 import { ProtectedRoute } from "@/components/auth/protected-route";
 
@@ -76,6 +77,12 @@ function Router() {
         <Route path="/anime-search">
           <ProtectedRoute>
             <AnimeSearchPage />
+          </ProtectedRoute>
+        </Route>
+
+        <Route path="/streaming">
+          <ProtectedRoute>
+            <AnimeStreamingPage />
           </ProtectedRoute>
         </Route>
 
