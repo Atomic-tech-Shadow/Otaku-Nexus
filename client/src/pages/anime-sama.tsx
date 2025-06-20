@@ -80,6 +80,17 @@ const AnimeSamaPage: React.FC = () => {
   const [selectedServer, setSelectedServer] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [watchHistory, setWatchHistory] = useState<{[key: string]: number}>({});
+  const [videoProgress, setVideoProgress] = useState<{[key: string]: number}>({});
+  const [lastWatched, setLastWatched] = useState<string | null>(null);
+
+  // Charger l'historique au démarrage
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('animeWatchHistory');
+    if (savedHistory) {
+      setWatchHistory(JSON.parse(savedHistory));
+    }
+  }, []);
 
   const API_BASE = 'https://api-anime-sama.onrender.com';
 
@@ -418,7 +429,14 @@ const AnimeSamaPage: React.FC = () => {
                   />
                   <div className="p-3">
                     <h3 className="text-white font-medium text-sm line-clamp-2">{anime.title}</h3>
-                    <p className="text-gray-400 text-xs mt-1">{anime.status}</p>
+                    <div className="flex justify-between items-center mt-1">
+                      <p className="text-gray-400 text-xs">{anime.status}</p>
+                      {watchHistory[anime.id] && (
+                        <span className="text-cyan-400 text-xs bg-cyan-900/30 px-1 rounded">
+                          Ep {watchHistory[anime.id]}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
