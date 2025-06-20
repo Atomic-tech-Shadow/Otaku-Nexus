@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowLeft, Download } from 'lucide-react';
-import { Link } from 'wouter';
+import { Search, ArrowLeft, Download, Star, Eye, Check, Play, Filter, Grid, List, TrendingUp, ChevronRight } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import AppHeader from "@/components/layout/app-header";
+import BottomNav from "@/components/layout/bottom-nav";
 
 interface SearchResult {
   id: string;
@@ -40,34 +44,8 @@ interface Episode {
   available: boolean;
 }
 
-interface EpisodeDetails {
-  id: string;
-  title: string;
-  animeTitle: string;
-  episodeNumber: number;
-  sources: VideoSource[];
-  availableServers: string[];
-  url: string;
-}
-
-interface VideoSource {
-  url: string;
-  server: string;
-  quality: string;
-  language: string;
-  type: string;
-  serverIndex: number;
-}
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  timestamp: string;
-  meta?: any;
-}
-
 const AnimeSamaPage: React.FC = () => {
-  const [currentView, setCurrentView] = useState<'search' | 'anime' | 'player'>('search');
+  const [currentView, setCurrentView] = useState<'home' | 'search' | 'anime' | 'player'>('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [selectedAnime, setSelectedAnime] = useState<AnimeDetails | null>(null);
@@ -76,26 +54,91 @@ const AnimeSamaPage: React.FC = () => {
   const [availableLanguages, setAvailableLanguages] = useState<string[]>(['VOSTFR']);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
-  const [episodeDetails, setEpisodeDetails] = useState<EpisodeDetails | null>(null);
-  const [selectedServer, setSelectedServer] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [popularAnimes, setPopularAnimes] = useState<SearchResult[]>([]);
+  const [trendingAnimes, setTrendingAnimes] = useState<SearchResult[]>([]);
 
   const API_BASE = 'https://api-anime-sama.onrender.com';
 
-  // Recherche d'animes
-  const searchAnimes = async (query: string) => {
-    if (query.trim().length < 2) {
-      setSearchResults([]);
-      return;
+  useEffect(() => {
+    if (currentView === 'home') {
+      loadPopularAnimes();
     }
+  }, [currentView]);
 
+  const loadPopularAnimes = async () => {
+    setLoading(true);
+    try {
+      const mockPopular: SearchResult[] = [
+        {
+          id: 'attack-on-titan',
+          title: 'L\'Attaque des Titans',
+          url: '/anime/attack-on-titan',
+          type: 'TV',
+          status: 'Terminé',
+          image: 'https://cdn.myanimelist.net/images/anime/10/47347.jpg'
+        },
+        {
+          id: 'demon-slayer',
+          title: 'Demon Slayer',
+          url: '/anime/demon-slayer',
+          type: 'TV',
+          status: 'En cours',
+          image: 'https://cdn.myanimelist.net/images/anime/1286/99889.jpg'
+        },
+        {
+          id: 'one-piece',
+          title: 'One Piece',
+          url: '/anime/one-piece',
+          type: 'TV',
+          status: 'En cours',
+          image: 'https://cdn.myanimelist.net/images/anime/6/73245.jpg'
+        },
+        {
+          id: 'naruto',
+          title: 'Naruto',
+          url: '/anime/naruto',
+          type: 'TV',
+          status: 'Terminé',
+          image: 'https://cdn.myanimelist.net/images/anime/13/17405.jpg'
+        },
+        {
+          id: 'my-hero-academia',
+          title: 'My Hero Academia',
+          url: '/anime/my-hero-academia',
+          type: 'TV',
+          status: 'En cours',
+          image: 'https://cdn.myanimelist.net/images/anime/10/78745.jpg'
+        },
+        {
+          id: 'jujutsu-kaisen',
+          title: 'Jujutsu Kaisen',
+          url: '/anime/jujutsu-kaisen',
+          type: 'TV',
+          status: 'En cours',
+          image: 'https://cdn.myanimelist.net/images/anime/1171/109222.jpg'
+        }
+      ];
+      setPopularAnimes(mockPopular);
+      setTrendingAnimes(mockPopular.slice().reverse());
+    } catch (err) {
+      console.error('Erreur chargement populaires:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const searchAnimes = async (query: string) => {
+    if (!query.trim()) return;
+    
     setLoading(true);
     setError(null);
     
     try {
       const response = await fetch(`${API_BASE}/api/search?query=${encodeURIComponent(query)}`);
-      const apiResponse: ApiResponse<SearchResult[]> = await response.json();
+      const apiResponse = await response.json();
       
       if (!apiResponse.success) {
         throw new Error('Erreur lors de la recherche');
@@ -111,14 +154,13 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Charger les détails d'un anime
   const loadAnimeDetails = async (animeId: string) => {
     setLoading(true);
     setError(null);
     
     try {
       const response = await fetch(`${API_BASE}/api/anime/${animeId}`);
-      const apiResponse: ApiResponse<AnimeDetails> = await response.json();
+      const apiResponse = await response.json();
       
       if (!apiResponse.success) {
         throw new Error('Erreur lors du chargement de l\'anime');
@@ -136,82 +178,26 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Détecter les langues disponibles pour une saison
-  const detectAvailableLanguages = async (animeId: string, seasonNumber: number) => {
-    const languages = [];
-    
-    // Tester VF
-    try {
-      const vfResponse = await fetch(`${API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vf`);
-      const vfData = await vfResponse.json();
-      if (vfData.success && vfData.data.episodes.length > 0) {
-        languages.push('VF');
-      }
-    } catch (err) {
-      console.log('VF non disponible');
-    }
-    
-    // Tester VOSTFR
-    try {
-      const vostfrResponse = await fetch(`${API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vostfr`);
-      const vostfrData = await vostfrResponse.json();
-      if (vostfrData.success && vostfrData.data.episodes.length > 0) {
-        languages.push('VOSTFR');
-      }
-    } catch (err) {
-      console.log('VOSTFR non disponible');
-    }
-    
-    return languages;
-  };
-
-  // Charger les épisodes d'une saison
   const loadSeasonEpisodes = async (season: Season) => {
     if (!selectedAnime) return;
     
     setLoading(true);
     setError(null);
     setCurrentView('player');
+    setSelectedSeason(season);
     
     try {
-      // Détecter les langues disponibles
-      const availLangs = await detectAvailableLanguages(selectedAnime.id, season.number);
-      setAvailableLanguages(availLangs);
-      console.log('Langues disponibles:', availLangs);
-      
-      // Ajuster la langue sélectionnée si nécessaire
-      let languageToUse = selectedLanguage;
-      if (!availLangs.includes(selectedLanguage)) {
-        languageToUse = availLangs[0] as 'VF' | 'VOSTFR';
-        setSelectedLanguage(languageToUse);
-      }
-      
-      const language = languageToUse.toLowerCase();
-      console.log(`Chargement épisodes ${selectedAnime.id} saison ${season.number} langue ${language}`);
-      
+      const language = selectedLanguage.toLowerCase();
       const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${language}`);
-      const apiResponse: ApiResponse<{
-        animeId: string;
-        season: number;
-        language: string;
-        episodes: Episode[];
-        episodeCount: number;
-      }> = await response.json();
-      
-      console.log('Réponse épisodes:', apiResponse);
+      const apiResponse = await response.json();
       
       if (!apiResponse.success) {
         throw new Error('Erreur lors du chargement des épisodes');
       }
       
       setEpisodes(apiResponse.data.episodes);
-      setSelectedSeason(season);
-      
-      // Charger automatiquement le premier épisode
       if (apiResponse.data.episodes.length > 0) {
-        const firstEpisode = apiResponse.data.episodes[0];
-        setSelectedEpisode(firstEpisode);
-        await loadEpisodeSources(firstEpisode.id);
+        setSelectedEpisode(apiResponse.data.episodes[0]);
       }
     } catch (err) {
       console.error('Erreur épisodes:', err);
@@ -221,193 +207,131 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Charger les sources d'un épisode
-  const loadEpisodeSources = async (episodeId: string) => {
-    try {
-      console.log('Chargement des sources pour épisode:', episodeId);
-      const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
-      const apiResponse: ApiResponse<EpisodeDetails> = await response.json();
+  const renderHomeView = () => (
+    <div className="min-h-screen bg-nexus-dark text-white pb-20">
+      <AppHeader />
       
-      console.log('Réponse API sources:', apiResponse);
-      
-      if (!apiResponse.success) {
-        throw new Error('Erreur lors du chargement des sources');
-      }
-      
-      setEpisodeDetails(apiResponse.data);
-      setSelectedServer(0);
-      console.log('Sources chargées:', apiResponse.data.sources);
-    } catch (err) {
-      console.error('Erreur sources:', err);
-      // Créer des sources de test pour le développement
-      const mockSources: EpisodeDetails = {
-        id: episodeId,
-        title: `Episode ${selectedEpisode?.episodeNumber || 1}`,
-        animeTitle: selectedAnime?.title || '',
-        episodeNumber: selectedEpisode?.episodeNumber || 1,
-        sources: [
-          {
-            url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-            server: 'Vidmoly',
-            quality: 'HD',
-            language: selectedLanguage,
-            type: 'iframe',
-            serverIndex: 1
-          },
-          {
-            url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-            server: 'SendVid',
-            quality: 'HD',
-            language: selectedLanguage,
-            type: 'iframe',
-            serverIndex: 2
-          },
-          {
-            url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-            server: 'Sibnet',
-            quality: 'HD',
-            language: selectedLanguage,
-            type: 'iframe',
-            serverIndex: 3
-          }
-        ],
-        availableServers: ['Vidmoly', 'SendVid', 'Sibnet'],
-        url: ''
-      };
-      setEpisodeDetails(mockSources);
-      setSelectedServer(0);
-      setError('Utilisation des sources de test - Vérifiez votre API.');
-    }
-  };
+      <main className="px-4 pt-6">
+        {/* Hero Section */}
+        <div className="glass-morphism rounded-2xl p-6 mb-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-20 h-20 rounded-full opacity-30 bg-gradient-to-br from-nexus-cyan to-transparent"></div>
+          <h1 className="text-2xl font-bold mb-2 text-gradient">Anime Streaming</h1>
+          <p className="text-gray-300 text-sm mb-4">Découvrez et regardez vos animes préférés</p>
+          
+          <Button 
+            onClick={() => setCurrentView('search')}
+            className="w-full bg-gradient-to-r from-nexus-cyan to-nexus-purple hover:from-nexus-cyan/80 hover:to-nexus-purple/80"
+          >
+            <Search className="w-4 h-4 mr-2" />
+            Rechercher un anime
+          </Button>
+        </div>
 
-  // Navigation entre épisodes
-  const navigateEpisode = async (direction: 'prev' | 'next') => {
-    if (!selectedEpisode || episodes.length === 0) return;
-    
-    const currentIndex = episodes.findIndex(ep => ep.id === selectedEpisode.id);
-    let newIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
-    
-    if (newIndex >= 0 && newIndex < episodes.length) {
-      const newEpisode = episodes[newIndex];
-      setSelectedEpisode(newEpisode);
-      await loadEpisodeSources(newEpisode.id);
-    }
-  };
-
-  // Changer de langue
-  const changeLanguage = async (newLanguage: 'VF' | 'VOSTFR') => {
-    if (!selectedSeason || !selectedAnime || selectedLanguage === newLanguage) return;
-    
-    setSelectedLanguage(newLanguage);
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const language = newLanguage.toLowerCase();
-      console.log(`Changement vers ${newLanguage} pour ${selectedAnime.id} saison ${selectedSeason.number}`);
-      
-      const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`);
-      const apiResponse: ApiResponse<{
-        animeId: string;
-        season: number;
-        language: string;
-        episodes: Episode[];
-        episodeCount: number;
-      }> = await response.json();
-      
-      if (!apiResponse.success || apiResponse.data.episodes.length === 0) {
-        throw new Error(`Aucun épisode ${newLanguage} disponible`);
-      }
-      
-      setEpisodes(apiResponse.data.episodes);
-      
-      // Recharger le premier épisode avec la nouvelle langue
-      const firstEpisode = apiResponse.data.episodes[0];
-      setSelectedEpisode(firstEpisode);
-      await loadEpisodeSources(firstEpisode.id);
-      
-    } catch (err) {
-      console.error('Erreur changement langue:', err);
-      setError(`Impossible de charger les épisodes ${newLanguage}.`);
-      // Revenir à la langue précédente si échec
-      setSelectedLanguage(selectedLanguage === 'VF' ? 'VOSTFR' : 'VF');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Effet de recherche avec délai
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchQuery.trim()) {
-        searchAnimes(searchQuery);
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
-
-  // Les sources viennent directement de l'API avec la bonne langue
-  const currentSources = episodeDetails?.sources || [];
-  const currentSource = currentSources[selectedServer];
-
-  console.log('Sources chargées:', currentSources);
-  console.log('Source actuelle:', currentSource);
-  console.log('Serveur sélectionné:', selectedServer);
-
-  return (
-    <div className="min-h-screen" style={{ backgroundColor: '#000000' }}>
-      {/* Header exact anime-sama avec recherche intégrée */}
-      <div className="sticky top-0 z-50" style={{ backgroundColor: '#000000', borderBottom: '1px solid #333' }}>
-        <div className="flex items-center justify-between p-3">
-          <div className="flex items-center flex-1">
-            <Link href="/" className="mr-3">
-              <button className="p-2 rounded" style={{ backgroundColor: '#1a1a1a' }}>
-                <ArrowLeft size={18} className="text-white" />
-              </button>
-            </Link>
-            
-            {currentView === 'search' ? (
-              <div className="flex items-center flex-1">
-                <div className="text-white font-bold text-lg mr-2">🔍</div>
-                <input
-                  type="text"
-                  placeholder="Rechercher un anime..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 bg-gray-800 text-white px-3 py-2 rounded text-sm border border-gray-700 focus:border-cyan-500 focus:outline-none"
-                />
-              </div>
-            ) : (
-              <div className="flex items-center">
-                <div className="text-white font-bold text-lg mr-2">🔍</div>
-                <span className="text-white font-medium text-sm uppercase tracking-wide">
-                  {currentView === 'anime' ? 'APERÇU' : 
-                   selectedAnime?.title || 'ANIME'}
-                </span>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-2 ml-3">
-            <div className="text-white text-xl">🇹🇬</div>
+        {/* Quick Categories */}
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+            <Trending className="w-5 h-5 text-nexus-cyan" />
+            Catégories populaires
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            <Button 
+              variant="outline" 
+              className="h-12 border-nexus-cyan/30 hover:bg-nexus-cyan/10"
+              onClick={() => {
+                setSearchQuery('action');
+                setCurrentView('search');
+              }}
+            >
+              Action / Aventure
+            </Button>
+            <Button 
+              variant="outline" 
+              className="h-12 border-nexus-purple/30 hover:bg-nexus-purple/10"
+              onClick={() => {
+                setSearchQuery('romance');
+                setCurrentView('search');
+              }}
+            >
+              Romance / Slice of Life
+            </Button>
+            <Button 
+              variant="outline" 
+              className="h-12 border-nexus-pink/30 hover:bg-nexus-pink/10"
+              onClick={() => {
+                setSearchQuery('shonen');
+                setCurrentView('search');
+              }}
+            >
+              Shonen / Combat
+            </Button>
+            <Button 
+              variant="outline" 
+              className="h-12 border-nexus-orange/30 hover:bg-nexus-orange/10"
+              onClick={() => {
+                setSearchQuery('ghibli');
+                setCurrentView('search');
+              }}
+            >
+              Studio Ghibli
+            </Button>
           </div>
         </div>
-      </div>
 
-      {/* Page de recherche */}
-      {currentView === 'search' && (
-        <div className="p-4">
-
-
-          {/* Résultats de recherche */}
-          {searchResults.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {searchResults.map((anime) => (
+        {/* Trending Now */}
+        {trendingAnimes.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Star className="w-5 h-5 text-nexus-pink" />
+                Tendances actuelles
+              </h2>
+              <Button variant="ghost" size="sm" onClick={() => setCurrentView('search')}>
+                Voir tout <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {trendingAnimes.slice(0, 6).map((anime) => (
                 <div
                   key={anime.id}
                   onClick={() => loadAnimeDetails(anime.id)}
-                  className="rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform"
-                  style={{ backgroundColor: '#1a1a1a' }}
+                  className="flex-shrink-0 w-28 glass-morphism rounded-xl overflow-hidden cursor-pointer hover:scale-105 transition-transform"
+                >
+                  <img
+                    src={anime.image}
+                    alt={anime.title}
+                    className="w-full h-36 object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = 'https://via.placeholder.com/112x144/1a1a2e/00c3ff?text=Anime';
+                    }}
+                  />
+                  <div className="p-2">
+                    <h3 className="text-white font-medium text-xs line-clamp-2">{anime.title}</h3>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Popular Animes */}
+        {popularAnimes.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-nexus-cyan" />
+                Animes populaires
+              </h2>
+              <Button variant="ghost" size="sm" onClick={() => setCurrentView('search')}>
+                Voir tout <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {popularAnimes.slice(0, 4).map((anime) => (
+                <div
+                  key={anime.id}
+                  onClick={() => loadAnimeDetails(anime.id)}
+                  className="glass-morphism rounded-xl overflow-hidden cursor-pointer hover:scale-105 transition-transform"
                 >
                   <img
                     src={anime.image}
@@ -415,289 +339,399 @@ const AnimeSamaPage: React.FC = () => {
                     className="w-full aspect-[3/4] object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = 'https://via.placeholder.com/300x400/1a1a1a/ffffff?text=Image+Non+Disponible';
+                      target.src = 'https://via.placeholder.com/300x400/1a1a2e/00c3ff?text=Anime';
                     }}
                   />
                   <div className="p-3">
                     <h3 className="text-white font-medium text-sm line-clamp-2">{anime.title}</h3>
-                    <p className="text-gray-400 text-xs mt-1">{anime.status}</p>
+                    <p className="text-nexus-cyan text-xs mt-1">{anime.status}</p>
                   </div>
                 </div>
               ))}
             </div>
-          )}
+          </div>
+        )}
 
-          {!searchQuery && (
-            <div className="text-center py-20">
-              <div className="text-6xl mb-4">🔍</div>
-              <h2 className="text-white text-2xl font-bold mb-2">Recherchez votre anime</h2>
-              <p className="text-gray-400">Tapez le nom de l'anime que vous souhaitez regarder</p>
+        {/* Features */}
+        <div className="glass-morphism rounded-2xl p-6">
+          <h2 className="text-lg font-semibold mb-4">Fonctionnalités</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-full bg-nexus-cyan/20 flex items-center justify-center mx-auto mb-2">
+                <Play className="w-6 h-6 text-nexus-cyan" />
+              </div>
+              <p className="text-sm text-gray-300">Streaming HD</p>
             </div>
-          )}
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-full bg-nexus-purple/20 flex items-center justify-center mx-auto mb-2">
+                <Download className="w-6 h-6 text-nexus-purple" />
+              </div>
+              <p className="text-sm text-gray-300">Téléchargement</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-full bg-nexus-pink/20 flex items-center justify-center mx-auto mb-2">
+                <Star className="w-6 h-6 text-nexus-pink" />
+              </div>
+              <p className="text-sm text-gray-300">Favoris</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-full bg-nexus-orange/20 flex items-center justify-center mx-auto mb-2">
+                <Eye className="w-6 h-6 text-nexus-orange" />
+              </div>
+              <p className="text-sm text-gray-300">Watchlist</p>
+            </div>
+          </div>
         </div>
-      )}
+      </main>
 
-      {/* Page détails anime - APERÇU */}
-      {currentView === 'anime' && selectedAnime && (
-        <div className="p-0">
-          {/* Image principale */}
-          <div className="relative">
-            <img
-              src={selectedAnime.image}
-              alt={selectedAnime.title}
-              className="w-full h-64 object-cover"
-            />
-            <div 
-              className="absolute inset-0"
-              style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.8) 100%)' }}
-            />
-            <div className="absolute bottom-4 left-4 right-4">
-              <h1 className="text-white text-2xl font-bold mb-2">{selectedAnime.title}</h1>
-              <div className="text-sm space-y-1">
-                <div>
-                  <span className="text-white font-medium">Avancement :</span>
-                  <span className="text-gray-300 ml-2">Aucune donnée.</span>
-                </div>
-                <div>
-                  <span className="text-white font-medium">Correspondance :</span>
-                  <span className="text-gray-300 ml-2">
-                    {selectedEpisode ? `Episode ${selectedEpisode.episodeNumber}` : 'Episode 1'}
-                  </span>
+      <BottomNav />
+    </div>
+  );
+
+  const renderSearchView = () => (
+    <div className="min-h-screen bg-nexus-dark text-white pb-20">
+      <AppHeader />
+      
+      <main className="px-4 pt-6">
+        {/* Header with back button */}
+        <div className="flex items-center gap-3 mb-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCurrentView('home')}
+            className="p-2"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h1 className="text-xl font-bold">Recherche d'animes</h1>
+        </div>
+
+        {/* Search bar */}
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Input
+            type="text"
+            placeholder="Rechercher un anime..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && searchAnimes(searchQuery)}
+            className="pl-10 bg-nexus-surface border-nexus-cyan/30 text-white placeholder-gray-400"
+          />
+          <Button
+            onClick={() => searchAnimes(searchQuery)}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-nexus-cyan hover:bg-nexus-cyan/80"
+            size="sm"
+          >
+            Rechercher
+          </Button>
+        </div>
+
+        {/* View toggle */}
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex gap-2">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              className="p-2"
+            >
+              <Grid className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="p-2"
+            >
+              <List className="w-4 h-4" />
+            </Button>
+          </div>
+          <Button variant="outline" size="sm">
+            <Filter className="w-4 h-4 mr-2" />
+            Filtres
+          </Button>
+        </div>
+
+        {/* Loading state */}
+        {loading && (
+          <div className="flex justify-center py-8">
+            <LoadingSpinner size="lg" />
+          </div>
+        )}
+
+        {/* Error state */}
+        {error && (
+          <div className="glass-morphism rounded-xl p-6 text-center mb-6">
+            <p className="text-red-400">{error}</p>
+            <Button
+              onClick={() => setError(null)}
+              variant="outline"
+              className="mt-4"
+            >
+              Réessayer
+            </Button>
+          </div>
+        )}
+
+        {/* Search results */}
+        {searchResults.length > 0 && (
+          <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-4' : 'space-y-4'}>
+            {searchResults.map((anime) => (
+              <div
+                key={anime.id}
+                onClick={() => loadAnimeDetails(anime.id)}
+                className={`glass-morphism rounded-xl overflow-hidden cursor-pointer hover:scale-105 transition-transform ${
+                  viewMode === 'list' ? 'flex gap-4' : ''
+                }`}
+              >
+                <img
+                  src={anime.image}
+                  alt={anime.title}
+                  className={`object-cover ${
+                    viewMode === 'grid' ? 'w-full aspect-[3/4]' : 'w-24 h-32 flex-shrink-0'
+                  }`}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = 'https://via.placeholder.com/300x400/1a1a2e/00c3ff?text=Anime';
+                  }}
+                />
+                <div className="p-3 flex-1">
+                  <h3 className="text-white font-medium text-sm line-clamp-2 mb-1">{anime.title}</h3>
+                  <p className="text-nexus-cyan text-xs">{anime.status}</p>
+                  {viewMode === 'list' && (
+                    <p className="text-gray-400 text-xs mt-1">{anime.type}</p>
+                  )}
                 </div>
               </div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!searchQuery && searchResults.length === 0 && !loading && (
+          <div className="text-center py-20">
+            <div className="w-20 h-20 rounded-full bg-nexus-cyan/20 flex items-center justify-center mx-auto mb-4">
+              <Search className="w-10 h-10 text-nexus-cyan" />
             </div>
+            <h2 className="text-white text-xl font-bold mb-2">Recherchez votre anime</h2>
+            <p className="text-gray-400">Tapez le nom de l'anime que vous souhaitez regarder</p>
           </div>
+        )}
+      </main>
 
-          {/* Boutons d'action */}
-          <div className="flex gap-2 p-4">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm" style={{ backgroundColor: '#2a2a2a' }}>
-              <span>⭐</span> Favoris
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm" style={{ backgroundColor: '#2a2a2a' }}>
-              <span>👁</span> Watchlist
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm" style={{ backgroundColor: '#2a2a2a' }}>
-              <span>✓</span> Vu
-            </button>
-          </div>
+      <BottomNav />
+    </div>
+  );
 
-          {/* Section ANIME avec sagas */}
-          <div className="px-4 pb-4">
-            <h2 className="text-white text-lg font-bold mb-4 uppercase tracking-wide">ANIME</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {selectedAnime.seasons.map((season) => (
-                <button
-                  key={season.number}
-                  onClick={() => loadSeasonEpisodes(season)}
-                  className="relative overflow-hidden rounded-lg border-2 transition-all"
-                  style={{ 
-                    aspectRatio: '16/9',
-                    borderColor: selectedSeason?.number === season.number ? '#3b82f6' : '#1e40af',
-                    backgroundColor: '#1e40af'
-                  }}
-                >
-                  <img
-                    src={selectedAnime.image}
-                    alt={season.name}
-                    className="w-full h-full object-cover opacity-60"
-                  />
-                  <div 
-                    className="absolute inset-0"
-                    style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.9) 100%)' }}
-                  />
-                  <div className="absolute bottom-2 left-2 right-2">
-                    <div className="text-white text-sm font-bold text-left">{season.name}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+  const renderAnimeDetails = () => {
+    if (!selectedAnime) return null;
 
-      {/* Page lecteur - Interface exacte anime-sama */}
-      {currentView === 'player' && selectedAnime && selectedSeason && (
-        <div className="p-0">
-          {/* Image avec titre superposé */}
-          <div className="relative">
+    return (
+      <div className="min-h-screen bg-nexus-dark text-white pb-20">
+        <AppHeader />
+        
+        <main>
+          {/* Hero image */}
+          <div className="relative h-64 overflow-hidden">
             <img
               src={selectedAnime.image}
               alt={selectedAnime.title}
-              className="w-full h-48 object-cover"
+              className="w-full h-full object-cover"
             />
-            <div 
-              className="absolute inset-0"
-              style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.9) 100%)' }}
-            />
-            <div className="absolute bottom-4 left-4">
-              <h1 className="text-white text-2xl font-bold">{selectedAnime.title}</h1>
-              <h2 className="text-gray-300 text-lg uppercase tracking-wider">{selectedSeason.name}</h2>
-            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-nexus-dark via-transparent to-transparent" />
+            <Button
+              onClick={() => setCurrentView('search')}
+              variant="ghost"
+              className="absolute top-4 left-4 bg-black/50 hover:bg-black/70"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
           </div>
 
-          {/* Interface de contrôle */}
-          <div className="p-4 space-y-4">
-            {/* Drapeaux VF/VOSTFR basés sur les langues disponibles */}
-            <div className="flex gap-2">
-              {availableLanguages.map((lang) => (
-                <button
-                  key={lang}
-                  onClick={() => changeLanguage(lang as 'VF' | 'VOSTFR')}
-                  className="flex items-center justify-center w-12 h-10 rounded border-2"
-                  style={{
-                    backgroundColor: selectedLanguage === lang ? 
-                      (lang === 'VF' ? '#1e40af' : '#dc2626') : '#374151',
-                    borderColor: selectedLanguage === lang ? '#ffffff' : '#6b7280'
-                  }}
-                >
-                  <span className="text-white font-bold text-xs">
-                    {lang === 'VF' ? '🇫🇷' : '🇯🇵'}
-                  </span>
-                </button>
-              ))}
+          <div className="px-4 -mt-16 relative z-10">
+            {/* Anime info card */}
+            <div className="glass-morphism rounded-2xl p-6 mb-6">
+              <h1 className="text-2xl font-bold mb-2">{selectedAnime.title}</h1>
+              <div className="flex gap-2 mb-4">
+                <span className="px-2 py-1 rounded-lg bg-nexus-cyan/20 text-nexus-cyan text-xs">
+                  {selectedAnime.status}
+                </span>
+                <span className="px-2 py-1 rounded-lg bg-nexus-purple/20 text-nexus-purple text-xs">
+                  {selectedAnime.year}
+                </span>
+              </div>
+              
+              {selectedAnime.description && (
+                <p className="text-gray-300 text-sm mb-4 line-clamp-3">{selectedAnime.description}</p>
+              )}
+
+              {/* Action buttons */}
+              <div className="flex gap-2">
+                <Button className="flex-1 bg-nexus-cyan hover:bg-nexus-cyan/80">
+                  <Star className="w-4 h-4 mr-2" />
+                  Favoris
+                </Button>
+                <Button variant="outline" className="flex-1 border-nexus-purple/30">
+                  <Eye className="w-4 h-4 mr-2" />
+                  Watchlist
+                </Button>
+                <Button variant="outline" className="border-nexus-pink/30">
+                  <Check className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
 
-            {/* Dropdowns */}
-            <div className="grid grid-cols-2 gap-4">
-              <select
-                onChange={(e) => {
-                  const episode = episodes.find(ep => ep.id === e.target.value);
-                  if (episode) {
-                    setSelectedEpisode(episode);
-                    loadEpisodeSources(episode.id);
-                  }
-                }}
-                className="w-full p-3 text-white rounded text-sm font-medium"
-                style={{ backgroundColor: '#1e40af', border: '1px solid #3b82f6' }}
-                defaultValue=""
-              >
-                <option value="" disabled>EPISODE 1</option>
-                {episodes.map((episode) => (
-                  <option key={episode.id} value={episode.id}>
-                    EPISODE {episode.episodeNumber}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={selectedServer}
-                onChange={(e) => setSelectedServer(Number(e.target.value))}
-                className="w-full p-3 text-white rounded text-sm font-medium"
-                style={{ backgroundColor: '#1e40af', border: '1px solid #3b82f6' }}
-              >
-                {currentSources.length > 0 ? (
-                  currentSources.map((source, index) => (
-                    <option key={index} value={index}>
-                      LECTEUR {index + 1} - {source.server}
-                    </option>
-                  ))
-                ) : (
-                  <option value={0}>LECTEUR 1</option>
-                )}
-              </select>
-            </div>
-
-            {/* Dernière sélection */}
-            <div className="text-gray-400 text-sm">
-              DERNIÈRE SÉLECTION : <span className="text-white italic">
-                {selectedEpisode ? `EPISODE ${selectedEpisode.episodeNumber}` : 'EPISODE 1'}
-              </span>
-            </div>
-
-            {/* Message d'information sur la langue */}
-            {currentSources.length > 0 && episodeDetails && (
-              <div className="text-center">
-                {episodeDetails.sources.every(s => s.language.toUpperCase() !== selectedLanguage) ? (
-                  <div className="bg-yellow-600/20 border border-yellow-600/30 rounded-lg p-2">
-                    <p className="text-yellow-200 text-xs">
-                      Aucune source {selectedLanguage} disponible. Affichage des sources {episodeDetails.sources[0]?.language || 'disponibles'}.
-                    </p>
-                  </div>
-                ) : null}
+            {/* Seasons */}
+            {selectedAnime.seasons && selectedAnime.seasons.length > 0 && (
+              <div className="glass-morphism rounded-2xl p-6">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Play className="w-5 h-5 text-nexus-cyan" />
+                  Saisons disponibles
+                </h2>
+                <div className="space-y-3">
+                  {selectedAnime.seasons.map((season) => (
+                    <Button
+                      key={season.number}
+                      onClick={() => loadSeasonEpisodes(season)}
+                      variant="outline"
+                      className="w-full justify-between border-nexus-cyan/30 hover:bg-nexus-cyan/10 h-auto p-4"
+                    >
+                      <div className="text-left">
+                        <div className="font-medium">{season.name}</div>
+                        <div className="text-sm text-gray-400">{season.episodeCount} épisodes</div>
+                      </div>
+                      <div className="flex gap-1">
+                        {season.languages.map((lang) => (
+                          <span
+                            key={lang}
+                            className="px-2 py-1 rounded bg-nexus-purple/20 text-nexus-purple text-xs"
+                          >
+                            {lang}
+                          </span>
+                        ))}
+                      </div>
+                    </Button>
+                  ))}
+                </div>
               </div>
             )}
+          </div>
+        </main>
 
-            {/* Boutons navigation */}
-            <div className="flex justify-center gap-4">
-              <button
-                onClick={() => navigateEpisode('prev')}
-                disabled={!selectedEpisode || episodes.findIndex(ep => ep.id === selectedEpisode.id) === 0}
-                className="flex items-center justify-center w-14 h-14 text-white rounded-lg disabled:opacity-50 transition-colors"
-                style={{ backgroundColor: '#1e40af' }}
-              >
-                ◀
-              </button>
-              
-              <button
-                onClick={() => {
-                  if (selectedEpisode) {
-                    loadEpisodeSources(selectedEpisode.id);
-                  }
-                }}
-                className="flex items-center justify-center w-14 h-14 text-white rounded-lg transition-colors"
-                style={{ backgroundColor: '#374151' }}
-              >
-                <Download size={20} />
-              </button>
-              
-              <button
-                onClick={() => navigateEpisode('next')}
-                disabled={!selectedEpisode || episodes.findIndex(ep => ep.id === selectedEpisode.id) === episodes.length - 1}
-                className="flex items-center justify-center w-14 h-14 text-white rounded-lg disabled:opacity-50 transition-colors"
-                style={{ backgroundColor: '#1e40af' }}
-              >
-                ▶
-              </button>
-            </div>
+        <BottomNav />
+      </div>
+    );
+  };
 
-            {/* Message exact */}
-            <div className="text-center py-4">
-              <p className="text-white text-sm">
-                <span className="italic">Pub insistante ou vidéo indisponible ?</span><br />
-                <span className="font-bold">Changez de lecteur.</span>
+  const renderPlayerView = () => {
+    return (
+      <div className="min-h-screen bg-nexus-dark text-white pb-20">
+        <AppHeader />
+        
+        <main>
+          {/* Header */}
+          <div className="flex items-center gap-3 p-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCurrentView('anime')}
+              className="p-2"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex-1">
+              <h1 className="font-bold">{selectedAnime?.title}</h1>
+              <p className="text-sm text-gray-400">
+                {selectedSeason?.name} - Episode {selectedEpisode?.episodeNumber || 1}
               </p>
             </div>
+          </div>
 
-            {/* Lecteur vidéo */}
-            {currentSource && (
-              <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: '#000' }}>
-                <iframe
-                  src={currentSource.url}
-                  className="w-full h-64 md:h-80 lg:h-96"
-                  allowFullScreen
-                  frameBorder="0"
-                  title={`${episodeDetails?.title} - ${currentSource.server}`}
-                />
-
+          {/* Language selector */}
+          {availableLanguages.length > 1 && (
+            <div className="px-4 mb-4">
+              <div className="flex gap-2">
+                {availableLanguages.map((lang) => (
+                  <Button
+                    key={lang}
+                    variant={selectedLanguage === lang ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedLanguage(lang as 'VF' | 'VOSTFR')}
+                    className="bg-nexus-surface border-nexus-cyan/30"
+                  >
+                    {lang}
+                  </Button>
+                ))}
               </div>
-            )}
-          </div>
-        </div>
-      )}
+            </div>
+          )}
 
-      {/* Loading */}
-      {loading && (
-        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
-          <div className="p-6 rounded-lg" style={{ backgroundColor: '#1a1a1a' }}>
-            <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-            <p className="text-white text-sm">Chargement...</p>
+          {/* Video player placeholder */}
+          <div className="mx-4 mb-6">
+            <div className="aspect-video bg-black rounded-xl flex items-center justify-center">
+              <div className="text-center">
+                <Play className="w-16 h-16 text-nexus-cyan mx-auto mb-4" />
+                <h3 className="text-lg font-bold mb-2">Lecteur vidéo</h3>
+                <p className="text-gray-400 text-sm">
+                  Connexion au serveur de streaming...
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Error */}
-      {error && (
-        <div className="fixed bottom-4 left-4 right-4 p-3 rounded-lg z-50" style={{ backgroundColor: '#dc2626' }}>
-          <p className="text-white text-sm">{error}</p>
-          <button
-            onClick={() => setError(null)}
-            className="absolute top-2 right-2 text-white hover:text-gray-300"
-          >
-            ×
-          </button>
-        </div>
-      )}
-    </div>
+          {/* Episode list */}
+          {episodes.length > 0 && (
+            <div className="px-4 mb-6">
+              <div className="glass-morphism rounded-2xl p-6">
+                <h2 className="text-lg font-semibold mb-4">Episodes</h2>
+                <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+                  {episodes.map((episode) => (
+                    <Button
+                      key={episode.id}
+                      variant={selectedEpisode?.id === episode.id ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedEpisode(episode)}
+                      className="h-12 bg-nexus-surface border-nexus-cyan/30"
+                    >
+                      Ep {episode.episodeNumber}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Controls */}
+          <div className="px-4">
+            <div className="glass-morphism rounded-2xl p-6">
+              <div className="flex gap-2">
+                <Button className="flex-1 bg-nexus-cyan hover:bg-nexus-cyan/80">
+                  <Play className="w-4 h-4 mr-2" />
+                  Lire
+                </Button>
+                <Button variant="outline" className="border-nexus-purple/30">
+                  <Download className="w-4 h-4" />
+                </Button>
+                <Button variant="outline" className="border-nexus-pink/30">
+                  <Star className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </main>
+
+        <BottomNav />
+      </div>
+    );
+  };
+
+  return (
+    <>
+      {currentView === 'home' && renderHomeView()}
+      {currentView === 'search' && renderSearchView()}
+      {currentView === 'anime' && renderAnimeDetails()}
+      {currentView === 'player' && renderPlayerView()}
+    </>
   );
 };
 
