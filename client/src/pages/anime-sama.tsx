@@ -98,7 +98,7 @@ const AnimeSamaPage: React.FC = () => {
   // Charger les animes populaires depuis l'API
   const loadPopularAnimes = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/popular`);
+      const response = await fetch(`${API_BASE}/api/trending`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -113,16 +113,8 @@ const AnimeSamaPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Error loading popular animes:', err);
-      // En cas d'erreur, utiliser une liste de base d'animes populaires
-      const fallbackAnimes: SearchResult[] = [
-        { id: 'one-piece', title: 'One Piece', url: '/anime/one-piece', type: 'TV', status: 'En cours', image: 'https://cdn.myanimelist.net/images/anime/6/73245.jpg' },
-        { id: 'naruto', title: 'Naruto', url: '/anime/naruto', type: 'TV', status: 'Terminé', image: 'https://cdn.myanimelist.net/images/anime/13/17405.jpg' },
-        { id: 'attack-on-titan', title: 'L\'Attaque des Titans', url: '/anime/attack-on-titan', type: 'TV', status: 'Terminé', image: 'https://cdn.myanimelist.net/images/anime/10/47347.jpg' },
-        { id: 'demon-slayer', title: 'Demon Slayer', url: '/anime/demon-slayer', type: 'TV', status: 'En cours', image: 'https://cdn.myanimelist.net/images/anime/1286/99889.jpg' },
-        { id: 'my-hero-academia', title: 'My Hero Academia', url: '/anime/my-hero-academia', type: 'TV', status: 'En cours', image: 'https://cdn.myanimelist.net/images/anime/10/78745.jpg' }g' },
-        { id: 'jujutsu-kaisen', title: 'Jujutsu Kaisen', url: '/anime/jujutsu-kaisen', type: 'TV', status: 'En cours', image: 'https://cdn.myanimelist.net/images/anime/1171/109222.jpg' }
-      ];
-      setPopularAnimes(fallbackAnimes);
+      setError('Impossible de charger les animes populaires');
+      setPopularAnimes([]);
     }
   };
 
@@ -219,12 +211,9 @@ const AnimeSamaPage: React.FC = () => {
     setCurrentView('player');
     
     try {
-      // Détecter les langues disponibles
       const availLangs = await detectAvailableLanguages(selectedAnime.id, season.number);
       setAvailableLanguages(availLangs);
-      // Langues détectées avec succès
       
-      // Ajuster la langue sélectionnée si nécessaire
       let languageToUse = selectedLanguage;
       if (!availLangs.includes(selectedLanguage)) {
         languageToUse = availLangs[0] as 'VF' | 'VOSTFR';
@@ -232,7 +221,6 @@ const AnimeSamaPage: React.FC = () => {
       }
       
       const language = languageToUse.toLowerCase();
-      // Chargement des épisodes en cours
       
       const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${language}`);
       const apiResponse: ApiResponse<{
@@ -242,8 +230,6 @@ const AnimeSamaPage: React.FC = () => {
         episodes: Episode[];
         episodeCount: number;
       }> = await response.json();
-      
-      console.log('Réponse épisodes:', apiResponse);
       
       if (!apiResponse.success) {
         throw new Error('Erreur lors du chargement des épisodes');
@@ -269,11 +255,8 @@ const AnimeSamaPage: React.FC = () => {
   // Charger les sources d'un épisode
   const loadEpisodeSources = async (episodeId: string) => {
     try {
-      console.log('Chargement des sources pour épisode:', episodeId);
       const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
       const apiResponse: ApiResponse<EpisodeDetails> = await response.json();
-      
-      console.log('Réponse API sources:', apiResponse);
       
       if (!apiResponse.success) {
         throw new Error('Erreur lors du chargement des sources');
@@ -281,47 +264,10 @@ const AnimeSamaPage: React.FC = () => {
       
       setEpisodeDetails(apiResponse.data);
       setSelectedServer(0);
-      console.log('Sources chargées:', apiResponse.data.sources);
     } catch (err) {
       console.error('Erreur sources:', err);
-      // Créer des sources de test pour le développement
-      const mockSources: EpisodeDetails = {
-        id: episodeId,
-        title: `Episode ${selectedEpisode?.episodeNumber || 1}`,
-        animeTitle: selectedAnime?.title || '',
-        episodeNumber: selectedEpisode?.episodeNumber || 1,
-        sources: [
-          {
-            url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-            server: 'Vidmoly',
-            quality: 'HD',
-            language: selectedLanguage,
-            type: 'iframe',
-            serverIndex: 1
-          },
-          {
-            url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-            server: 'SendVid',
-            quality: 'HD',
-            language: selectedLanguage,
-            type: 'iframe',
-            serverIndex: 2
-          },
-          {
-            url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-            server: 'Sibnet',
-            quality: 'HD',
-            language: selectedLanguage,
-            type: 'iframe',
-            serverIndex: 3
-          }
-        ],
-        availableServers: ['Vidmoly', 'SendVid', 'Sibnet'],
-        url: ''
-      };
-      setEpisodeDetails(mockSources);
-      setSelectedServer(0);
-      setError('Utilisation des sources de test - Vérifiez votre API.');
+      setError('Impossible de charger les sources vidéo. Vérifiez que l\'épisode est disponible.');
+      setEpisodeDetails(null);
     }
   };
 
@@ -349,7 +295,6 @@ const AnimeSamaPage: React.FC = () => {
     
     try {
       const language = newLanguage.toLowerCase();
-      console.log(`Changement vers ${newLanguage} pour ${selectedAnime.id} saison ${selectedSeason.number}`);
       
       const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`);
       const apiResponse: ApiResponse<{
@@ -392,11 +337,8 @@ const AnimeSamaPage: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [searchQuery, currentView]);
 
-  // Les sources viennent directement de l'API avec la bonne langue
   const currentSources = episodeDetails?.sources || [];
   const currentSource = currentSources[selectedServer];
-
-  // Debug logs supprimés pour optimiser les performances
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#000000' }}>
