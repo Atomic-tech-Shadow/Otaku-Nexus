@@ -414,10 +414,7 @@ useEffect(() => {
 - anime-sama.fr a configuré des headers HTTP qui bloquent l'embedding via iframe
 - Headers bloquants : `X-Frame-Options: DENY` ou `Content-Security-Policy: frame-ancestors 'self'`
 - Types de sources : "iframe" (bloqué) vs "direct" (peut fonctionner)
-**Solutions possibles** :
-- Proxy server côté backend pour contourner CORS
-- Boutons "Regarder sur anime-sama.fr" ouvrant dans nouvel onglet
-- Système de redirection côté serveur
+- L'iframe reste vide car le navigateur bloque le chargement du contenu externe protégé
 
 ### Sources vidéo indisponibles
 **Solution** : Changer de lecteur via le dropdown serveur (HD/FHD)
@@ -445,7 +442,6 @@ L'API `https://api-anime-sama.onrender.com` est maintenue séparément et peut n
 ⚠️ **Problème CORS vidéo** - Iframe bloqué par anime-sama.fr, solution manuelle requise
 
 ### Améliorations futures possibles
-- Proxy backend pour contourner CORS
 - Favoris persistants avec LocalStorage
 - Historique détaillé par utilisateur
 - Cache intelligent des données API
