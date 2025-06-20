@@ -21,6 +21,13 @@ interface AnimeDetails {
   year: string;
   seasons: Season[];
   url: string;
+  progressInfo?: {
+    advancement: string;
+    correspondence: string;
+    totalEpisodes?: number;
+    hasFilms?: boolean;
+    hasScans?: boolean;
+  };
 }
 
 interface Season {
@@ -501,17 +508,33 @@ const AnimeSamaPage: React.FC = () => {
             />
             <div className="absolute bottom-4 left-4 right-4">
               <h1 className="text-white text-2xl font-bold mb-2">{selectedAnime.title}</h1>
-              <div className="text-sm space-y-1">
-                <div>
-                  <span className="text-white font-medium">Avancement :</span>
-                  <span className="text-gray-300 ml-2">Aucune donnée.</span>
+              {/* Informations d'avancement authentiques */}
+              {selectedAnime.progressInfo && (
+                <div className="text-sm space-y-1">
+                  <div>
+                    <span className="text-white font-semibold">Avancement :</span>
+                    <span className="text-gray-400 ml-2">{selectedAnime.progressInfo.advancement}</span>
+                  </div>
+                  <div>
+                    <span className="text-white font-semibold">Correspondance :</span>
+                    <span className="text-gray-400 ml-2">{selectedAnime.progressInfo.correspondence}</span>
+                  </div>
+                  {selectedAnime.progressInfo.totalEpisodes && (
+                    <p className="text-gray-400 text-xs">
+                      {selectedAnime.progressInfo.totalEpisodes} épisodes disponibles
+                    </p>
+                  )}
                 </div>
-                <div>
-                  <span className="text-white font-medium">Correspondance :</span>
-                  <span className="text-gray-300 ml-2">
-                    {selectedEpisode ? `Episode ${selectedEpisode.episodeNumber}` : 'Episode 1'}
-                  </span>
-                </div>
+              )}
+              
+              {/* Indicateurs Films/Scans authentiques */}
+              <div className="flex gap-3 mt-2">
+                {selectedAnime.progressInfo?.hasFilms && (
+                  <div className="text-blue-400 text-sm">📽️ Films disponibles</div>
+                )}
+                {selectedAnime.progressInfo?.hasScans && (
+                  <div className="text-green-400 text-sm">📖 Scans manga disponibles</div>
+                )}
               </div>
             </div>
           </div>
