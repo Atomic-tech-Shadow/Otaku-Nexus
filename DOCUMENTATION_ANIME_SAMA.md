@@ -32,7 +32,7 @@ La page Anime-Sama reproduit fidèlement l'interface et les fonctionnalités du 
 - **One Piece**: "Episode 1122 -> Chapitre 1088" (1122 épisodes total)
 - **Demon Slayer**: "Saison 4 Épisode 8 -> Chapitre 139"
 - **Numérotation réelle**: One Piece S10 = Episodes 890-939 (pas 1-50)
-- **Films/Scans**: Détection automatique des contenus disponibles
+- **Films/Scans**: Détection automatique mais affichage incomplet (problème connu)
 - **Correspondance manga**: Informations exactes anime → chapitre
 
 ### ✅ Navigation utilisateur authentique
@@ -419,6 +419,13 @@ useEffect(() => {
 ### Sources vidéo indisponibles
 **Solution** : Changer de lecteur via le dropdown serveur (HD/FHD)
 
+### Films et Scans manquants dans l'affichage des saisons
+**Problème** : Sur anime-sama.fr, les films et scans s'affichent avec les saisons, mais l'implémentation actuelle ne les inclut pas dans la grille des saisons
+**Détails** : 
+- L'API détecte correctement les films et scans via `progressInfo.hasFilms` et `progressInfo.hasScans`
+- Les films et scans ne sont pas récupérés comme "saisons" séparées dans la réponse API
+- L'affichage reste incomplet comparé au site original
+
 ### Langue non disponible
 **Solution** : Détection automatique et fallback vers langue disponible
 
@@ -438,7 +445,7 @@ L'API `https://api-anime-sama.onrender.com` est maintenue séparément et peut n
 ✅ **Données réelles** - API fournissant les vraies informations d'avancement  
 ✅ **Numérotation correcte** - Episodes avec vrais numéros (890, 1090, etc.)  
 ✅ **progressInfo authentique** - Correspondance manga exacte  
-✅ **Films/Scans détectés** - Indicateurs automatiques  
+⚠️ **Films/Scans incomplets** - Détectés mais pas affichés avec les saisons comme sur le site original  
 ⚠️ **Problème CORS vidéo** - Iframe bloqué par anime-sama.fr, solution manuelle requise
 
 ### Améliorations futures possibles
