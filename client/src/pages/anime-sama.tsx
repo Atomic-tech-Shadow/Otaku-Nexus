@@ -675,9 +675,9 @@ const AnimeSamaPage: React.FC = () => {
               </span>
             </div>
 
-            {/* Message d'information sur la langue */}
+            {/* Message d'information sur la langue et vidéo */}
             {currentSources.length > 0 && episodeDetails && (
-              <div className="text-center">
+              <div className="space-y-2">
                 {episodeDetails.sources.every(s => s.language.toUpperCase() !== selectedLanguage) ? (
                   <div className="bg-yellow-600/20 border border-yellow-600/30 rounded-lg p-2">
                     <p className="text-yellow-200 text-xs">
@@ -685,6 +685,13 @@ const AnimeSamaPage: React.FC = () => {
                     </p>
                   </div>
                 ) : null}
+                
+                <div className="bg-blue-600/20 border border-blue-600/30 rounded-lg p-3">
+                  <p className="text-blue-200 text-xs text-center">
+                    <span className="font-semibold">Note:</span> Pour des raisons de sécurité, certaines vidéos s'ouvrent dans un nouvel onglet. 
+                    Cliquez sur "Regarder sur..." pour accéder au lecteur vidéo.
+                  </p>
+                </div>
               </div>
             )}
 
@@ -729,17 +736,83 @@ const AnimeSamaPage: React.FC = () => {
               </p>
             </div>
 
-            {/* Lecteur vidéo */}
+            {/* Lecteur vidéo avec options multiples */}
             {currentSource && (
-              <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: '#000' }}>
-                <iframe
-                  src={currentSource.url}
-                  className="w-full h-64 md:h-80 lg:h-96"
-                  allowFullScreen
-                  frameBorder="0"
-                  title={`${episodeDetails?.title} - ${currentSource.server}`}
-                />
-
+              <div className="space-y-3">
+                <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: '#000' }}>
+                  {currentSource.type === 'iframe' ? (
+                    <div className="w-full h-64 md:h-80 lg:h-96 flex items-center justify-center text-white">
+                      <div className="text-center space-y-4">
+                        <div className="text-4xl">🎬</div>
+                        <div>
+                          <p className="text-sm mb-2">Episode {selectedEpisode?.episodeNumber} - {currentSource.server}</p>
+                          <p className="text-xs text-gray-400 mb-4">Qualité: {currentSource.quality}</p>
+                        </div>
+                        <div className="space-y-2">
+                          <a
+                            href={currentSource.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block px-6 py-3 rounded-lg text-white font-medium transition-colors hover:bg-blue-700"
+                            style={{ backgroundColor: '#1e40af' }}
+                          >
+                            ▶ Regarder sur {currentSource.server}
+                          </a>
+                          {episodeDetails && episodeDetails.sources.length > 1 && (
+                            <p className="text-xs text-gray-500">
+                              {episodeDetails.sources.length - 1} autre(s) serveur(s) disponible(s)
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : currentSource.type === 'direct' ? (
+                    <div className="w-full h-64 md:h-80 lg:h-96 flex items-center justify-center text-white">
+                      <div className="text-center space-y-4">
+                        <div className="text-4xl">🎥</div>
+                        <p className="text-sm">Serveur de streaming direct</p>
+                        <a
+                          href={currentSource.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block px-6 py-3 rounded-lg text-white font-medium transition-colors hover:bg-green-700"
+                          style={{ backgroundColor: '#16a34a' }}
+                        >
+                          ▶ Streaming Direct - {currentSource.quality}
+                        </a>
+                      </div>
+                    </div>
+                  ) : (
+                    <iframe
+                      src={currentSource.url}
+                      className="w-full h-64 md:h-80 lg:h-96"
+                      allowFullScreen
+                      frameBorder="0"
+                      title={`${episodeDetails?.title} - ${currentSource.server}`}
+                      sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  )}
+                </div>
+                
+                {/* Boutons rapides pour tous les serveurs */}
+                {episodeDetails && episodeDetails.sources.length > 1 && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {episodeDetails.sources.map((source, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedServer(index)}
+                        className={`p-2 rounded text-xs font-medium transition-colors ${
+                          selectedServer === index 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        }`}
+                      >
+                        {source.server} ({source.quality})
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
