@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { animeSamaService } from "./anime-sama-api";
 import {
   insertQuizSchema,
   insertQuizResultSchema,
@@ -9,6 +10,11 @@ import {
   insertChatRoomMemberSchema,
   insertAdminPostSchema,
   updateUserProfileSchema,
+  insertAnimeSchema,
+  insertAnimeSeasonSchema,
+  insertAnimeEpisodeSchema,
+  insertAnimeFavoriteSchema,
+  insertAnimeWatchingProgressSchema,
 } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
 
@@ -190,7 +196,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Anime streaming routes with Anime-Sama API integration
+  app.get('/api/anime/search', async (req, res) => {
+    try {
+      const { query } = req.query;
+      if (!query) {
+        return res.status(400).json({ message: "Query parameter required" });
+      }
+      const results = await animeSamaService.searchAnime(query as string);
+      res.json(results);
+    } catch (error) {
+      console.error("Error searching anime:", error);
+      res.status(500).json({ message: "Failed to search anime" });
+    }
+  });
 
+  app.get('/api/anime/trending', async (req, res) => {
+    try {
+      const trending = await animeSamaService.getTrendingAnime();
+      res.json(trending);
+    } catch (error) {
+      console.error("Error fetching trending anime:", error);
+      res.status(500).json({ message: "Failed to fetch trending anime" });
+    }
+  });
+
+  app.get('/api/anime/random', async (req, res) => {
+    try {
+      const randomAnime = await animeSamaService.getRandomAnime();
+      res.json(randomAnime);
+    } catch (error) {
+      console.error("Error fetching random anime:", error);
+      res.status(500).json({ message: "Failed to fetch random anime" });
+    }
+  });
+
+  app.get('/api/anime/:animeId', async (req, res) => {
+    try {
+      const { animeId } = req.params;
+      const anime = await animeSamaService.getAnimeById(animeId);
+      if (!anime) {
+        return res.status(404).json({ message: "Anime not found" });
+      }
+      res.json(anime);
+    } catch (error) {
+      console.error("Error fetching anime details:", error);
+      res.status(500).json({ message: "Failed to fetch anime details" });
+    }
+  });
+
+  app.get('/api/anime/:animeId/seasons/:season/episodes', async (req, res) => {
+    try {
+      const { animeId, season } = req.params;
+      const { language = 'vostfr' } = req.query;
+      const episodes = await animeSamaService.getSeasonEpisodes(
+        animeId,
+        parseInt(season),
+        language as 'vf' | 'vostfr'
+      );
+      res.json(episodes);
+    } catch (error) {
+      console.error("Error fetching season episodes:", error);
+      res.status(500).json({ message: "Failed to fetch season episodes" });
+    }
+  });
+
+  app.get('/api/episode/:episodeId', async (req, res) => {
+    try {
+      const { episodeId } = req.params;
+      const episode = await animeSamaService.getEpisodeDetails(episodeId);
+      if (!episode) {
+        return res.status(404).json({ message: "Episode not found" });
+      }
+      res.json(episode);
+    } catch (error) {
+      console.error("Error fetching episode details:", error);
+      res.status(500).json({ message: "Failed to fetch episode details" });
+    }
+  });
+
+  app.get('/api/anime/catalogue', async (req, res) => {
+    try {
+      const catalogue = await animeSamaService.getCatalogue();
+      res.json(catalogue);
+    } catch (error) {
+      console.error("Error fetching anime catalogue:", error);
+      res.status(500).json({ message: "Failed to fetch anime catalogue" });
+    }
+  });
+
+  app.get('/api/anime/genres', async (req, res) => {
+    try {
+      const genres = await animeSamaService.getGenres();
+      res.json(genres);
+    } catch (error) {
+      console.error("Error fetching genres:", error);
+      res.status(500).json({ message: "Failed to fetch genres" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

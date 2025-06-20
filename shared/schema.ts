@@ -83,6 +83,74 @@ export const authTokens = pgTable("auth_tokens", {
 
 
 
+// Anime storage table - Anime-Sama API integration
+export const animes = pgTable("animes", {
+  id: serial("id").primaryKey(),
+  animeId: text("anime_id").unique().notNull(), // anime-sama ID
+  title: text("title").notNull(),
+  description: text("description"),
+  imageUrl: text("image_url"),
+  status: text("status"),
+  genres: text("genres").array(),
+  year: text("year"),
+  type: text("type"), // anime, film, etc.
+  totalEpisodes: integer("total_episodes"),
+  hasFilms: boolean("has_films").default(false),
+  hasScans: boolean("has_scans").default(false),
+  correspondence: text("correspondence"), // Episode -> Chapter mapping
+  advancement: text("advancement"), // Progress info
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Anime seasons table
+export const animeSeasons = pgTable("anime_seasons", {
+  id: serial("id").primaryKey(),
+  animeId: integer("anime_id").notNull().references(() => animes.id, { onDelete: "cascade" }),
+  seasonNumber: integer("season_number").notNull(),
+  name: text("name").notNull(),
+  languages: text("languages").array(), // ['VOSTFR', 'VF']
+  episodeCount: integer("episode_count").default(0),
+  url: text("url"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Anime episodes table
+export const animeEpisodes = pgTable("anime_episodes", {
+  id: serial("id").primaryKey(),
+  seasonId: integer("season_id").notNull().references(() => animeSeasons.id, { onDelete: "cascade" }),
+  episodeId: text("episode_id").unique().notNull(), // anime-sama episode ID
+  title: text("title").notNull(),
+  episodeNumber: integer("episode_number").notNull(),
+  language: text("language").notNull(), // VOSTFR, VF
+  url: text("url"),
+  available: boolean("available").default(true),
+  streamingSources: jsonb("streaming_sources"), // Array of streaming sources
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Anime favorites and watching progress
+export const animeFavorites = pgTable("anime_favorites", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  animeId: integer("anime_id").notNull().references(() => animes.id),
+  rating: integer("rating"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const animeWatchingProgress = pgTable("anime_watching_progress", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  animeId: integer("anime_id").notNull().references(() => animes.id),
+  seasonId: integer("season_id").references(() => animeSeasons.id),
+  episodeId: integer("episode_id").references(() => animeEpisodes.id),
+  currentEpisode: integer("current_episode").default(1),
+  totalEpisodes: integer("total_episodes"),
+  watchedMinutes: integer("watched_minutes").default(0),
+  totalMinutes: integer("total_minutes"),
+  status: text("status").default("watching"), // watching, completed, on-hold, dropped
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const mangas = pgTable("mangas", {
   id: serial("id").primaryKey(),
   malId: integer("mal_id").unique().notNull(),
@@ -279,6 +347,32 @@ export const insertAdminPostSchema = createInsertSchema(adminPosts).omit({
   updatedAt: true,
 });
 
+// Anime schemas
+export const insertAnimeSchema = createInsertSchema(animes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAnimeSeasonSchema = createInsertSchema(animeSeasons).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAnimeEpisodeSchema = createInsertSchema(animeEpisodes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAnimeFavoriteSchema = createInsertSchema(animeFavorites).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAnimeWatchingProgressSchema = createInsertSchema(animeWatchingProgress).omit({
+  id: true,
+  updatedAt: true,
+});
+
 export const updateUserProfileSchema = createInsertSchema(users).pick({
   firstName: true,
   lastName: true,
@@ -317,3 +411,15 @@ export type ChatRoomMember = typeof chatRoomMembers.$inferSelect;
 export type InsertChatRoomMember = z.infer<typeof insertChatRoomMemberSchema>;
 export type AdminPost = typeof adminPosts.$inferSelect;
 export type InsertAdminPost = z.infer<typeof insertAdminPostSchema>;
+
+// Anime types
+export type Anime = typeof animes.$inferSelect;
+export type InsertAnime = z.infer<typeof insertAnimeSchema>;
+export type AnimeSeason = typeof animeSeasons.$inferSelect;
+export type InsertAnimeSeason = z.infer<typeof insertAnimeSeasonSchema>;
+export type AnimeEpisode = typeof animeEpisodes.$inferSelect;
+export type InsertAnimeEpisode = z.infer<typeof insertAnimeEpisodeSchema>;
+export type AnimeFavorite = typeof animeFavorites.$inferSelect;
+export type InsertAnimeFavorite = z.infer<typeof insertAnimeFavoriteSchema>;
+export type AnimeWatchingProgress = typeof animeWatchingProgress.$inferSelect;
+export type InsertAnimeWatchingProgress = z.infer<typeof insertAnimeWatchingProgressSchema>;

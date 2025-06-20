@@ -6,6 +6,11 @@ import {
   chatMessages,
   chatRoomMembers,
   adminPosts,
+  animes,
+  animeSeasons,
+  animeEpisodes,
+  animeFavorites,
+  animeWatchingProgress,
   mangas,
   mangaChapters,
   mangaReadingProgress,
@@ -13,6 +18,16 @@ import {
   type User,
   type UpsertUser,
   type UpdateUserProfile,
+  type Anime,
+  type InsertAnime,
+  type AnimeSeason,
+  type InsertAnimeSeason,
+  type AnimeEpisode,
+  type InsertAnimeEpisode,
+  type AnimeFavorite,
+  type InsertAnimeFavorite,
+  type AnimeWatchingProgress,
+  type InsertAnimeWatchingProgress,
   type Quiz,
   type InsertQuiz,
   type QuizResult,
@@ -48,6 +63,23 @@ export interface IStorage {
   updateUserXP(userId: string, xpToAdd: number): Promise<User>;
 
 
+
+  // Anime operations
+  getAnimes(limit?: number): Promise<Anime[]>;
+  getAnimeByAnimeId(animeId: string): Promise<Anime | undefined>;
+  createAnime(anime: InsertAnime): Promise<Anime>;
+  getTrendingAnimes(): Promise<Anime[]>;
+  searchAnimes(query: string): Promise<Anime[]>;
+  getAnimeSeasons(animeId: number): Promise<AnimeSeason[]>;
+  createAnimeSeason(season: InsertAnimeSeason): Promise<AnimeSeason>;
+  getSeasonEpisodes(seasonId: number, language?: string): Promise<AnimeEpisode[]>;
+  createAnimeEpisode(episode: InsertAnimeEpisode): Promise<AnimeEpisode>;
+  getEpisodeById(episodeId: string): Promise<AnimeEpisode | undefined>;
+  getUserAnimeFavorites(userId: string): Promise<AnimeFavorite[]>;
+  addAnimeFavorite(favorite: InsertAnimeFavorite): Promise<AnimeFavorite>;
+  removeAnimeFavorite(userId: string, animeId: number): Promise<void>;
+  getUserWatchingProgress(userId: string, animeId?: number): Promise<AnimeWatchingProgress[]>;
+  updateWatchingProgress(progress: InsertAnimeWatchingProgress): Promise<AnimeWatchingProgress>;
 
   // Manga operations
   getMangas(limit?: number): Promise<Manga[]>;
