@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowLeft, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
-import { Link } from 'wouter';
+import { Search, ArrowLeft, ChevronLeft, ChevronRight, RotateCcw, Home, MessageCircle, Play, User } from 'lucide-react';
+import { Link, useLocation } from 'wouter';
 
 interface SearchResult {
   id: string;
@@ -90,24 +90,51 @@ const AnimeStreamingPage: React.FC = () => {
   const loadTrendingAnimes = async () => {
     setLoadingTrending(true);
     try {
-      // Utiliser l'endpoint trending de l'API
-      const response = await fetch(`${API_BASE}/api/trending`);
-      const apiResponse: ApiResponse<SearchResult[]> = await response.json();
+      console.log('Chargement des trending animes...');
       
-      if (apiResponse.success && apiResponse.data) {
-        setTrendingAnimes(apiResponse.data.slice(0, 8));
-      } else {
-        // Fallback: charger le catalogue si trending ne fonctionne pas
-        const catalogueResponse = await fetch(`${API_BASE}/api/catalogue?page=1`);
-        const catalogueApiResponse: ApiResponse<SearchResult[]> = await catalogueResponse.json();
+      // Essayer l'endpoint trending
+      try {
+        const response = await fetch(`${API_BASE}/api/trending`);
+        console.log('Response trending:', response.status);
         
-        if (catalogueApiResponse.success && catalogueApiResponse.data) {
-          setTrendingAnimes(catalogueApiResponse.data.slice(0, 8));
+        if (response.ok) {
+          const apiResponse: ApiResponse<SearchResult[]> = await response.json();
+          console.log('Données trending:', apiResponse);
+          
+          if (apiResponse.success && apiResponse.data && apiResponse.data.length > 0) {
+            setTrendingAnimes(apiResponse.data.slice(0, 8));
+            console.log('Trending chargés:', apiResponse.data.length, 'animes');
+            return;
+          }
         }
+      } catch (trendingError) {
+        console.log('Trending API non disponible, essaie catalogue...');
       }
+
+      // Fallback: charger le catalogue
+      try {
+        const catalogueResponse = await fetch(`${API_BASE}/api/catalogue?page=1`);
+        console.log('Response catalogue:', catalogueResponse.status);
+        
+        if (catalogueResponse.ok) {
+          const catalogueApiResponse: ApiResponse<SearchResult[]> = await catalogueResponse.json();
+          console.log('Données catalogue:', catalogueApiResponse);
+          
+          if (catalogueApiResponse.success && catalogueApiResponse.data && catalogueApiResponse.data.length > 0) {
+            setTrendingAnimes(catalogueApiResponse.data.slice(0, 8));
+            console.log('Catalogue chargé:', catalogueApiResponse.data.length, 'animes');
+            return;
+          }
+        }
+      } catch (catalogueError) {
+        console.log('Catalogue API non disponible, essaie fallback...');
+      }
+
+      // Dernier recours: anime populaires
+      await loadPopularAnimesFallback();
+      
     } catch (error) {
-      console.error('Erreur chargement trending:', error);
-      // Dernier recours: recherche d'anime populaires
+      console.error('Erreur générale chargement trending:', error);
       await loadPopularAnimesFallback();
     } finally {
       setLoadingTrending(false);
@@ -116,6 +143,8 @@ const AnimeStreamingPage: React.FC = () => {
 
   // Fallback pour les anime populaires
   const loadPopularAnimesFallback = async () => {
+    console.log('Chargement fallback des anime populaires...');
+    
     const popularAnimes = [
       'naruto', 'one piece', 'attack on titan', 'demon slayer', 
       'dragon ball', 'bleach', 'hunter x hunter', 'jujutsu kaisen'
@@ -123,19 +152,21 @@ const AnimeStreamingPage: React.FC = () => {
     
     const trendingResults: SearchResult[] = [];
     
-    for (const anime of popularAnimes.slice(0, 6)) {
+    for (const anime of popularAnimes.slice(0, 8)) {
       try {
         const response = await fetch(`${API_BASE}/api/search?query=${encodeURIComponent(anime)}`);
         const apiResponse: ApiResponse<SearchResult[]> = await response.json();
         
         if (apiResponse.success && apiResponse.data && apiResponse.data.length > 0) {
           trendingResults.push(apiResponse.data[0]);
+          console.log(`Anime ajouté: ${apiResponse.data[0].title}`);
         }
       } catch (error) {
         console.log(`Erreur pour ${anime}:`, error);
       }
     }
     
+    console.log(`Fallback terminé: ${trendingResults.length} anime chargés`);
     setTrendingAnimes(trendingResults);
   };
 
@@ -224,27 +255,29 @@ const AnimeStreamingPage: React.FC = () => {
     
     try {
       const languageParam = selectedLanguage.toLowerCase();
+      console.log(`Chargement saison ${season.number} en ${languageParam} pour ${selectedAnime.id}`);
+      
       const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${languageParam}`);
       
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: Saison non disponible`);
+        throw new Error(`HTTP ${response.status}: Saison ${season.number} non disponible`);
       }
       
       const apiResponse: ApiResponse<{episodes: Episode[], episodeCount: number}> = await response.json();
+      console.log('Réponse épisodes:', apiResponse);
       
       if (!apiResponse.success || !apiResponse.data) {
         throw new Error('Données épisodes incomplètes');
       }
       
-      console.log('Épisodes chargés:', apiResponse.data);
-      
       // L'API retourne un objet avec episodes et episodeCount
       const episodes = apiResponse.data.episodes || apiResponse.data;
+      console.log(`Épisodes trouvés pour saison ${season.number}:`, episodes.length);
       setEpisodes(Array.isArray(episodes) ? episodes : []);
       
     } catch (err) {
       console.error('Erreur épisodes:', err);
-      setError(`Erreur: ${err instanceof Error ? err.message : 'Impossible de charger les épisodes'}`);
+      setError(`Erreur saison ${season.number}: ${err instanceof Error ? err.message : 'Impossible de charger les épisodes'}`);
       setEpisodes([]);
     } finally {
       setLoading(false);
@@ -342,9 +375,18 @@ const AnimeStreamingPage: React.FC = () => {
 
   // Charger toutes les données au montage
   useEffect(() => {
-    loadTrendingAnimes();
-    loadCatalogueAnimes();
-    loadRandomAnime();
+    // Force immediate loading of trending anime using fallback
+    const initializeData = async () => {
+      setLoadingTrending(true);
+      await loadPopularAnimesFallback();
+      setLoadingTrending(false);
+      
+      // Try to load additional data in background
+      loadCatalogueAnimes();
+      loadRandomAnime();
+    };
+    
+    initializeData();
   }, []);
 
   // Effet de recherche avec délai
@@ -888,7 +930,7 @@ const AnimeStreamingPage: React.FC = () => {
 
       {/* Error message */}
       {error && (
-        <div className="fixed bottom-4 left-4 right-4 bg-red-600 text-white p-3 rounded z-50">
+        <div className="fixed bottom-20 left-4 right-4 bg-red-600 text-white p-3 rounded z-50">
           <p className="text-sm">{error}</p>
           <button
             onClick={() => setError(null)}
@@ -898,6 +940,39 @@ const AnimeStreamingPage: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* Navigation Bottom Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 z-40">
+        <div className="flex justify-around items-center h-16 px-4">
+          <Link href="/" className="flex flex-col items-center justify-center space-y-1 text-gray-400 hover:text-blue-400 transition-colors">
+            <Home size={20} />
+            <span className="text-xs">Accueil</span>
+          </Link>
+          
+          <Link href="/quiz" className="flex flex-col items-center justify-center space-y-1 text-gray-400 hover:text-blue-400 transition-colors">
+            <Play size={20} />
+            <span className="text-xs">Quiz</span>
+          </Link>
+          
+          <Link href="/chat" className="flex flex-col items-center justify-center space-y-1 text-gray-400 hover:text-blue-400 transition-colors">
+            <MessageCircle size={20} />
+            <span className="text-xs">Chat</span>
+          </Link>
+          
+          <Link href="/streaming" className="flex flex-col items-center justify-center space-y-1 text-blue-400">
+            <Search size={20} />
+            <span className="text-xs">Streaming</span>
+          </Link>
+          
+          <Link href="/profile" className="flex flex-col items-center justify-center space-y-1 text-gray-400 hover:text-blue-400 transition-colors">
+            <User size={20} />
+            <span className="text-xs">Profil</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Add bottom padding to prevent content overlap */}
+      <div className="h-16"></div>
     </div>
   );
 };
