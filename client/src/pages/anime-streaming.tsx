@@ -63,43 +63,97 @@ export default function AnimeStreaming() {
   // Trending anime query
   const { data: trendingAnime, isLoading: loadingTrending } = useQuery({
     queryKey: ['/api/anime/trending'],
+    queryFn: async () => {
+      const response = await fetch('/api/anime/trending');
+      if (!response.ok) throw new Error('Failed to fetch trending anime');
+      return response.json();
+    },
     enabled: activeTab === 'trending',
   });
 
   // Search anime query
   const { data: searchResults, isLoading: loadingSearch, refetch: searchAnime } = useQuery({
-    queryKey: ['/api/anime/search', searchQuery],
+    queryKey: ['/api/anime/search', { query: searchQuery }],
+    queryFn: async () => {
+      if (!searchQuery.trim()) return [];
+      const response = await fetch(`/api/anime/search?query=${encodeURIComponent(searchQuery)}`);
+      if (!response.ok) throw new Error('Search failed');
+      return response.json();
+    },
     enabled: false,
   });
 
   // Random anime query
   const { data: randomAnime, isLoading: loadingRandom, refetch: getRandomAnime } = useQuery({
     queryKey: ['/api/anime/random'],
+    queryFn: async () => {
+      const response = await fetch('/api/anime/random');
+      if (!response.ok) throw new Error('Failed to fetch random anime');
+      return response.json();
+    },
     enabled: false,
   });
 
   // Catalogue query
   const { data: catalogueAnime, isLoading: loadingCatalogue } = useQuery({
     queryKey: ['/api/anime/catalogue'],
+    queryFn: async () => {
+      const response = await fetch('/api/anime/catalogue');
+      if (!response.ok) throw new Error('Failed to fetch catalogue');
+      return response.json();
+    },
     enabled: activeTab === 'catalogue',
   });
 
   // Selected anime details
   const { data: animeDetails, isLoading: loadingDetails } = useQuery({
     queryKey: ['/api/anime', selectedAnime?.id],
+    queryFn: async () => {
+      if (!selectedAnime?.id) return null;
+      const response = await fetch(`/api/anime/${selectedAnime.id}`);
+      if (!response.ok) throw new Error('Failed to fetch anime details');
+      return response.json();
+    },
     enabled: !!selectedAnime?.id,
   });
 
   // Season episodes query
   const { data: seasonEpisodes, isLoading: loadingEpisodes } = useQuery({
     queryKey: ['/api/anime', selectedAnime?.id, 'seasons', selectedSeason, 'episodes', selectedLanguage],
+    queryFn: async () => {
+      if (!selectedAnime?.id || selectedSeason === null) return [];
+      const response = await fetch(`/api/anime/${selectedAnime.id}/seasons/${selectedSeason}/episodes?language=${selectedLanguage}`);
+      if (!response.ok) throw new Error('Failed to fetch episodes');
+      return response.json();
+    },
     enabled: !!selectedAnime?.id && selectedSeason !== null,
   });
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim()) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez entrer un terme de recherche",
+        variant: "destructive",
+      });
+      return;
+    }
+    console.log("Searching for:", searchQuery);
     setActiveTab('search');
-    await searchAnime();
+    try {
+      await searchAnime();
+      toast({
+        title: "Recherche effectuée",
+        description: `Recherche pour "${searchQuery}" terminée`,
+      });
+    } catch (error) {
+      console.error("Search error:", error);
+      toast({
+        title: "Erreur de recherche",
+        description: "Impossible de rechercher des animes",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleRandomAnime = async () => {
@@ -190,7 +244,7 @@ export default function AnimeStreaming() {
   const renderAnimeDetails = () => {
     if (!selectedAnime) return null;
 
-    const details = animeDetails || selectedAnime;
+    const details = (animeDetails as AnimeInfo) || selectedAnime;
 
     return (
       <div className="space-y-6">
@@ -218,7 +272,7 @@ export default function AnimeStreaming() {
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">{details.title}</h1>
               <div className="flex flex-wrap gap-2 mb-4">
-                {details.genres?.map((genre) => (
+                {details.genres?.map((genre: string) => (
                   <Badge key={genre} variant="secondary">{genre}</Badge>
                 ))}
               </div>
@@ -426,10 +480,10 @@ export default function AnimeStreaming() {
           renderAnimeDetails()
         ) : (
           <div>
-            {activeTab === 'trending' && renderAnimeGrid(trendingAnime, loadingTrending)}
-            {activeTab === 'search' && renderAnimeGrid(searchResults, loadingSearch)}
-            {activeTab === 'random' && randomAnime && renderAnimeGrid([randomAnime], loadingRandom)}
-            {activeTab === 'catalogue' && renderAnimeGrid(catalogueAnime, loadingCatalogue)}
+            {activeTab === 'trending' && renderAnimeGrid(trendingAnime as AnimeInfo[] || [], loadingTrending)}
+            {activeTab === 'search' && renderAnimeGrid(searchResults as AnimeInfo[], loadingSearch)}
+            {activeTab === 'random' && randomAnime && renderAnimeGrid([randomAnime as AnimeInfo], loadingRandom)}
+            {activeTab === 'catalogue' && renderAnimeGrid(catalogueAnime as AnimeInfo[], loadingCatalogue)}
           </div>
         )}
       </div>
