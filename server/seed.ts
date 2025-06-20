@@ -1,93 +1,16 @@
 import { db } from "./db";
-import { animes, quizzes } from "@shared/schema";
+import { quizzes, users, chatRooms } from "@shared/schema";
 import { mangaQuizzes } from "./quiz-data.js";
 
 async function seedDatabase() {
   console.log("🌱 Seeding database with sample data...");
 
-  // Sample anime data
-  const sampleAnimes = [
-    {
-      malId: 16498,
-      title: "Attack on Titan",
-      synopsis: "Humanity fights for survival against giant humanoid Titans that have brought civilization to the brink of extinction.",
-      imageUrl: "https://cdn.myanimelist.net/images/anime/10/47347.jpg",
-      score: "9.0",
-      year: 2013,
-      status: "Finished Airing",
-      episodes: 25
-    },
-    {
-      malId: 11061,
-      title: "Hunter x Hunter (2011)",
-      synopsis: "A young boy named Gon Freecss discovers that his father, who left him at a young age, is actually a world-renowned Hunter.",
-      imageUrl: "https://cdn.myanimelist.net/images/anime/1337/99013.jpg",
-      score: "9.1",
-      year: 2011,
-      status: "Finished Airing",
-      episodes: 148
-    },
-    {
-      malId: 9253,
-      title: "Steins;Gate",
-      synopsis: "A group of friends have customized their microwave into a device that can send text messages to the past.",
-      imageUrl: "https://cdn.myanimelist.net/images/anime/5/73199.jpg",
-      score: "9.0",
-      year: 2011,
-      status: "Finished Airing",
-      episodes: 24
-    },
-    {
-      malId: 20,
-      title: "Naruto",
-      synopsis: "Naruto Uzumaki, a mischievous adolescent ninja, struggles as he searches for recognition and dreams of becoming the Hokage.",
-      imageUrl: "https://cdn.myanimelist.net/images/anime/13/17405.jpg",
-      score: "8.4",
-      year: 2002,
-      status: "Finished Airing",
-      episodes: 220
-    },
-    {
-      malId: 21,
-      title: "One Piece",
-      synopsis: "Monkey D. Luffy sets off on an adventure with his pirate crew in hopes of finding the greatest treasure ever.",
-      imageUrl: "https://cdn.myanimelist.net/images/anime/6/73245.jpg",
-      score: "9.2",
-      year: 1999,
-      status: "Currently Airing",
-      episodes: 1000
-    },
-    {
-      malId: 30276,
-      title: "One Punch Man",
-      synopsis: "The story of Saitama, a hero that only became a hero for fun. After three years of special training, he's become so strong that he's practically invincible.",
-      imageUrl: "https://cdn.myanimelist.net/images/anime/12/76049.jpg",
-      score: "8.8",
-      year: 2015,
-      status: "Finished Airing",
-      episodes: 12
-    },
-    {
-      malId: 38000,
-      title: "Demon Slayer",
-      synopsis: "A family is attacked by demons and only two members survive - Tanjiro and his sister Nezuko, who is turning into a demon slowly.",
-      imageUrl: "https://cdn.myanimelist.net/images/anime/1286/99889.jpg",
-      score: "8.7",
-      year: 2019,
-      status: "Finished Airing",
-      episodes: 26
-    },
-    {
-      malId: 40748,
-      title: "Jujutsu Kaisen",
-      synopsis: "A boy swallows a cursed talisman - the finger of a demon - and becomes cursed himself.",
-      imageUrl: "https://cdn.myanimelist.net/images/anime/1171/109222.jpg",
-      score: "8.6",
-      year: 2020,
-      status: "Finished Airing",
-      episodes: 24
-    }
-  ];
+  // Check if data already exists
+  const existingQuizzes = await db.select().from(quizzes).limit(1);
+  if (existingQuizzes.length > 0) {
+    console.log("✅ Database already seeded, skipping...");
+    return;
+  }
 
   // Sample quiz data
   const sampleQuizzes = [
@@ -192,17 +115,36 @@ async function seedDatabase() {
 
 
   try {
-    // Insert anime data
-    console.log("📺 Adding sample anime data...");
-    await db.insert(animes).values(sampleAnimes);
-
     // Insert quiz data
     console.log("🧠 Adding sample quiz data...");
     await db.insert(quizzes).values(sampleQuizzes);
 
+    // Create admin user first
+    console.log("👤 Creating admin user...");
+    const adminUser = await db.insert(users).values({
+      id: "admin",
+      email: "admin@otakunexus.com",
+      password: "$2a$10$dummy.hash.for.admin.user.account",
+      firstName: "Admin",
+      lastName: "User",
+      username: "admin",
+      isAdmin: true,
+      level: 100,
+      xp: 99999
+    }).returning();
+
+    // Create default chat room
+    console.log("💬 Creating default chat room...");
+    await db.insert(chatRooms).values({
+      name: "General Discussion",
+      description: "Welcome to the general chat! Discuss anime, manga, and more!",
+      isPublic: true,
+      createdBy: adminUser[0].id
+    });
+
     console.log("✅ Database seeded successfully!");
-    console.log(`   - ${sampleAnimes.length} anime entries`);
     console.log(`   - ${sampleQuizzes.length} quiz entries`);
+    console.log(`   - 1 default chat room`);
 
   } catch (error) {
     console.error("❌ Error seeding database:", error);
