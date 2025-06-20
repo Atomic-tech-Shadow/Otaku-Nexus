@@ -1,4 +1,4 @@
-import { Home, Brain, MessageCircle, User } from "lucide-react";
+import { Home, Brain, MessageCircle, User, Play } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 
@@ -15,12 +15,13 @@ export default function BottomNav() {
     { icon: Home, label: "Accueil", path: "/" },
     { icon: Brain, label: "Quiz", path: "/quiz" },
     { icon: MessageCircle, label: "Chat", path: "/chat" },
+    { icon: Play, label: "Streaming", path: "/anime-sama" },
   ];
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50">
       <div className="max-w-sm mx-auto">
-        <nav className="bg-nexus-surface/95 backdrop-blur-lg border-t border-nexus-cyan/20 px-3 py-2">
+        <nav className="bg-nexus-surface/95 backdrop-blur-lg border-t border-nexus-cyan/20 px-2 py-2">
           <div className="flex items-center justify-around">
             {navItems.map(({ icon: Icon, label, path }) => {
               const isActive = location === path;
@@ -28,7 +29,7 @@ export default function BottomNav() {
                 <Link key={path} to={path}>
                   <motion.div
                     whileTap={{ scale: 0.95 }}
-                    className={`relative flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${
+                    className={`relative flex flex-col items-center px-1 py-2 rounded-xl transition-all duration-300 ${
                       isActive
                         ? "bg-nexus-cyan/20 text-nexus-cyan"
                         : "text-gray-400 hover:text-nexus-purple hover:bg-nexus-purple/10"
@@ -44,7 +45,7 @@ export default function BottomNav() {
                     )}
 
                     <Icon 
-                      className={`w-6 h-6 mb-1 transition-all duration-300 ${
+                      className={`w-5 h-5 mb-1 transition-all duration-300 ${
                         isActive ? "text-nexus-cyan scale-110" : ""
                       }`} 
                     />
