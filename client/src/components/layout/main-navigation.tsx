@@ -1,6 +1,9 @@
-// Navigation simplifiée pour le header uniquement
+// Simplified navigation for the header, now linking to anime-sama
 import { useAuth } from "@/hooks/useAuth";
 import { User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Play } from "lucide-react";
+import Link from "next/link";
 
 export default function MainNavigation() {
   const { user } = useAuth();
@@ -10,6 +13,16 @@ export default function MainNavigation() {
       {/* Logo/Title */}
       <div className="flex items-center space-x-3">
         <h1 className="text-2xl font-bold text-gradient">Otaku Nexus</h1>
+      </div>
+
+      {/* Navigation Links */}
+      <div className="hidden md:flex items-center space-x-5">
+        <Button variant="ghost" asChild>
+          <Link href="/anime-sama" className="flex items-center gap-2">
+            <Play className="h-4 w-4" />
+            Anime-Sama
+          </Link>
+        </Button>
       </div>
 
       {/* User Info */}

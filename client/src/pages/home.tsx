@@ -113,7 +113,7 @@ export default function Home() {
                 </div>
               </Link>
             </div>
-            
+
             {/* Anime Sama */}
             <div className="mt-3">
               <Link href="/anime-sama">
