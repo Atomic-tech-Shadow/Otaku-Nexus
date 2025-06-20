@@ -83,6 +83,7 @@ const AnimeSamaPage: React.FC = () => {
   const [watchHistory, setWatchHistory] = useState<{[key: string]: number}>({});
   const [videoProgress, setVideoProgress] = useState<{[key: string]: number}>({});
   const [lastWatched, setLastWatched] = useState<string | null>(null);
+  const [popularAnimes, setPopularAnimes] = useState<SearchResult[]>([]);
 
   // Charger l'historique au démarrage
   useEffect(() => {
@@ -90,7 +91,32 @@ const AnimeSamaPage: React.FC = () => {
     if (savedHistory) {
       setWatchHistory(JSON.parse(savedHistory));
     }
+    // Charger les animes populaires au démarrage
+    loadPopularAnimes();
   }, []);
+
+  // Charger les animes populaires depuis l'API
+  const loadPopularAnimes = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/popular`);
+      const apiResponse = await response.json();
+      
+      if (apiResponse.success && apiResponse.data) {
+        setPopularAnimes(apiResponse.data.slice(0, 12)); // Limiter à 12 animes
+      }
+    } catch (err) {
+      // En cas d'erreur, utiliser une liste de base d'animes populaires
+      const fallbackAnimes: SearchResult[] = [
+        { id: 'one-piece', title: 'One Piece', url: '/anime/one-piece', type: 'TV', status: 'En cours', image: 'https://cdn.myanimelist.net/images/anime/6/73245.jpg' },
+        { id: 'naruto', title: 'Naruto', url: '/anime/naruto', type: 'TV', status: 'Terminé', image: 'https://cdn.myanimelist.net/images/anime/13/17405.jpg' },
+        { id: 'attack-on-titan', title: 'L\'Attaque des Titans', url: '/anime/attack-on-titan', type: 'TV', status: 'Terminé', image: 'https://cdn.myanimelist.net/images/anime/10/47347.jpg' },
+        { id: 'demon-slayer', title: 'Demon Slayer', url: '/anime/demon-slayer', type: 'TV', status: 'En cours', image: 'https://cdn.myanimelist.net/images/anime/1286/99889.jpg' },
+        { id: 'my-hero-academia', title: 'My Hero Academia', url: '/anime/my-hero-academia', type: 'TV', status: 'En cours', image: 'https://cdn.myanimelist.net/images/anime/10/78745.jpg' },
+        { id: 'jujutsu-kaisen', title: 'Jujutsu Kaisen', url: '/anime/jujutsu-kaisen', type: 'TV', status: 'En cours', image: 'https://cdn.myanimelist.net/images/anime/1171/109222.jpg' }
+      ];
+      setPopularAnimes(fallbackAnimes);
+    }
+  };
 
   const API_BASE = 'https://api-anime-sama.onrender.com';
 
@@ -443,11 +469,66 @@ const AnimeSamaPage: React.FC = () => {
             </div>
           )}
 
-          {!searchQuery && (
-            <div className="text-center py-20">
-              <div className="text-6xl mb-4">🔍</div>
-              <h2 className="text-white text-2xl font-bold mb-2">Recherchez votre anime</h2>
-              <p className="text-gray-400">Tapez le nom de l'anime que vous souhaitez regarder</p>
+          {!searchQuery && !searchResults.length && (
+            <div>
+              {/* Section Animes Populaires */}
+              {popularAnimes.length > 0 && (
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-white text-lg font-bold">🔥 Animes Populaires</h2>
+                    <button 
+                      onClick={() => loadPopularAnimes()}
+                      className="text-cyan-400 text-sm hover:text-cyan-300 transition-colors"
+                    >
+                      Actualiser
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {popularAnimes.map((anime) => (
+                      <div
+                        key={anime.id}
+                        onClick={() => loadAnimeDetails(anime.id)}
+                        className="rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform group"
+                        style={{ backgroundColor: '#1a1a1a' }}
+                      >
+                        <div className="relative">
+                          <img
+                            src={anime.image}
+                            alt={anime.title}
+                            className="w-full aspect-[3/4] object-cover group-hover:opacity-90 transition-opacity"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'https://via.placeholder.com/300x400/1a1a1a/ffffff?text=Image+Non+Disponible';
+                            }}
+                          />
+                          {watchHistory[anime.id] && (
+                            <div className="absolute top-2 right-2 bg-cyan-500 text-white text-xs px-2 py-1 rounded-full">
+                              Ep {watchHistory[anime.id]}
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                        <div className="p-3">
+                          <h3 className="text-white font-medium text-sm line-clamp-2 group-hover:text-cyan-400 transition-colors">
+                            {anime.title}
+                          </h3>
+                          <div className="flex justify-between items-center mt-1">
+                            <p className="text-gray-400 text-xs">{anime.status}</p>
+                            <span className="text-cyan-400 text-xs">{anime.type}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Message de recherche */}
+              <div className="text-center py-12 border-t border-gray-800">
+                <div className="text-4xl mb-4">🔍</div>
+                <h2 className="text-white text-xl font-bold mb-2">Recherchez votre anime</h2>
+                <p className="text-gray-400 text-sm">Tapez le nom de l'anime que vous souhaitez regarder</p>
+              </div>
             </div>
           )}
         </div>
