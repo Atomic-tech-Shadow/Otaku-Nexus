@@ -263,17 +263,17 @@ const AnimeStreamingPage: React.FC = () => {
         throw new Error(`HTTP ${response.status}: Saison ${season.number} non disponible`);
       }
       
-      const apiResponse: ApiResponse<{episodes: Episode[], episodeCount: number}> = await response.json();
+      const apiResponse: ApiResponse<{animeId: string, season: number, language: string, episodes: Episode[], episodeCount: number}> = await response.json();
       console.log('Réponse épisodes:', apiResponse);
       
-      if (!apiResponse.success || !apiResponse.data) {
+      if (!apiResponse.success || !apiResponse.data || !apiResponse.data.episodes) {
         throw new Error('Données épisodes incomplètes');
       }
       
-      // L'API retourne un objet avec episodes et episodeCount
-      const episodes = apiResponse.data.episodes || apiResponse.data;
+      // L'API retourne un objet avec animeId, season, language, episodes et episodeCount
+      const episodes = apiResponse.data.episodes;
       console.log(`Épisodes trouvés pour saison ${season.number}:`, episodes.length);
-      setEpisodes(Array.isArray(episodes) ? episodes : []);
+      setEpisodes(episodes);
       
     } catch (err) {
       console.error('Erreur épisodes:', err);
