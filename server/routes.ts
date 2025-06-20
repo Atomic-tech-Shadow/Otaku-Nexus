@@ -44,8 +44,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/user/profile', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
+      console.log("Profile update request body:", req.body);
       const profileData = updateUserProfileSchema.parse(req.body);
+      console.log("Parsed profile data:", profileData);
       const updatedUser = await storage.updateUserProfile(userId, profileData);
+      console.log("Updated user from DB:", updatedUser);
       res.json(updatedUser);
     } catch (error) {
       console.error("Error updating user profile:", error);

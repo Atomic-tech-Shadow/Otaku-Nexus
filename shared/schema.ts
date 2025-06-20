@@ -280,6 +280,8 @@ export const insertAdminPostSchema = createInsertSchema(adminPosts).omit({
 });
 
 export const updateUserProfileSchema = createInsertSchema(users).pick({
+  firstName: true,
+  lastName: true,
   username: true,
   bio: true,
   favoriteQuote: true,
