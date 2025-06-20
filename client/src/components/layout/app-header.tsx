@@ -17,7 +17,7 @@ export default function AppHeader() {
   // Calculs sécurisés avec valeurs par défaut
   const currentLevel = user?.level ?? 1;
   const currentXP = user?.xp ?? 0;
-  const xpToNextLevel = 100;
+  const xpToNextLevel = currentLevel * 200; // XP requis augmente avec le niveau
   const xpProgress = Math.min(((currentXP % xpToNextLevel) / xpToNextLevel) * 100, 100);
 
   const handleLogout = () => {
