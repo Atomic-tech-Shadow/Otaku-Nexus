@@ -1,15 +1,12 @@
-import 'react-native-gesture-handler';
-import { Stack } from 'expo-router';
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
+import AppWrapper from './src/components/AppWrapper';
 
-export default function RootLayout() {
+export default function App() {
   return (
     <>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="auth" options={{ headerShown: false }} />
-      </Stack>
-      <StatusBar style="auto" />
+      <AppWrapper />
+      <StatusBar style="light" />
     </>
   );
 }
