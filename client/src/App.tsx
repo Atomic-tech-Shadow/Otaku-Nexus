@@ -88,6 +88,12 @@ function Router() {
           </ProtectedRoute>
         </Route>
 
+        <Route path="/anime-streaming">
+          <ProtectedRoute>
+            <AnimeStreamingPage />
+          </ProtectedRoute>
+        </Route>
+
         <Route path="/anime-sama">
           <ProtectedRoute>
             <AnimeSamaPage />

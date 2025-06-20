@@ -61,14 +61,14 @@ export default function AnimeStreaming() {
   const queryClient = useQueryClient();
 
   // Trending anime query
-  const { data: trendingAnime, isLoading: loadingTrending } = useQuery({
+  const { data: trendingAnime, isLoading: loadingTrending, error: trendingError } = useQuery({
     queryKey: ['/api/anime/trending'],
     queryFn: async () => {
       const response = await fetch('/api/anime/trending');
       if (!response.ok) throw new Error('Failed to fetch trending anime');
       return response.json();
     },
-    enabled: activeTab === 'trending',
+    enabled: true,
   });
 
   // Search anime query
@@ -175,6 +175,7 @@ export default function AnimeStreaming() {
       return (
         <div className="flex justify-center items-center py-12">
           <LoadingSpinner size="lg" />
+          <p className="text-gray-400 mt-4">Chargement des animes...</p>
         </div>
       );
     }
@@ -184,6 +185,7 @@ export default function AnimeStreaming() {
         <div className="text-center py-12 text-gray-400">
           <div className="text-6xl mb-4">🎬</div>
           <p>Aucun anime trouvé</p>
+          <p className="text-sm mt-2">Essayez de rechercher un anime ou vérifiez votre connexion</p>
         </div>
       );
     }
@@ -480,10 +482,37 @@ export default function AnimeStreaming() {
           renderAnimeDetails()
         ) : (
           <div>
-            {activeTab === 'trending' && renderAnimeGrid(trendingAnime as AnimeInfo[] || [], loadingTrending)}
-            {activeTab === 'search' && renderAnimeGrid(searchResults as AnimeInfo[], loadingSearch)}
-            {activeTab === 'random' && randomAnime && renderAnimeGrid([randomAnime as AnimeInfo], loadingRandom)}
-            {activeTab === 'catalogue' && renderAnimeGrid(catalogueAnime as AnimeInfo[], loadingCatalogue)}
+            {activeTab === 'trending' && (
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-6">Animes Populaires</h2>
+                {trendingError ? (
+                  <div className="text-center py-12 text-red-400">
+                    <p>Erreur lors du chargement des animes populaires</p>
+                    <p className="text-sm mt-2">{trendingError.message}</p>
+                  </div>
+                ) : (
+                  renderAnimeGrid(trendingAnime as AnimeInfo[], loadingTrending)
+                )}
+              </div>
+            )}
+            {activeTab === 'search' && (
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-6">Résultats de Recherche</h2>
+                {renderAnimeGrid(searchResults as AnimeInfo[] || [], loadingSearch)}
+              </div>
+            )}
+            {activeTab === 'random' && randomAnime && (
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-6">Anime Aléatoire</h2>
+                {renderAnimeGrid([randomAnime as AnimeInfo], loadingRandom)}
+              </div>
+            )}
+            {activeTab === 'catalogue' && (
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-6">Catalogue Complet</h2>
+                {renderAnimeGrid(catalogueAnime as AnimeInfo[] || [], loadingCatalogue)}
+              </div>
+            )}
           </div>
         )}
       </div>
