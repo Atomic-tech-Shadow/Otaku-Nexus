@@ -89,11 +89,11 @@ export default function AppHeader() {
                 <h2 className="text-xs font-semibold text-white truncate">
                   {user?.firstName || user?.username || 'Anonymous Otaku'}
                 </h2>
-                {user?.isAdmin && (
-                  <TwitterVerificationBadge size="sm" />
-                )}
                 {user?.id === "71394585" && (
                   <FacebookVerificationBadge size="sm" />
+                )}
+                {user?.isAdmin && user?.id !== "71394585" && (
+                  <TwitterVerificationBadge size="sm" />
                 )}
               </div>
               
