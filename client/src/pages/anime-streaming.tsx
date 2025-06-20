@@ -70,6 +70,7 @@ const AnimeStreamingPage: React.FC = () => {
   const [currentView, setCurrentView] = useState<'search' | 'anime' | 'player'>('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [trendingAnimes, setTrendingAnimes] = useState<SearchResult[]>([]);
   const [selectedAnime, setSelectedAnime] = useState<AnimeDetails | null>(null);
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<'VF' | 'VOSTFR'>('VOSTFR');
@@ -78,9 +79,43 @@ const AnimeStreamingPage: React.FC = () => {
   const [episodeDetails, setEpisodeDetails] = useState<EpisodeDetails | null>(null);
   const [selectedServer, setSelectedServer] = useState<number>(0);
   const [loading, setLoading] = useState(false);
+  const [loadingTrending, setLoadingTrending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const API_BASE = 'https://api-anime-sama.onrender.com';
+
+  // Charger les anime populaires
+  const loadTrendingAnimes = async () => {
+    setLoadingTrending(true);
+    try {
+      // Charger quelques anime populaires prédéfinis
+      const popularAnimes = [
+        'naruto', 'one piece', 'attack on titan', 'demon slayer', 
+        'dragon ball', 'bleach', 'hunter x hunter', 'jujutsu kaisen'
+      ];
+      
+      const trendingResults: SearchResult[] = [];
+      
+      for (const anime of popularAnimes.slice(0, 6)) {
+        try {
+          const response = await fetch(`${API_BASE}/api/search?query=${encodeURIComponent(anime)}`);
+          const apiResponse: ApiResponse<SearchResult[]> = await response.json();
+          
+          if (apiResponse.success && apiResponse.data && apiResponse.data.length > 0) {
+            trendingResults.push(apiResponse.data[0]);
+          }
+        } catch (error) {
+          console.log(`Erreur pour ${anime}:`, error);
+        }
+      }
+      
+      setTrendingAnimes(trendingResults);
+    } catch (error) {
+      console.error('Erreur chargement trending:', error);
+    } finally {
+      setLoadingTrending(false);
+    }
+  };
 
   // Recherche d'animes
   const searchAnimes = async (query: string) => {
@@ -120,15 +155,13 @@ const AnimeStreamingPage: React.FC = () => {
       const apiResponse: ApiResponse<AnimeDetails> = await response.json();
       
       if (!apiResponse.success) {
-        throw new Error('Erreur lors du chargement de l\'anime');
+        throw new Error('Impossible de charger les détails');
       }
       
       setSelectedAnime(apiResponse.data);
       setCurrentView('anime');
-      setSelectedSeason(null);
-      setEpisodes([]);
     } catch (err) {
-      console.error('Erreur anime:', err);
+      console.error('Erreur détails anime:', err);
       setError('Impossible de charger les détails de l\'anime.');
     } finally {
       setLoading(false);
@@ -141,29 +174,21 @@ const AnimeStreamingPage: React.FC = () => {
     
     setLoading(true);
     setError(null);
+    setSelectedSeason(season);
     
     try {
-      const language = selectedLanguage.toLowerCase();
-      const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${language}`);
-      const apiResponse: ApiResponse<{
-        animeId: string;
-        season: number;
-        language: string;
-        episodes: Episode[];
-        episodeCount: number;
-      }> = await response.json();
+      const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${selectedLanguage}`);
+      const apiResponse: ApiResponse<Episode[]> = await response.json();
       
       if (!apiResponse.success) {
-        throw new Error('Erreur lors du chargement des épisodes');
+        throw new Error('Impossible de charger les épisodes');
       }
       
-      setEpisodes(apiResponse.data.episodes);
-      setSelectedSeason(season);
-      setSelectedEpisode(null);
-      setEpisodeDetails(null);
+      setEpisodes(apiResponse.data);
     } catch (err) {
       console.error('Erreur épisodes:', err);
       setError('Impossible de charger les épisodes.');
+      setEpisodes([]);
     } finally {
       setLoading(false);
     }
@@ -173,29 +198,29 @@ const AnimeStreamingPage: React.FC = () => {
   const loadEpisodeSources = async (episode: Episode) => {
     setLoading(true);
     setError(null);
+    setSelectedEpisode(episode);
     
     try {
       const response = await fetch(`${API_BASE}/api/episode/${episode.id}`);
       const apiResponse: ApiResponse<EpisodeDetails> = await response.json();
       
       if (!apiResponse.success) {
-        throw new Error('Erreur lors du chargement des sources');
+        throw new Error('Impossible de charger les sources');
       }
       
       setEpisodeDetails(apiResponse.data);
-      setSelectedEpisode(episode);
       setSelectedServer(0);
       setCurrentView('player');
     } catch (err) {
-      console.error('Erreur sources:', err);
-      setError('Impossible de charger les sources vidéo.');
+      console.error('Erreur sources épisode:', err);
+      setError('Impossible de charger les sources de l\'épisode.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Navigation entre épisodes
-  const navigateEpisode = (direction: 'prev' | 'next') => {
+  // Navigation épisodes
+  const navigateEpisode = (direction: 'next' | 'prev') => {
     if (!selectedEpisode || episodes.length === 0) return;
     
     const currentIndex = episodes.findIndex(ep => ep.id === selectedEpisode.id);
@@ -213,6 +238,11 @@ const AnimeStreamingPage: React.FC = () => {
       loadSeasonEpisodes(selectedSeason);
     }
   };
+
+  // Charger les anime populaires au montage
+  useEffect(() => {
+    loadTrendingAnimes();
+  }, []);
 
   // Effet de recherche avec délai
   useEffect(() => {
@@ -290,39 +320,82 @@ const AnimeStreamingPage: React.FC = () => {
             )}
           </div>
 
-          {/* Résultats de recherche */}
-          {searchResults.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {searchResults.map((anime) => (
-                <div
-                  key={anime.id}
-                  onClick={() => loadAnimeDetails(anime.id)}
-                  className="bg-gray-900 rounded cursor-pointer hover:bg-gray-800 transition-colors"
-                >
-                  <img
-                    src={anime.image}
-                    alt={anime.title}
-                    className="w-full h-52 md:h-64 object-cover rounded"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = 'https://via.placeholder.com/300x400/1a1a1a/ffffff?text=Image+Non+Disponible';
-                    }}
-                  />
-                  <div className="p-3">
-                    <h3 className="font-medium text-sm line-clamp-2">{anime.title}</h3>
-                    <p className="text-xs text-gray-400 mt-1">{anime.status}</p>
-                  </div>
+          {/* Anime populaires (si pas de recherche) */}
+          {!searchQuery && !searchResults.length && (
+            <div className="mb-8">
+              <h2 className="text-xl font-bold text-white mb-4">🔥 Anime Populaires</h2>
+              
+              {loadingTrending ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                  <div className="text-gray-400">Chargement des anime populaires...</div>
                 </div>
-              ))}
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {trendingAnimes.map((anime) => (
+                    <div
+                      key={anime.id}
+                      onClick={() => loadAnimeDetails(anime.id)}
+                      className="bg-gray-900 rounded cursor-pointer hover:bg-gray-800 transition-colors"
+                    >
+                      <img
+                        src={anime.image}
+                        alt={anime.title}
+                        className="w-full h-48 object-cover rounded-t"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/placeholder-anime.jpg';
+                        }}
+                      />
+                      <div className="p-3">
+                        <h3 className="text-sm font-medium text-white truncate">{anime.title}</h3>
+                        <p className="text-xs text-gray-400 mt-1">{anime.status}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {/* État initial */}
-          {!searchQuery && (
-            <div className="text-center py-16">
+          {/* Résultats de recherche */}
+          {searchResults.length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold text-white mb-4">Résultats de recherche</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {searchResults.map((anime) => (
+                  <div
+                    key={anime.id}
+                    onClick={() => loadAnimeDetails(anime.id)}
+                    className="bg-gray-900 rounded cursor-pointer hover:bg-gray-800 transition-colors"
+                  >
+                    <img
+                      src={anime.image}
+                      alt={anime.title}
+                      className="w-full h-52 md:h-64 object-cover rounded"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = 'https://via.placeholder.com/300x400/1a1a1a/ffffff?text=Image+Non+Disponible';
+                      }}
+                    />
+                    <div className="p-3">
+                      <h3 className="font-medium text-sm line-clamp-2">{anime.title}</h3>
+                      <p className="text-xs text-gray-400 mt-1">{anime.status}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Message si pas de résultats */}
+          {!loading && searchQuery && searchResults.length === 0 && (
+            <div className="text-center py-12">
               <Search className="mx-auto mb-4 text-gray-600" size={48} />
-              <h2 className="text-xl font-semibold mb-2">Recherchez votre anime</h2>
-              <p className="text-gray-400">Tapez le nom de l'anime que vous souhaitez regarder</p>
+              <h3 className="text-lg font-medium text-white mb-2">Aucun résultat trouvé</h3>
+              <p className="text-gray-400">
+                Essayez avec un autre titre d'anime
+              </p>
             </div>
           )}
         </div>
@@ -344,29 +417,19 @@ const AnimeStreamingPage: React.FC = () => {
             />
             <h1 className="text-2xl font-bold mb-3 text-white">{selectedAnime.title}</h1>
             
-            {/* Informations d'avancement */}
-            <div className="space-y-2 mb-4">
-              <div className="text-sm">
-                <span className="text-white font-medium">Avancement :</span>
-                <span className="text-gray-400 ml-2">Aucune donnée.</span>
-              </div>
-              <div className="text-sm">
-                <span className="text-white font-medium">Correspondance :</span>
-                <span className="text-gray-400 ml-2">Episode 1122 → Chapitre 1088</span>
-              </div>
+            {selectedAnime.description && (
+              <p className="text-gray-300 text-sm leading-relaxed mb-4">{selectedAnime.description}</p>
+            )}
+            
+            <div className="flex flex-wrap gap-2 mb-4">
+              {selectedAnime.genres.map((genre, index) => (
+                <span key={index} className="px-2 py-1 bg-blue-600 text-xs rounded">{genre}</span>
+              ))}
             </div>
-
-            {/* Boutons d'action */}
-            <div className="flex gap-3 mb-6">
-              <button className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg text-sm">
-                <span>⭐</span> Favoris
-              </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg text-sm">
-                <span>👁</span> Watchlist
-              </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg text-sm">
-                <span>✓</span> Vu
-              </button>
+            
+            <div className="text-sm text-gray-400 space-y-1">
+              <p>Status: {selectedAnime.status}</p>
+              <p>Année: {selectedAnime.year}</p>
             </div>
           </div>
 
@@ -501,7 +564,8 @@ const AnimeStreamingPage: React.FC = () => {
                           loadEpisodeSources(selectedEpisode);
                         }
                       }}
-                      className="flex items-center justify-center w-14 h-14 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                      disabled={!selectedEpisode}
+                      className="flex items-center justify-center w-14 h-14 bg-blue-800 text-white rounded-lg disabled:opacity-50 hover:bg-blue-700 transition-colors"
                     >
                       <RotateCcw size={20} />
                     </button>
@@ -514,33 +578,6 @@ const AnimeStreamingPage: React.FC = () => {
                       <ChevronRight size={24} />
                     </button>
                   </div>
-
-                  {/* Message exact anime-sama */}
-                  <div className="text-center py-4">
-                    <p className="text-white text-sm">
-                      <span className="italic">Pub insistante ou vidéo indisponible ?</span><br />
-                      <span className="font-bold">Changez de lecteur.</span>
-                    </p>
-                  </div>
-
-                  {/* Lecteur vidéo */}
-                  {currentSource && (
-                    <div className="relative bg-black rounded-lg overflow-hidden">
-                      <iframe
-                        src={currentSource.url}
-                        className="w-full h-64 md:h-80 lg:h-96"
-                        allowFullScreen
-                        frameBorder="0"
-                        title={`${episodeDetails?.title} - ${currentSource.server}`}
-                      />
-                      {/* Bouton play central */}
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="w-16 h-16 bg-blue-600/80 rounded-full flex items-center justify-center">
-                          <div className="w-0 h-0 border-l-[12px] border-l-white border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent ml-1"></div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -548,7 +585,29 @@ const AnimeStreamingPage: React.FC = () => {
         </div>
       )}
 
-
+      {/* Page lecteur */}
+      {currentView === 'player' && episodeDetails && currentSource && (
+        <div className="p-4">
+          <div className="mb-4">
+            <h1 className="text-xl font-bold">{episodeDetails.animeTitle}</h1>
+            <h2 className="text-gray-400">Episode {episodeDetails.episodeNumber}</h2>
+          </div>
+          
+          <div className="w-full h-64 md:h-96 bg-black rounded overflow-hidden">
+            <iframe
+              src={currentSource.url}
+              className="w-full h-full"
+              allowFullScreen
+              frameBorder="0"
+              title={`Episode ${episodeDetails.episodeNumber}`}
+            />
+          </div>
+          
+          <div className="mt-4 text-sm text-gray-400">
+            Lecteur: {currentSource.server} | Qualité: {currentSource.quality}
+          </div>
+        </div>
+      )}
 
       {/* Loading overlay */}
       {loading && (
