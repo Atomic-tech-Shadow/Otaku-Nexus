@@ -1,9 +1,8 @@
 // Simplified navigation for the header, now linking to anime-sama
 import { useAuth } from "@/hooks/useAuth";
-import { User } from "lucide-react";
+import { User, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Play } from "lucide-react";
-import Link from "next/link";
+import { Link } from "wouter";
 
 export default function MainNavigation() {
   const { user } = useAuth();

@@ -99,19 +99,27 @@ const AnimeSamaPage: React.FC = () => {
   const loadPopularAnimes = async () => {
     try {
       const response = await fetch(`${API_BASE}/api/popular`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const apiResponse = await response.json();
       
       if (apiResponse.success && apiResponse.data) {
         setPopularAnimes(apiResponse.data.slice(0, 12)); // Limiter à 12 animes
+      } else {
+        throw new Error('Invalid API response format');
       }
     } catch (err) {
+      console.error('Error loading popular animes:', err);
       // En cas d'erreur, utiliser une liste de base d'animes populaires
       const fallbackAnimes: SearchResult[] = [
         { id: 'one-piece', title: 'One Piece', url: '/anime/one-piece', type: 'TV', status: 'En cours', image: 'https://cdn.myanimelist.net/images/anime/6/73245.jpg' },
         { id: 'naruto', title: 'Naruto', url: '/anime/naruto', type: 'TV', status: 'Terminé', image: 'https://cdn.myanimelist.net/images/anime/13/17405.jpg' },
         { id: 'attack-on-titan', title: 'L\'Attaque des Titans', url: '/anime/attack-on-titan', type: 'TV', status: 'Terminé', image: 'https://cdn.myanimelist.net/images/anime/10/47347.jpg' },
         { id: 'demon-slayer', title: 'Demon Slayer', url: '/anime/demon-slayer', type: 'TV', status: 'En cours', image: 'https://cdn.myanimelist.net/images/anime/1286/99889.jpg' },
-        { id: 'my-hero-academia', title: 'My Hero Academia', url: '/anime/my-hero-academia', type: 'TV', status: 'En cours', image: 'https://cdn.myanimelist.net/images/anime/10/78745.jpg' },
+        { id: 'my-hero-academia', title: 'My Hero Academia', url: '/anime/my-hero-academia', type: 'TV', status: 'En cours', image: 'https://cdn.myanimelist.net/images/anime/10/78745.jpg' }g' },
         { id: 'jujutsu-kaisen', title: 'Jujutsu Kaisen', url: '/anime/jujutsu-kaisen', type: 'TV', status: 'En cours', image: 'https://cdn.myanimelist.net/images/anime/1171/109222.jpg' }
       ];
       setPopularAnimes(fallbackAnimes);
@@ -499,6 +507,7 @@ const AnimeSamaPage: React.FC = () => {
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.src = 'https://via.placeholder.com/300x400/1a1a1a/ffffff?text=Image+Non+Disponible';
+                              target.onerror = null; // Prevent infinite loop
                             }}
                           />
                           {watchHistory[anime.id] && (
