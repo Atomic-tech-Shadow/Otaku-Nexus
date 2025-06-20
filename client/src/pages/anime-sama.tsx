@@ -148,7 +148,7 @@ const AnimeSamaPage: React.FC = () => {
         languages.push('VF');
       }
     } catch (err) {
-      console.log('VF non disponible');
+      // VF non disponible
     }
     
     // Tester VOSTFR
@@ -159,7 +159,7 @@ const AnimeSamaPage: React.FC = () => {
         languages.push('VOSTFR');
       }
     } catch (err) {
-      console.log('VOSTFR non disponible');
+      // VOSTFR non disponible
     }
     
     return languages;
@@ -177,7 +177,7 @@ const AnimeSamaPage: React.FC = () => {
       // Détecter les langues disponibles
       const availLangs = await detectAvailableLanguages(selectedAnime.id, season.number);
       setAvailableLanguages(availLangs);
-      console.log('Langues disponibles:', availLangs);
+      // Langues détectées avec succès
       
       // Ajuster la langue sélectionnée si nécessaire
       let languageToUse = selectedLanguage;
@@ -187,7 +187,7 @@ const AnimeSamaPage: React.FC = () => {
       }
       
       const language = languageToUse.toLowerCase();
-      console.log(`Chargement épisodes ${selectedAnime.id} saison ${season.number} langue ${language}`);
+      // Chargement des épisodes en cours
       
       const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${language}`);
       const apiResponse: ApiResponse<{
@@ -336,24 +336,22 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Effet de recherche avec délai
+  // Effet de recherche avec délai optimisé
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (searchQuery.trim()) {
+      if (searchQuery.trim() && currentView === 'search') {
         searchAnimes(searchQuery);
       }
-    }, 500);
+    }, 800);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+  }, [searchQuery, currentView]);
 
   // Les sources viennent directement de l'API avec la bonne langue
   const currentSources = episodeDetails?.sources || [];
   const currentSource = currentSources[selectedServer];
 
-  console.log('Sources chargées:', currentSources);
-  console.log('Source actuelle:', currentSource);
-  console.log('Serveur sélectionné:', selectedServer);
+  // Debug logs supprimés pour optimiser les performances
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#000000' }}>
