@@ -268,10 +268,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!episode) {
         return res.status(404).json({ message: "Episode not found" });
       }
-      res.json(episode);
+      
+      // Ajouter les solutions CORS
+      const enhancedEpisode = {
+        success: true,
+        data: {
+          ...episode,
+          sources: episode.sources.map(source => ({
+            ...source,
+            proxyUrl: `/api/proxy/${encodeURIComponent(source.url)}`,
+            embedUrl: `/api/embed/${episodeId}`
+          })),
+          embedUrl: `/api/embed/${episodeId}`,
+          corsInfo: {
+            note: "Original URLs may have CORS restrictions. Use proxyUrl or embedUrl for direct access.",
+            proxyEndpoint: "/api/proxy/[url]",
+            embedEndpoint: "/api/embed/[episodeId]"
+          }
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      res.json(enhancedEpisode);
     } catch (error) {
       console.error("Error fetching episode details:", error);
       res.status(500).json({ message: "Failed to fetch episode details" });
+    }
+  });
+
+  // Route proxy pour contourner CORS
+  app.get('/api/proxy/:encodedUrl', async (req, res) => {
+    try {
+      const targetUrl = decodeURIComponent(req.params.encodedUrl);
+      
+      // Validation de sécurité - only allow anime-sama URLs
+      if (!targetUrl.includes('anime-sama.fr') && !targetUrl.includes('streaming.anime-sama.fr')) {
+        return res.status(403).json({ message: "URL not allowed" });
+      }
+      
+      const response = await fetch(targetUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Referer': 'https://anime-sama.fr/',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        }
+      });
+      
+      // Copier les headers appropriés
+      res.set({
+        'Content-Type': response.headers.get('content-type') || 'text/html',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      });
+      
+      const content = await response.text();
+      res.send(content);
+    } catch (error) {
+      console.error("Proxy error:", error);
+      res.status(500).json({ message: "Proxy failed" });
+    }
+  });
+
+  // Route embed pour iframe direct
+  app.get('/api/embed/:episodeId', async (req, res) => {
+    try {
+      const { episodeId } = req.params;
+      const episode = await animeSamaService.getEpisodeDetails(episodeId);
+      
+      if (!episode || !episode.sources.length) {
+        return res.status(404).send(`
+          <html>
+            <body style="background: #000; color: #fff; text-align: center; padding: 50px;">
+              <h2>Episode non trouvé</h2>
+              <p>L'épisode demandé n'est pas disponible.</p>
+            </body>
+          </html>
+        `);
+      }
+      
+      const source = episode.sources[0];
+      const embedHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Episode ${episode.episodeNumber} - ${episode.animeTitle}</title>
+          <style>
+            body { margin: 0; padding: 0; background: #000; }
+            iframe { width: 100%; height: 100vh; border: none; }
+            .fallback { color: white; text-align: center; padding: 50px; }
+          </style>
+        </head>
+        <body>
+          <iframe src="${source.url}" allowfullscreen></iframe>
+          <div class="fallback" style="display: none;">
+            <h3>Lecteur indisponible</h3>
+            <p>Tentative de chargement...</p>
+            <a href="${source.url}" target="_blank" style="color: #1e40af;">
+              Ouvrir dans un nouvel onglet
+            </a>
+          </div>
+          <script>
+            // Fallback si iframe ne charge pas
+            setTimeout(() => {
+              const iframe = document.querySelector('iframe');
+              const fallback = document.querySelector('.fallback');
+              if (!iframe.contentWindow) {
+                iframe.style.display = 'none';
+                fallback.style.display = 'block';
+              }
+            }, 5000);
+          </script>
+        </body>
+        </html>
+      `;
+      
+      res.set('Content-Type', 'text/html');
+      res.send(embedHtml);
+    } catch (error) {
+      console.error("Embed error:", error);
+      res.status(500).send('<html><body style="color: red;">Erreur de chargement</body></html>');
     }
   });
 

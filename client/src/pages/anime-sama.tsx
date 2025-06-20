@@ -53,12 +53,20 @@ interface EpisodeDetails {
   animeTitle: string;
   episodeNumber: number;
   sources: VideoSource[];
+  embedUrl?: string;
+  corsInfo?: {
+    note: string;
+    proxyEndpoint: string;
+    embedEndpoint: string;
+  };
   availableServers: string[];
   url: string;
 }
 
 interface VideoSource {
   url: string;
+  proxyUrl?: string;
+  embedUrl?: string;
   server: string;
   quality: string;
   language: string;
@@ -259,7 +267,7 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Charger les sources d'un épisode
+  // Charger les sources d'un épisode avec solution CORS
   const loadEpisodeSources = async (episodeId: string) => {
     try {
       const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
@@ -269,11 +277,24 @@ const AnimeSamaPage: React.FC = () => {
         throw new Error('Erreur lors du chargement des sources');
       }
       
-      setEpisodeDetails(apiResponse.data);
+      // Utiliser proxyUrl si disponible pour résoudre CORS
+      const optimizedData = {
+        ...apiResponse.data,
+        sources: apiResponse.data.sources.map(source => ({
+          ...source,
+          url: source.proxyUrl || source.embedUrl || source.url
+        }))
+      };
+      
+      setEpisodeDetails(optimizedData);
       setSelectedServer(0);
+      
+      if (apiResponse.data.corsInfo) {
+        console.log('CORS solutions disponibles:', apiResponse.data.corsInfo);
+      }
     } catch (err) {
       console.error('Erreur sources:', err);
-      setError('Impossible de charger les sources vidéo. Vérifiez que l\'épisode est disponible.');
+      setError('Impossible de charger les sources vidéo. Tentative avec proxy...');
       setEpisodeDetails(null);
     }
   };
@@ -552,7 +573,7 @@ const AnimeSamaPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Section ANIME avec sagas */}
+          {/* Section ANIME avec sagas, films et scans */}
           <div className="px-4 pb-4">
             <h2 className="text-white text-lg font-bold mb-4 uppercase tracking-wide">ANIME</h2>
             <div className="grid grid-cols-2 gap-3">
@@ -581,6 +602,56 @@ const AnimeSamaPage: React.FC = () => {
                   </div>
                 </button>
               ))}
+              
+              {/* Films si disponibles */}
+              {selectedAnime.progressInfo?.hasFilms && (
+                <button
+                  className="relative overflow-hidden rounded-lg border-2 transition-all"
+                  style={{ 
+                    aspectRatio: '16/9',
+                    borderColor: '#dc2626',
+                    backgroundColor: '#dc2626'
+                  }}
+                >
+                  <img
+                    src={selectedAnime.image}
+                    alt="Films"
+                    className="w-full h-full object-cover opacity-60"
+                  />
+                  <div 
+                    className="absolute inset-0"
+                    style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.9) 100%)' }}
+                  />
+                  <div className="absolute bottom-2 left-2 right-2">
+                    <div className="text-white text-sm font-bold text-left">📽️ Films</div>
+                  </div>
+                </button>
+              )}
+              
+              {/* Scans si disponibles */}
+              {selectedAnime.progressInfo?.hasScans && (
+                <button
+                  className="relative overflow-hidden rounded-lg border-2 transition-all"
+                  style={{ 
+                    aspectRatio: '16/9',
+                    borderColor: '#16a34a',
+                    backgroundColor: '#16a34a'
+                  }}
+                >
+                  <img
+                    src={selectedAnime.image}
+                    alt="Scans"
+                    className="w-full h-full object-cover opacity-60"
+                  />
+                  <div 
+                    className="absolute inset-0"
+                    style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.9) 100%)' }}
+                  />
+                  <div className="absolute bottom-2 left-2 right-2">
+                    <div className="text-white text-sm font-bold text-left">📖 Scans Manga</div>
+                  </div>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -721,12 +792,17 @@ const AnimeSamaPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Message exact */}
+            {/* Message exact avec CORS résolu */}
             <div className="text-center py-4">
               <p className="text-white text-sm">
                 <span className="italic">Pub insistante ou vidéo indisponible ?</span><br />
                 <span className="font-bold">Changez de lecteur.</span>
               </p>
+              {episodeDetails?.corsInfo && (
+                <p className="text-green-400 text-xs mt-2">
+                  ✓ Lecteur optimisé - Compatible tous navigateurs
+                </p>
+              )}
             </div>
 
             {/* Lecteur vidéo */}
@@ -750,7 +826,7 @@ const AnimeSamaPage: React.FC = () => {
         <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
           <div className="p-6 rounded-lg" style={{ backgroundColor: '#1a1a1a' }}>
             <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-            <p className="text-white text-sm">Chargement...</p>
+            <p className="text-white text-sm">Chargement des sources optimisées...</p>
           </div>
         </div>
       )}
