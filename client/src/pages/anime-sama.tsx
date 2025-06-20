@@ -270,9 +270,7 @@ const AnimeSamaPage: React.FC = () => {
       }
       
       setEpisodeDetails(apiResponse.data);
-      // Sélectionner automatiquement le serveur "direct" si disponible
-      const directServerIndex = apiResponse.data.sources.findIndex(source => source.type === 'direct');
-      setSelectedServer(directServerIndex >= 0 ? directServerIndex : 0);
+      setSelectedServer(0);
     } catch (err) {
       console.error('Erreur sources:', err);
       setError('Impossible de charger les sources vidéo. Vérifiez que l\'épisode est disponible.');
@@ -734,29 +732,13 @@ const AnimeSamaPage: React.FC = () => {
             {/* Lecteur vidéo */}
             {currentSource && (
               <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: '#000' }}>
-                {currentSource.type === 'direct' ? (
-                  <iframe
-                    src={currentSource.url}
-                    className="w-full h-64 md:h-80 lg:h-96"
-                    allowFullScreen
-                    frameBorder="0"
-                    title={`${episodeDetails?.title} - ${currentSource.server}`}
-                    allow="autoplay; fullscreen"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <div className="w-full h-64 md:h-80 lg:h-96 flex items-center justify-center">
-                    <a
-                      href={currentSource.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-8 py-4 rounded-lg text-white font-medium transition-all hover:scale-105"
-                      style={{ backgroundColor: '#1e40af' }}
-                    >
-                      ▶ Regarder Episode {selectedEpisode?.episodeNumber}
-                    </a>
-                  </div>
-                )}
+                <iframe
+                  src={currentSource.url}
+                  className="w-full h-64 md:h-80 lg:h-96"
+                  allowFullScreen
+                  frameBorder="0"
+                  title={`${episodeDetails?.title} - ${currentSource.server}`}
+                />
               </div>
             )}
           </div>
