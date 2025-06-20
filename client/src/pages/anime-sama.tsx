@@ -230,7 +230,7 @@ const AnimeSamaPage: React.FC = () => {
         {/* Quick Categories */}
         <div className="mb-6">
           <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-nexus-cyan" />
+            <Trending className="w-5 h-5 text-nexus-cyan" />
             Catégories populaires
           </h2>
           <div className="grid grid-cols-2 gap-3">
