@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
-import { Play, Search, Star, BookmarkPlus, Eye, TrendingUp, Shuffle } from "lucide-react";
+import { Play, Search, TrendingUp, Shuffle } from "lucide-react";
 import { Link } from "wouter";
 
 interface AnimeInfo {
@@ -58,102 +58,47 @@ export default function AnimeStreaming() {
   const [activeTab, setActiveTab] = useState<'trending' | 'search' | 'random' | 'catalogue'>('trending');
   
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   // Trending anime query
-  const { data: trendingAnime, isLoading: loadingTrending, error: trendingError } = useQuery({
+  const { data: trendingAnime, isLoading: loadingTrending } = useQuery({
     queryKey: ['/api/anime/trending'],
-    queryFn: async () => {
-      const response = await fetch('/api/anime/trending');
-      if (!response.ok) throw new Error('Failed to fetch trending anime');
-      return response.json();
-    },
-    enabled: true,
+    enabled: activeTab === 'trending',
   });
 
   // Search anime query
   const { data: searchResults, isLoading: loadingSearch, refetch: searchAnime } = useQuery({
     queryKey: ['/api/anime/search', { query: searchQuery }],
-    queryFn: async () => {
-      if (!searchQuery.trim()) return [];
-      const response = await fetch(`/api/anime/search?query=${encodeURIComponent(searchQuery)}`);
-      if (!response.ok) throw new Error('Search failed');
-      return response.json();
-    },
     enabled: false,
   });
 
   // Random anime query
   const { data: randomAnime, isLoading: loadingRandom, refetch: getRandomAnime } = useQuery({
     queryKey: ['/api/anime/random'],
-    queryFn: async () => {
-      const response = await fetch('/api/anime/random');
-      if (!response.ok) throw new Error('Failed to fetch random anime');
-      return response.json();
-    },
     enabled: false,
   });
 
   // Catalogue query
   const { data: catalogueAnime, isLoading: loadingCatalogue } = useQuery({
     queryKey: ['/api/anime/catalogue'],
-    queryFn: async () => {
-      const response = await fetch('/api/anime/catalogue');
-      if (!response.ok) throw new Error('Failed to fetch catalogue');
-      return response.json();
-    },
     enabled: activeTab === 'catalogue',
   });
 
   // Selected anime details
   const { data: animeDetails, isLoading: loadingDetails } = useQuery({
     queryKey: ['/api/anime', selectedAnime?.id],
-    queryFn: async () => {
-      if (!selectedAnime?.id) return null;
-      const response = await fetch(`/api/anime/${selectedAnime.id}`);
-      if (!response.ok) throw new Error('Failed to fetch anime details');
-      return response.json();
-    },
     enabled: !!selectedAnime?.id,
   });
 
   // Season episodes query
   const { data: seasonEpisodes, isLoading: loadingEpisodes } = useQuery({
     queryKey: ['/api/anime', selectedAnime?.id, 'seasons', selectedSeason, 'episodes', selectedLanguage],
-    queryFn: async () => {
-      if (!selectedAnime?.id || selectedSeason === null) return [];
-      const response = await fetch(`/api/anime/${selectedAnime.id}/seasons/${selectedSeason}/episodes?language=${selectedLanguage}`);
-      if (!response.ok) throw new Error('Failed to fetch episodes');
-      return response.json();
-    },
     enabled: !!selectedAnime?.id && selectedSeason !== null,
   });
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez entrer un terme de recherche",
-        variant: "destructive",
-      });
-      return;
-    }
-    console.log("Searching for:", searchQuery);
+    if (!searchQuery.trim()) return;
     setActiveTab('search');
-    try {
-      await searchAnime();
-      toast({
-        title: "Recherche effectuée",
-        description: `Recherche pour "${searchQuery}" terminée`,
-      });
-    } catch (error) {
-      console.error("Search error:", error);
-      toast({
-        title: "Erreur de recherche",
-        description: "Impossible de rechercher des animes",
-        variant: "destructive",
-      });
-    }
+    await searchAnime();
   };
 
   const handleRandomAnime = async () => {
@@ -175,7 +120,6 @@ export default function AnimeStreaming() {
       return (
         <div className="flex justify-center items-center py-12">
           <LoadingSpinner size="lg" />
-          <p className="text-gray-400 mt-4">Chargement des animes...</p>
         </div>
       );
     }
@@ -185,7 +129,6 @@ export default function AnimeStreaming() {
         <div className="text-center py-12 text-gray-400">
           <div className="text-6xl mb-4">🎬</div>
           <p>Aucun anime trouvé</p>
-          <p className="text-sm mt-2">Essayez de rechercher un anime ou vérifiez votre connexion</p>
         </div>
       );
     }
@@ -221,21 +164,8 @@ export default function AnimeStreaming() {
                 {anime.title}
               </h3>
               <div className="flex items-center justify-between text-xs text-gray-400">
-                <span>{anime.year}</span>
                 <span>{anime.type}</span>
               </div>
-              {anime.progressInfo && (
-                <div className="mt-2">
-                  <div className="text-xs text-electric-blue">
-                    {anime.progressInfo.totalEpisodes} épisodes
-                  </div>
-                  {anime.progressInfo.correspondence && (
-                    <div className="text-xs text-gray-400 line-clamp-1">
-                      {anime.progressInfo.correspondence}
-                    </div>
-                  )}
-                </div>
-              )}
             </CardContent>
           </Card>
         ))}
@@ -246,7 +176,7 @@ export default function AnimeStreaming() {
   const renderAnimeDetails = () => {
     if (!selectedAnime) return null;
 
-    const details = (animeDetails as AnimeInfo) || selectedAnime;
+    const details = animeDetails || selectedAnime;
 
     return (
       <div className="space-y-6">
@@ -274,70 +204,23 @@ export default function AnimeStreaming() {
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">{details.title}</h1>
               <div className="flex flex-wrap gap-2 mb-4">
-                {details.genres?.map((genre: string) => (
+                {details.genres?.map((genre) => (
                   <Badge key={genre} variant="secondary">{genre}</Badge>
                 ))}
               </div>
-            </div>
-
-            {details.description && (
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-2">Synopsis</h3>
-                <p className="text-gray-300">{details.description}</p>
+              
+              <div className="space-y-2 text-gray-300">
+                <p><strong>Description:</strong> {details.description || 'Aucune description disponible'}</p>
+                <p><strong>Statut:</strong> {details.status}</p>
+                <p><strong>Type:</strong> {details.type}</p>
               </div>
-            )}
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-electric-blue">
-                  {details.progressInfo?.totalEpisodes || 'N/A'}
-                </div>
-                <div className="text-sm text-gray-400">Épisodes</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-electric-blue">{details.year}</div>
-                <div className="text-sm text-gray-400">Année</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-electric-blue">{details.status}</div>
-                <div className="text-sm text-gray-400">Statut</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-electric-blue">{details.type}</div>
-                <div className="text-sm text-gray-400">Type</div>
-              </div>
-            </div>
-
-            {details.progressInfo?.correspondence && (
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-2">Correspondance</h3>
-                <p className="text-gray-300">{details.progressInfo.correspondence}</p>
-              </div>
-            )}
-
-            {details.progressInfo?.advancement && (
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-2">Avancement</h3>
-                <p className="text-gray-300">{details.progressInfo.advancement}</p>
-              </div>
-            )}
-
-            <div className="flex gap-2">
-              <Button className="bg-electric-blue hover:bg-electric-blue/80">
-                <BookmarkPlus className="h-4 w-4 mr-2" />
-                Ajouter aux favoris
-              </Button>
-              <Button variant="outline">
-                <Eye className="h-4 w-4 mr-2" />
-                Marquer comme vu
-              </Button>
             </div>
           </div>
         </div>
 
         {details.seasons && details.seasons.length > 0 && (
           <div>
-            <h3 className="text-xl font-semibold text-white mb-4">Saisons</h3>
+            <h3 className="text-xl font-semibold text-white mb-4">Saisons disponibles</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {details.seasons.map((season) => (
                 <Card 
@@ -346,10 +229,15 @@ export default function AnimeStreaming() {
                   onClick={() => handleSeasonSelect(season.number)}
                 >
                   <CardContent className="p-4">
-                    <h4 className="text-white font-semibold mb-2">{season.name}</h4>
-                    <div className="text-sm text-gray-400 mb-2">
-                      Saison {season.number} • {season.episodeCount} épisodes
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-white font-semibold">
+                        Saison {season.number}
+                      </h4>
+                      <Badge variant="outline">
+                        {season.episodeCount} épisodes
+                      </Badge>
                     </div>
+                    <p className="text-gray-400 text-sm mb-2">{season.name}</p>
                     <div className="flex gap-1">
                       {season.languages.map((lang) => (
                         <Badge key={lang} variant="outline" className="text-xs">
@@ -431,7 +319,7 @@ export default function AnimeStreaming() {
             Streaming Anime
           </h1>
           <p className="text-gray-400 mb-6">
-            Découvrez et regardez vos animes préférés avec une numérotation authentique et des données réelles
+            Découvrez et regardez vos animes préférés
           </p>
 
           {!selectedAnime && (
@@ -482,37 +370,10 @@ export default function AnimeStreaming() {
           renderAnimeDetails()
         ) : (
           <div>
-            {activeTab === 'trending' && (
-              <div>
-                <h2 className="text-2xl font-bold text-white mb-6">Animes Populaires</h2>
-                {trendingError ? (
-                  <div className="text-center py-12 text-red-400">
-                    <p>Erreur lors du chargement des animes populaires</p>
-                    <p className="text-sm mt-2">{trendingError.message}</p>
-                  </div>
-                ) : (
-                  renderAnimeGrid(trendingAnime as AnimeInfo[], loadingTrending)
-                )}
-              </div>
-            )}
-            {activeTab === 'search' && (
-              <div>
-                <h2 className="text-2xl font-bold text-white mb-6">Résultats de Recherche</h2>
-                {renderAnimeGrid(searchResults as AnimeInfo[] || [], loadingSearch)}
-              </div>
-            )}
-            {activeTab === 'random' && randomAnime && (
-              <div>
-                <h2 className="text-2xl font-bold text-white mb-6">Anime Aléatoire</h2>
-                {renderAnimeGrid([randomAnime as AnimeInfo], loadingRandom)}
-              </div>
-            )}
-            {activeTab === 'catalogue' && (
-              <div>
-                <h2 className="text-2xl font-bold text-white mb-6">Catalogue Complet</h2>
-                {renderAnimeGrid(catalogueAnime as AnimeInfo[] || [], loadingCatalogue)}
-              </div>
-            )}
+            {activeTab === 'trending' && renderAnimeGrid(trendingAnime, loadingTrending)}
+            {activeTab === 'search' && renderAnimeGrid(searchResults, loadingSearch)}
+            {activeTab === 'random' && randomAnime && renderAnimeGrid([randomAnime], loadingRandom)}
+            {activeTab === 'catalogue' && renderAnimeGrid(catalogueAnime, loadingCatalogue)}
           </div>
         )}
       </div>
