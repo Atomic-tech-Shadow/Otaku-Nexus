@@ -278,12 +278,14 @@ const AnimeSamaPage: React.FC = () => {
         throw new Error('Erreur lors du chargement des sources');
       }
       
-      // Utiliser proxyUrl si disponible pour résoudre CORS
+      // Prioriser l'embed URL pour éviter les problèmes CORS
       const optimizedData = {
         ...apiResponse.data,
-        sources: apiResponse.data.sources.map(source => ({
+        sources: apiResponse.data.sources.map((source, index) => ({
           ...source,
-          url: source.proxyUrl || source.embedUrl || source.url
+          url: apiResponse.data.embedUrl && index === 0 ? 
+               `${API_BASE}${apiResponse.data.embedUrl}` : 
+               source.proxyUrl || source.url
         }))
       };
       
@@ -295,7 +297,7 @@ const AnimeSamaPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Erreur sources:', err);
-      setError('Impossible de charger les sources vidéo. Tentative avec proxy...');
+      setError('Impossible de charger les sources vidéo.');
       setEpisodeDetails(null);
     }
   };
@@ -714,6 +716,7 @@ const AnimeSamaPage: React.FC = () => {
             {/* Dropdowns */}
             <div className="grid grid-cols-2 gap-4">
               <select
+                value={selectedEpisode?.id || ""}
                 onChange={(e) => {
                   const episode = episodes.find(ep => ep.id === e.target.value);
                   if (episode) {
@@ -723,9 +726,10 @@ const AnimeSamaPage: React.FC = () => {
                 }}
                 className="w-full p-3 text-white rounded text-sm font-medium"
                 style={{ backgroundColor: '#1e40af', border: '1px solid #3b82f6' }}
-                defaultValue=""
               >
-                <option value="" disabled>EPISODE 1</option>
+                <option value="" disabled>
+                  {selectedEpisode ? `EPISODE ${selectedEpisode.episodeNumber}` : 'EPISODE 1'}
+                </option>
                 {episodes.map((episode) => (
                   <option key={episode.id} value={episode.id}>
                     EPISODE {episode.episodeNumber}
@@ -817,7 +821,7 @@ const AnimeSamaPage: React.FC = () => {
               )}
             </div>
 
-            {/* Lecteur vidéo */}
+            {/* Lecteur vidéo avec solution CORS */}
             {currentSource && (
               <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: '#000' }}>
                 <iframe
@@ -826,7 +830,37 @@ const AnimeSamaPage: React.FC = () => {
                   allowFullScreen
                   frameBorder="0"
                   title={`${episodeDetails?.title} - ${currentSource.server}`}
+                  onError={() => {
+                    setError('Erreur de chargement du lecteur. Tentative avec un autre serveur...');
+                    if (selectedServer < currentSources.length - 1) {
+                      setSelectedServer(selectedServer + 1);
+                    }
+                  }}
                 />
+                {/* Fallback si iframe ne charge pas */}
+                <div className="absolute inset-0 flex items-center justify-center text-white opacity-0 hover:opacity-100 transition-opacity bg-black/50">
+                  <button
+                    onClick={() => window.open(currentSource.url, '_blank')}
+                    className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 transition-colors"
+                  >
+                    Ouvrir dans un nouvel onglet
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Informations sur les sources disponibles */}
+            {episodeDetails && (
+              <div className="text-center">
+                <p className="text-gray-400 text-xs">
+                  {currentSources.length} lecteur{currentSources.length > 1 ? 's' : ''} disponible{currentSources.length > 1 ? 's' : ''}
+                  {episodeDetails.corsInfo && ' • Optimisé pour tous navigateurs'}
+                </p>
+                {episodeDetails.embedUrl && (
+                  <p className="text-green-400 text-xs mt-1">
+                    ✓ Lecteur intégré - Chargement optimisé
+                  </p>
+                )}
               </div>
             )}
           </div>

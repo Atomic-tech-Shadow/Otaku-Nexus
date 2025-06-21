@@ -44,12 +44,20 @@ export interface AnimeSamaEpisodeDetail {
   language: string;
   sources: Array<{
     url: string;
+    proxyUrl?: string;
+    embedUrl?: string;
     server: string;
     quality: string;
     language: string;
     type: string;
     serverIndex: number;
   }>;
+  embedUrl?: string;
+  corsInfo?: {
+    note: string;
+    proxyEndpoint: string;
+    embedEndpoint: string;
+  };
   availableServers: string[];
   url: string;
 }
