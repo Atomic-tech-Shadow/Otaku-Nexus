@@ -2,11 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Send, MessageCircle, Users, Settings } from "lucide-react";
+import { Send, MessageCircle, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MainLayout from "@/components/layout/main-layout";
-import { Link } from "wouter";
 import { TwitterVerificationBadge } from "@/components/ui/verification-badges";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { motion } from "framer-motion";
@@ -34,11 +33,11 @@ export default function Chat() {
 
   const { data: messages = [], isLoading, refetch } = useQuery({
     queryKey: ["/api/chat/messages"],
-    refetchInterval: 5000, // Moins fréquent pour réduire la charge
+    refetchInterval: 5000,
     retry: 1,
     refetchOnMount: true,
-    refetchOnWindowFocus: false, // Éviter les refetch inutiles
-    staleTime: 30000, // Cache les données pendant 30 secondes
+    refetchOnWindowFocus: false,
+    staleTime: 30000,
   });
 
   const sendMessageMutation = useMutation({
@@ -52,31 +51,30 @@ export default function Chat() {
       if (!response.ok) throw new Error("Failed to send message");
       return response.json();
     },
-    onMutate: async (content: string) => {
-      // Optimistic update - afficher le message immédiatement
+    onMutate: async (newMessageContent) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/chat/messages"] });
       const previousMessages = queryClient.getQueryData(["/api/chat/messages"]);
-      const tempMessage = {
+      
+      const optimisticMessage = {
         id: `temp-${Date.now()}`,
-        content,
-        userId: user?.id,
+        content: newMessageContent,
+        userId: user?.id || '',
         userFirstName: user?.firstName,
         userLastName: user?.lastName,
         userProfileImageUrl: user?.profileImageUrl,
         isAdmin: user?.isAdmin,
-        createdAt: new Date().toISOString(),
-        isOwn: true,
-        isPending: true
+        timestamp: new Date().toISOString(),
+        isOwn: true
       };
-      
-      queryClient.setQueryData(["/api/chat/messages"], (old: any) => 
-        [...(old || []), tempMessage]
-      );
-      
-      setNewMessage(""); // Vider le champ immédiatement
+
+      queryClient.setQueryData(["/api/chat/messages"], (old: any) => {
+        return [...(old || []), optimisticMessage];
+      });
+
+      setNewMessage("");
       return { previousMessages };
     },
     onSuccess: (data) => {
-      // Remplacer le message temporaire par le vrai message
       queryClient.setQueryData(["/api/chat/messages"], (old: any) => {
         const messages = old || [];
         const filteredMessages = messages.filter((msg: any) => !msg.id.startsWith('temp-'));
@@ -84,11 +82,10 @@ export default function Chat() {
       });
     },
     onError: (error, variables, context) => {
-      // Restaurer l'état précédent en cas d'erreur
       if (context?.previousMessages) {
         queryClient.setQueryData(["/api/chat/messages"], context.previousMessages);
       }
-      setNewMessage(variables); // Remettre le message dans le champ
+      setNewMessage(variables);
       toast({
         title: "Erreur",
         description: "Impossible d'envoyer le message",
@@ -117,194 +114,163 @@ export default function Chat() {
   const processedMessages = Array.isArray(messages) ? messages
     .map((msg: any, index: number) => ({
       ...msg,
-      id: `${msg.id}-${msg.createdAt || msg.timestamp}-${index}`, // ID unique
+      id: `${msg.id}-${msg.createdAt || msg.timestamp}-${index}`,
       isOwn: msg.userId === user?.id
     }))
     .sort((a: any, b: any) => {
-      // Tri par date de création pour afficher les plus récents en bas
       const dateA = new Date(a.createdAt || a.timestamp).getTime();
       const dateB = new Date(b.createdAt || b.timestamp).getTime();
       return dateA - dateB;
     }) : [];
 
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-96">
+          <LoadingSpinner size="lg" />
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-dark-bg text-white flex flex-col">
+    <MainLayout>
       {/* Background Animation */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-10 left-10 w-32 h-32 bg-electric-blue rounded-full opacity-20 animate-float"></div>
-        <div className="absolute top-40 right-5 w-24 h-24 bg-hot-pink rounded-full opacity-15 animate-pulse-slow"></div>
-        <div className="absolute bottom-20 left-5 w-20 h-20 bg-otaku-purple rounded-full opacity-25 animate-float" style={{ animationDelay: '2s' }}></div>
+        <motion.div 
+          className="absolute top-10 left-10 w-32 h-32 rounded-full opacity-20 bg-nexus-cyan"
+          animate={{ y: [0, -20, 0] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div 
+          className="absolute top-40 right-5 w-24 h-24 rounded-full opacity-15 bg-nexus-pink"
+          animate={{ scale: [1, 1.2, 1] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div 
+          className="absolute bottom-20 left-5 w-20 h-20 rounded-full opacity-25 bg-nexus-purple"
+          animate={{ y: [0, -20, 0] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        />
       </div>
 
-      <div className="relative z-10 flex flex-col h-screen">
-        {/* Custom Header for Chat */}
-        <header className="bg-gradient-to-r from-card-bg to-secondary-bg p-4 border-b border-gray-800">
-          <div className="flex items-center justify-between">
+      <div className="relative z-10 flex flex-col h-full">
+        {/* Chat Header */}
+        <motion.section 
+          className="mb-4 px-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="glass-morphism rounded-2xl p-6 relative overflow-hidden card-hover">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-nexus-cyan to-transparent rounded-full opacity-30" />
             <div className="flex items-center space-x-3">
-              <Link href="/">
-                <Button variant="ghost" size="sm" className="p-2">
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-              </Link>
-
-              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-electric-blue relative">
-                {user?.profileImageUrl ? (
-                  <>
-                    <img 
-                      src={user.profileImageUrl} 
-                      alt="Profile" 
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.currentTarget;
-                        target.style.display = 'none';
-                        const fallback = target.nextElementSibling as HTMLElement;
-                        if (fallback) {
-                          fallback.classList.remove('hidden');
-                          fallback.classList.add('flex');
-                        }
-                      }}
-                    />
-                    <div className="hidden absolute inset-0 w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink items-center justify-center">
-                      <span className="text-sm font-bold text-white">
-                        {(user?.firstName || user?.username || 'O').charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink flex items-center justify-center">
-                    <span className="text-sm font-bold text-white">
-                      {(user?.firstName || user?.username || 'O').charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                )}
-              </div>
-
+              <MessageCircle className="w-8 h-8 text-nexus-cyan" />
               <div>
-                <h2 className="text-lg font-semibold">Chat Global</h2>
-                <span className="text-sm text-green-400">Otakus en ligne</span>
+                <h1 className="text-xl font-bold text-white">Otaku Chat</h1>
+                <p className="text-gray-300 text-sm">Connect with fellow anime fans</p>
               </div>
             </div>
-
-            <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="sm">
-                <Phone className="w-5 h-5" />
-              </Button>
-              <Button variant="ghost" size="sm">
-                <Video className="w-5 h-5" />
-              </Button>
-              <Button variant="ghost" size="sm">
-                <MoreVertical className="w-5 h-5" />
-              </Button>
+            <div className="flex items-center space-x-4 mt-4">
+              <div className="text-center">
+                <div className="text-lg font-bold text-nexus-cyan">💬</div>
+                <div className="text-xs text-gray-400">Live Chat</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-nexus-pink">👥</div>
+                <div className="text-xs text-gray-400">Community</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-nexus-purple">⚡</div>
+                <div className="text-xs text-gray-400">Real Time</div>
+              </div>
             </div>
           </div>
-        </header>
+        </motion.section>
 
         {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
-          {isLoading ? (
-            <div className="flex justify-center items-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-electric-blue"></div>
-            </div>
-          ) : processedMessages.length === 0 ? (
-            <div className="text-center text-gray-400 mt-8">
-              <span>Aucun message pour le moment</span>
-            </div>
-          ) : (
-            processedMessages.map((message: any) => (
-              <div key={message.id} className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}>
-                <div className={`flex gap-3 max-w-xs lg:max-w-md ${message.isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
-                  {!message.isOwn && (
-                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 relative">
-                      {message.userProfileImageUrl && message.userProfileImageUrl.trim() !== '' ? (
-                        <>
-                          <img 
-                            src={message.userProfileImageUrl} 
-                            alt="Profile" 
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const target = e.currentTarget;
-                              target.style.display = 'none';
-                              const fallback = target.nextElementSibling as HTMLElement;
-                              if (fallback) {
-                                fallback.classList.remove('hidden');
-                                fallback.classList.add('flex');
-                              }
-                            }}
-                          />
-                          <div className="hidden absolute inset-0 w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink items-center justify-center">
-                            <span className="text-xs font-bold text-white">
-                              {(message.userFirstName || message.username || 'A').charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-electric-blue to-hot-pink flex items-center justify-center">
-                          <span className="text-xs font-bold text-white">
-                            {(message.userFirstName || message.username || 'A').charAt(0).toUpperCase()}
+        <motion.div 
+          className="flex-1 px-4 pb-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <div className="glass-morphism rounded-2xl p-4 h-96 overflow-y-auto custom-scroll">
+            <div className="space-y-4">
+              {processedMessages.length === 0 ? (
+                <motion.div 
+                  className="text-center py-8"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <MessageCircle className="w-16 h-16 text-nexus-cyan mx-auto mb-4 opacity-50" />
+                  <p className="text-gray-300 mb-2">No messages yet</p>
+                  <p className="text-sm text-gray-400">Be the first to start the conversation!</p>
+                </motion.div>
+              ) : (
+                processedMessages.map((message: any, index) => (
+                  <motion.div
+                    key={message.id}
+                    className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                  >
+                    <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
+                      message.isOwn 
+                        ? 'bg-gradient-to-r from-nexus-cyan to-nexus-purple text-white' 
+                        : 'bg-nexus-surface text-white'
+                    }`}>
+                      {!message.isOwn && (
+                        <div className="flex items-center space-x-2 mb-1">
+                          <span className="text-xs font-semibold text-nexus-cyan">
+                            {message.userFirstName || message.username}
                           </span>
+                          {message.isAdmin && <TwitterVerificationBadge size="sm" />}
                         </div>
                       )}
+                      <p className="text-sm">{message.content}</p>
+                      <p className="text-xs opacity-70 mt-1">
+                        {new Date(message.createdAt || message.timestamp).toLocaleTimeString()}
+                      </p>
                     </div>
-                  )}
-                  <div className={`px-4 py-2 rounded-2xl ${
-                    message.isOwn 
-                      ? 'bg-gradient-to-r from-electric-blue to-hot-pink text-white ml-auto' 
-                      : 'bg-gray-700 text-white'
-                  }`}>
-                    {!message.isOwn && (
-                      <div className="text-xs text-gray-400 mb-1 flex items-center gap-1">
-                        <span>{message.userFirstName || message.username || 'Anonyme'}</span>
-                        {message.isAdmin && (
-                          <TwitterVerificationBadge size="sm" className="ml-1" />
-                        )}
-                      </div>
-                    )}
-                    <div className="text-sm">
-                      {message.content}
-                      {message.isPending && (
-                        <span className="ml-2 opacity-50">
-                          <LoadingSpinner size="sm" />
-                        </span>
-                      )}
-                    </div>
-                    <div className={`text-xs mt-1 ${message.isOwn ? 'text-gray-200' : 'text-gray-400'}`}>
-                      {new Date(message.createdAt || message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+                  </motion.div>
+                ))
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
+        </motion.div>
 
         {/* Message Input */}
-        <div className="fixed bottom-16 left-0 right-0 bg-nexus-surface/95 backdrop-blur-lg border-t border-nexus-cyan/20 p-4">
-          <div className="flex items-center space-x-2 max-w-sm mx-auto">
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Écrivez un message..."
-              className="flex-1 bg-nexus-surface border border-nexus-cyan/30 text-white placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-nexus-cyan focus:border-transparent"
-              disabled={sendMessageMutation.isPending}
-            />
-            <Button 
-              onClick={handleSendMessage}
-              disabled={!newMessage.trim() || sendMessageMutation.isPending}
-              className="bg-gradient-to-r from-nexus-cyan to-nexus-purple hover:from-nexus-purple hover:to-nexus-pink transition-all duration-300 rounded-lg"
-            >
-              {sendMessageMutation.isPending ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              ) : (
+        <motion.div 
+          className="px-4 pb-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          <div className="glass-morphism rounded-2xl p-4">
+            <div className="flex space-x-2">
+              <Input
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type your message..."
+                className="flex-1 bg-nexus-surface border-nexus-cyan/30 text-white placeholder-gray-400 focus:border-nexus-cyan"
+                disabled={sendMessageMutation.isPending}
+              />
+              <Button
+                onClick={handleSendMessage}
+                disabled={!newMessage.trim() || sendMessageMutation.isPending}
+                className="btn-hover bg-gradient-to-r from-nexus-cyan to-nexus-purple hover:from-nexus-purple hover:to-nexus-pink"
+              >
                 <Send className="w-4 h-4" />
-              )}
-            </Button>
+              </Button>
+            </div>
           </div>
-        </div>
-
-        <BottomNav />
+        </motion.div>
       </div>
-    </div>
+    </MainLayout>
   );
 }

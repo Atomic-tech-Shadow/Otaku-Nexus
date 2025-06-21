@@ -146,7 +146,7 @@ export default function Home() {
         </motion.section>
 
         {/* Featured Quiz */}
-        {featuredQuiz && (
+        {featuredQuiz && typeof featuredQuiz === 'object' && (
           <motion.section 
             className="mb-6"
             initial={{ opacity: 0, y: 20 }}
@@ -159,7 +159,7 @@ export default function Home() {
                 Featured Quiz
               </h3>
             </div>
-            <QuizCard quiz={featuredQuiz} />
+            <QuizCard quiz={featuredQuiz as any} />
           </motion.section>
         )}
 
