@@ -1,548 +1,338 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Dimensions,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
+
+const { width } = Dimensions.get('window');
 
 interface Quiz {
   id: number;
   title: string;
   description: string;
-  imageUrl?: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  questions: Question[];
-  category: string;
+  difficulty: string;
+  questions: any[];
+  xpReward: number;
 }
 
-interface Question {
-  id: number;
-  question: string;
-  options: string[];
-  correctAnswer: number;
-  explanation?: string;
-}
+export default function QuizScreen({ navigation }: any) {
+  const [selectedDifficulty, setSelectedDifficulty] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
-interface QuizScreenProps {
-  navigation: any;
-  user: any;
-}
+  const { data: quizzes = [], isLoading, error } = useQuery<Quiz[]>({
+    queryKey: ["/api/quizzes"],
+    retry: false,
+  });
 
-const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, user }) => {
-  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
-  const [showResults, setShowResults] = useState(false);
-  const [score, setScore] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'quiz' | 'results'>('list');
-
-  useEffect(() => {
-    fetchQuizzes();
-  }, []);
-
-  const fetchQuizzes = async () => {
-    setLoading(true);
-    try {
-      // Simulation de données pour le moment
-      const mockQuizzes: Quiz[] = [
-        {
-          id: 1,
-          title: 'Anime Classics',
-          description: 'Test your knowledge of classic anime series',
-          difficulty: 'medium',
-          category: 'Classic',
-          questions: [
-            {
-              id: 1,
-              question: 'Which anime features a character named Spike Spiegel?',
-              options: ['Cowboy Bebop', 'Trigun', 'Outlaw Star', 'Space Dandy'],
-              correctAnswer: 0,
-              explanation: 'Spike Spiegel is the main character of Cowboy Bebop.'
-            },
-            {
-              id: 2,
-              question: 'What is the name of the main character in Dragon Ball?',
-              options: ['Vegeta', 'Piccolo', 'Goku', 'Gohan'],
-              correctAnswer: 2,
-              explanation: 'Goku is the main protagonist of the Dragon Ball series.'
-            }
-          ]
-        },
-        {
-          id: 2,
-          title: 'Modern Anime',
-          description: 'Challenge yourself with recent anime series',
-          difficulty: 'hard',
-          category: 'Modern',
-          questions: [
-            {
-              id: 1,
-              question: 'Which anime features the character Tanjiro Kamado?',
-              options: ['Attack on Titan', 'Demon Slayer', 'Jujutsu Kaisen', 'My Hero Academia'],
-              correctAnswer: 1,
-              explanation: 'Tanjiro Kamado is the main character of Demon Slayer.'
-            }
-          ]
-        }
-      ];
-      setQuizzes(mockQuizzes);
-    } catch (error) {
-      console.error('Error fetching quizzes:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const startQuiz = (quiz: Quiz) => {
-    setSelectedQuiz(quiz);
-    setCurrentQuestionIndex(0);
-    setSelectedAnswers([]);
-    setShowResults(false);
-    setScore(0);
-    setViewMode('quiz');
-  };
-
-  const selectAnswer = (answerIndex: number) => {
-    const newAnswers = [...selectedAnswers];
-    newAnswers[currentQuestionIndex] = answerIndex;
-    setSelectedAnswers(newAnswers);
-  };
-
-  const nextQuestion = () => {
-    if (selectedQuiz && currentQuestionIndex < selectedQuiz.questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else {
-      finishQuiz();
-    }
-  };
-
-  const finishQuiz = () => {
-    if (!selectedQuiz) return;
-
-    let correctAnswers = 0;
-    selectedQuiz.questions.forEach((question, index) => {
-      if (selectedAnswers[index] === question.correctAnswer) {
-        correctAnswers++;
-      }
-    });
-
-    setScore(correctAnswers);
-    setViewMode('results');
-  };
-
-  const resetQuiz = () => {
-    setSelectedQuiz(null);
-    setCurrentQuestionIndex(0);
-    setSelectedAnswers([]);
-    setShowResults(false);
-    setScore(0);
-    setViewMode('list');
-  };
+  const filteredQuizzes = Array.isArray(quizzes) ? quizzes.filter(quiz => {
+    const difficultyMatch = selectedDifficulty === "all" || quiz.difficulty === selectedDifficulty;
+    const categoryMatch = selectedCategory === "all";
+    return difficultyMatch && categoryMatch;
+  }) : [];
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'easy': return '#10b981';
-      case 'medium': return '#f59e0b';
-      case 'hard': return '#ef4444';
-      default: return '#6b7280';
+      case 'easy': return '#4ECDC4';
+      case 'medium': return '#FFD700';
+      case 'hard': return '#FF6B6B';
+      default: return '#888';
     }
   };
 
-  const renderQuizList = () => (
-    <View style={styles.quizList}>
-      <Text style={styles.sectionTitle}>Available Quizzes</Text>
-      {quizzes.map((quiz) => (
-        <TouchableOpacity
-          key={quiz.id}
-          style={styles.quizCard}
-          onPress={() => startQuiz(quiz)}
-        >
-          <LinearGradient
-            colors={['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)']}
-            style={styles.quizCardGradient}
-          >
-            <View style={styles.quizHeader}>
-              <Text style={styles.quizTitle}>{quiz.title}</Text>
-              <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(quiz.difficulty) }]}>
-                <Text style={styles.difficultyText}>{quiz.difficulty.toUpperCase()}</Text>
-              </View>
-            </View>
-            <Text style={styles.quizDescription}>{quiz.description}</Text>
-            <View style={styles.quizFooter}>
-              <Text style={styles.quizCategory}>{quiz.category}</Text>
-              <Text style={styles.questionCount}>{quiz.questions.length} questions</Text>
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-
-  const renderQuiz = () => {
-    if (!selectedQuiz) return null;
-
-    const currentQuestion = selectedQuiz.questions[currentQuestionIndex];
-    const isAnswerSelected = selectedAnswers[currentQuestionIndex] !== undefined;
-
-    return (
-      <View style={styles.quizContainer}>
-        <View style={styles.quizHeader}>
-          <TouchableOpacity onPress={resetQuiz} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <Text style={styles.quizTitle}>{selectedQuiz.title}</Text>
-        </View>
-
-        <View style={styles.progressContainer}>
-          <Text style={styles.progressText}>
-            Question {currentQuestionIndex + 1} of {selectedQuiz.questions.length}
-          </Text>
-          <View style={styles.progressBar}>
-            <View 
-              style={[
-                styles.progressFill, 
-                { width: `${((currentQuestionIndex + 1) / selectedQuiz.questions.length) * 100}%` }
-              ]} 
-            />
-          </View>
-        </View>
-
-        <View style={styles.questionContainer}>
-          <Text style={styles.questionText}>{currentQuestion.question}</Text>
-          
-          <View style={styles.optionsContainer}>
-            {currentQuestion.options.map((option, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.optionButton,
-                  selectedAnswers[currentQuestionIndex] === index && styles.selectedOption
-                ]}
-                onPress={() => selectAnswer(index)}
-              >
-                <Text style={[
-                  styles.optionText,
-                  selectedAnswers[currentQuestionIndex] === index && styles.selectedOptionText
-                ]}>
-                  {option}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <TouchableOpacity
-            style={[styles.nextButton, !isAnswerSelected && styles.disabledButton]}
-            onPress={nextQuestion}
-            disabled={!isAnswerSelected}
-          >
-            <LinearGradient
-              colors={isAnswerSelected ? ['#00c3ff', '#ff00ff'] : ['#666', '#666']}
-              style={styles.nextButtonGradient}
-            >
-              <Text style={styles.nextButtonText}>
-                {currentQuestionIndex === selectedQuiz.questions.length - 1 ? 'Finish' : 'Next'}
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
+  const getDifficultyText = (difficulty: string) => {
+    switch (difficulty) {
+      case 'easy': return 'Facile';
+      case 'medium': return 'Moyen';
+      case 'hard': return 'Difficile';
+      default: return difficulty;
+    }
   };
 
-  const renderResults = () => {
-    if (!selectedQuiz) return null;
+  const handleQuizPress = (quizId: number) => {
+    navigation.navigate('QuizDetail', { quizId });
+  };
 
-    const percentage = (score / selectedQuiz.questions.length) * 100;
-
+  if (isLoading) {
     return (
-      <View style={styles.resultsContainer}>
-        <LinearGradient
-          colors={['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)']}
-          style={styles.resultsCard}
-        >
-          <Text style={styles.resultsTitle}>Quiz Complete!</Text>
-          <Text style={styles.scoreText}>
-            {score} / {selectedQuiz.questions.length}
-          </Text>
-          <Text style={styles.percentageText}>
-            {percentage.toFixed(0)}%
-          </Text>
-          
-          <View style={styles.scoreBreakdown}>
-            <Text style={styles.breakdownTitle}>Review:</Text>
-            {selectedQuiz.questions.map((question, index) => (
-              <View key={index} style={styles.questionReview}>
-                <View style={styles.reviewHeader}>
-                  <Text style={styles.reviewQuestionText}>Q{index + 1}</Text>
-                  <Ionicons 
-                    name={selectedAnswers[index] === question.correctAnswer ? "checkmark-circle" : "close-circle"}
-                    size={20}
-                    color={selectedAnswers[index] === question.correctAnswer ? "#10b981" : "#ef4444"}
-                  />
-                </View>
-                <Text style={styles.reviewQuestion}>{question.question}</Text>
-                <Text style={styles.correctAnswer}>
-                  Correct: {question.options[question.correctAnswer]}
-                </Text>
-              </View>
-            ))}
+      <SafeAreaView style={styles.container}>
+        <LinearGradient colors={['#0f0f0f', '#1a1a1a', '#000000']} style={styles.gradient}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#00D4FF" />
+            <Text style={styles.loadingText}>Chargement des quiz...</Text>
           </View>
-
-          <TouchableOpacity style={styles.restartButton} onPress={resetQuiz}>
-            <LinearGradient
-              colors={['#00c3ff', '#ff00ff']}
-              style={styles.restartButtonGradient}
-            >
-              <Text style={styles.restartButtonText}>Back to Quizzes</Text>
-            </LinearGradient>
-          </TouchableOpacity>
         </LinearGradient>
-      </View>
+      </SafeAreaView>
     );
-  };
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={['#1a1a2e', '#16213e', '#0f3460']}
-        style={styles.backgroundGradient}
-      >
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          {viewMode === 'list' && renderQuizList()}
-          {viewMode === 'quiz' && renderQuiz()}
-          {viewMode === 'results' && renderResults()}
+      <LinearGradient colors={['#0f0f0f', '#1a1a1a', '#000000']} style={styles.gradient}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Quiz Otaku</Text>
+          <View style={styles.placeholder} />
+        </View>
+
+        {/* Filters */}
+        <View style={styles.filtersContainer}>
+          <Text style={styles.filterLabel}>Difficulté</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+            {['all', 'easy', 'medium', 'hard'].map((difficulty) => (
+              <TouchableOpacity
+                key={difficulty}
+                style={[
+                  styles.filterButton,
+                  selectedDifficulty === difficulty && styles.filterButtonActive
+                ]}
+                onPress={() => setSelectedDifficulty(difficulty)}
+              >
+                <Text style={[
+                  styles.filterButtonText,
+                  selectedDifficulty === difficulty && styles.filterButtonTextActive
+                ]}>
+                  {difficulty === 'all' ? 'Tous' : getDifficultyText(difficulty)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Quiz List */}
+        <ScrollView 
+          style={styles.quizContainer}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.quizContent}
+        >
+          {filteredQuizzes.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="brain" size={64} color="#333" />
+              <Text style={styles.emptyTitle}>Aucun quiz disponible</Text>
+              <Text style={styles.emptyText}>
+                Revenez plus tard pour de nouveaux défis !
+              </Text>
+            </View>
+          ) : (
+            filteredQuizzes.map((quiz) => (
+              <TouchableOpacity
+                key={quiz.id}
+                style={styles.quizCard}
+                onPress={() => handleQuizPress(quiz.id)}
+              >
+                <LinearGradient
+                  colors={['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)']}
+                  style={styles.quizGradient}
+                >
+                  <View style={styles.quizHeader}>
+                    <View style={styles.quizInfo}>
+                      <Text style={styles.quizTitle}>{quiz.title}</Text>
+                      <Text style={styles.quizDescription} numberOfLines={2}>
+                        {quiz.description}
+                      </Text>
+                    </View>
+                    <View style={styles.quizMeta}>
+                      <View style={[
+                        styles.difficultyBadge,
+                        { backgroundColor: getDifficultyColor(quiz.difficulty) }
+                      ]}>
+                        <Text style={styles.difficultyText}>
+                          {getDifficultyText(quiz.difficulty)}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.quizFooter}>
+                    <View style={styles.quizStats}>
+                      <View style={styles.statItem}>
+                        <Ionicons name="help-circle" size={16} color="#888" />
+                        <Text style={styles.statText}>
+                          {quiz.questions?.length || 0} questions
+                        </Text>
+                      </View>
+                      <View style={styles.statItem}>
+                        <Ionicons name="trophy" size={16} color="#FFD700" />
+                        <Text style={styles.statText}>+{quiz.xpReward} XP</Text>
+                      </View>
+                    </View>
+                    <Ionicons name="chevron-forward" size={24} color="#00D4FF" />
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            ))
+          )}
         </ScrollView>
       </LinearGradient>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  backgroundGradient: {
+  gradient: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
-    paddingHorizontal: 16,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
-  sectionTitle: {
-    fontSize: 24,
+  backButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  headerTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: 'white',
+  },
+  placeholder: {
+    width: 40,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: 'white',
+    marginTop: 15,
+    fontSize: 16,
+  },
+  filtersContainer: {
+    paddingHorizontal: 20,
     marginBottom: 20,
+  },
+  filterLabel: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  filterScroll: {
+    flexDirection: 'row',
+  },
+  filterButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    marginRight: 10,
+  },
+  filterButtonActive: {
+    backgroundColor: '#00D4FF',
+  },
+  filterButtonText: {
+    color: '#888',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  filterButtonTextActive: {
+    color: 'white',
+  },
+  quizContainer: {
+    flex: 1,
+  },
+  quizContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 100,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    marginTop: 20,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#888',
+    marginTop: 10,
     textAlign: 'center',
   },
-  quizList: {
-    paddingTop: 20,
-  },
   quizCard: {
-    marginBottom: 16,
-    borderRadius: 16,
+    marginBottom: 15,
+    borderRadius: 15,
     overflow: 'hidden',
   },
-  quizCardGradient: {
+  quizGradient: {
     padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 16,
   },
   quizHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    marginBottom: 15,
+  },
+  quizInfo: {
+    flex: 1,
+    marginRight: 15,
   },
   quizTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: 'white',
-    flex: 1,
+    marginBottom: 5,
+  },
+  quizDescription: {
+    fontSize: 14,
+    color: '#888',
+    lineHeight: 20,
+  },
+  quizMeta: {
+    alignItems: 'flex-end',
   },
   difficultyBadge: {
+    borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
   },
   difficultyText: {
     color: 'white',
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: 'bold',
-  },
-  quizDescription: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 14,
-    marginBottom: 12,
   },
   quizFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  quizCategory: {
-    color: '#00c3ff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  questionCount: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 12,
-  },
-  quizContainer: {
-    paddingTop: 20,
-  },
-  backButton: {
-    padding: 8,
-    marginRight: 12,
-  },
-  progressContainer: {
-    marginBottom: 24,
-  },
-  progressText: {
-    color: 'white',
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 4,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#00c3ff',
-    borderRadius: 4,
-  },
-  questionContainer: {
-    flex: 1,
-  },
-  questionText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  optionsContainer: {
-    marginBottom: 32,
-  },
-  optionButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  selectedOption: {
-    borderColor: '#00c3ff',
-    backgroundColor: 'rgba(0, 195, 255, 0.2)',
-  },
-  optionText: {
-    color: 'white',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  selectedOptionText: {
-    color: '#00c3ff',
-    fontWeight: 'bold',
-  },
-  nextButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  nextButtonGradient: {
-    padding: 16,
-    alignItems: 'center',
-  },
-  nextButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  resultsContainer: {
-    paddingTop: 20,
-  },
-  resultsCard: {
-    padding: 24,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-  },
-  resultsTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 16,
-  },
-  scoreText: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#00c3ff',
-    marginBottom: 8,
-  },
-  percentageText: {
-    fontSize: 24,
-    color: '#ff00ff',
-    marginBottom: 24,
-  },
-  scoreBreakdown: {
-    width: '100%',
-    marginBottom: 24,
-  },
-  breakdownTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 12,
-  },
-  questionReview: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  reviewHeader: {
+  quizStats: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 15,
+  },
+  statItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    gap: 5,
   },
-  reviewQuestionText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  reviewQuestion: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  correctAnswer: {
-    color: '#10b981',
+  statText: {
+    color: '#888',
     fontSize: 12,
-  },
-  restartButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  restartButtonGradient: {
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  restartButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
 });
-
-export default QuizScreen;

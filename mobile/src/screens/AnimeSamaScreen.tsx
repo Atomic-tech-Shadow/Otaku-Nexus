@@ -1,55 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  TextInput,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-interface SearchResult {
+interface AnimeResult {
   id: string;
   title: string;
   url: string;
   type: string;
   status: string;
   image: string;
+  description?: string;
+  genres?: string[];
+  year?: string;
 }
 
-interface AnimeDetails {
-  id: string;
-  title: string;
-  description: string;
-  image: string;
-  genres: string[];
-  status: string;
-  year: string;
-  seasons: Season[];
-  url: string;
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  timestamp: string;
+  meta?: any;
 }
 
-interface Season {
-  number: number;
-  name: string;
-  languages: string[];
-  episodeCount: number;
-  url: string;
-}
-
-interface AnimeSamaScreenProps {
-  navigation: any;
-}
-
-const AnimeSamaScreen: React.FC<AnimeSamaScreenProps> = ({ navigation }) => {
-  const [currentView, setCurrentView] = useState<'search' | 'anime' | 'player'>('search');
+export default function AnimeSamaScreen({ navigation }: any) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [selectedAnime, setSelectedAnime] = useState<AnimeDetails | null>(null);
+  const [searchResults, setSearchResults] = useState<AnimeResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const API_BASE = 'https://api-anime-sama.onrender.com';
 
-  const searchAnimes = async (query: string) => {
+  const searchAnime = async (query: string) => {
     if (query.trim().length < 2) {
       setSearchResults([]);
       return;
@@ -60,439 +55,315 @@ const AnimeSamaScreen: React.FC<AnimeSamaScreenProps> = ({ navigation }) => {
     
     try {
       const response = await fetch(`${API_BASE}/api/search?query=${encodeURIComponent(query)}`);
-      const apiResponse = await response.json();
+      const apiResponse: ApiResponse<AnimeResult[]> = await response.json();
       
       if (!apiResponse.success) {
-        throw new Error(apiResponse.message || 'Erreur de recherche');
+        throw new Error('Erreur lors de la recherche');
       }
-
-      setSearchResults(apiResponse.data || []);
+      
+      setSearchResults(apiResponse.data);
     } catch (err) {
-      console.error('Erreur de recherche:', err);
-      setError('Erreur lors de la recherche. Veuillez réessayer.');
+      console.error('Erreur recherche:', err);
+      setError('Impossible de rechercher les animes. Vérifiez votre connexion.');
       setSearchResults([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const getAnimeDetails = async (animeId: string) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await fetch(`${API_BASE}/api/anime/${animeId}`);
-      const apiResponse = await response.json();
-      
-      if (!apiResponse.success) {
-        throw new Error(apiResponse.message || 'Erreur lors du chargement des détails');
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim()) {
+        searchAnime(searchQuery);
       }
+    }, 500);
 
-      setSelectedAnime(apiResponse.data);
-      setCurrentView('anime');
-    } catch (err) {
-      console.error('Erreur détails anime:', err);
-      setError('Erreur lors du chargement des détails. Veuillez réessayer.');
-    } finally {
-      setLoading(false);
-    }
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  const handleAnimePress = (animeId: string) => {
+    navigation.navigate('AnimeDetail', { animeId });
   };
 
-  const handleSearch = () => {
-    searchAnimes(searchQuery);
-  };
-
-  const renderSearchView = () => (
-    <View style={styles.searchContainer}>
-      <Text style={styles.title}>Anime-Sama Streaming</Text>
-      <Text style={styles.subtitle}>Recherchez et regardez vos animes préférés</Text>
-
-      <View style={styles.searchInputContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Rechercher un anime..."
-          placeholderTextColor="rgba(255, 255, 255, 0.6)"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onSubmitEditing={handleSearch}
-        />
-        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-          <Ionicons name="search" size={20} color="white" />
-        </TouchableOpacity>
-      </View>
-
-      {error && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
+  const renderAnimeCard = (anime: AnimeResult) => (
+    <TouchableOpacity
+      key={anime.id}
+      style={styles.animeCard}
+      onPress={() => handleAnimePress(anime.id)}
+    >
+      <Image
+        source={{ uri: anime.image || 'https://via.placeholder.com/150x200' }}
+        style={styles.animeImage}
+        resizeMode="cover"
+      />
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.8)']}
+        style={styles.animeOverlay}
+      >
+        <Text style={styles.animeTitle} numberOfLines={2}>
+          {anime.title}
+        </Text>
+        <Text style={styles.animeType}>{anime.type}</Text>
+        <View style={styles.animeStatus}>
+          <View style={[
+            styles.statusDot,
+            { backgroundColor: anime.status === 'En cours' ? '#4ECDC4' : '#FFD700' }
+          ]} />
+          <Text style={styles.statusText}>{anime.status}</Text>
         </View>
-      )}
-
-      {loading && (
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Recherche en cours...</Text>
-        </View>
-      )}
-
-      <ScrollView style={styles.resultsContainer} showsVerticalScrollIndicator={false}>
-        {searchResults.map((result) => (
-          <TouchableOpacity
-            key={result.id}
-            style={styles.resultCard}
-            onPress={() => getAnimeDetails(result.id)}
-          >
-            <LinearGradient
-              colors={['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)']}
-              style={styles.resultCardGradient}
-            >
-              <View style={styles.resultContent}>
-                {result.image && (
-                  <Image source={{ uri: result.image }} style={styles.resultImage} />
-                )}
-                <View style={styles.resultInfo}>
-                  <Text style={styles.resultTitle} numberOfLines={2}>{result.title}</Text>
-                  <Text style={styles.resultType}>{result.type}</Text>
-                  <Text style={styles.resultStatus}>{result.status}</Text>
-                </View>
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
+      </LinearGradient>
+    </TouchableOpacity>
   );
-
-  const renderAnimeDetails = () => {
-    if (!selectedAnime) return null;
-
-    return (
-      <View style={styles.animeContainer}>
-        <View style={styles.animeHeader}>
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={() => setCurrentView('search')}
-          >
-            <Ionicons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <Text style={styles.animeTitle} numberOfLines={2}>{selectedAnime.title}</Text>
-        </View>
-
-        <ScrollView style={styles.animeContent} showsVerticalScrollIndicator={false}>
-          {selectedAnime.image && (
-            <Image source={{ uri: selectedAnime.image }} style={styles.animeImage} />
-          )}
-
-          <View style={styles.animeInfo}>
-            <Text style={styles.animeDescription}>{selectedAnime.description}</Text>
-            
-            <View style={styles.animeMetadata}>
-              <Text style={styles.metadataLabel}>Statut:</Text>
-              <Text style={styles.metadataValue}>{selectedAnime.status}</Text>
-            </View>
-
-            <View style={styles.animeMetadata}>
-              <Text style={styles.metadataLabel}>Année:</Text>
-              <Text style={styles.metadataValue}>{selectedAnime.year}</Text>
-            </View>
-
-            {selectedAnime.genres && selectedAnime.genres.length > 0 && (
-              <View style={styles.genresContainer}>
-                <Text style={styles.genresLabel}>Genres:</Text>
-                <View style={styles.genresList}>
-                  {selectedAnime.genres.map((genre, index) => (
-                    <View key={index} style={styles.genreTag}>
-                      <Text style={styles.genreText}>{genre}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
-
-            {selectedAnime.seasons && selectedAnime.seasons.length > 0 && (
-              <View style={styles.seasonsContainer}>
-                <Text style={styles.seasonsLabel}>Saisons disponibles:</Text>
-                {selectedAnime.seasons.map((season) => (
-                  <TouchableOpacity key={season.number} style={styles.seasonCard}>
-                    <LinearGradient
-                      colors={['rgba(0, 195, 255, 0.1)', 'rgba(255, 0, 255, 0.1)']}
-                      style={styles.seasonCardGradient}
-                    >
-                      <View style={styles.seasonInfo}>
-                        <Text style={styles.seasonName}>{season.name}</Text>
-                        <Text style={styles.seasonEpisodes}>{season.episodeCount} épisodes</Text>
-                        <View style={styles.languagesContainer}>
-                          {season.languages.map((lang, index) => (
-                            <View key={index} style={styles.languageTag}>
-                              <Text style={styles.languageText}>{lang}</Text>
-                            </View>
-                          ))}
-                        </View>
-                      </View>
-                      <Ionicons name="play-circle" size={32} color="#00c3ff" />
-                    </LinearGradient>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
-        </ScrollView>
-      </View>
-    );
-  };
 
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
-        colors={['#0a0a0a', '#1a1a1a', '#2a2a2a']}
-        style={styles.backgroundGradient}
+        colors={['#0f0f0f', '#1a1a1a', '#000000']}
+        style={styles.gradient}
       >
-        {currentView === 'search' && renderSearchView()}
-        {currentView === 'anime' && renderAnimeDetails()}
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Anime-Sama</Text>
+          <View style={styles.placeholder} />
+        </View>
+
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputContainer}>
+            <Ionicons name="search" size={20} color="#888" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Rechercher un anime (ex: naruto, one piece...)"
+              placeholderTextColor="#888"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {loading && (
+              <ActivityIndicator
+                size="small"
+                color="#00D4FF"
+                style={styles.loadingIcon}
+              />
+            )}
+          </View>
+        </View>
+
+        {/* Error Message */}
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+
+        {/* Search Instructions */}
+        {!searchQuery && searchResults.length === 0 && !loading && (
+          <View style={styles.instructionsContainer}>
+            <Ionicons name="search" size={64} color="#333" />
+            <Text style={styles.instructionsTitle}>Rechercher un anime</Text>
+            <Text style={styles.instructionsText}>
+              Tapez le nom de l'anime que vous souhaitez regarder
+            </Text>
+            <Text style={styles.examplesText}>
+              Exemples : naruto, one piece, demon slayer, attack on titan
+            </Text>
+          </View>
+        )}
+
+        {/* Search Results */}
+        <ScrollView 
+          style={styles.resultsContainer}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.resultsContent}
+        >
+          {searchResults.length > 0 && (
+            <View style={styles.resultsGrid}>
+              {searchResults.map(renderAnimeCard)}
+            </View>
+          )}
+
+          {/* No Results */}
+          {searchQuery && searchResults.length === 0 && !loading && (
+            <View style={styles.noResultsContainer}>
+              <Ionicons name="sad-outline" size={48} color="#666" />
+              <Text style={styles.noResultsText}>
+                Aucun anime trouvé pour "{searchQuery}"
+              </Text>
+              <Text style={styles.noResultsSubtext}>
+                Essayez avec un autre terme de recherche
+              </Text>
+            </View>
+          )}
+        </ScrollView>
       </LinearGradient>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  backgroundGradient: {
+  gradient: {
     flex: 1,
   },
-  searchContainer: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 20,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
-  title: {
-    fontSize: 28,
+  backButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  headerTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: 'white',
-    textAlign: 'center',
-    marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.7)',
-    textAlign: 'center',
-    marginBottom: 24,
+  placeholder: {
+    width: 40,
+  },
+  searchContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
   },
   searchInputContainer: {
     flexDirection: 'row',
-    marginBottom: 20,
+    alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+  },
+  searchIcon: {
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    color: 'white',
     fontSize: 16,
+    color: 'white',
   },
-  searchButton: {
-    padding: 12,
-    backgroundColor: '#00c3ff',
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+  loadingIcon: {
+    marginLeft: 10,
   },
   errorContainer: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
+    backgroundColor: 'rgba(255, 0, 0, 0.2)',
+    borderColor: 'rgba(255, 0, 0, 0.3)',
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderRadius: 10,
+    margin: 20,
+    padding: 15,
   },
   errorText: {
-    color: '#ef4444',
+    color: '#FF6B6B',
+    fontSize: 14,
     textAlign: 'center',
   },
-  loadingContainer: {
-    padding: 20,
+  instructionsContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 40,
   },
-  loadingText: {
-    color: 'rgba(255, 255, 255, 0.7)',
+  instructionsTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  instructionsText: {
+    fontSize: 16,
+    color: '#888',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  examplesText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
   },
   resultsContainer: {
     flex: 1,
   },
-  resultCard: {
-    marginBottom: 12,
-    borderRadius: 12,
-    overflow: 'hidden',
+  resultsContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
-  resultCardGradient: {
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-  },
-  resultContent: {
-    flexDirection: 'row',
-    padding: 12,
-  },
-  resultImage: {
-    width: 60,
-    height: 80,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  resultInfo: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  resultTitle: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  resultType: {
-    color: '#00c3ff',
-    fontSize: 12,
-    marginBottom: 2,
-  },
-  resultStatus: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 12,
-  },
-  animeContainer: {
-    flex: 1,
-  },
-  animeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  backButton: {
-    padding: 8,
-    marginRight: 12,
-  },
-  animeTitle: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-    flex: 1,
-  },
-  animeContent: {
-    flex: 1,
-  },
-  animeImage: {
-    width: width,
-    height: width * 0.6,
-    resizeMode: 'cover',
-  },
-  animeInfo: {
-    padding: 16,
-  },
-  animeDescription: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  animeMetadata: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  metadataLabel: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 14,
-    fontWeight: '500',
-    width: 80,
-  },
-  metadataValue: {
-    color: 'white',
-    fontSize: 14,
-    flex: 1,
-  },
-  genresContainer: {
-    marginTop: 16,
-  },
-  genresLabel: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  genresList: {
+  resultsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    justifyContent: 'space-between',
   },
-  genreTag: {
-    backgroundColor: 'rgba(0, 195, 255, 0.2)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 195, 255, 0.3)',
-  },
-  genreText: {
-    color: '#00c3ff',
-    fontSize: 12,
-  },
-  seasonsContainer: {
-    marginTop: 24,
-  },
-  seasonsLabel: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  seasonCard: {
-    marginBottom: 12,
-    borderRadius: 12,
+  animeCard: {
+    width: (width - 60) / 2,
+    height: 280,
+    marginBottom: 20,
+    borderRadius: 15,
     overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
-  seasonCardGradient: {
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
+  animeImage: {
+    width: '100%',
+    height: '70%',
   },
-  seasonInfo: {
-    flex: 1,
+  animeOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 10,
   },
-  seasonName: {
-    color: 'white',
-    fontSize: 16,
+  animeTitle: {
+    fontSize: 14,
     fontWeight: 'bold',
+    color: 'white',
     marginBottom: 4,
   },
-  seasonEpisodes: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
-    marginBottom: 8,
+  animeType: {
+    fontSize: 12,
+    color: '#00D4FF',
+    marginBottom: 4,
   },
-  languagesContainer: {
+  animeStatus: {
     flexDirection: 'row',
-    gap: 6,
+    alignItems: 'center',
   },
-  languageTag: {
-    backgroundColor: 'rgba(255, 0, 255, 0.2)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 0, 255, 0.3)',
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
   },
-  languageText: {
-    color: '#ff00ff',
+  statusText: {
     fontSize: 10,
-    fontWeight: '500',
+    color: '#888',
+  },
+  noResultsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 100,
+  },
+  noResultsText: {
+    fontSize: 18,
+    color: 'white',
+    marginTop: 20,
+    textAlign: 'center',
+  },
+  noResultsSubtext: {
+    fontSize: 14,
+    color: '#888',
+    marginTop: 10,
+    textAlign: 'center',
   },
 });
-
-export default AnimeSamaScreen;

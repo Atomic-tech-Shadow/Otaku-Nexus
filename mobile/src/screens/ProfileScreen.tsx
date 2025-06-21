@@ -1,62 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   ScrollView,
   TouchableOpacity,
-  StyleSheet,
   Image,
-  TextInput,
   Alert,
-  ActivityIndicator,
+  Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '../hooks/useAuth';
-import { apiService } from '../services/api';
+import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const { width } = Dimensions.get('window');
 
 export default function ProfileScreen({ navigation }: any) {
-  const { user, updateUser, logout } = useAuth();
-  const [editing, setEditing] = useState(false);
-  const [firstName, setFirstName] = useState(user?.firstName || '');
-  const [lastName, setLastName] = useState(user?.lastName || '');
-  const [bio, setBio] = useState(user?.bio || '');
-  const [loading, setLoading] = useState(false);
-  const [userStats, setUserStats] = useState({
-    totalQuizzes: 0,
-    totalAnime: 0,
-    totalXP: 0,
-    rank: 0,
+  const { data: userStats = { totalQuizzes: 0, totalAnime: 0, totalXP: 0, rank: 0 } } = useQuery<{
+    totalQuizzes: number;
+    totalAnime: number;
+    totalXP: number;
+    rank: number;
+  }>({
+    queryKey: ["/api/user/stats"],
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
   });
 
-  useEffect(() => {
-    loadUserStats();
-  }, []);
+  const { data: favorites = [] } = useQuery<any[]>({
+    queryKey: ["/api/favorites"],
+    staleTime: 10 * 60 * 1000,
+    retry: 2,
+  });
 
-  const loadUserStats = async () => {
-    try {
-      const stats = await apiService.getUserStats();
-      setUserStats(stats);
-    } catch (error) {
-      console.error('Error loading user stats:', error);
-    }
-  };
-
-  const handleSave = async () => {
-    setLoading(true);
-    try {
-      const updatedUser = await apiService.updateProfile({
-        firstName,
-        lastName,
-        bio,
-      });
-      updateUser(updatedUser);
-      setEditing(false);
-      Alert.alert('Succès', 'Profil mis à jour avec succès');
-    } catch (error: any) {
-      Alert.alert('Erreur', error.message || 'Impossible de mettre à jour le profil');
-    } finally {
-      setLoading(false);
-    }
+  // Mock user data - in real app, this would come from auth context
+  const user = {
+    firstName: 'Otaku',
+    lastName: 'User',
+    email: 'user@otaku.com',
+    profileImageUrl: null,
+    isAdmin: false,
   };
 
   const handleLogout = async () => {
@@ -64,438 +49,385 @@ export default function ProfileScreen({ navigation }: any) {
       'Déconnexion',
       'Êtes-vous sûr de vouloir vous déconnecter ?',
       [
-        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Annuler',
+          style: 'cancel',
+        },
         {
           text: 'Déconnexion',
           style: 'destructive',
           onPress: async () => {
-            await logout();
-            navigation.replace('Auth');
-          }
-        }
+            try {
+              await AsyncStorage.clear();
+              navigation.navigate('Auth');
+            } catch (error) {
+              console.error('Erreur lors de la déconnexion:', error);
+            }
+          },
+        },
       ]
     );
   };
 
-  const getLevel = (xp: number) => {
-    return Math.floor(xp / 100) + 1;
+  const getRankBadge = (rank: number) => {
+    if (rank <= 3) return { icon: 'trophy', color: '#FFD700', text: 'Légende' };
+    if (rank <= 10) return { icon: 'medal', color: '#C0C0C0', text: 'Expert' };
+    if (rank <= 50) return { icon: 'ribbon', color: '#CD7F32', text: 'Avancé' };
+    return { icon: 'star', color: '#00D4FF', text: 'Novice' };
   };
 
-  const getXPForNextLevel = (xp: number) => {
-    const currentLevel = getLevel(xp);
-    return currentLevel * 100;
-  };
-
-  const getXPProgress = (xp: number) => {
-    const currentLevelXP = (getLevel(xp) - 1) * 100;
-    const nextLevelXP = getLevel(xp) * 100;
-    return ((xp - currentLevelXP) / (nextLevelXP - currentLevelXP)) * 100;
-  };
+  const rankBadge = getRankBadge(userStats.rank);
 
   return (
-    <ScrollView style={styles.container}>
-      <LinearGradient
-        colors={['#9b59b6', '#8e44ad']}
-        style={styles.header}
-      >
-        <View style={styles.profileSection}>
-          <View style={styles.avatarContainer}>
-            {user?.profileImageUrl ? (
-              <Image 
-                source={{ uri: user.profileImageUrl }} 
-                style={styles.avatar}
-                onError={() => {
-                  // Handle image load error by showing initials
-                  console.log('Profile image failed to load, showing initials');
-                }}
-              />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarText}>
-                  {(user?.firstName?.[0] || user?.email?.[0] || 'U').toUpperCase()}
-                </Text>
-              </View>
-            )}
-          </View>
-          
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>
-              {user?.firstName && user?.lastName 
-                ? `${user.firstName} ${user.lastName}`
-                : user?.email
-              }
-            </Text>
-            <Text style={styles.userEmail}>{user?.email}</Text>
-            
-            <View style={styles.levelContainer}>
-              <Text style={styles.levelText}>
-                Niveau {getLevel(user?.xp || 0)}
-              </Text>
-              <View style={styles.xpBar}>
-                <View 
-                  style={[
-                    styles.xpProgress, 
-                    { width: `${getXPProgress(user?.xp || 0)}%` }
-                  ]} 
-                />
-              </View>
-              <Text style={styles.xpText}>
-                {user?.xp || 0} / {getXPForNextLevel(user?.xp || 0)} XP
-              </Text>
-            </View>
-          </View>
-        </View>
-      </LinearGradient>
-
-      <View style={styles.content}>
-        {/* Statistiques */}
-        <View style={styles.statsContainer}>
-          <Text style={styles.sectionTitle}>Statistiques</Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{userStats.totalQuizzes}</Text>
-              <Text style={styles.statLabel}>Quiz complétés</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{userStats.totalAnime}</Text>
-              <Text style={styles.statLabel}>Anime favoris</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{userStats.totalXP}</Text>
-              <Text style={styles.statLabel}>XP total</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>#{userStats.rank}</Text>
-              <Text style={styles.statLabel}>Classement</Text>
-            </View>
-          </View>
+    <SafeAreaView style={styles.container}>
+      <LinearGradient colors={['#0f0f0f', '#1a1a1a', '#000000']} style={styles.gradient}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Profil</Text>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => navigation.navigate('EditProfile')}
+          >
+            <Ionicons name="create" size={20} color="#00D4FF" />
+          </TouchableOpacity>
         </View>
 
-        {/* Informations personnelles */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Informations personnelles</Text>
-            <TouchableOpacity
-              onPress={() => editing ? handleSave() : setEditing(true)}
-              disabled={loading}
-              style={styles.editButton}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#3498db" />
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* Profile Info */}
+          <View style={styles.profileSection}>
+            <View style={styles.avatarContainer}>
+              {user.profileImageUrl ? (
+                <Image source={{ uri: user.profileImageUrl }} style={styles.avatar} />
               ) : (
-                <Text style={styles.editButtonText}>
-                  {editing ? 'Sauvegarder' : 'Modifier'}
-                </Text>
+                <View style={styles.avatarPlaceholder}>
+                  <Text style={styles.avatarText}>
+                    {user.firstName?.[0]}{user.lastName?.[0]}
+                  </Text>
+                </View>
               )}
+              <View style={[styles.rankBadgeContainer, { backgroundColor: rankBadge.color }]}>
+                <Ionicons name={rankBadge.icon as any} size={16} color="white" />
+              </View>
+            </View>
+            
+            <Text style={styles.userName}>
+              {user.firstName} {user.lastName}
+            </Text>
+            <Text style={styles.userEmail}>{user.email}</Text>
+            
+            <View style={styles.rankContainer}>
+              <Text style={styles.rankText}>{rankBadge.text}</Text>
+              <Text style={styles.rankNumber}>Rang #{userStats.rank}</Text>
+            </View>
+          </View>
+
+          {/* Stats */}
+          <View style={styles.statsSection}>
+            <Text style={styles.sectionTitle}>Statistiques</Text>
+            <View style={styles.statsGrid}>
+              <View style={styles.statCard}>
+                <LinearGradient
+                  colors={['#667eea', '#764ba2']}
+                  style={styles.statGradient}
+                >
+                  <Ionicons name="trophy" size={32} color="white" />
+                  <Text style={styles.statNumber}>{userStats.totalXP}</Text>
+                  <Text style={styles.statLabel}>XP Total</Text>
+                </LinearGradient>
+              </View>
+              
+              <View style={styles.statCard}>
+                <LinearGradient
+                  colors={['#f093fb', '#f5576c']}
+                  style={styles.statGradient}
+                >
+                  <Ionicons name="brain" size={32} color="white" />
+                  <Text style={styles.statNumber}>{userStats.totalQuizzes}</Text>
+                  <Text style={styles.statLabel}>Quiz Réussis</Text>
+                </LinearGradient>
+              </View>
+              
+              <View style={styles.statCard}>
+                <LinearGradient
+                  colors={['#4facfe', '#00f2fe']}
+                  style={styles.statGradient}
+                >
+                  <Ionicons name="play" size={32} color="white" />
+                  <Text style={styles.statNumber}>{userStats.totalAnime}</Text>
+                  <Text style={styles.statLabel}>Animes Vus</Text>
+                </LinearGradient>
+              </View>
+              
+              <View style={styles.statCard}>
+                <LinearGradient
+                  colors={['#a8edea', '#fed6e3']}
+                  style={styles.statGradient}
+                >
+                  <Ionicons name="heart" size={32} color="white" />
+                  <Text style={styles.statNumber}>{favorites.length}</Text>
+                  <Text style={styles.statLabel}>Favoris</Text>
+                </LinearGradient>
+              </View>
+            </View>
+          </View>
+
+          {/* Quick Actions */}
+          <View style={styles.actionsSection}>
+            <Text style={styles.sectionTitle}>Actions rapides</Text>
+            
+            <TouchableOpacity 
+              style={styles.actionItem}
+              onPress={() => navigation.navigate('EditProfile')}
+            >
+              <View style={styles.actionIcon}>
+                <Ionicons name="person" size={20} color="#00D4FF" />
+              </View>
+              <View style={styles.actionContent}>
+                <Text style={styles.actionTitle}>Modifier le profil</Text>
+                <Text style={styles.actionSubtitle}>Changer votre photo et vos informations</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#888" />
             </TouchableOpacity>
-          </View>
 
-          <View style={styles.formContainer}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Prénom</Text>
-              <TextInput
-                style={[styles.input, !editing && styles.inputDisabled]}
-                value={firstName}
-                onChangeText={setFirstName}
-                placeholder="Votre prénom"
-                editable={editing}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Nom</Text>
-              <TextInput
-                style={[styles.input, !editing && styles.inputDisabled]}
-                value={lastName}
-                onChangeText={setLastName}
-                placeholder="Votre nom"
-                editable={editing}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Bio</Text>
-              <TextInput
-                style={[styles.textArea, !editing && styles.inputDisabled]}
-                value={bio}
-                onChangeText={setBio}
-                placeholder="Parlez-nous de vous..."
-                multiline
-                numberOfLines={4}
-                editable={editing}
-              />
-            </View>
-
-            {editing && (
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => {
-                  setEditing(false);
-                  setFirstName(user?.firstName || '');
-                  setLastName(user?.lastName || '');
-                  setBio(user?.bio || '');
-                }}
-              >
-                <Text style={styles.cancelButtonText}>Annuler</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
-        {/* Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Actions</Text>
-          <View style={styles.actionsList}>
-            <TouchableOpacity
+            <TouchableOpacity 
               style={styles.actionItem}
               onPress={() => navigation.navigate('Quiz')}
             >
-              <Text style={styles.actionText}>Mes résultats de quiz</Text>
-              <Text style={styles.actionArrow}>→</Text>
+              <View style={styles.actionIcon}>
+                <Ionicons name="brain" size={20} color="#00D4FF" />
+              </View>
+              <View style={styles.actionContent}>
+                <Text style={styles.actionTitle}>Mes quiz</Text>
+                <Text style={styles.actionSubtitle}>Voir l'historique de vos quiz</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#888" />
             </TouchableOpacity>
-            
-            <TouchableOpacity
+
+            <TouchableOpacity 
               style={styles.actionItem}
-              onPress={() => navigation.navigate('Anime')}
+              onPress={() => navigation.navigate('AnimeSama')}
             >
-              <Text style={styles.actionText}>Mes anime favoris</Text>
-              <Text style={styles.actionArrow}>→</Text>
+              <View style={styles.actionIcon}>
+                <Ionicons name="play" size={20} color="#00D4FF" />
+              </View>
+              <View style={styles.actionContent}>
+                <Text style={styles.actionTitle}>Mes animes</Text>
+                <Text style={styles.actionSubtitle}>Gérer votre liste d'animes</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#888" />
             </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.actionItem, styles.logoutAction]}
-              onPress={handleLogout}
+
+            <TouchableOpacity 
+              style={styles.actionItem}
+              onPress={() => Alert.alert('Paramètres', 'Fonctionnalité à venir')}
             >
-              <Text style={[styles.actionText, styles.logoutText]}>
-                Se déconnecter
-              </Text>
-              <Text style={[styles.actionArrow, styles.logoutText]}>→</Text>
+              <View style={styles.actionIcon}>
+                <Ionicons name="settings" size={20} color="#00D4FF" />
+              </View>
+              <View style={styles.actionContent}>
+                <Text style={styles.actionTitle}>Paramètres</Text>
+                <Text style={styles.actionSubtitle}>Notifications, confidentialité</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#888" />
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
-    </ScrollView>
+
+          {/* Logout */}
+          <View style={styles.logoutSection}>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <Ionicons name="log-out" size={20} color="#FF6B6B" />
+              <Text style={styles.logoutText}>Se déconnecter</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </LinearGradient>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
-  header: {
-    paddingTop: 60,
-    paddingBottom: 30,
-    paddingHorizontal: 20,
-  },
-  profileSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarContainer: {
-    marginRight: 16,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-  },
-  avatarPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  userInfo: {
+  gradient: {
     flex: 1,
   },
-  userName: {
-    fontSize: 22,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  headerTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 4,
+    color: 'white',
+  },
+  editButton: {
+    padding: 8,
+  },
+  profileSection: {
+    alignItems: 'center',
+    paddingVertical: 30,
+  },
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: 15,
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  avatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#00D4FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  rankBadgeContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#000',
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 5,
   },
   userEmail: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 12,
-  },
-  levelContainer: {
-    alignItems: 'flex-start',
-  },
-  levelText: {
     fontSize: 16,
+    color: '#888',
+    marginBottom: 15,
+  },
+  rankContainer: {
+    alignItems: 'center',
+  },
+  rankText: {
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 8,
+    color: '#00D4FF',
   },
-  xpBar: {
-    width: '100%',
-    height: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderRadius: 3,
-    marginBottom: 4,
+  rankNumber: {
+    fontSize: 14,
+    color: '#888',
   },
-  xpProgress: {
-    height: '100%',
-    backgroundColor: '#f1c40f',
-    borderRadius: 3,
-  },
-  xpText: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.9)',
-  },
-  content: {
-    padding: 20,
-  },
-  statsContainer: {
-    marginBottom: 24,
+  statsSection: {
+    paddingHorizontal: 20,
+    marginBottom: 30,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 16,
+    color: 'white',
+    marginBottom: 15,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    justifyContent: 'space-between',
   },
   statCard: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
+    width: (width - 60) / 2,
+    marginBottom: 15,
+    borderRadius: 15,
+    overflow: 'hidden',
+  },
+  statGradient: {
+    padding: 20,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   statNumber: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#3498db',
-    marginBottom: 4,
+    color: 'white',
+    marginTop: 10,
+    marginBottom: 5,
   },
   statLabel: {
     fontSize: 12,
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
   },
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  editButton: {
-    backgroundColor: '#3498db',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  editButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  formContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: '#333',
-  },
-  inputDisabled: {
-    backgroundColor: '#f5f5f5',
-    color: '#666',
-  },
-  textArea: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: '#333',
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  cancelButton: {
-    backgroundColor: '#95a5a6',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  cancelButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  actionsList: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  actionsSection: {
+    paddingHorizontal: 20,
+    marginBottom: 30,
   },
   actionItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 10,
   },
-  actionText: {
+  actionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 212, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  actionContent: {
+    flex: 1,
+  },
+  actionTitle: {
     fontSize: 16,
-    color: '#333',
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 2,
   },
-  actionArrow: {
-    fontSize: 16,
-    color: '#666',
+  actionSubtitle: {
+    fontSize: 12,
+    color: '#888',
   },
-  logoutAction: {
-    borderBottomWidth: 0,
+  logoutSection: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    borderRadius: 15,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 107, 107, 0.3)',
   },
   logoutText: {
-    color: '#e74c3c',
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FF6B6B',
+    marginLeft: 10,
   },
 });

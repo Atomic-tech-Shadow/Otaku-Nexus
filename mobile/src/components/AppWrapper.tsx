@@ -1,60 +1,102 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 
+// Import screens
 import HomeScreen from '../screens/HomeScreen';
+import QuizScreen from '../screens/QuizScreen';
+import ChatScreen from '../screens/ChatScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import AnimeSamaScreen from '../screens/AnimeSamaScreen';
+import AnimeDetailScreen from '../screens/AnimeDetailScreen';
+import AnimeScreen from '../screens/AnimeScreen';
+import VideosScreen from '../screens/VideosScreen';
+import AuthScreen from '../screens/AuthScreen';
+import AdminScreen from '../screens/AdminScreen';
 
-interface AppWrapperProps {
-  children?: React.ReactNode;
+import { queryClient } from '../services/queryClient';
+
+const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
+
+function TabNavigator() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: any;
+
+          if (route.name === 'Home') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'Quiz') {
+            iconName = focused ? 'brain' : 'brain-outline';
+          } else if (route.name === 'Chat') {
+            iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
+          } else if (route.name === 'Profile') {
+            iconName = focused ? 'person' : 'person-outline';
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: '#00D4FF',
+        tabBarInactiveTintColor: 'gray',
+        tabBarStyle: {
+          backgroundColor: '#1a1a1a',
+          borderTopColor: '#333',
+          height: 90,
+          paddingBottom: 10,
+          paddingTop: 10,
+        },
+        headerShown: false,
+      })}
+    >
+      <Tab.Screen 
+        name="Home" 
+        component={HomeScreen} 
+        options={{ tabBarLabel: 'Accueil' }}
+      />
+      <Tab.Screen 
+        name="Quiz" 
+        component={QuizScreen} 
+        options={{ tabBarLabel: 'Quiz' }}
+      />
+      <Tab.Screen 
+        name="Chat" 
+        component={ChatScreen} 
+        options={{ tabBarLabel: 'Chat' }}
+      />
+      <Tab.Screen 
+        name="Profile" 
+        component={ProfileScreen} 
+        options={{ tabBarLabel: 'Profil' }}
+      />
+    </Tab.Navigator>
+  );
 }
 
-// Mock user data for demonstration
-const mockUser = {
-  id: '1',
-  firstName: 'Otaku',
-  username: 'otaku_user',
-  profileImageUrl: null,
-  level: 5,
-  xp: 1250,
-  isAdmin: false,
-};
-
-const mockUserStats = {
-  totalAnime: 42,
-  totalQuizzes: 15,
-  totalXP: 1250,
-  rank: 8,
-};
-
-const AppWrapper: React.FC<AppWrapperProps> = ({ children }) => {
-  // Simple navigation mock
-  const mockNavigation = {
-    navigate: (screen: string) => {
-      console.log(`Navigate to: ${screen}`);
-    },
-  };
-
+export default function AppWrapper() {
   return (
-    <SafeAreaProvider>
-      <LinearGradient
-        colors={['#1a1a2e', '#16213e', '#0f3460']}
-        style={styles.container}
-      >
-        <HomeScreen 
-          navigation={mockNavigation}
-          user={mockUser}
-          userStats={mockUserStats}
-        />
-      </LinearGradient>
-    </SafeAreaProvider>
+    <QueryClientProvider client={queryClient}>
+      <SafeAreaProvider>
+        <NavigationContainer>
+          <Stack.Navigator 
+            initialRouteName="Main"
+            screenOptions={{ headerShown: false }}
+          >
+            <Stack.Screen name="Main" component={TabNavigator} />
+            <Stack.Screen name="Auth" component={AuthScreen} />
+            <Stack.Screen name="AnimeSama" component={AnimeSamaScreen} />
+            <Stack.Screen name="AnimeDetail" component={AnimeDetailScreen} />
+            <Stack.Screen name="Anime" component={AnimeScreen} />
+            <Stack.Screen name="Videos" component={VideosScreen} />
+            <Stack.Screen name="Admin" component={AdminScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </QueryClientProvider>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
-
-export default AppWrapper;
+}

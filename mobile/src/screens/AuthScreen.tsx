@@ -2,131 +2,221 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
+  Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '../hooks/useAuth';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const { width } = Dimensions.get('window');
 
 export default function AuthScreen({ navigation }: any) {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+  });
   const [loading, setLoading] = useState(false);
 
-  const { login, register } = useAuth();
+  const handleAuth = async () => {
+    if (!formData.email || !formData.password) {
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs requis.');
+      return;
+    }
 
-  const handleSubmit = async () => {
-    if (!email || !password) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs requis');
+    if (!isLogin && (!formData.firstName || !formData.lastName)) {
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
       return;
     }
 
     setLoading(true);
+
     try {
-      if (isLogin) {
-        await login({ email, password });
+      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+      const body = isLogin 
+        ? { email: formData.email, password: formData.password }
+        : formData;
+
+      const response = await fetch(`http://localhost:5000${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(body),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Store auth state
+        await AsyncStorage.setItem('isAuthenticated', 'true');
+        if (data.user) {
+          await AsyncStorage.setItem('user', JSON.stringify(data.user));
+        }
+
+        navigation.navigate('Main');
       } else {
-        await register({ email, password, firstName, lastName });
+        const errorData = await response.json();
+        Alert.alert('Erreur', errorData.message || 'Une erreur est survenue.');
       }
-      navigation.replace('Home');
-    } catch (error: any) {
-      Alert.alert('Erreur', error.message || 'Une erreur est survenue');
+    } catch (error) {
+      console.error('Auth error:', error);
+      Alert.alert('Erreur', 'Impossible de se connecter au serveur.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSkip = async () => {
+    // For demo purposes, allow skipping auth
+    await AsyncStorage.setItem('isAuthenticated', 'true');
+    await AsyncStorage.setItem('user', JSON.stringify({
+      id: 'demo',
+      email: 'demo@otaku.com',
+      firstName: 'Demo',
+      lastName: 'User'
+    }));
+    navigation.navigate('Main');
+  };
+
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <LinearGradient
-        colors={['#1a1a2e', '#16213e', '#0f3460']}
-        style={styles.gradient}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+    <SafeAreaView style={styles.container}>
+      <LinearGradient colors={['#0f0f0f', '#1a1a1a', '#000000']} style={styles.gradient}>
+        <KeyboardAvoidingView 
+          style={styles.content}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Otaku App</Text>
+            <Text style={styles.title}>Otaku Nexus</Text>
             <Text style={styles.subtitle}>
-              {isLogin ? 'Connectez-vous' : 'Créez votre compte'}
+              {isLogin ? 'Connectez-vous à votre compte' : 'Créez votre compte otaku'}
             </Text>
           </View>
 
+          {/* Form */}
           <View style={styles.form}>
             {!isLogin && (
-              <>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Prénom"
-                  placeholderTextColor="#888"
-                  value={firstName}
-                  onChangeText={setFirstName}
-                  autoCapitalize="words"
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Nom"
-                  placeholderTextColor="#888"
-                  value={lastName}
-                  onChangeText={setLastName}
-                  autoCapitalize="words"
-                />
-              </>
+              <View style={styles.nameRow}>
+                <View style={styles.nameInput}>
+                  <Ionicons name="person-outline" size={20} color="#888" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Prénom"
+                    placeholderTextColor="#888"
+                    value={formData.firstName}
+                    onChangeText={(text) => setFormData(prev => ({ ...prev, firstName: text }))}
+                  />
+                </View>
+                <View style={styles.nameInput}>
+                  <Ionicons name="person-outline" size={20} color="#888" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Nom"
+                    placeholderTextColor="#888"
+                    value={formData.lastName}
+                    onChangeText={(text) => setFormData(prev => ({ ...prev, lastName: text }))}
+                  />
+                </View>
+              </View>
             )}
-            
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor="#888"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            
-            <TextInput
-              style={styles.input}
-              placeholder="Mot de passe"
-              placeholderTextColor="#888"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
+
+            <View style={styles.inputContainer}>
+              <Ionicons name="mail-outline" size={20} color="#888" style={styles.inputIcon} />
+              <TextInput
+                style={styles.textInput}
+                placeholder="Email"
+                placeholderTextColor="#888"
+                value={formData.email}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, email: text }))}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
+              <TextInput
+                style={styles.textInput}
+                placeholder="Mot de passe"
+                placeholderTextColor="#888"
+                value={formData.password}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, password: text }))}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity
+                style={styles.passwordToggle}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Ionicons 
+                  name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                  size={20} 
+                  color="#888" 
+                />
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleSubmit}
+              style={[styles.authButton, loading && styles.authButtonDisabled]}
+              onPress={handleAuth}
               disabled={loading}
             >
-              <Text style={styles.buttonText}>
-                {loading ? 'Chargement...' : (isLogin ? 'Se connecter' : 'S\'inscrire')}
-              </Text>
+              <LinearGradient
+                colors={['#667eea', '#764ba2']}
+                style={styles.authGradient}
+              >
+                <Text style={styles.authButtonText}>
+                  {loading ? 'Chargement...' : (isLogin ? 'Se connecter' : 'S\'inscrire')}
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.switchButton}
-              onPress={() => setIsLogin(!isLogin)}
-            >
+            <View style={styles.switchContainer}>
               <Text style={styles.switchText}>
-                {isLogin 
-                  ? 'Pas de compte ? Inscrivez-vous' 
-                  : 'Déjà un compte ? Connectez-vous'
-                }
+                {isLogin ? 'Pas encore de compte ?' : 'Déjà un compte ?'}
               </Text>
+              <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
+                <Text style={styles.switchLink}>
+                  {isLogin ? 'S\'inscrire' : 'Se connecter'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Demo Skip */}
+            <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+              <Text style={styles.skipText}>Continuer en mode démo</Text>
             </TouchableOpacity>
           </View>
-        </ScrollView>
+
+          {/* Features */}
+          <View style={styles.features}>
+            <View style={styles.feature}>
+              <Ionicons name="play-circle" size={24} color="#00D4FF" />
+              <Text style={styles.featureText}>Streaming anime</Text>
+            </View>
+            <View style={styles.feature}>
+              <Ionicons name="brain" size={24} color="#FF6B6B" />
+              <Text style={styles.featureText}>Quiz otaku</Text>
+            </View>
+            <View style={styles.feature}>
+              <Ionicons name="chatbubbles" size={24} color="#4ECDC4" />
+              <Text style={styles.featureText}>Chat communauté</Text>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </LinearGradient>
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -137,10 +227,10 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
+  content: {
+    flex: 1,
     justifyContent: 'center',
-    padding: 20,
+    paddingHorizontal: 30,
   },
   header: {
     alignItems: 'center',
@@ -149,47 +239,105 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 8,
+    color: 'white',
+    marginBottom: 10,
   },
   subtitle: {
     fontSize: 16,
-    color: '#ccc',
+    color: '#888',
+    textAlign: 'center',
   },
   form: {
-    width: '100%',
+    marginBottom: 30,
   },
-  input: {
+  nameRow: {
+    flexDirection: 'row',
+    gap: 15,
+    marginBottom: 20,
+  },
+  nameInput: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    color: '#fff',
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    paddingVertical: 15,
   },
-  button: {
-    backgroundColor: '#e74c3c',
-    borderRadius: 12,
-    padding: 16,
+  inputContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    paddingVertical: 15,
+    marginBottom: 20,
   },
-  buttonDisabled: {
-    opacity: 0.6,
+  inputIcon: {
+    marginRight: 10,
   },
-  buttonText: {
-    color: '#fff',
+  textInput: {
+    flex: 1,
     fontSize: 16,
+    color: 'white',
+  },
+  passwordToggle: {
+    padding: 5,
+  },
+  authButton: {
+    marginBottom: 20,
+    borderRadius: 25,
+    overflow: 'hidden',
+  },
+  authButtonDisabled: {
+    opacity: 0.7,
+  },
+  authGradient: {
+    paddingVertical: 18,
+    alignItems: 'center',
+  },
+  authButtonText: {
+    fontSize: 18,
     fontWeight: 'bold',
+    color: 'white',
   },
-  switchButton: {
-    marginTop: 20,
+  switchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 20,
   },
   switchText: {
-    color: '#ccc',
+    color: '#888',
     fontSize: 14,
+    marginRight: 5,
+  },
+  switchLink: {
+    color: '#00D4FF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  skipButton: {
+    alignItems: 'center',
+    paddingVertical: 15,
+  },
+  skipText: {
+    color: '#666',
+    fontSize: 14,
+    textDecorationLine: 'underline',
+  },
+  features: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingTop: 20,
+  },
+  feature: {
+    alignItems: 'center',
+  },
+  featureText: {
+    color: '#888',
+    fontSize: 12,
+    marginTop: 5,
+    textAlign: 'center',
   },
 });

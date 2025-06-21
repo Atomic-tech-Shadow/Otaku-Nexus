@@ -1,361 +1,332 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Dimensions,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigation } from '@react-navigation/native';
 
-interface UserStats {
-  totalAnime: number;
-  totalQuizzes: number;
-  totalXP: number;
-  rank: number;
-}
+const { width } = Dimensions.get('window');
 
 interface HomeScreenProps {
   navigation: any;
-  user: any;
-  userStats: UserStats;
 }
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, user, userStats }) => {
-  const handleNavigateToChat = () => {
-    navigation.navigate('Chat');
+export default function HomeScreen({ navigation }: HomeScreenProps) {
+  const { data: userStats = {}, isLoading: statsLoading } = useQuery({
+    queryKey: ["/api/user/stats"],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+  });
+
+  const { data: featuredQuiz, isLoading: quizLoading } = useQuery({
+    queryKey: ["/api/quizzes/featured"],
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    retry: 2,
+  });
+
+  const { data: topUsers = [], isLoading: leaderboardLoading } = useQuery({
+    queryKey: ["/api/users/leaderboard"],
+    staleTime: 30 * 1000, // 30 seconds
+    retry: 2,
+    refetchInterval: 60 * 1000, // Actualise toutes les minutes
+  });
+
+  const handleAnimePress = () => {
+    navigation.navigate('AnimeSama');
   };
 
-  const handleNavigateToQuiz = () => {
+  const handleQuizPress = () => {
     navigation.navigate('Quiz');
   };
 
-  const handleNavigateToAnimeSama = () => {
-    navigation.navigate('AnimeSama');
+  const handleChatPress = () => {
+    navigation.navigate('Chat');
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
-        colors={['#1a1a2e', '#16213e', '#0f3460']}
-        style={styles.backgroundGradient}
+        colors={['#0f0f0f', '#1a1a1a', '#000000']}
+        style={styles.gradient}
       >
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <ScrollView showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.appTitle}>Otaku Nexus</Text>
-            <View style={styles.userInfo}>
-              <View style={styles.avatar}>
-                {user?.profileImageUrl ? (
-                  <Image source={{ uri: user.profileImageUrl }} style={styles.avatarImage} />
-                ) : (
-                  <Text style={styles.avatarText}>
-                    {(user?.firstName || user?.username || 'U').charAt(0).toUpperCase()}
-                  </Text>
-                )}
-              </View>
-              <View style={styles.userDetails}>
-                <Text style={styles.userName}>
-                  {user?.firstName || user?.username || 'Anonymous Otaku'}
-                </Text>
-                <View style={styles.levelContainer}>
-                  <Text style={styles.level}>Niv {user?.level || 1}</Text>
-                  <View style={styles.xpBar}>
-                    <View style={[styles.xpProgress, { width: '65%' }]} />
-                  </View>
-                  <Text style={styles.xp}>{user?.xp || 0}</Text>
-                </View>
-              </View>
+            <View>
+              <Text style={styles.welcomeText}>Bienvenue sur</Text>
+              <Text style={styles.titleText}>Otaku Nexus</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.profileButton}
+              onPress={() => navigation.navigate('Profile')}
+            >
+              <Ionicons name="person-circle" size={40} color="#00D4FF" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Stats Cards */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statsCard}>
+              <Ionicons name="trophy" size={24} color="#FFD700" />
+              <Text style={styles.statsNumber}>{userStats.totalXP || 0}</Text>
+              <Text style={styles.statsLabel}>XP Total</Text>
+            </View>
+            <View style={styles.statsCard}>
+              <Ionicons name="brain" size={24} color="#FF6B6B" />
+              <Text style={styles.statsNumber}>{userStats.totalQuizzes || 0}</Text>
+              <Text style={styles.statsLabel}>Quiz Complétés</Text>
+            </View>
+            <View style={styles.statsCard}>
+              <Ionicons name="play" size={24} color="#4ECDC4" />
+              <Text style={styles.statsNumber}>{userStats.totalAnime || 0}</Text>
+              <Text style={styles.statsLabel}>Animes Vus</Text>
             </View>
           </View>
 
-          {/* Welcome Section */}
-          <View style={styles.welcomeSection}>
-            <LinearGradient
-              colors={['rgba(0, 255, 255, 0.1)', 'rgba(255, 0, 255, 0.1)']}
-              style={styles.welcomeCard}
-            >
-              <Text style={styles.welcomeTitle}>
-                Welcome back, {user?.firstName || user?.username || 'Otaku'}!
-              </Text>
-              <Text style={styles.welcomeSubtitle}>Ready to explore the anime universe?</Text>
-              <View style={styles.statsContainer}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{userStats?.totalAnime || 0}</Text>
-                  <Text style={styles.statLabel}>Anime</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{userStats?.totalQuizzes || 0}</Text>
-                  <Text style={styles.statLabel}>Quizzes</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{userStats?.totalXP || 0}</Text>
-                  <Text style={styles.statLabel}>XP</Text>
-                </View>
-              </View>
-            </LinearGradient>
-          </View>
-
-          {/* Quick Actions */}
-          <View style={styles.quickActions}>
-            <TouchableOpacity onPress={handleNavigateToChat} style={styles.actionButton}>
+          {/* Main Actions */}
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity style={styles.actionCard} onPress={handleAnimePress}>
               <LinearGradient
-                colors={['#00c3ff', '#ff00ff']}
-                style={styles.actionButtonGradient}
+                colors={['#667eea', '#764ba2']}
+                style={styles.actionGradient}
               >
-                <Ionicons name="chatbubbles" size={24} color="white" />
-                <Text style={styles.actionButtonText}>Chat</Text>
+                <Ionicons name="play-circle" size={48} color="white" />
+                <Text style={styles.actionTitle}>Anime-Sama</Text>
+                <Text style={styles.actionSubtitle}>Regarder des animes en streaming</Text>
               </LinearGradient>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={handleNavigateToQuiz} style={styles.actionButton}>
+            <TouchableOpacity style={styles.actionCard} onPress={handleQuizPress}>
               <LinearGradient
-                colors={['#c44fff', '#ff7b00']}
-                style={styles.actionButtonGradient}
+                colors={['#f093fb', '#f5576c']}
+                style={styles.actionGradient}
               >
-                <Ionicons name="brain" size={24} color="white" />
-                <Text style={styles.actionButtonText}>Quiz</Text>
+                <Ionicons name="brain" size={48} color="white" />
+                <Text style={styles.actionTitle}>Quiz Otaku</Text>
+                <Text style={styles.actionSubtitle}>Testez vos connaissances</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.actionCard} onPress={handleChatPress}>
+              <LinearGradient
+                colors={['#4facfe', '#00f2fe']}
+                style={styles.actionGradient}
+              >
+                <Ionicons name="chatbubbles" size={48} color="white" />
+                <Text style={styles.actionTitle}>Chat Communauté</Text>
+                <Text style={styles.actionSubtitle}>Discutez avec d'autres otakus</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
 
-          {/* Anime Sama Button */}
-          <TouchableOpacity onPress={handleNavigateToAnimeSama} style={styles.fullWidthButton}>
-            <LinearGradient
-              colors={['#2563eb', '#0891b2']}
-              style={styles.fullWidthButtonGradient}
-            >
-              <Ionicons name="play-circle" size={24} color="white" />
-              <Text style={styles.fullWidthButtonText}>Anime-Sama Streaming</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+          {/* Featured Quiz */}
+          {featuredQuiz && (
+            <View style={styles.featuredSection}>
+              <Text style={styles.sectionTitle}>Quiz du jour</Text>
+              <TouchableOpacity style={styles.featuredCard}>
+                <LinearGradient
+                  colors={['#667eea', '#764ba2']}
+                  style={styles.featuredGradient}
+                >
+                  <View style={styles.featuredContent}>
+                    <Ionicons name="star" size={24} color="#FFD700" />
+                    <View style={styles.featuredText}>
+                      <Text style={styles.featuredTitle}>{featuredQuiz.title}</Text>
+                      <Text style={styles.featuredDescription}>{featuredQuiz.description}</Text>
+                      <Text style={styles.featuredXP}>+{featuredQuiz.xpReward} XP</Text>
+                    </View>
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          )}
 
-          {/* Progress Section */}
-          <View style={styles.progressSection}>
-            <LinearGradient
-              colors={['rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.02)']}
-              style={styles.progressCard}
-            >
-              <Text style={styles.progressTitle}>Your Progress</Text>
-              <View style={styles.progressItem}>
-                <View style={styles.progressHeader}>
-                  <Text style={styles.progressLabel}>Quizzes Completed</Text>
-                  <Text style={styles.progressValue}>{userStats?.totalQuizzes || 0}</Text>
+          {/* Leaderboard */}
+          <View style={styles.leaderboardSection}>
+            <Text style={styles.sectionTitle}>Top Otakus</Text>
+            {topUsers.slice(0, 3).map((user: any, index: number) => (
+              <View key={user.id} style={styles.leaderboardItem}>
+                <View style={styles.leaderboardRank}>
+                  <Text style={styles.rankNumber}>{index + 1}</Text>
                 </View>
-                <View style={styles.progressBar}>
-                  <View style={[styles.progressFill, { width: '65%' }]} />
+                <View style={styles.leaderboardUser}>
+                  <Text style={styles.leaderboardName}>
+                    {user.firstName} {user.lastName}
+                  </Text>
+                  <Text style={styles.leaderboardXP}>{user.totalXP} XP</Text>
                 </View>
+                {index === 0 && <Ionicons name="trophy" size={20} color="#FFD700" />}
               </View>
-              <View style={styles.progressItem}>
-                <View style={styles.progressHeader}>
-                  <Text style={styles.progressLabel}>Rank</Text>
-                  <Text style={styles.progressValue}>#{userStats?.rank || 'Unranked'}</Text>
-                </View>
-                <View style={styles.progressBar}>
-                  <View style={[styles.progressFill, { width: '45%' }]} />
-                </View>
-              </View>
-            </LinearGradient>
+            ))}
           </View>
         </ScrollView>
       </LinearGradient>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  backgroundGradient: {
+  gradient: {
     flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-    paddingHorizontal: 16,
   },
   header: {
-    paddingTop: 20,
-    paddingBottom: 20,
-    alignItems: 'center',
-  },
-  appTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#00c3ff',
-    marginBottom: 16,
-  },
-  userInfo: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    alignSelf: 'stretch',
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#00c3ff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  avatarImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-  },
-  avatarText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  userDetails: {
-    flex: 1,
-  },
-  userName: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  levelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  level: {
-    color: '#00c3ff',
-    fontSize: 12,
-    fontWeight: '500',
-    marginRight: 8,
-  },
-  xpBar: {
-    flex: 1,
-    height: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 3,
-    marginRight: 8,
-  },
-  xpProgress: {
-    height: '100%',
-    backgroundColor: '#00c3ff',
-    borderRadius: 3,
-  },
-  xp: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 12,
-  },
-  welcomeSection: {
-    marginBottom: 24,
-  },
-  welcomeCard: {
     padding: 20,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    paddingTop: 10,
   },
-  welcomeTitle: {
-    color: 'white',
-    fontSize: 20,
+  welcomeText: {
+    fontSize: 16,
+    color: '#888',
+  },
+  titleText: {
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 8,
+    color: 'white',
   },
-  welcomeSubtitle: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 14,
-    marginBottom: 16,
+  profileButton: {
+    padding: 5,
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    paddingHorizontal: 20,
+    marginBottom: 20,
   },
-  statItem: {
+  statsCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+    flex: 1,
+    marginHorizontal: 5,
+  },
+  statsNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+    marginTop: 5,
+  },
+  statsLabel: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
+  },
+  actionsContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  actionCard: {
+    marginBottom: 15,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  actionGradient: {
+    padding: 20,
     alignItems: 'center',
   },
-  statNumber: {
-    color: '#ff00ff',
-    fontSize: 18,
+  actionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    marginTop: 10,
+  },
+  actionSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 5,
+    textAlign: 'center',
+  },
+  featuredSection: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 15,
+  },
+  featuredCard: {
+    borderRadius: 15,
+    overflow: 'hidden',
+  },
+  featuredGradient: {
+    padding: 15,
+  },
+  featuredContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  featuredText: {
+    flex: 1,
+    marginLeft: 15,
+  },
+  featuredTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  featuredDescription: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 2,
+  },
+  featuredXP: {
+    fontSize: 12,
+    color: '#FFD700',
+    marginTop: 5,
     fontWeight: 'bold',
   },
-  statLabel: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 12,
-    marginTop: 4,
+  leaderboardSection: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
-  quickActions: {
+  leaderboardItem: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 10,
   },
-  actionButton: {
+  leaderboardRank: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#00D4FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  rankNumber: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  leaderboardUser: {
     flex: 1,
   },
-  actionButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 8,
-  },
-  actionButtonText: {
+  leaderboardName: {
     color: 'white',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
-  fullWidthButton: {
-    marginBottom: 24,
-  },
-  fullWidthButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 8,
-  },
-  fullWidthButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  progressSection: {
-    marginBottom: 24,
-  },
-  progressCard: {
-    padding: 20,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  progressTitle: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  progressItem: {
-    marginBottom: 16,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  progressLabel: {
-    color: 'rgba(255, 255, 255, 0.8)',
+  leaderboardXP: {
+    color: '#888',
     fontSize: 14,
-  },
-  progressValue: {
-    color: '#00c3ff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 4,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#00c3ff',
-    borderRadius: 4,
   },
 });
-
-export default HomeScreen;
