@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, ArrowLeft, Download } from 'lucide-react';
 import { Link } from 'wouter';
 import MainLayout from '@/components/layout/main-layout';
+import '../styles/anime-sama.css';
 
 interface SearchResult {
   id: string;
@@ -69,10 +70,12 @@ interface VideoSource {
   proxyUrl?: string;
   embedUrl?: string;
   server: string;
+  serverName?: string;
   quality: string;
   language: string;
   type: string;
   serverIndex: number;
+  isEmbed?: boolean;
 }
 
 interface ApiResponse<T> {
@@ -268,8 +271,9 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Charger les sources d'un épisode avec solution CORS
+  // Charger les sources d'un épisode avec solution CORS améliorée
   const loadEpisodeSources = async (episodeId: string) => {
+    setLoading(true);
     try {
       const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
       const apiResponse: ApiResponse<EpisodeDetails> = await response.json();
@@ -278,27 +282,28 @@ const AnimeSamaPage: React.FC = () => {
         throw new Error('Erreur lors du chargement des sources');
       }
       
-      // Prioriser l'embed URL pour éviter les problèmes CORS
+      // Utiliser directement l'embed endpoint pour éviter CORS
+      const embedUrl = `/api/embed/${episodeId}`;
       const optimizedData = {
         ...apiResponse.data,
         sources: apiResponse.data.sources.map((source, index) => ({
           ...source,
-          url: apiResponse.data.embedUrl && index === 0 ? 
-               `${API_BASE}${apiResponse.data.embedUrl}` : 
-               source.proxyUrl || source.url
+          url: index === 0 ? embedUrl : source.url,
+          serverName: index === 0 ? `Lecteur Intégré - ${source.server}` : `Lecteur ${index + 1} - ${source.server}`,
+          isEmbed: index === 0
         }))
       };
       
       setEpisodeDetails(optimizedData);
       setSelectedServer(0);
       
-      if (apiResponse.data.corsInfo) {
-        console.log('CORS solutions disponibles:', apiResponse.data.corsInfo);
-      }
+      console.log('Sources chargées:', optimizedData.sources.length);
     } catch (err) {
       console.error('Erreur sources:', err);
       setError('Impossible de charger les sources vidéo.');
       setEpisodeDetails(null);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -372,7 +377,7 @@ const AnimeSamaPage: React.FC = () => {
   const currentSource = currentSources[selectedServer];
 
   return (
-    <MainLayout className="bg-black">
+    <MainLayout className="bg-black anime-sama-page">
       {/* Header exact anime-sama avec recherche intégrée */}
       <div className="sticky top-0 z-40" style={{ backgroundColor: '#000000', borderBottom: '1px solid #333' }}>
         <div className="flex items-center justify-between p-3">
@@ -739,18 +744,24 @@ const AnimeSamaPage: React.FC = () => {
 
               <select
                 value={selectedServer}
-                onChange={(e) => setSelectedServer(Number(e.target.value))}
+                onChange={(e) => {
+                  const newServerIndex = Number(e.target.value);
+                  setSelectedServer(newServerIndex);
+                  console.log('Changement serveur:', newServerIndex, currentSources[newServerIndex]);
+                }}
                 className="w-full p-3 text-white rounded text-sm font-medium"
                 style={{ backgroundColor: '#1e40af', border: '1px solid #3b82f6' }}
               >
                 {currentSources.length > 0 ? (
                   currentSources.map((source, index) => (
                     <option key={index} value={index}>
-                      LECTEUR {index + 1} - {source.server} ({source.quality})
+                      {source.serverName || `LECTEUR ${index + 1} - ${source.server}`} 
+                      {source.quality && ` (${source.quality})`}
+                      {source.isEmbed && ' ⭐'}
                     </option>
                   ))
                 ) : (
-                  <option value={0}>LECTEUR 1</option>
+                  <option value={0}>LECTEUR 1 - Chargement...</option>
                 )}
               </select>
             </div>
@@ -808,42 +819,76 @@ const AnimeSamaPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Message exact avec CORS résolu */}
+            {/* Message d'information utilisateur */}
             <div className="text-center py-4">
               <p className="text-white text-sm">
                 <span className="italic">Pub insistante ou vidéo indisponible ?</span><br />
                 <span className="font-bold">Changez de lecteur.</span>
               </p>
-              {episodeDetails?.corsInfo && (
-                <p className="text-green-400 text-xs mt-2">
-                  ✓ Lecteur optimisé - Compatible tous navigateurs
-                </p>
+              
+              {/* Informations sur le lecteur actuel */}
+              {currentSource && (
+                <div className="mt-2 text-xs">
+                  {currentSource.isEmbed ? (
+                    <p className="text-green-400">
+                      ✓ Lecteur intégré - Chargement optimisé
+                    </p>
+                  ) : (
+                    <p className="text-yellow-400">
+                      ⚠ Lecteur externe - Peut nécessiter plusieurs tentatives
+                    </p>
+                  )}
+                  <p className="text-gray-400 mt-1">
+                    Serveur: {currentSource.server} 
+                    {currentSource.quality && ` • Qualité: ${currentSource.quality}`}
+                  </p>
+                </div>
               )}
             </div>
 
-            {/* Lecteur vidéo avec solution CORS */}
+            {/* Lecteur vidéo optimisé */}
             {currentSource && (
-              <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: '#000' }}>
+              <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: '#000', minHeight: '400px' }}>
                 <iframe
                   src={currentSource.url}
                   className="w-full h-64 md:h-80 lg:h-96"
                   allowFullScreen
                   frameBorder="0"
+                  allow="autoplay; fullscreen"
                   title={`${episodeDetails?.title} - ${currentSource.server}`}
+                  onLoad={() => {
+                    console.log('Lecteur chargé avec succès');
+                    setError(null);
+                  }}
                   onError={() => {
-                    setError('Erreur de chargement du lecteur. Tentative avec un autre serveur...');
+                    console.error('Erreur iframe, tentative serveur suivant');
                     if (selectedServer < currentSources.length - 1) {
                       setSelectedServer(selectedServer + 1);
+                      setError('Changement de serveur automatique...');
+                    } else {
+                      setError('Tous les serveurs ont échoué. Essayez de recharger.');
                     }
                   }}
                 />
-                {/* Fallback si iframe ne charge pas */}
-                <div className="absolute inset-0 flex items-center justify-center text-white opacity-0 hover:opacity-100 transition-opacity bg-black/50">
+                
+                {/* Overlay d'information */}
+                <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                  {currentSource.isEmbed ? '🎬 Lecteur intégré' : '🌐 Lecteur externe'}
+                </div>
+                
+                {/* Bouton d'ouverture externe */}
+                <div className="absolute top-2 right-2">
                   <button
-                    onClick={() => window.open(currentSource.url, '_blank')}
-                    className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 transition-colors"
+                    onClick={() => {
+                      if (currentSource.isEmbed) {
+                        window.open(currentSource.url, '_blank');
+                      } else {
+                        window.open(currentSource.url, '_blank');
+                      }
+                    }}
+                    className="bg-black/70 text-white text-xs px-2 py-1 rounded hover:bg-black/90 transition-colors"
                   >
-                    Ouvrir dans un nouvel onglet
+                    ⧉ Nouvel onglet
                   </button>
                 </div>
               </div>
@@ -851,8 +896,8 @@ const AnimeSamaPage: React.FC = () => {
 
             {/* Informations sur les sources disponibles */}
             {episodeDetails && (
-              <div className="text-center">
-                <p className="text-gray-400 text-xs">
+              <div className="status-message info">
+                <p className="text-sm">
                   {currentSources.length} lecteur{currentSources.length > 1 ? 's' : ''} disponible{currentSources.length > 1 ? 's' : ''}
                   {episodeDetails.corsInfo && ' • Optimisé pour tous navigateurs'}
                 </p>
@@ -863,6 +908,16 @@ const AnimeSamaPage: React.FC = () => {
                 )}
               </div>
             )}
+
+            {/* Instructions utilisateur améliorées */}
+            <div className="status-message info">
+              <p className="text-sm">
+                <strong>💡 Astuce:</strong> Si le lecteur ne fonctionne pas, essayez un autre serveur dans le menu déroulant ci-dessus.
+              </p>
+              <p className="text-xs mt-1 opacity-75">
+                Les lecteurs intégrés (⭐) offrent la meilleure compatibilité.
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -871,15 +926,16 @@ const AnimeSamaPage: React.FC = () => {
       {loading && (
         <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
           <div className="p-6 rounded-lg" style={{ backgroundColor: '#1a1a1a' }}>
-            <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+            <div className="loading-spinner mx-auto mb-3"></div>
             <p className="text-white text-sm">Chargement des sources optimisées...</p>
+            <p className="text-gray-400 text-xs mt-1">Connexion à l'API anime-sama.fr...</p>
           </div>
         </div>
       )}
 
       {/* Error */}
       {error && (
-        <div className="fixed bottom-4 left-4 right-4 p-3 rounded-lg z-50" style={{ backgroundColor: '#dc2626' }}>
+        <div className="fixed bottom-4 left-4 right-4 p-3 rounded-lg z-50 status-message error">
           <p className="text-white text-sm">{error}</p>
           <button
             onClick={() => setError(null)}

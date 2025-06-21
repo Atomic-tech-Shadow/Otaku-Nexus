@@ -1,0 +1,488 @@
+/* Anime-Sama Page Styles - Authentic Reproduction */
+
+.anime-sama-page {
+  background: #000000;
+  color: #ffffff;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+}
+
+/* Header Styles */
+.anime-header {
+  position: relative;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.anime-header img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.anime-header h1 {
+  color: #ffffff;
+  font-size: 2.5em;
+  margin: 15px 0;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
+.anime-info {
+  background: #1a1a1a;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px auto;
+  max-width: 800px;
+}
+
+.anime-meta {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.anime-meta span {
+  background: #333;
+  padding: 5px 12px;
+  border-radius: 5px;
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+
+/* Progress Info Styles */
+.progress-info {
+  background: #2a2a2a;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+  border-left: 4px solid #1e40af;
+}
+
+.progress-info .info-item {
+  margin: 8px 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+.progress-info .info-label {
+  font-weight: bold;
+  color: #ffffff;
+  margin-right: 10px;
+  min-width: 120px;
+}
+
+.progress-info .info-value {
+  color: #cccccc;
+  flex: 1;
+}
+
+/* Language Selector - Exact anime-sama.fr Style */
+.language-selector {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 30px 0;
+}
+
+.lang-btn {
+  background: #2a2a2a;
+  color: white;
+  border: 2px solid #444;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.1em;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lang-btn:hover {
+  background: #3a3a3a;
+  border-color: #666;
+  transform: translateY(-2px);
+}
+
+.lang-btn.active {
+  background: #1e40af;
+  border-color: #3b82f6;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+}
+
+.lang-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #666;
+}
+
+/* Seasons Grid - Blue Cards Style */
+.seasons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+  margin: 30px 0;
+  padding: 0 20px;
+}
+
+.season-card {
+  position: relative;
+  aspect-ratio: 16/9;
+  background: #1e40af;
+  border: 2px solid #3b82f6;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.season-card:hover {
+  transform: scale(1.05);
+  border-color: #60a5fa;
+  box-shadow: 0 8px 25px rgba(30, 64, 175, 0.4);
+}
+
+.season-card.active {
+  border-color: #ffffff;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.season-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.6;
+}
+
+.season-card .overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.9) 100%);
+}
+
+.season-card .title {
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
+  color: white;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+/* Episode Selector */
+.episode-selector {
+  margin: 30px 0;
+  background: #1a1a1a;
+  padding: 25px;
+  border-radius: 10px;
+}
+
+.episode-selector h3 {
+  text-align: center;
+  color: #ffffff;
+  margin-bottom: 20px;
+  font-size: 1.3em;
+}
+
+.episodes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.episode-btn {
+  background: #2a2a2a;
+  color: white;
+  border: 1px solid #444;
+  padding: 12px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9em;
+  text-align: center;
+}
+
+.episode-btn:hover {
+  background: #3a3a3a;
+  border-color: #666;
+  transform: translateY(-2px);
+}
+
+.episode-btn.active {
+  background: #1e40af;
+  border-color: #3b82f6;
+  box-shadow: 0 0 10px rgba(30, 64, 175, 0.5);
+}
+
+.episode-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #666;
+}
+
+/* Video Player Section */
+.video-section {
+  margin: 40px 0;
+  background: #1a1a1a;
+  padding: 25px;
+  border-radius: 10px;
+  border: 1px solid #333;
+}
+
+.video-section h3 {
+  text-align: center;
+  color: #ffffff;
+  margin-bottom: 20px;
+  font-size: 1.2em;
+}
+
+.video-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 20px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.control-select {
+  width: 100%;
+  padding: 12px;
+  background: #1e40af;
+  color: white;
+  border: 1px solid #3b82f6;
+  border-radius: 6px;
+  font-size: 0.9em;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.control-select:focus {
+  outline: none;
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+}
+
+/* Video Player */
+.video-player {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 400px;
+}
+
+.video-player iframe {
+  width: 100%;
+  height: 400px;
+  border: none;
+}
+
+.video-overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  justify-content: space-between;
+  z-index: 5;
+}
+
+.video-info-badge {
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.video-action-btn {
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.video-action-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+/* Navigation Buttons */
+.navigation-controls {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.nav-btn {
+  width: 50px;
+  height: 50px;
+  background: #1e40af;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2em;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-btn:hover {
+  background: #3b82f6;
+  transform: scale(1.1);
+}
+
+.nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #666;
+}
+
+.nav-btn.action {
+  background: #374151;
+}
+
+.nav-btn.action:hover {
+  background: #4b5563;
+}
+
+/* Status Messages */
+.status-message {
+  text-align: center;
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 8px;
+}
+
+.status-message.info {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+}
+
+.status-message.success {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #86efac;
+}
+
+.status-message.warning {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+
+.status-message.error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+/* Loading States */
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #333;
+  border-top: 2px solid #1e40af;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  color: white;
+  z-index: 10;
+}
+
+.loading-text {
+  margin-top: 10px;
+  font-size: 0.9em;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .anime-header h1 {
+    font-size: 2em;
+  }
+  
+  .anime-meta {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .language-selector {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .seasons-grid {
+    grid-template-columns: 1fr;
+    padding: 0 10px;
+  }
+  
+  .video-controls {
+    grid-template-columns: 1fr;
+  }
+  
+  .video-player iframe {
+    height: 250px;
+  }
+  
+  .episodes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .anime-sama-page {
+    padding: 10px;
+  }
+  
+  .video-section,
+  .episode-selector,
+  .anime-info {
+    padding: 15px;
+  }
+  
+  .navigation-controls {
+    gap: 10px;
+  }
+  
+  .nav-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1em;
+  }
+}
