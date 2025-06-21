@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import LoadingSpinner from "@/components/ui/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Play, 
@@ -55,8 +55,9 @@ export default function WatchPage() {
 
   // Fetch episode details and streaming sources
   const { data: episode, isLoading, error } = useQuery<EpisodeDetails>({
-    queryKey: ['/api/episode', episodeId],
+    queryKey: [`/api/episode/${episodeId}`],
     enabled: !!episodeId,
+    retry: 2,
   });
 
   // Update watching progress mutation

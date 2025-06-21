@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MainLayout from "@/components/layout/main-layout";
 import { TwitterVerificationBadge } from "@/components/ui/verification-badges";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import LoadingSpinner from "@/components/ui/loading-spinner";
 import { motion } from "framer-motion";
 
 interface Message {
