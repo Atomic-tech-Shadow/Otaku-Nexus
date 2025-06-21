@@ -2,15 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Send, Phone, Video, MoreVertical, ArrowLeft } from "lucide-react";
+import { Send, MessageCircle, Users, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import AppHeader from "@/components/layout/app-header";
-import BottomNav from "@/components/layout/bottom-nav";
-
+import MainLayout from "@/components/layout/main-layout";
 import { Link } from "wouter";
 import { TwitterVerificationBadge } from "@/components/ui/verification-badges";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { motion } from "framer-motion";
 
 interface Message {
   id: string;
