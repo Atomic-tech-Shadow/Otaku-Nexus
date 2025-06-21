@@ -246,8 +246,6 @@ const AnimeSamaPage: React.FC = () => {
       
       const language = languageToUse.toLowerCase();
       
-      console.log(`Chargement saison ${season.number} pour ${selectedAnime.id} en ${language}`);
-      
       const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${language}`);
       const apiResponse: ApiResponse<{
         animeId: string;
@@ -257,13 +255,9 @@ const AnimeSamaPage: React.FC = () => {
         episodeCount: number;
       }> = await response.json();
       
-      console.log('API Response:', apiResponse);
-      
       if (!apiResponse.success || !apiResponse.data.episodes.length) {
         throw new Error(`Aucun épisode trouvé pour la ${season.name}`);
       }
-      
-      console.log(`${apiResponse.data.episodes.length} épisodes chargés pour ${season.name}`);
       
       setEpisodes(apiResponse.data.episodes);
       setSelectedSeason(season);
@@ -307,7 +301,7 @@ const AnimeSamaPage: React.FC = () => {
       setEpisodeDetails(optimizedData);
       setSelectedServer(0);
       
-      console.log('Sources chargées:', optimizedData.sources.length);
+
     } catch (err) {
       console.error('Erreur sources:', err);
       setError('Impossible de charger les sources vidéo.');
@@ -760,11 +754,7 @@ const AnimeSamaPage: React.FC = () => {
 
               <select
                 value={selectedServer}
-                onChange={(e) => {
-                  const newServerIndex = Number(e.target.value);
-                  setSelectedServer(newServerIndex);
-                  console.log('Changement serveur:', newServerIndex, currentSources[newServerIndex]);
-                }}
+                onChange={(e) => setSelectedServer(Number(e.target.value))}
                 className="w-full p-3 text-white rounded text-sm font-medium"
                 style={{ backgroundColor: '#1e40af', border: '1px solid #3b82f6' }}
               >
@@ -852,17 +842,10 @@ const AnimeSamaPage: React.FC = () => {
                   frameBorder="0"
                   allow="autoplay; fullscreen"
                   title={`${episodeDetails?.title} - ${currentSource.server}`}
-                  onLoad={() => {
-                    console.log('Lecteur chargé avec succès');
-                    setError(null);
-                  }}
+                  onLoad={() => setError(null)}
                   onError={() => {
-                    console.error('Erreur iframe, tentative serveur suivant');
                     if (selectedServer < currentSources.length - 1) {
                       setSelectedServer(selectedServer + 1);
-                      setError('Changement de serveur automatique...');
-                    } else {
-                      setError('Tous les serveurs ont échoué. Essayez de recharger.');
                     }
                   }}
                 />
@@ -897,10 +880,9 @@ const AnimeSamaPage: React.FC = () => {
       {/* Loading */}
       {loading && (
         <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
-          <div className="p-6 rounded-lg" style={{ backgroundColor: '#1a1a1a' }}>
-            <div className="loading-spinner mx-auto mb-3"></div>
-            <p className="text-white text-sm">Chargement des sources optimisées...</p>
-            <p className="text-gray-400 text-xs mt-1">Connexion à l'API anime-sama.fr...</p>
+          <div className="p-4 rounded-lg" style={{ backgroundColor: '#1a1a1a' }}>
+            <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+            <p className="text-white text-sm">Chargement...</p>
           </div>
         </div>
       )}

@@ -398,22 +398,7 @@
   color: #f87171;
 }
 
-/* Loading States */
-.loading-spinner {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 2px solid #333;
-  border-top: 2px solid #1e40af;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
+/* Loading States - Simplified */
 .loading-overlay {
   position: absolute;
   inset: 0;
@@ -424,11 +409,6 @@
   flex-direction: column;
   color: white;
   z-index: 10;
-}
-
-.loading-text {
-  margin-top: 10px;
-  font-size: 0.9em;
 }
 
 /* Responsive Design */
