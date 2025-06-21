@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ArrowLeft, Download } from 'lucide-react';
 import { Link } from 'wouter';
+import MainLayout from '@/components/layout/main-layout';
 
 interface SearchResult {
   id: string;
@@ -369,16 +370,27 @@ const AnimeSamaPage: React.FC = () => {
   const currentSource = currentSources[selectedServer];
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#000000' }}>
+    <MainLayout className="bg-black">
       {/* Header exact anime-sama avec recherche intégrée */}
-      <div className="sticky top-0 z-50" style={{ backgroundColor: '#000000', borderBottom: '1px solid #333' }}>
+      <div className="sticky top-0 z-40" style={{ backgroundColor: '#000000', borderBottom: '1px solid #333' }}>
         <div className="flex items-center justify-between p-3">
           <div className="flex items-center flex-1">
-            <Link href="/" className="mr-3">
-              <button className="p-2 rounded" style={{ backgroundColor: '#1a1a1a' }}>
+            {currentView !== 'search' && (
+              <button 
+                onClick={() => {
+                  if (currentView === 'player') {
+                    setCurrentView('anime');
+                  } else if (currentView === 'anime') {
+                    setCurrentView('search');
+                    setSelectedAnime(null);
+                  }
+                }}
+                className="mr-3 p-2 rounded" 
+                style={{ backgroundColor: '#1a1a1a' }}
+              >
                 <ArrowLeft size={18} className="text-white" />
               </button>
-            </Link>
+            )}
             
             {currentView === 'search' ? (
               <div className="flex items-center flex-1">
@@ -843,7 +855,7 @@ const AnimeSamaPage: React.FC = () => {
           </button>
         </div>
       )}
-    </div>
+    </MainLayout>
   );
 };
 
