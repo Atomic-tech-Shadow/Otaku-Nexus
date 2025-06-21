@@ -229,6 +229,11 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     setCurrentView('player');
     
+    // Reset des états pour éviter la confusion
+    setEpisodes([]);
+    setSelectedEpisode(null);
+    setEpisodeDetails(null);
+    
     try {
       const availLangs = await detectAvailableLanguages(selectedAnime.id, season.number);
       setAvailableLanguages(availLangs);
@@ -241,6 +246,8 @@ const AnimeSamaPage: React.FC = () => {
       
       const language = languageToUse.toLowerCase();
       
+      console.log(`Chargement saison ${season.number} pour ${selectedAnime.id} en ${language}`);
+      
       const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${language}`);
       const apiResponse: ApiResponse<{
         animeId: string;
@@ -250,22 +257,25 @@ const AnimeSamaPage: React.FC = () => {
         episodeCount: number;
       }> = await response.json();
       
-      if (!apiResponse.success) {
-        throw new Error('Erreur lors du chargement des épisodes');
+      console.log('API Response:', apiResponse);
+      
+      if (!apiResponse.success || !apiResponse.data.episodes.length) {
+        throw new Error(`Aucun épisode trouvé pour la ${season.name}`);
       }
+      
+      console.log(`${apiResponse.data.episodes.length} épisodes chargés pour ${season.name}`);
       
       setEpisodes(apiResponse.data.episodes);
       setSelectedSeason(season);
       
       // Charger automatiquement le premier épisode
-      if (apiResponse.data.episodes.length > 0) {
-        const firstEpisode = apiResponse.data.episodes[0];
-        setSelectedEpisode(firstEpisode);
-        await loadEpisodeSources(firstEpisode.id);
-      }
+      const firstEpisode = apiResponse.data.episodes[0];
+      setSelectedEpisode(firstEpisode);
+      await loadEpisodeSources(firstEpisode.id);
+      
     } catch (err) {
       console.error('Erreur épisodes:', err);
-      setError('Impossible de charger les épisodes.');
+      setError(`Impossible de charger les épisodes de ${season.name}.`);
     } finally {
       setLoading(false);
     }
@@ -732,14 +742,20 @@ const AnimeSamaPage: React.FC = () => {
                 className="w-full p-3 text-white rounded text-sm font-medium"
                 style={{ backgroundColor: '#1e40af', border: '1px solid #3b82f6' }}
               >
-                <option value="" disabled>
-                  {selectedEpisode ? `EPISODE ${selectedEpisode.episodeNumber}` : 'EPISODE 1'}
-                </option>
-                {episodes.map((episode) => (
-                  <option key={episode.id} value={episode.id}>
-                    EPISODE {episode.episodeNumber}
-                  </option>
-                ))}
+                {episodes.length > 0 ? (
+                  <>
+                    <option value="" disabled>
+                      {selectedEpisode ? `EPISODE ${selectedEpisode.episodeNumber}` : 'Sélectionner un épisode'}
+                    </option>
+                    {episodes.map((episode) => (
+                      <option key={episode.id} value={episode.id}>
+                        EPISODE {episode.episodeNumber}
+                      </option>
+                    ))}
+                  </>
+                ) : (
+                  <option value="" disabled>Chargement des épisodes...</option>
+                )}
               </select>
 
               <select
@@ -755,13 +771,12 @@ const AnimeSamaPage: React.FC = () => {
                 {currentSources.length > 0 ? (
                   currentSources.map((source, index) => (
                     <option key={index} value={index}>
-                      {source.serverName || `LECTEUR ${index + 1} - ${source.server}`} 
+                      LECTEUR {index + 1} - {source.server}
                       {source.quality && ` (${source.quality})`}
-                      {source.isEmbed && ' ⭐'}
                     </option>
                   ))
                 ) : (
-                  <option value={0}>LECTEUR 1 - Chargement...</option>
+                  <option value={0}>LECTEUR 1</option>
                 )}
               </select>
             </div>
@@ -769,7 +784,7 @@ const AnimeSamaPage: React.FC = () => {
             {/* Dernière sélection */}
             <div className="text-gray-400 text-sm">
               DERNIÈRE SÉLECTION : <span className="text-white italic">
-                {selectedEpisode ? `EPISODE ${selectedEpisode.episodeNumber}` : 'EPISODE 1'}
+                {selectedEpisode ? `${selectedSeason?.name} - EPISODE ${selectedEpisode.episodeNumber}` : 'Aucun épisode sélectionné'}
               </span>
             </div>
 
@@ -819,31 +834,12 @@ const AnimeSamaPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Message d'information utilisateur */}
+            {/* Message d'information utilisateur simplifié */}
             <div className="text-center py-4">
               <p className="text-white text-sm">
                 <span className="italic">Pub insistante ou vidéo indisponible ?</span><br />
                 <span className="font-bold">Changez de lecteur.</span>
               </p>
-              
-              {/* Informations sur le lecteur actuel */}
-              {currentSource && (
-                <div className="mt-2 text-xs">
-                  {currentSource.isEmbed ? (
-                    <p className="text-green-400">
-                      ✓ Lecteur intégré - Chargement optimisé
-                    </p>
-                  ) : (
-                    <p className="text-yellow-400">
-                      ⚠ Lecteur externe - Peut nécessiter plusieurs tentatives
-                    </p>
-                  )}
-                  <p className="text-gray-400 mt-1">
-                    Serveur: {currentSource.server} 
-                    {currentSource.quality && ` • Qualité: ${currentSource.quality}`}
-                  </p>
-                </div>
-              )}
             </div>
 
             {/* Lecteur vidéo optimisé */}
@@ -871,10 +867,7 @@ const AnimeSamaPage: React.FC = () => {
                   }}
                 />
                 
-                {/* Overlay d'information */}
-                <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                  {currentSource.isEmbed ? '🎬 Lecteur intégré' : '🌐 Lecteur externe'}
-                </div>
+
                 
                 {/* Bouton d'ouverture externe */}
                 <div className="absolute top-2 right-2">
@@ -894,30 +887,9 @@ const AnimeSamaPage: React.FC = () => {
               </div>
             )}
 
-            {/* Informations sur les sources disponibles */}
-            {episodeDetails && (
-              <div className="status-message info">
-                <p className="text-sm">
-                  {currentSources.length} lecteur{currentSources.length > 1 ? 's' : ''} disponible{currentSources.length > 1 ? 's' : ''}
-                  {episodeDetails.corsInfo && ' • Optimisé pour tous navigateurs'}
-                </p>
-                {episodeDetails.embedUrl && (
-                  <p className="text-green-400 text-xs mt-1">
-                    ✓ Lecteur intégré - Chargement optimisé
-                  </p>
-                )}
-              </div>
-            )}
 
-            {/* Instructions utilisateur améliorées */}
-            <div className="status-message info">
-              <p className="text-sm">
-                <strong>💡 Astuce:</strong> Si le lecteur ne fonctionne pas, essayez un autre serveur dans le menu déroulant ci-dessus.
-              </p>
-              <p className="text-xs mt-1 opacity-75">
-                Les lecteurs intégrés (⭐) offrent la meilleure compatibilité.
-              </p>
-            </div>
+
+
           </div>
         </div>
       )}
