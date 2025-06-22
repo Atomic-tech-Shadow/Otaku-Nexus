@@ -166,17 +166,30 @@ const AnimeSamaPage: React.FC = () => {
   // CORRECTION 5: Fonction de retry automatique pour vidéos
   const loadVideoSourceWithRetry = (serverIndex: number, retryCount = 0) => {
     const maxRetries = 3;
+    const availableSources = episodeDetails?.sources || [];
     
     if (retryCount < maxRetries) {
       console.warn(`Retry ${retryCount + 1}/${maxRetries} for server ${serverIndex + 1}`);
       setTimeout(() => {
         setSelectedServer(serverIndex); // Force reload
       }, 2000 * (retryCount + 1)); // Délai progressif
-    } else if (serverIndex + 1 < currentSources.length) {
+    } else if (serverIndex + 1 < availableSources.length) {
       console.log(`Switching to next server: ${serverIndex + 2}`);
       setSelectedServer(serverIndex + 1);
     } else {
-      setError('Tous les serveurs vidéo ont échoué. Essayez de recharger la page.');
+      setError('Tous les serveurs vidéo ont échoué. Pub insistante ou vidéo indisponible ? Changez de lecteur.');
+    }
+  };
+
+  // CORRECTION 5: Gestion d'erreurs vidéo avec fallback automatique
+  const handleVideoError = (currentServerIndex: number) => {
+    const sources = episodeDetails?.sources || [];
+    
+    if (currentServerIndex + 1 < sources.length) {
+      console.log(`Video error detected, switching to server ${currentServerIndex + 2}`);
+      setSelectedServer(currentServerIndex + 1);
+    } else {
+      setError('Aucune source vidéo disponible. Essayez un autre épisode.');
     }
   };
 
@@ -325,36 +338,87 @@ const AnimeSamaPage: React.FC = () => {
         throw new Error(`API error: ${JSON.stringify(apiResponse)}`);
       }
       
+      // CORRECTION 8: Épisodes Vides API - Fallback intelligent
       if (!apiResponse.data || !apiResponse.data.episodes || apiResponse.data.episodes.length === 0) {
-        // Tentative de fallback vers l'autre langue
-        const fallbackLanguage = languageToUse === 'VOSTFR' ? 'vf' : 'vostfr';
-        const fallbackLanguageUpper = languageToUse === 'VOSTFR' ? 'VF' : 'VOSTFR';
+        console.log('API returned empty episodes, attempting intelligent fallback...');
         
-        console.log(`No episodes found for ${languageToUse}, trying fallback to ${fallbackLanguageUpper}`);
+        // Tenter plusieurs langues et méthodes
+        const languages = ['VOSTFR', 'VF'];
+        let validEpisodes = [];
         
-        try {
-          const fallbackResponse = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${fallbackLanguage}`);
-          const fallbackApiResponse = await fallbackResponse.json();
-          
-          if (fallbackApiResponse.success && fallbackApiResponse.data?.episodes?.length > 0) {
-            console.log(`Fallback successful: Found ${fallbackApiResponse.data.episodes.length} episodes in ${fallbackLanguageUpper}`);
-            setSelectedLanguage(fallbackLanguageUpper);
-            setAvailableLanguages([fallbackLanguageUpper]);
-            setEpisodes(fallbackApiResponse.data.episodes);
-            setSelectedSeason(season);
+        for (const lang of languages) {
+          try {
+            const langCode = lang.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
+            const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${langCode}`);
+            const data = await response.json();
             
-            const firstEpisode = fallbackApiResponse.data.episodes[0];
-            setSelectedEpisode(firstEpisode);
-            await loadEpisodeSources(firstEpisode.id);
-            
-            setError(`Épisodes trouvés en ${fallbackLanguageUpper} seulement pour ${season.name}`);
-            return;
+            if (data.success && data.data && data.data.episodes && data.data.episodes.length > 0) {
+              validEpisodes = data.data.episodes;
+              setSelectedLanguage(lang as 'VF' | 'VOSTFR');
+              console.log(`Found ${validEpisodes.length} episodes in ${lang}`);
+              break;
+            }
+          } catch (err) {
+            console.warn(`Failed to fetch episodes in ${lang}:`, err);
           }
-        } catch (fallbackErr) {
-          console.error('Fallback also failed:', fallbackErr);
         }
         
-        throw new Error(`Aucun épisode disponible pour ${season.name} dans aucune langue. Cette saison pourrait ne pas être encore disponible.`);
+        // Si aucun épisode trouvé, essayer endpoint content
+        if (validEpisodes.length === 0) {
+          try {
+            const contentResponse = await fetch(`${API_BASE}/api/content?animeId=${selectedAnime.id}&type=episodes`);
+            const contentData = await contentResponse.json();
+            
+            if (contentData.success && contentData.data && contentData.data.length > 0) {
+              validEpisodes = contentData.data;
+              console.log(`Found ${validEpisodes.length} episodes via content endpoint`);
+            }
+          } catch (contentErr) {
+            console.warn('Content endpoint failed:', contentErr);
+          }
+        }
+        
+        // Dernière tentative avec catalogue
+        if (validEpisodes.length === 0) {
+          try {
+            const catalogueResponse = await fetch(`${API_BASE}/api/catalogue?search=${selectedAnime.id}`);
+            const catalogueData = await catalogueResponse.json();
+            
+            if (catalogueData.success && catalogueData.data) {
+              const animeInfo = catalogueData.data.find((a: any) => a.id === selectedAnime.id);
+              if (animeInfo && animeInfo.seasons && animeInfo.seasons[season.number - 1]) {
+                const seasonInfo = animeInfo.seasons[season.number - 1];
+                // Générer des épisodes basés sur episodeCount
+                validEpisodes = Array.from({ length: seasonInfo.episodeCount }, (_, i) => ({
+                  id: `${selectedAnime.id}-s${season.number}-e${i + 1}`,
+                  episodeNumber: i + 1,
+                  title: `Épisode ${i + 1}`,
+                  language: 'VOSTFR',
+                  url: '',
+                  available: true
+                }));
+                console.log(`Generated ${validEpisodes.length} episodes from catalogue info`);
+              }
+            }
+          } catch (catalogueErr) {
+            console.warn('Catalogue endpoint failed:', catalogueErr);
+          }
+        }
+        
+        if (validEpisodes.length === 0) {
+          throw new Error(`Aucun épisode disponible pour ${season.name}. Cet anime pourrait ne pas être encore disponible.`);
+        }
+        
+        // Continuer avec les épisodes trouvés
+        setEpisodes(validEpisodes);
+        setSelectedSeason(season);
+        
+        const firstEpisode = validEpisodes[0];
+        setSelectedEpisode(firstEpisode);
+        await loadEpisodeSources(firstEpisode.id);
+        
+        setError(`Épisodes trouvés via méthode alternative pour ${season.name}`);
+        return;
       }
       
       console.log('Episodes loaded successfully:', apiResponse.data.episodes.length);
@@ -957,74 +1021,81 @@ const AnimeSamaPage: React.FC = () => {
             </div>
 
             {/* CORRECTION 5: Lecteur vidéo optimisé avec gestion d'erreurs améliorée */}
-            {currentSource && (
-              <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: '#000', minHeight: '400px' }}>
-                <iframe
-                  key={`${selectedEpisode?.id}-${selectedServer}`}
-                  src={currentSource.url}
-                  className="w-full h-64 md:h-80 lg:h-96"
-                  allowFullScreen
-                  frameBorder="0"
-                  allow="autoplay; fullscreen"
-                  title={`${episodeDetails?.title} - ${currentSource.server}`}
-                  onLoad={() => {
-                    setError(null);
-                    console.log(`Successfully loaded server ${selectedServer + 1}`);
-                  }}
-                  onError={() => {
-                    console.error(`Failed to load server ${selectedServer + 1}`);
-                    loadVideoSourceWithRetry(selectedServer, 0);
-                  }}
-                />
-                
-                {/* Indicateur serveur actuel */}
-                <div className="absolute top-2 left-2">
-                  <div className="bg-black/70 text-white text-xs px-2 py-1 rounded">
-                    Serveur {selectedServer + 1}/{currentSources.length} - {currentSource.server}
-                  </div>
-                </div>
-                
-                {/* Bouton d'ouverture externe */}
-                <div className="absolute top-2 right-2">
-                  <button
-                    onClick={() => {
-                      window.open(currentSource.url, '_blank');
+            {(() => {
+              const currentSources = episodeDetails?.sources || [];
+              const currentSource = currentSources[selectedServer];
+              
+              if (!currentSource) return null;
+              
+              return (
+                <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: '#000', minHeight: '400px' }}>
+                  <iframe
+                    key={`${selectedEpisode?.id}-${selectedServer}`}
+                    src={currentSource.url}
+                    className="w-full h-64 md:h-80 lg:h-96"
+                    allowFullScreen
+                    frameBorder="0"
+                    allow="autoplay; fullscreen"
+                    title={`${episodeDetails?.title} - ${currentSource.server}`}
+                    onLoad={() => {
+                      setError(null);
+                      console.log(`Successfully loaded server ${selectedServer + 1}`);
                     }}
-                    className="bg-black/70 text-white text-xs px-2 py-1 rounded hover:bg-black/90 transition-colors"
-                  >
-                    ⧉ Nouvel onglet
-                  </button>
-                </div>
-                
-                {/* Boutons navigation serveurs */}
-                {currentSources.length > 1 && (
-                  <div className="absolute bottom-2 right-2 flex gap-2">
+                    onError={() => {
+                      console.error(`Failed to load server ${selectedServer + 1}`);
+                      handleVideoError(selectedServer);
+                    }}
+                  />
+                  
+                  {/* Indicateur serveur actuel */}
+                  <div className="absolute top-2 left-2">
+                    <div className="bg-black/70 text-white text-xs px-2 py-1 rounded">
+                      Serveur {selectedServer + 1}/{currentSources.length} - {currentSource.server}
+                    </div>
+                  </div>
+                  
+                  {/* Bouton d'ouverture externe */}
+                  <div className="absolute top-2 right-2">
                     <button
                       onClick={() => {
-                        if (selectedServer > 0) {
-                          setSelectedServer(selectedServer - 1);
-                        }
+                        window.open(currentSource.url, '_blank');
                       }}
-                      disabled={selectedServer === 0}
-                      className="bg-black/70 text-white text-xs px-2 py-1 rounded hover:bg-black/90 transition-colors disabled:opacity-50"
+                      className="bg-black/70 text-white text-xs px-2 py-1 rounded hover:bg-black/90 transition-colors"
                     >
-                      ← Serveur précédent
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (selectedServer < currentSources.length - 1) {
-                          setSelectedServer(selectedServer + 1);
-                        }
-                      }}
-                      disabled={selectedServer === currentSources.length - 1}
-                      className="bg-black/70 text-white text-xs px-2 py-1 rounded hover:bg-black/90 transition-colors disabled:opacity-50"
-                    >
-                      Serveur suivant →
+                      ⧉ Nouvel onglet
                     </button>
                   </div>
-                )}
-              </div>
-            )}
+                  
+                  {/* Boutons navigation serveurs */}
+                  {currentSources.length > 1 && (
+                    <div className="absolute bottom-2 right-2 flex gap-2">
+                      <button
+                        onClick={() => {
+                          if (selectedServer > 0) {
+                            setSelectedServer(selectedServer - 1);
+                          }
+                        }}
+                        disabled={selectedServer === 0}
+                        className="bg-black/70 text-white text-xs px-2 py-1 rounded hover:bg-black/90 transition-colors disabled:opacity-50"
+                      >
+                        ← Serveur précédent
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (selectedServer < currentSources.length - 1) {
+                            setSelectedServer(selectedServer + 1);
+                          }
+                        }}
+                        disabled={selectedServer === currentSources.length - 1}
+                        className="bg-black/70 text-white text-xs px-2 py-1 rounded hover:bg-black/90 transition-colors disabled:opacity-50"
+                      >
+                        Serveur suivant →
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
 
 

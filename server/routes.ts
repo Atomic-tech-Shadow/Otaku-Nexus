@@ -332,6 +332,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Route proxy pour contourner CORS
+  // CORRECTION 1: Endpoint CORS manquant - Ajouter /api/embed/:episodeId
+  app.get('/api/embed/:episodeId', async (req, res) => {
+    try {
+      const { episodeId } = req.params;
+      const episode = await animeSamaService.getEpisodeDetails(episodeId);
+      
+      if (!episode) {
+        return res.status(404).json({ message: "Episode not found" });
+      }
+
+      // CORRECTION 4: Headers CORS pour Vidéo
+      res.setHeader('X-Frame-Options', 'ALLOWALL');
+      res.setHeader('Content-Security-Policy', "frame-ancestors *");
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+      // Retourner page HTML avec iframe intégré
+      const embedHtml = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${episode.animeTitle} - Episode ${episode.episodeNumber}</title>
+    <style>
+        body { margin: 0; padding: 0; background: #000; }
+        iframe { width: 100%; height: 100vh; border: none; }
+        .error { color: white; text-align: center; padding: 20px; }
+    </style>
+</head>
+<body>
+    ${episode.sources.length > 0 ? 
+      `<iframe src="${episode.sources[0].url}" allowfullscreen></iframe>` :
+      `<div class="error">Aucune source disponible pour cet épisode</div>`
+    }
+</body>
+</html>`;
+      
+      return res.status(200).send(embedHtml);
+    } catch (error) {
+      console.error("Error in embed endpoint:", error);
+      res.status(500).send(`
+        <html>
+          <body style="background:#000;color:white;text-align:center;padding:20px;">
+            <h2>Erreur de chargement</h2>
+            <p>Impossible de charger l'épisode</p>
+          </body>
+        </html>
+      `);
+    }
+  });
+
   app.get('/api/proxy/:encodedUrl', async (req, res) => {
     try {
       const targetUrl = decodeURIComponent(req.params.encodedUrl);
