@@ -365,64 +365,210 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Route embed pour iframe direct
+  // Route embed pour iframe direct - CORRECTION CORS CRITIQUE
   app.get('/api/embed/:episodeId', async (req, res) => {
     try {
       const { episodeId } = req.params;
+      
+      // Configuration CORS pour l'embed - CORRECTION 1
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('X-Frame-Options', 'ALLOWALL');
+      res.setHeader('Content-Security-Policy', "frame-ancestors *");
+      
       const episode = await animeSamaService.getEpisodeDetails(episodeId);
       
       if (!episode || !episode.sources.length) {
         return res.status(404).send(`
+          <!DOCTYPE html>
           <html>
-            <body style="background: #000; color: #fff; text-align: center; padding: 50px;">
-              <h2>Episode non trouvé</h2>
-              <p>L'épisode demandé n'est pas disponible.</p>
+            <head>
+              <meta charset="UTF-8">
+              <title>Episode non trouvé</title>
+              <style>
+                body { margin: 0; padding: 0; background: #000; color: #fff; font-family: Arial, sans-serif; }
+                .error-container { text-align: center; padding: 50px; }
+                .retry-btn { background: #1e40af; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+                .retry-btn:hover { background: #3b82f6; }
+              </style>
+            </head>
+            <body>
+              <div class="error-container">
+                <h2>Episode non trouvé</h2>
+                <p>L'épisode demandé n'est pas disponible.</p>
+                <button class="retry-btn" onclick="window.parent.location.reload()">Réessayer</button>
+              </div>
             </body>
           </html>
         `);
       }
       
-      const source = episode.sources[0];
+      // Système de retry automatique avec plusieurs sources - CORRECTION 5
+      const sources = episode.sources;
       const embedHtml = `
         <!DOCTYPE html>
         <html>
         <head>
+          <meta charset="UTF-8">
           <title>Episode ${episode.episodeNumber} - ${episode.animeTitle}</title>
           <style>
-            body { margin: 0; padding: 0; background: #000; }
-            iframe { width: 100%; height: 100vh; border: none; }
-            .fallback { color: white; text-align: center; padding: 50px; }
+            body { margin: 0; padding: 0; background: #000; font-family: Arial, sans-serif; }
+            iframe { width: 100%; height: 100vh; border: none; display: block; }
+            .loading { 
+              position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+              color: white; text-align: center; z-index: 10; 
+            }
+            .error-overlay { 
+              position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
+              background: rgba(0,0,0,0.9); color: white; text-align: center; 
+              padding: 50px; display: none; z-index: 20; 
+            }
+            .retry-btn { 
+              background: #1e40af; color: white; border: none; 
+              padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px; 
+            }
+            .retry-btn:hover { background: #3b82f6; }
+            .server-info { 
+              position: absolute; top: 10px; left: 10px; 
+              background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; 
+              border-radius: 3px; font-size: 12px; z-index: 15; 
+            }
           </style>
         </head>
         <body>
-          <iframe src="${source.url}" allowfullscreen></iframe>
-          <div class="fallback" style="display: none;">
-            <h3>Lecteur indisponible</h3>
-            <p>Tentative de chargement...</p>
-            <a href="${source.url}" target="_blank" style="color: #1e40af;">
-              Ouvrir dans un nouvel onglet
-            </a>
+          <div class="loading" id="loading">
+            <div>Chargement du lecteur...</div>
           </div>
+          
+          <div class="server-info" id="serverInfo">
+            Serveur 1/${sources.length} - ${sources[0]?.server || 'Inconnu'}
+          </div>
+          
+          <iframe id="videoFrame" src="${sources[0]?.url}" allowfullscreen></iframe>
+          
+          <div class="error-overlay" id="errorOverlay">
+            <h3>Lecteur indisponible</h3>
+            <p id="errorMessage">Impossible de charger la vidéo depuis ce serveur.</p>
+            <button class="retry-btn" onclick="tryNextServer()">Essayer serveur suivant</button>
+            <button class="retry-btn" onclick="window.parent.location.reload()">Recharger</button>
+          </div>
+          
           <script>
-            // Fallback si iframe ne charge pas
-            setTimeout(() => {
-              const iframe = document.querySelector('iframe');
-              const fallback = document.querySelector('.fallback');
-              if (!iframe.contentWindow) {
-                iframe.style.display = 'none';
-                fallback.style.display = 'block';
+            const sources = ${JSON.stringify(sources)};
+            let currentServerIndex = 0;
+            let retryAttempts = 0;
+            const maxRetries = 3;
+            
+            const videoFrame = document.getElementById('videoFrame');
+            const loading = document.getElementById('loading');
+            const errorOverlay = document.getElementById('errorOverlay');
+            const serverInfo = document.getElementById('serverInfo');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Gestion d'erreurs vidéo avec retry automatique - CORRECTION 5
+            function loadVideoSource(serverIndex) {
+              if (serverIndex >= sources.length) {
+                displayVideoError('Aucune source disponible');
+                return;
               }
-            }, 5000);
+              
+              currentServerIndex = serverIndex;
+              const source = sources[serverIndex];
+              
+              // Mise à jour info serveur
+              serverInfo.textContent = \`Serveur \${serverIndex + 1}/\${sources.length} - \${source.server}\`;
+              
+              // Configuration iframe
+              videoFrame.src = source.url;
+              videoFrame.style.display = 'block';
+              errorOverlay.style.display = 'none';
+              loading.style.display = 'block';
+              
+              // Timeout pour détecter les échecs de chargement
+              const timeout = setTimeout(() => {
+                console.warn(\`Timeout for server \${serverIndex + 1}\`);
+                if (retryAttempts < maxRetries) {
+                  retryAttempts++;
+                  loadVideoSource(serverIndex);
+                } else if (serverIndex + 1 < sources.length) {
+                  retryAttempts = 0;
+                  loadVideoSource(serverIndex + 1);
+                } else {
+                  displayVideoError('Tous les serveurs ont échoué');
+                }
+              }, 10000); // 10 secondes timeout
+              
+              // Succès de chargement
+              videoFrame.onload = function() {
+                clearTimeout(timeout);
+                loading.style.display = 'none';
+                retryAttempts = 0;
+                console.log(\`Successfully loaded server \${serverIndex + 1}\`);
+              };
+              
+              // Erreur de chargement
+              videoFrame.onerror = function() {
+                clearTimeout(timeout);
+                console.error(\`Failed to load server \${serverIndex + 1}\`);
+                if (retryAttempts < maxRetries) {
+                  retryAttempts++;
+                  setTimeout(() => loadVideoSource(serverIndex), 2000);
+                } else if (serverIndex + 1 < sources.length) {
+                  retryAttempts = 0;
+                  loadVideoSource(serverIndex + 1);
+                } else {
+                  displayVideoError('Tous les serveurs ont échoué');
+                }
+              };
+            }
+            
+            function displayVideoError(message) {
+              loading.style.display = 'none';
+              errorOverlay.style.display = 'block';
+              errorMessage.textContent = message;
+              videoFrame.style.display = 'none';
+            }
+            
+            function tryNextServer() {
+              if (currentServerIndex + 1 < sources.length) {
+                retryAttempts = 0;
+                loadVideoSource(currentServerIndex + 1);
+              } else {
+                errorMessage.textContent = 'Aucun autre serveur disponible';
+              }
+            }
+            
+            // Démarrer le chargement
+            loadVideoSource(0);
           </script>
         </body>
         </html>
       `;
       
-      res.set('Content-Type', 'text/html');
+      res.setHeader('Content-Type', 'text/html');
       res.send(embedHtml);
     } catch (error) {
       console.error("Embed error:", error);
-      res.status(500).send('<html><body style="color: red;">Erreur de chargement</body></html>');
+      res.status(500).send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>Erreur</title>
+            <style>
+              body { margin: 0; padding: 0; background: #000; color: #fff; font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+              .retry-btn { background: #1e40af; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+              .retry-btn:hover { background: #3b82f6; }
+            </style>
+          </head>
+          <body>
+            <h2>Erreur du serveur</h2>
+            <p>Impossible de charger l'épisode.</p>
+            <button class="retry-btn" onclick="window.parent.location.reload()">Réessayer</button>
+          </body>
+        </html>
+      `);
     }
   });
 

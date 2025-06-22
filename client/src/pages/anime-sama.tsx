@@ -103,6 +103,25 @@ const AnimeSamaPage: React.FC = () => {
   const [videoProgress, setVideoProgress] = useState<{[key: string]: number}>({});
   const [lastWatched, setLastWatched] = useState<string | null>(null);
   const [popularAnimes, setPopularAnimes] = useState<SearchResult[]>([]);
+  
+  // CORRECTION 6: Race Conditions - Variable de verrouillage
+  const [languageChangeInProgress, setLanguageChangeInProgress] = useState(false);
+
+  // CORRECTION 7: Cache et Performance - Cache simple en mémoire
+  const cache = new Map();
+  
+  const getCachedData = async (key: string, fetcher: () => Promise<any>, ttl = 300000) => {
+    if (cache.has(key)) {
+      const { data, timestamp } = cache.get(key);
+      if (Date.now() - timestamp < ttl) {
+        return data;
+      }
+    }
+    
+    const data = await fetcher();
+    cache.set(key, { data, timestamp: Date.now() });
+    return data;
+  };
 
   // Charger l'historique au démarrage
   useEffect(() => {
@@ -114,16 +133,21 @@ const AnimeSamaPage: React.FC = () => {
     loadPopularAnimes();
   }, []);
 
-  // Charger les animes populaires depuis l'API
+  // CORRECTION 7: Charger les animes populaires avec cache
   const loadPopularAnimes = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/trending`);
+      const cacheKey = 'trending_animes';
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const apiResponse = await response.json();
+      // Utiliser le cache pour éviter les requêtes répétées
+      const apiResponse = await getCachedData(cacheKey, async () => {
+        const response = await fetch(`${API_BASE}/api/trending`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return await response.json();
+      }, 600000); // Cache pendant 10 minutes
       
       if (apiResponse.success && apiResponse.data) {
         setPopularAnimes(apiResponse.data.slice(0, 12)); // Limiter à 12 animes
@@ -138,6 +162,23 @@ const AnimeSamaPage: React.FC = () => {
   };
 
   const API_BASE = 'https://api-anime-sama.onrender.com';
+
+  // CORRECTION 5: Fonction de retry automatique pour vidéos
+  const loadVideoSourceWithRetry = (serverIndex: number, retryCount = 0) => {
+    const maxRetries = 3;
+    
+    if (retryCount < maxRetries) {
+      console.warn(`Retry ${retryCount + 1}/${maxRetries} for server ${serverIndex + 1}`);
+      setTimeout(() => {
+        setSelectedServer(serverIndex); // Force reload
+      }, 2000 * (retryCount + 1)); // Délai progressif
+    } else if (serverIndex + 1 < currentSources.length) {
+      console.log(`Switching to next server: ${serverIndex + 2}`);
+      setSelectedServer(serverIndex + 1);
+    } else {
+      setError('Tous les serveurs vidéo ont échoué. Essayez de recharger la page.');
+    }
+  };
 
   // Recherche d'animes
   const searchAnimes = async (query: string) => {
@@ -275,12 +316,17 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Charger les sources d'un épisode avec solution CORS améliorée
+  // CORRECTION 7: Charger les sources d'un épisode avec cache et CORS améliorée
   const loadEpisodeSources = async (episodeId: string) => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
-      const apiResponse: ApiResponse<EpisodeDetails> = await response.json();
+      const cacheKey = `episode_${episodeId}`;
+      
+      // Utiliser le cache pour éviter les requêtes répétées
+      const apiResponse = await getCachedData(cacheKey, async () => {
+        const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
+        return await response.json();
+      }, 180000); // Cache pendant 3 minutes
       
       if (!apiResponse.success) {
         throw new Error('Erreur lors du chargement des sources');
@@ -290,7 +336,7 @@ const AnimeSamaPage: React.FC = () => {
       const embedUrl = `/api/embed/${episodeId}`;
       const optimizedData = {
         ...apiResponse.data,
-        sources: apiResponse.data.sources.map((source, index) => ({
+        sources: apiResponse.data.sources.map((source: any, index: number) => ({
           ...source,
           url: index === 0 ? embedUrl : source.url,
           serverName: index === 0 ? `Lecteur Intégré - ${source.server}` : `Lecteur ${index + 1} - ${source.server}`,
@@ -301,6 +347,12 @@ const AnimeSamaPage: React.FC = () => {
       setEpisodeDetails(optimizedData);
       setSelectedServer(0);
       
+      // Sauvegarder dans l'historique de visionnage
+      if (selectedAnime) {
+        const newHistory = { ...watchHistory, [selectedAnime.id]: apiResponse.data.episodeNumber };
+        setWatchHistory(newHistory);
+        localStorage.setItem('animeWatchHistory', JSON.stringify(newHistory));
+      }
 
     } catch (err) {
       console.error('Erreur sources:', err);
@@ -325,25 +377,28 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Changer de langue
+  // CORRECTION 6: Changer de langue avec protection race conditions
   const changeLanguage = async (newLanguage: 'VF' | 'VOSTFR') => {
     if (!selectedSeason || !selectedAnime || selectedLanguage === newLanguage) return;
     
+    // Protection contre les race conditions
+    if (languageChangeInProgress) return;
+    setLanguageChangeInProgress(true);
+    
+    const previousLanguage = selectedLanguage;
     setSelectedLanguage(newLanguage);
     setLoading(true);
     setError(null);
     
     try {
       const language = newLanguage.toLowerCase();
+      const cacheKey = `seasons_${selectedAnime.id}_${selectedSeason.number}_${language}`;
       
-      const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`);
-      const apiResponse: ApiResponse<{
-        animeId: string;
-        season: number;
-        language: string;
-        episodes: Episode[];
-        episodeCount: number;
-      }> = await response.json();
+      // Utiliser le cache pour éviter les requêtes répétées
+      const apiResponse = await getCachedData(cacheKey, async () => {
+        const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`);
+        return await response.json();
+      });
       
       if (!apiResponse.success || apiResponse.data.episodes.length === 0) {
         throw new Error(`Aucun épisode ${newLanguage} disponible`);
@@ -360,9 +415,10 @@ const AnimeSamaPage: React.FC = () => {
       console.error('Erreur changement langue:', err);
       setError(`Impossible de charger les épisodes ${newLanguage}.`);
       // Revenir à la langue précédente si échec
-      setSelectedLanguage(selectedLanguage === 'VF' ? 'VOSTFR' : 'VF');
+      setSelectedLanguage(previousLanguage);
     } finally {
       setLoading(false);
+      setLanguageChangeInProgress(false);
     }
   };
 
@@ -832,41 +888,73 @@ const AnimeSamaPage: React.FC = () => {
               </p>
             </div>
 
-            {/* Lecteur vidéo optimisé */}
+            {/* CORRECTION 5: Lecteur vidéo optimisé avec gestion d'erreurs améliorée */}
             {currentSource && (
               <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: '#000', minHeight: '400px' }}>
                 <iframe
+                  key={`${selectedEpisode?.id}-${selectedServer}`}
                   src={currentSource.url}
                   className="w-full h-64 md:h-80 lg:h-96"
                   allowFullScreen
                   frameBorder="0"
                   allow="autoplay; fullscreen"
                   title={`${episodeDetails?.title} - ${currentSource.server}`}
-                  onLoad={() => setError(null)}
+                  onLoad={() => {
+                    setError(null);
+                    console.log(`Successfully loaded server ${selectedServer + 1}`);
+                  }}
                   onError={() => {
-                    if (selectedServer < currentSources.length - 1) {
-                      setSelectedServer(selectedServer + 1);
-                    }
+                    console.error(`Failed to load server ${selectedServer + 1}`);
+                    loadVideoSourceWithRetry(selectedServer, 0);
                   }}
                 />
                 
-
+                {/* Indicateur serveur actuel */}
+                <div className="absolute top-2 left-2">
+                  <div className="bg-black/70 text-white text-xs px-2 py-1 rounded">
+                    Serveur {selectedServer + 1}/{currentSources.length} - {currentSource.server}
+                  </div>
+                </div>
                 
                 {/* Bouton d'ouverture externe */}
                 <div className="absolute top-2 right-2">
                   <button
                     onClick={() => {
-                      if (currentSource.isEmbed) {
-                        window.open(currentSource.url, '_blank');
-                      } else {
-                        window.open(currentSource.url, '_blank');
-                      }
+                      window.open(currentSource.url, '_blank');
                     }}
                     className="bg-black/70 text-white text-xs px-2 py-1 rounded hover:bg-black/90 transition-colors"
                   >
                     ⧉ Nouvel onglet
                   </button>
                 </div>
+                
+                {/* Boutons navigation serveurs */}
+                {currentSources.length > 1 && (
+                  <div className="absolute bottom-2 right-2 flex gap-2">
+                    <button
+                      onClick={() => {
+                        if (selectedServer > 0) {
+                          setSelectedServer(selectedServer - 1);
+                        }
+                      }}
+                      disabled={selectedServer === 0}
+                      className="bg-black/70 text-white text-xs px-2 py-1 rounded hover:bg-black/90 transition-colors disabled:opacity-50"
+                    >
+                      ← Serveur précédent
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (selectedServer < currentSources.length - 1) {
+                          setSelectedServer(selectedServer + 1);
+                        }
+                      }}
+                      disabled={selectedServer === currentSources.length - 1}
+                      className="bg-black/70 text-white text-xs px-2 py-1 rounded hover:bg-black/90 transition-colors disabled:opacity-50"
+                    >
+                      Serveur suivant →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
