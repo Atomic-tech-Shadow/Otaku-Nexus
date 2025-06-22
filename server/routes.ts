@@ -683,15 +683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/catalogue', async (req, res) => {
-    try {
-      const catalogue = await animeSamaService.getCatalogue();
-      res.json({ success: true, data: catalogue, timestamp: new Date().toISOString() });
-    } catch (error) {
-      console.error("Error fetching anime catalogue:", error);
-      res.status(500).json({ success: false, message: "Failed to fetch anime catalogue" });
-    }
-  });
+
 
   app.get('/api/anime/genres', async (req, res) => {
     try {
