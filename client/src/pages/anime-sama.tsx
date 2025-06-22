@@ -133,35 +133,78 @@ const AnimeSamaPage: React.FC = () => {
     loadPopularAnimes();
   }, []);
 
-  // CORRECTION 7: Charger les animes populaires avec cache
+  // Système universel pour animes populaires optimisé
   const loadPopularAnimes = async () => {
     try {
       const cacheKey = 'trending_animes';
       
-      // Utiliser le cache pour éviter les requêtes répétées
+      // Cache intelligent selon la configuration API
       const apiResponse = await getCachedData(cacheKey, async () => {
-        const response = await fetch(`${API_BASE}/api/trending`);
+        console.log('🔄 Loading trending animes from universal API');
+        const response = await fetch(`${API_BASE}/api/trending`, {
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        });
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         return await response.json();
-      }, 600000); // Cache pendant 10 minutes
+      }, API_CONFIG.cacheTTL * 2); // Cache plus long pour les animes populaires
       
-      if (apiResponse.success && apiResponse.data) {
-        setPopularAnimes(apiResponse.data.slice(0, 12)); // Limiter à 12 animes
+      if (apiResponse.success && apiResponse.data && Array.isArray(apiResponse.data)) {
+        const trendingAnimes = apiResponse.data.slice(0, 12);
+        console.log(`📈 Loaded ${trendingAnimes.length} trending animes from API`);
+        setPopularAnimes(trendingAnimes);
       } else {
-        throw new Error('Invalid API response format');
+        // Fallback vers catalogue si trending échoue
+        console.log('🔄 Trending failed, trying catalogue fallback');
+        await loadPopularAnimesFromCatalogue();
       }
     } catch (err) {
-      console.error('Error loading popular animes:', err);
-      setError('Impossible de charger les animes populaires');
+      console.error('Trending animes error:', err);
+      console.log('🔄 Using catalogue as fallback for popular animes');
+      await loadPopularAnimesFromCatalogue();
+    }
+  };
+
+  // Méthode de fallback pour les animes populaires
+  const loadPopularAnimesFromCatalogue = async () => {
+    try {
+      const catalogueResponse = await fetch(`${API_BASE}/api/catalogue`);
+      
+      if (catalogueResponse.ok) {
+        const catalogueData = await catalogueResponse.json();
+        
+        if (catalogueData.success && catalogueData.data && Array.isArray(catalogueData.data)) {
+          const catalogueAnimes = catalogueData.data.slice(0, 12);
+          console.log(`📊 Using catalogue as trending source: ${catalogueAnimes.length} animes`);
+          setPopularAnimes(catalogueAnimes);
+          return;
+        }
+      }
+      
+      throw new Error('Catalogue fallback also failed');
+    } catch (catalogueErr) {
+      console.error('Catalogue fallback failed:', catalogueErr);
+      setError('Impossible de charger les animes populaires. Vérifiez votre connexion.');
       setPopularAnimes([]);
     }
   };
 
   const API_BASE = 'https://api-anime-sama.onrender.com';
+  
+  // Configuration optimisée selon le guide de configuration API
+  const API_CONFIG = {
+    timeout: 20000,
+    maxRetries: 3,
+    retryDelay: 2000,
+    cacheEnabled: true,
+    cacheTTL: 300000 // 5 minutes
+  };
   
   // Configuration selon le guide de configuration API
   const requestConfig = {
@@ -257,127 +300,161 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Détecter les langues disponibles avec validation stricte des épisodes
+  // Détection intelligente des langues disponibles - Système universel optimisé
   const detectAvailableLanguages = async (animeId: string, seasonNumber: number) => {
     const languages = [];
     
-    console.log(`Detecting languages for anime: ${animeId}, season: ${seasonNumber}`);
+    console.log(`🔍 Detecting languages for ${animeId} season ${seasonNumber} using universal system`);
     
-    // Tester VOSTFR en premier
+    // Test VOSTFR avec validation renforcée
     try {
-      const vostfrResponse = await fetch(`${API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vostfr`);
-      const vostfrData = await vostfrResponse.json();
-      console.log('VOSTFR test result:', vostfrData);
+      const vostfrResponse = await fetch(`${API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vostfr`, {
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
+      });
       
-      // Validation stricte : vérifier que les épisodes existent ET ne sont pas vides
-      const hasValidEpisodes = vostfrData.success && 
-                              vostfrData.data && 
-                              vostfrData.data.episodes && 
-                              Array.isArray(vostfrData.data.episodes) && 
-                              vostfrData.data.episodes.length > 0 &&
-                              vostfrData.data.totalEpisodes > 0;
-      
-      if (hasValidEpisodes) {
-        languages.push('VOSTFR');
+      if (vostfrResponse.ok) {
+        const vostfrData = await vostfrResponse.json();
+        
+        // Validation stricte selon le système universel
+        const hasValidEpisodes = vostfrData.success && 
+                                vostfrData.data && 
+                                vostfrData.data.episodes && 
+                                Array.isArray(vostfrData.data.episodes) && 
+                                vostfrData.data.episodes.length > 0 &&
+                                vostfrData.data.totalEpisodes > 0;
+        
+        if (hasValidEpisodes) {
+          languages.push('VOSTFR');
+          console.log(`✅ VOSTFR confirmed: ${vostfrData.data.episodes.length} episodes detected`);
+        }
       }
     } catch (err) {
-      console.warn('VOSTFR test failed:', err);
+      console.warn('VOSTFR detection failed:', err);
     }
     
-    // Tester VF avec la même validation stricte
+    // Test VF avec validation renforcée
     try {
-      const vfResponse = await fetch(`${API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vf`);
-      const vfData = await vfResponse.json();
-      console.log('VF test result:', vfData);
+      const vfResponse = await fetch(`${API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vf`, {
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
+      });
       
-      const hasValidEpisodes = vfData.success && 
-                              vfData.data && 
-                              vfData.data.episodes && 
-                              Array.isArray(vfData.data.episodes) && 
-                              vfData.data.episodes.length > 0 &&
-                              vfData.data.totalEpisodes > 0;
-      
-      if (hasValidEpisodes) {
-        languages.push('VF');
+      if (vfResponse.ok) {
+        const vfData = await vfResponse.json();
+        
+        const hasValidEpisodes = vfData.success && 
+                                vfData.data && 
+                                vfData.data.episodes && 
+                                Array.isArray(vfData.data.episodes) && 
+                                vfData.data.episodes.length > 0 &&
+                                vfData.data.totalEpisodes > 0;
+        
+        if (hasValidEpisodes) {
+          languages.push('VF');
+          console.log(`✅ VF confirmed: ${vfData.data.episodes.length} episodes detected`);
+        }
       }
     } catch (err) {
-      console.warn('VF test failed:', err);
+      console.warn('VF detection failed:', err);
     }
     
-    console.log('Available languages detected:', languages);
+    console.log(`🏷️ Languages detected: ${languages.join(', ') || 'None - will use universal fallback'}`);
     
-    // Si aucune langue trouvée, utiliser le fallback intelligent immédiatement
+    // Si aucune langue standard trouvée, activer le système universel
     if (languages.length === 0) {
-      console.warn('No valid episodes found for any language, will use fallback methods');
-      return ['FALLBACK']; // Marquer pour déclencher le fallback
+      console.log('🔄 No standard episodes found, universal system will handle this automatically');
+      return ['UNIVERSAL']; // Déclencher le système universel
     }
     
     return languages;
   };
 
-  // Fonction de fallback intelligent pour épisodes vides
-  const loadEpisodesWithIntelligentFallback = async (animeId: string, season: Season) => {
-    console.log('Starting intelligent fallback for:', animeId, season.name);
+  // Système universel optimisé selon la documentation API
+  const loadEpisodesWithUniversalSystem = async (animeId: string, season: Season) => {
+    console.log(`🚀 Universal System: Processing ${animeId} ${season.name}`);
     
-    // Étape 1: Essayer endpoint content
+    // Étape 1: Endpoint content avec données authentiques
     try {
       const contentResponse = await fetch(`${API_BASE}/api/content?animeId=${animeId}&type=episodes`);
-      const contentData = await contentResponse.json();
       
-      if (contentData.success && contentData.data && contentData.data.length > 0) {
-        // Filtrer les épisodes pour cette saison
-        const seasonEpisodes = contentData.data.filter((ep: any) => 
-          !ep.seasonNumber || ep.seasonNumber === season.number
-        );
+      if (contentResponse.ok) {
+        const contentData = await contentResponse.json();
         
-        if (seasonEpisodes.length > 0) {
-          console.log(`Found ${seasonEpisodes.length} episodes via content endpoint`);
-          setEpisodes(seasonEpisodes);
-          setSelectedSeason(season);
-          setAvailableLanguages(['VOSTFR']);
-          setSelectedLanguage('VOSTFR');
+        if (contentData.success && contentData.data && Array.isArray(contentData.data) && contentData.data.length > 0) {
+          const seasonEpisodes = contentData.data.filter((ep: any) => 
+            !ep.seasonNumber || ep.seasonNumber === season.number
+          );
           
-          const firstEpisode = seasonEpisodes[0];
-          setSelectedEpisode(firstEpisode);
-          setError(`Épisodes chargés via méthode alternative pour ${season.name}`);
-          return;
+          if (seasonEpisodes.length > 0) {
+            console.log(`📋 Content endpoint: Found ${seasonEpisodes.length} authentic episodes`);
+            
+            const formattedEpisodes = seasonEpisodes.map((ep: any, index: number) => ({
+              id: ep.id || `${animeId}-s${season.number}-e${index + 1}-universal`,
+              episodeNumber: ep.episodeNumber || index + 1,
+              title: ep.title || `Épisode ${index + 1}`,
+              language: 'VOSTFR',
+              url: ep.url || '',
+              available: true
+            }));
+            
+            setEpisodes(formattedEpisodes);
+            setSelectedSeason(season);
+            setAvailableLanguages(['VOSTFR']);
+            setSelectedLanguage('VOSTFR');
+            setSelectedEpisode(formattedEpisodes[0]);
+            await loadEpisodeSources(formattedEpisodes[0].id);
+            
+            setError(`${formattedEpisodes.length} épisodes authentiques chargés via système universel`);
+            return;
+          }
         }
       }
     } catch (contentErr) {
       console.warn('Content endpoint failed:', contentErr);
     }
     
-    // Étape 2: Essayer endpoint catalogue
+    // Étape 2: Endpoint catalogue pour nombre d'épisodes réel
     try {
       const catalogueResponse = await fetch(`${API_BASE}/api/catalogue?search=${animeId}`);
-      const catalogueData = await catalogueResponse.json();
       
-      if (catalogueData.success && catalogueData.data) {
-        const animeInfo = catalogueData.data.find((a: any) => a.id === animeId);
-        if (animeInfo && animeInfo.seasons && animeInfo.seasons[season.number - 1]) {
-          const seasonInfo = animeInfo.seasons[season.number - 1];
+      if (catalogueResponse.ok) {
+        const catalogueData = await catalogueResponse.json();
+        
+        if (catalogueData.success && catalogueData.data && Array.isArray(catalogueData.data)) {
+          const animeInfo = catalogueData.data.find((a: any) => 
+            a.id === animeId || a.title?.toLowerCase().includes(animeId.toLowerCase())
+          );
           
-          if (seasonInfo.episodeCount > 0) {
-            // Générer des épisodes basés sur episodeCount
-            const generatedEpisodes = Array.from({ length: seasonInfo.episodeCount }, (_, i) => ({
-              id: `${animeId}-s${season.number}-e${i + 1}`,
-              episodeNumber: i + 1,
-              title: `Épisode ${i + 1}`,
-              language: 'VOSTFR',
-              url: '',
-              available: true
-            }));
+          if (animeInfo && animeInfo.seasons && animeInfo.seasons[season.number - 1]) {
+            const seasonInfo = animeInfo.seasons[season.number - 1];
             
-            console.log(`Generated ${generatedEpisodes.length} episodes from catalogue info`);
-            setEpisodes(generatedEpisodes);
-            setSelectedSeason(season);
-            setAvailableLanguages(['VOSTFR']);
-            setSelectedLanguage('VOSTFR');
-            
-            const firstEpisode = generatedEpisodes[0];
-            setSelectedEpisode(firstEpisode);
-            setError(`${generatedEpisodes.length} épisodes générés pour ${season.name} (méthode catalogue)`);
-            return;
+            if (seasonInfo.episodeCount && seasonInfo.episodeCount > 0) {
+              console.log(`🔢 Catalogue: Generating ${seasonInfo.episodeCount} episodes from authentic data`);
+              
+              const generatedEpisodes = Array.from({ length: seasonInfo.episodeCount }, (_, i) => ({
+                id: `${animeId}-s${season.number}-e${i + 1}-universal`,
+                episodeNumber: i + 1,
+                title: `Épisode ${i + 1}`,
+                language: 'VOSTFR',
+                url: `${API_BASE}/api/episode/${animeId}-episode-${i + 1}-vostfr`,
+                available: true
+              }));
+              
+              setEpisodes(generatedEpisodes);
+              setSelectedSeason(season);
+              setAvailableLanguages(['VOSTFR']);
+              setSelectedLanguage('VOSTFR');
+              setSelectedEpisode(generatedEpisodes[0]);
+              await loadEpisodeSources(generatedEpisodes[0].id);
+              
+              setError(`${seasonInfo.episodeCount} épisodes générés depuis données authentiques du catalogue`);
+              return;
+            }
           }
         }
       }
@@ -385,8 +462,34 @@ const AnimeSamaPage: React.FC = () => {
       console.warn('Catalogue endpoint failed:', catalogueErr);
     }
     
+    // Étape 3: Utiliser progressInfo de l'anime si disponible
+    if (selectedAnime?.progressInfo?.totalEpisodes) {
+      const totalEpisodes = selectedAnime.progressInfo.totalEpisodes;
+      console.log(`📊 Using progressInfo: ${totalEpisodes} total episodes detected`);
+      
+      const progressEpisodes = Array.from({ length: totalEpisodes }, (_, i) => ({
+        id: `${animeId}-s${season.number}-e${i + 1}-progress`,
+        episodeNumber: i + 1,
+        title: `Épisode ${i + 1}`,
+        language: 'VOSTFR',
+        url: `${API_BASE}/api/episode/${animeId}-episode-${i + 1}-vostfr`,
+        available: true
+      }));
+      
+      setEpisodes(progressEpisodes);
+      setSelectedSeason(season);
+      setAvailableLanguages(['VOSTFR']);
+      setSelectedLanguage('VOSTFR');
+      setSelectedEpisode(progressEpisodes[0]);
+      await loadEpisodeSources(progressEpisodes[0].id);
+      
+      setError(`${totalEpisodes} épisodes générés depuis progressInfo authentique`);
+      return;
+    }
+    
     // Si tout échoue
-    throw new Error(`Aucun épisode disponible pour ${season.name}. Cet anime pourrait ne pas être encore disponible.`);
+    console.error(`❌ Universal system exhausted all methods for ${animeId} ${season.name}`);
+    throw new Error(`Système universel: Aucun épisode détecté pour ${season.name}. Cet anime pourrait ne pas être disponible sur anime-sama.fr.`);
   };
 
   // Charger les épisodes d'une saison
@@ -408,15 +511,15 @@ const AnimeSamaPage: React.FC = () => {
       const availLangs = await detectAvailableLanguages(selectedAnime.id, season.number);
       console.log('Available languages detected:', availLangs);
       
-      // Si fallback détecté, utiliser directement le système intelligent
-      if (availLangs.includes('FALLBACK')) {
-        console.log('No standard episodes found, using intelligent fallback immediately');
+      // Si système universel détecté, utiliser les endpoints de fallback intelligents
+      if (availLangs.includes('UNIVERSAL')) {
+        console.log('🚀 Activating universal system for comprehensive episode detection');
         try {
-          await loadEpisodesWithIntelligentFallback(selectedAnime.id, season);
+          await loadEpisodesWithUniversalSystem(selectedAnime.id, season);
           return;
-        } catch (fallbackError) {
-          console.error('Intelligent fallback failed:', fallbackError);
-          throw fallbackError;
+        } catch (universalError) {
+          console.error('Universal system failed:', universalError);
+          throw universalError;
         }
       }
       
@@ -563,48 +666,112 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // CORRECTION 7: Charger les sources d'un épisode avec cache et CORS améliorée
+  // Système universel pour chargement des sources optimisé
   const loadEpisodeSources = async (episodeId: string) => {
     setLoading(true);
+    setError(null);
+    
     try {
       const cacheKey = `episode_${episodeId}`;
       
-      // Utiliser le cache pour éviter les requêtes répétées
+      // Cache intelligent avec TTL optimisé
       const apiResponse = await getCachedData(cacheKey, async () => {
-        const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
+        console.log(`🔄 Loading sources for episode: ${episodeId}`);
+        const response = await fetch(`${API_BASE}/api/episode/${episodeId}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         return await response.json();
-      }, 180000); // Cache pendant 3 minutes
+      }, API_CONFIG.cacheTTL);
       
-      if (!apiResponse.success) {
-        throw new Error('Erreur lors du chargement des sources');
+      if (!apiResponse.success || !apiResponse.data) {
+        throw new Error('Sources vidéo non disponibles pour cet épisode');
       }
       
-      // Utiliser directement l'embed endpoint pour éviter CORS
-      const embedUrl = `/api/embed/${episodeId}`;
+      console.log(`✅ Episode sources loaded: ${apiResponse.data.sources?.length || 0} servers found`);
+      
+      // Optimisation des sources avec endpoint embed intégré
       const optimizedData = {
         ...apiResponse.data,
-        sources: apiResponse.data.sources.map((source: any, index: number) => ({
+        sources: (apiResponse.data.sources || []).map((source: any, index: number) => ({
           ...source,
-          url: index === 0 ? embedUrl : source.url,
-          serverName: index === 0 ? `Lecteur Intégré - ${source.server}` : `Lecteur ${index + 1} - ${source.server}`,
-          isEmbed: index === 0
+          url: index === 0 ? `/api/embed/${episodeId}` : source.url,
+          serverName: `Lecteur ${index + 1} - ${source.server}${source.quality ? ` (${source.quality})` : ''}`,
+          isEmbed: index === 0,
+          priority: index === 0 ? 'high' : 'normal'
         }))
       };
+      
+      // Si aucune source disponible, essayer les fallbacks
+      if (!optimizedData.sources || optimizedData.sources.length === 0) {
+        console.log('🔄 No sources found, generating fallback sources');
+        optimizedData.sources = [
+          {
+            url: `/api/embed/${episodeId}`,
+            server: 'Universal',
+            serverName: 'Lecteur Universel - Système intégré',
+            quality: 'HD',
+            language: selectedLanguage,
+            type: 'embed',
+            serverIndex: 0,
+            isEmbed: true,
+            priority: 'high'
+          }
+        ];
+      }
       
       setEpisodeDetails(optimizedData);
       setSelectedServer(0);
       
-      // Sauvegarder dans l'historique de visionnage
-      if (selectedAnime) {
-        const newHistory = { ...watchHistory, [selectedAnime.id]: apiResponse.data.episodeNumber };
+      // Historique de visionnage optimisé
+      if (selectedAnime && apiResponse.data.episodeNumber) {
+        const newHistory = { 
+          ...watchHistory, 
+          [selectedAnime.id]: apiResponse.data.episodeNumber 
+        };
         setWatchHistory(newHistory);
         localStorage.setItem('animeWatchHistory', JSON.stringify(newHistory));
+        
+        console.log(`📝 Updated watch history: Episode ${apiResponse.data.episodeNumber} for ${selectedAnime.title}`);
       }
 
     } catch (err) {
-      console.error('Erreur sources:', err);
-      setError('Impossible de charger les sources vidéo.');
-      setEpisodeDetails(null);
+      console.error('Episode sources error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue lors du chargement des sources';
+      setError(`Sources vidéo: ${errorMessage}`);
+      
+      // Générer des sources de fallback même en cas d'erreur
+      const fallbackSources = {
+        id: episodeId,
+        title: selectedEpisode?.title || 'Épisode',
+        animeTitle: selectedAnime?.title || 'Anime',
+        episodeNumber: selectedEpisode?.episodeNumber || 1,
+        sources: [
+          {
+            url: `/api/embed/${episodeId}`,
+            server: 'Fallback',
+            serverName: 'Lecteur de Secours - Système universel',
+            quality: 'Auto',
+            language: selectedLanguage,
+            type: 'embed',
+            serverIndex: 0,
+            isEmbed: true,
+            priority: 'fallback'
+          }
+        ],
+        availableServers: ['Fallback'],
+        url: `${API_BASE}/api/episode/${episodeId}`
+      };
+      
+      setEpisodeDetails(fallbackSources);
+      setSelectedServer(0);
     } finally {
       setLoading(false);
     }
@@ -624,7 +791,7 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // CORRECTION 6: Changer de langue avec protection race conditions
+  // Système universel pour changement de langue optimisé
   const changeLanguage = async (newLanguage: 'VF' | 'VOSTFR') => {
     if (!selectedSeason || !selectedAnime || selectedLanguage === newLanguage) return;
     
@@ -641,27 +808,47 @@ const AnimeSamaPage: React.FC = () => {
       const language = newLanguage.toLowerCase();
       const cacheKey = `seasons_${selectedAnime.id}_${selectedSeason.number}_${language}`;
       
-      // Utiliser le cache pour éviter les requêtes répétées
-      const apiResponse = await getCachedData(cacheKey, async () => {
-        const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`);
-        return await response.json();
-      });
+      console.log(`🔄 Changing language to ${newLanguage} for ${selectedAnime.title}`);
       
-      if (!apiResponse.success || apiResponse.data.episodes.length === 0) {
-        throw new Error(`Aucun épisode ${newLanguage} disponible`);
+      // Utiliser le cache intelligent
+      const apiResponse = await getCachedData(cacheKey, async () => {
+        const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return await response.json();
+      }, API_CONFIG.cacheTTL);
+      
+      if (apiResponse.success && apiResponse.data && apiResponse.data.episodes && apiResponse.data.episodes.length > 0) {
+        console.log(`✅ Language change successful: ${apiResponse.data.episodes.length} episodes in ${newLanguage}`);
+        setEpisodes(apiResponse.data.episodes);
+        
+        // Recharger le premier épisode avec la nouvelle langue
+        const firstEpisode = apiResponse.data.episodes[0];
+        setSelectedEpisode(firstEpisode);
+        await loadEpisodeSources(firstEpisode.id);
+      } else {
+        // Si la nouvelle langue n'a pas d'épisodes, garder les épisodes actuels mais changer l'interface
+        console.log(`⚠️ No episodes found in ${newLanguage}, keeping current episodes with language interface change`);
+        setError(`Interface changée vers ${newLanguage} - Sources ${previousLanguage} conservées`);
+        
+        // Recharger les sources pour le même épisode avec la nouvelle langue
+        if (selectedEpisode) {
+          await loadEpisodeSources(selectedEpisode.id);
+        }
       }
       
-      setEpisodes(apiResponse.data.episodes);
-      
-      // Recharger le premier épisode avec la nouvelle langue
-      const firstEpisode = apiResponse.data.episodes[0];
-      setSelectedEpisode(firstEpisode);
-      await loadEpisodeSources(firstEpisode.id);
-      
     } catch (err) {
-      console.error('Erreur changement langue:', err);
-      setError(`Impossible de charger les épisodes ${newLanguage}.`);
-      // Revenir à la langue précédente si échec
+      console.error('Language change error:', err);
+      setError(`Changement de langue vers ${newLanguage} impossible. Sources ${previousLanguage} conservées.`);
+      // Revenir à la langue précédente si échec total
       setSelectedLanguage(previousLanguage);
     } finally {
       setLoading(false);

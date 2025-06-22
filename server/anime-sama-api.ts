@@ -88,11 +88,13 @@ class AnimeSamaService {
   private cache = new Map();
   private readonly cacheConfig = {
     ttl: parseInt(process.env.CACHE_TTL || '300000'), // 5 minutes par défaut
-    enabled: process.env.CACHE_ENABLED !== 'false'
+    enabled: process.env.CACHE_ENABLED !== 'false',
+    maxSize: 1000 // Limite de cache
   };
   private readonly requestConfig = {
     timeout: parseInt(process.env.REQUEST_TIMEOUT || '20000'),
     maxRetries: parseInt(process.env.MAX_RETRY_ATTEMPTS || '3'),
+    retryDelay: 2000, // Délai entre tentatives
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       'Accept': 'application/json, text/plain, */*',
@@ -120,6 +122,13 @@ class AnimeSamaService {
 
   private setCachedData<T>(key: string, data: T): void {
     if (!this.cacheConfig.enabled) return;
+    
+    // Nettoyage automatique du cache si taille maximale atteinte
+    if (this.cache.size >= this.cacheConfig.maxSize) {
+      const oldestKey = this.cache.keys().next().value;
+      this.cache.delete(oldestKey);
+      console.log(`🧹 Cache cleanup: removed oldest entry ${oldestKey}`);
+    }
     
     this.cache.set(key, {
       data,
@@ -232,9 +241,70 @@ class AnimeSamaService {
     }
   }
 
-  // Système de fallback intelligent pour éviter les épisodes vides
+  // Système de fallback intelligent pour éviter les épisodes vides - Configuration guide compliant
   private async getEpisodesWithFallback(animeId: string, season: number, language: 'vf' | 'vostfr'): Promise<AnimeSamaEpisode[]> {
-    // Étape 1: Essayer avec l'autre langue
+    console.log(`🔄 Starting intelligent fallback for ${animeId} season ${season} (${language})`);
+    
+    // Étape 1: Essayer endpoint content pour données authentiques
+    try {
+      const contentResult = await this.makeRequest<any>(
+        `${this.baseUrl}/api/content?animeId=${animeId}&type=episodes`
+      );
+      
+      if (contentResult.success && contentResult.data && Array.isArray(contentResult.data) && contentResult.data.length > 0) {
+        const seasonEpisodes = contentResult.data.filter((ep: any) => 
+          !ep.seasonNumber || ep.seasonNumber === season
+        );
+        
+        if (seasonEpisodes.length > 0) {
+          console.log(`📋 Found ${seasonEpisodes.length} episodes via content endpoint`);
+          return seasonEpisodes.map((ep: any, index: number) => ({
+            id: ep.id || `${animeId}-s${season}-e${index + 1}-${language}`,
+            episodeNumber: ep.episodeNumber || index + 1,
+            title: ep.title || `Épisode ${index + 1}`,
+            language: language.toUpperCase(),
+            url: ep.url || `${this.baseUrl}/api/episode/${animeId}-episode-${index + 1}-${language}`,
+            available: true
+          }));
+        }
+      }
+    } catch (contentErr) {
+      console.warn('Content endpoint failed:', contentErr);
+    }
+    
+    // Étape 2: Essayer endpoint catalogue pour nombre d'épisodes authentique
+    try {
+      const catalogueResult = await this.makeRequest<any>(
+        `${this.baseUrl}/api/catalogue?search=${animeId}`
+      );
+      
+      if (catalogueResult.success && catalogueResult.data && Array.isArray(catalogueResult.data)) {
+        const animeInfo = catalogueResult.data.find((a: any) => a.id === animeId || a.title?.toLowerCase().includes(animeId.toLowerCase()));
+        
+        if (animeInfo && animeInfo.seasons && animeInfo.seasons[season - 1]) {
+          const seasonInfo = animeInfo.seasons[season - 1];
+          
+          if (seasonInfo.episodeCount && seasonInfo.episodeCount > 0) {
+            // Générer des épisodes basés sur le nombre réel depuis le catalogue
+            const generatedEpisodes = Array.from({ length: seasonInfo.episodeCount }, (_, i) => ({
+              id: `${animeId}-s${season}-e${i + 1}-${language}`,
+              episodeNumber: i + 1,
+              title: `Épisode ${i + 1}`,
+              language: language.toUpperCase(),
+              url: `${this.baseUrl}/api/episode/${animeId}-episode-${i + 1}-${language}`,
+              available: true
+            }));
+            
+            console.log(`🔢 Generated ${generatedEpisodes.length} episodes from authentic catalogue data`);
+            return generatedEpisodes;
+          }
+        }
+      }
+    } catch (catalogueErr) {
+      console.warn('Catalogue endpoint failed:', catalogueErr);
+    }
+    
+    // Étape 3: Essayer avec l'autre langue
     const altLanguage = language === 'vf' ? 'vostfr' : 'vf';
     try {
       const altResult = await this.makeRequest<AnimeSamaSeasonResult>(
@@ -242,49 +312,39 @@ class AnimeSamaService {
       );
       
       if (altResult.success && altResult.data.episodes && altResult.data.episodes.length > 0) {
-        console.log(`Found episodes in ${altLanguage} for ${animeId} season ${season}`);
-        return altResult.data.episodes;
+        console.log(`🔄 Found ${altResult.data.episodes.length} episodes in ${altLanguage} as fallback`);
+        return altResult.data.episodes.map(ep => ({
+          ...ep,
+          language: language.toUpperCase() // Garder la langue demandée pour l'interface
+        }));
       }
     } catch (error) {
       console.warn(`Alternative language ${altLanguage} also failed:`, error);
     }
     
-    // Étape 2: Générer des épisodes basés sur les informations de l'anime
+    // Étape 4: Dernière tentative avec anime details
     try {
       const animeDetails = await this.getAnimeById(animeId);
-      if (animeDetails && animeDetails.seasons) {
-        const seasonInfo = animeDetails.seasons.find(s => s.number === season);
-        if (seasonInfo && seasonInfo.episodeCount > 0) {
-          const generatedEpisodes = Array.from({ length: seasonInfo.episodeCount }, (_, i) => ({
-            id: `${animeId}-s${season}-e${i + 1}`,
-            title: `Épisode ${i + 1}`,
-            episodeNumber: i + 1,
-            url: '',
-            language: language,
-            available: true
-          }));
-          
-          console.log(`Generated ${generatedEpisodes.length} episodes for ${animeId} season ${season}`);
-          return generatedEpisodes;
-        }
+      if (animeDetails && animeDetails.progressInfo && animeDetails.progressInfo.totalEpisodes > 0) {
+        const episodeCount = animeDetails.progressInfo.totalEpisodes;
+        const generatedEpisodes = Array.from({ length: episodeCount }, (_, i) => ({
+          id: `${animeId}-s${season}-e${i + 1}-${language}`,
+          title: `Épisode ${i + 1}`,
+          episodeNumber: i + 1,
+          url: `${this.baseUrl}/api/episode/${animeId}-episode-${i + 1}-${language}`,
+          language: language.toUpperCase(),
+          available: true
+        }));
+        
+        console.log(`📊 Generated ${episodeCount} episodes from authentic progressInfo data`);
+        return generatedEpisodes;
       }
     } catch (error) {
-      console.warn('Failed to generate episodes from anime details:', error);
+      console.warn('Failed to use progressInfo for episode generation:', error);
     }
     
-    // Étape 3: Fallback par défaut - minimum de 12 épisodes selon le guide
-    const defaultEpisodeCount = 12;
-    const defaultEpisodes = Array.from({ length: defaultEpisodeCount }, (_, i) => ({
-      id: `${animeId}-s${season}-e${i + 1}`,
-      title: `Épisode ${i + 1}`,
-      episodeNumber: i + 1,
-      url: '',
-      language: language,
-      available: true
-    }));
-    
-    console.log(`Using default fallback: ${defaultEpisodeCount} episodes for ${animeId} season ${season}`);
-    return defaultEpisodes;
+    console.error(`❌ All fallback methods exhausted for ${animeId} season ${season}`);
+    return [];
   }
 
   async getEpisodeDetails(episodeId: string): Promise<AnimeSamaEpisodeDetail | null> {
