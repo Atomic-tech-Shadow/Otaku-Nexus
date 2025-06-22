@@ -246,30 +246,47 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Détecter les langues disponibles pour une saison avec retry intelligent
+  // Détecter les langues disponibles avec validation stricte des épisodes
   const detectAvailableLanguages = async (animeId: string, seasonNumber: number) => {
     const languages = [];
     
     console.log(`Detecting languages for anime: ${animeId}, season: ${seasonNumber}`);
     
-    // Tester VOSTFR en premier (plus commun)
+    // Tester VOSTFR en premier
     try {
       const vostfrResponse = await fetch(`${API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vostfr`);
       const vostfrData = await vostfrResponse.json();
       console.log('VOSTFR test result:', vostfrData);
-      if (vostfrData.success && vostfrData.data && vostfrData.data.episodes && vostfrData.data.episodes.length > 0) {
+      
+      // Validation stricte : vérifier que les épisodes existent ET ne sont pas vides
+      const hasValidEpisodes = vostfrData.success && 
+                              vostfrData.data && 
+                              vostfrData.data.episodes && 
+                              Array.isArray(vostfrData.data.episodes) && 
+                              vostfrData.data.episodes.length > 0 &&
+                              vostfrData.data.totalEpisodes > 0;
+      
+      if (hasValidEpisodes) {
         languages.push('VOSTFR');
       }
     } catch (err) {
       console.warn('VOSTFR test failed:', err);
     }
     
-    // Tester VF
+    // Tester VF avec la même validation stricte
     try {
       const vfResponse = await fetch(`${API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vf`);
       const vfData = await vfResponse.json();
       console.log('VF test result:', vfData);
-      if (vfData.success && vfData.data && vfData.data.episodes && vfData.data.episodes.length > 0) {
+      
+      const hasValidEpisodes = vfData.success && 
+                              vfData.data && 
+                              vfData.data.episodes && 
+                              Array.isArray(vfData.data.episodes) && 
+                              vfData.data.episodes.length > 0 &&
+                              vfData.data.totalEpisodes > 0;
+      
+      if (hasValidEpisodes) {
         languages.push('VF');
       }
     } catch (err) {
@@ -278,13 +295,87 @@ const AnimeSamaPage: React.FC = () => {
     
     console.log('Available languages detected:', languages);
     
-    // Si aucune langue trouvée, retourner VOSTFR par défaut pour permettre la navigation
+    // Si aucune langue trouvée, utiliser le fallback intelligent immédiatement
     if (languages.length === 0) {
-      console.warn('No episodes found for any language, defaulting to VOSTFR');
-      return ['VOSTFR'];
+      console.warn('No valid episodes found for any language, will use fallback methods');
+      return ['FALLBACK']; // Marquer pour déclencher le fallback
     }
     
     return languages;
+  };
+
+  // Fonction de fallback intelligent pour épisodes vides
+  const loadEpisodesWithIntelligentFallback = async (animeId: string, season: Season) => {
+    console.log('Starting intelligent fallback for:', animeId, season.name);
+    
+    // Étape 1: Essayer endpoint content
+    try {
+      const contentResponse = await fetch(`${API_BASE}/api/content?animeId=${animeId}&type=episodes`);
+      const contentData = await contentResponse.json();
+      
+      if (contentData.success && contentData.data && contentData.data.length > 0) {
+        // Filtrer les épisodes pour cette saison
+        const seasonEpisodes = contentData.data.filter((ep: any) => 
+          !ep.seasonNumber || ep.seasonNumber === season.number
+        );
+        
+        if (seasonEpisodes.length > 0) {
+          console.log(`Found ${seasonEpisodes.length} episodes via content endpoint`);
+          setEpisodes(seasonEpisodes);
+          setSelectedSeason(season);
+          setAvailableLanguages(['VOSTFR']);
+          setSelectedLanguage('VOSTFR');
+          
+          const firstEpisode = seasonEpisodes[0];
+          setSelectedEpisode(firstEpisode);
+          setError(`Épisodes chargés via méthode alternative pour ${season.name}`);
+          return;
+        }
+      }
+    } catch (contentErr) {
+      console.warn('Content endpoint failed:', contentErr);
+    }
+    
+    // Étape 2: Essayer endpoint catalogue
+    try {
+      const catalogueResponse = await fetch(`${API_BASE}/api/catalogue?search=${animeId}`);
+      const catalogueData = await catalogueResponse.json();
+      
+      if (catalogueData.success && catalogueData.data) {
+        const animeInfo = catalogueData.data.find((a: any) => a.id === animeId);
+        if (animeInfo && animeInfo.seasons && animeInfo.seasons[season.number - 1]) {
+          const seasonInfo = animeInfo.seasons[season.number - 1];
+          
+          if (seasonInfo.episodeCount > 0) {
+            // Générer des épisodes basés sur episodeCount
+            const generatedEpisodes = Array.from({ length: seasonInfo.episodeCount }, (_, i) => ({
+              id: `${animeId}-s${season.number}-e${i + 1}`,
+              episodeNumber: i + 1,
+              title: `Épisode ${i + 1}`,
+              language: 'VOSTFR',
+              url: '',
+              available: true
+            }));
+            
+            console.log(`Generated ${generatedEpisodes.length} episodes from catalogue info`);
+            setEpisodes(generatedEpisodes);
+            setSelectedSeason(season);
+            setAvailableLanguages(['VOSTFR']);
+            setSelectedLanguage('VOSTFR');
+            
+            const firstEpisode = generatedEpisodes[0];
+            setSelectedEpisode(firstEpisode);
+            setError(`${generatedEpisodes.length} épisodes générés pour ${season.name} (méthode catalogue)`);
+            return;
+          }
+        }
+      }
+    } catch (catalogueErr) {
+      console.warn('Catalogue endpoint failed:', catalogueErr);
+    }
+    
+    // Si tout échoue
+    throw new Error(`Aucun épisode disponible pour ${season.name}. Cet anime pourrait ne pas être encore disponible.`);
   };
 
   // Charger les épisodes d'une saison
@@ -305,6 +396,19 @@ const AnimeSamaPage: React.FC = () => {
       
       const availLangs = await detectAvailableLanguages(selectedAnime.id, season.number);
       console.log('Available languages detected:', availLangs);
+      
+      // Si fallback détecté, utiliser directement le système intelligent
+      if (availLangs.includes('FALLBACK')) {
+        console.log('No standard episodes found, using intelligent fallback immediately');
+        try {
+          await loadEpisodesWithIntelligentFallback(selectedAnime.id, season);
+          return;
+        } catch (fallbackError) {
+          console.error('Intelligent fallback failed:', fallbackError);
+          throw fallbackError;
+        }
+      }
+      
       setAvailableLanguages(availLangs);
       
       let languageToUse = selectedLanguage;

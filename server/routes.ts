@@ -417,6 +417,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // CORRECTION: Ajouter endpoints manquants pour fallback intelligent
+  app.get('/api/catalogue', async (req, res) => {
+    try {
+      const { search } = req.query;
+      const catalogue = await animeSamaService.getCatalogue();
+      
+      let results = catalogue;
+      if (search) {
+        results = catalogue.filter(anime => 
+          anime.id.includes(search as string) || 
+          anime.title.toLowerCase().includes((search as string).toLowerCase())
+        );
+      }
+      
+      res.json({ success: true, data: results, timestamp: new Date().toISOString() });
+    } catch (error) {
+      console.error("Error fetching catalogue:", error);
+      res.status(500).json({ success: false, message: "Failed to fetch catalogue" });
+    }
+  });
+
+  app.get('/api/content', async (req, res) => {
+    try {
+      const { animeId, type } = req.query;
+      
+      if (!animeId) {
+        return res.status(400).json({ success: false, message: "animeId parameter required" });
+      }
+
+      // Essayer de récupérer l'anime pour obtenir les informations de saisons
+      const anime = await animeSamaService.getAnimeById(animeId as string);
+      
+      if (!anime || !anime.seasons) {
+        return res.json({ success: true, data: [], timestamp: new Date().toISOString() });
+      }
+
+      // Générer des épisodes basés sur les informations de saisons
+      const episodes = [];
+      for (const season of anime.seasons) {
+        for (let i = 1; i <= season.episodeCount; i++) {
+          episodes.push({
+            id: `${animeId}-s${season.number}-e${i}`,
+            episodeNumber: i,
+            title: `Épisode ${i}`,
+            language: 'VOSTFR',
+            url: '',
+            available: true,
+            seasonNumber: season.number
+          });
+        }
+      }
+
+      res.json({ success: true, data: episodes, timestamp: new Date().toISOString() });
+    } catch (error) {
+      console.error("Error fetching content:", error);
+      res.status(500).json({ success: false, message: "Failed to fetch content" });
+    }
+  });
+
   // Route embed pour iframe direct - CORRECTION CORS CRITIQUE
   app.get('/api/embed/:episodeId', async (req, res) => {
     try {
