@@ -162,6 +162,17 @@ const AnimeSamaPage: React.FC = () => {
   };
 
   const API_BASE = 'https://api-anime-sama.onrender.com';
+  
+  // Configuration selon le guide de configuration API
+  const requestConfig = {
+    timeout: 20000,
+    maxRetries: 3,
+    headers: {
+      'Accept': 'application/json, text/plain, */*',
+      'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
+      'Cache-Control': 'no-cache'
+    }
+  };
 
   // CORRECTION 5: Fonction de retry automatique pour vidéos
   const loadVideoSourceWithRetry = (serverIndex: number, retryCount = 0) => {
