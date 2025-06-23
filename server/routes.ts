@@ -349,22 +349,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-      // Retourner page HTML avec iframe intégré
+      // Retourner page HTML avec iframe intégré - SANS OVERLAY
       const embedHtml = `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${episode.animeTitle} - Episode ${episode.episodeNumber}</title>
+    <title>Lecteur Vidéo</title>
     <style>
-        body { margin: 0; padding: 0; background: #000; }
-        iframe { width: 100%; height: 100vh; border: none; }
-        .error { color: white; text-align: center; padding: 20px; }
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background: #000; 
+            overflow: hidden;
+            position: relative;
+        }
+        iframe { 
+            width: 100%; 
+            height: 100vh; 
+            border: none; 
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .error { 
+            color: white; 
+            text-align: center; 
+            padding: 50px; 
+            font-family: Arial, sans-serif;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        /* Overlay masquant pour cacher les éléments indésirables */
+        .overlay-mask {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 120px;
+            background: transparent;
+            z-index: 999;
+            pointer-events: none;
+        }
+        /* Zone cliquable invisible pour empêcher les clics sur l'overlay */
+        .click-blocker {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 120px;
+            z-index: 1000;
+            background: transparent;
+        }
     </style>
+    <script>
+        // Masquer automatiquement les overlays après chargement
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                // Essayer de masquer les overlays dans l'iframe si possible
+                try {
+                    const iframe = document.querySelector('iframe');
+                    if (iframe && iframe.contentDocument) {
+                        const style = iframe.contentDocument.createElement('style');
+                        style.textContent = \`
+                            .video-overlay, .episode-info, .player-controls, 
+                            [class*="episode"], [class*="title"], [class*="info"],
+                            [style*="position: absolute"], [style*="z-index"] {
+                                display: none !important;
+                                visibility: hidden !important;
+                            }
+                        \`;
+                        iframe.contentDocument.head.appendChild(style);
+                    }
+                } catch (e) {
+                    // Cross-origin, ignore
+                }
+            }, 1000);
+        });
+    </script>
 </head>
 <body>
     ${episode.sources.length > 0 ? 
-      `<iframe src="${episode.sources[0].url}" allowfullscreen></iframe>` :
+      `<iframe src="${episode.sources[0].url}" allowfullscreen></iframe>
+       <div class="overlay-mask"></div>
+       <div class="click-blocker"></div>` :
       `<div class="error">Aucune source disponible pour cet épisode</div>`
     }
 </body>

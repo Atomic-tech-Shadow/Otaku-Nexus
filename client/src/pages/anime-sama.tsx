@@ -1506,9 +1506,9 @@ const AnimeSamaPage: React.FC = () => {
 
 
 
-            {/* Zone lecteur vidéo */}
+            {/* Zone lecteur vidéo - Sans overlay */}
             <div 
-              className="w-full rounded-lg overflow-hidden" 
+              className="w-full rounded-lg overflow-hidden relative" 
               style={{ backgroundColor: '#000', minHeight: '300px' }}
             >
               {(() => {
@@ -1525,18 +1525,25 @@ const AnimeSamaPage: React.FC = () => {
                 const embedUrl = `${API_BASE}/api/embed/${correctEpisodeId}`;
                 
                 return (
-                  <iframe
-                    key={`${correctEpisodeId}-${selectedServer}`}
-                    src={embedUrl}
-                    className="w-full h-64 md:h-80"
-                    allowFullScreen
-                    frameBorder="0"
-                    allow="autoplay; fullscreen; encrypted-media"
-                    title={`Épisode ${selectedEpisode?.episodeNumber}`}
-                    style={{ border: 'none' }}
-                    onLoad={() => setError(null)}
-                    onError={() => setError('Erreur de chargement')}
-                  />
+                  <div className="relative w-full">
+                    <iframe
+                      key={`${correctEpisodeId}-${selectedServer}`}
+                      src={embedUrl}
+                      className="w-full h-64 md:h-80"
+                      allowFullScreen
+                      frameBorder="0"
+                      allow="autoplay; fullscreen; encrypted-media"
+                      title="Lecteur vidéo"
+                      style={{ border: 'none', display: 'block' }}
+                      onLoad={() => setError(null)}
+                      onError={() => setError('Erreur de chargement')}
+                    />
+                    {/* Overlay transparent pour masquer les éléments indésirables */}
+                    <div 
+                      className="absolute bottom-0 left-0 right-0 pointer-events-none"
+                      style={{ height: '80px', background: 'transparent', zIndex: 10 }}
+                    />
+                  </div>
                 );
               })()}
             </div>
