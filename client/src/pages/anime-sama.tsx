@@ -122,10 +122,16 @@ const AnimeSamaPage: React.FC = () => {
       const data = await fetcher();
       cache.set(key, { data, timestamp: Date.now() });
       return data;
-    } catch (error) {
-      console.warn(`Cache fetch failed for key ${key}:`, error);
-      // Retourner des données vides plutôt que de propager l'erreur
-      return { success: false, data: null };
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Unknown error';
+      console.warn(`Cache fetch failed for key ${key}:`, errorMessage);
+      // Retourner des données d'erreur structurées
+      return { 
+        success: false, 
+        data: null, 
+        error: errorMessage,
+        cached: false 
+      };
     }
   };
 
@@ -307,7 +313,8 @@ const AnimeSamaPage: React.FC = () => {
         headers: {
           'Accept': 'application/json',
           'Cache-Control': 'no-cache'
-        }
+        },
+        signal: AbortSignal.timeout(8000)
       });
       
       if (vostfrResponse.ok) {
@@ -326,8 +333,8 @@ const AnimeSamaPage: React.FC = () => {
           console.log(`✅ VOSTFR confirmed: ${vostfrData.data.episodes.length} episodes detected`);
         }
       }
-    } catch (err) {
-      console.warn('VOSTFR detection failed:', err);
+    } catch (err: any) {
+      console.warn('VOSTFR detection failed:', err?.message || 'Network error');
     }
     
     // Test VF avec validation renforcée
@@ -336,7 +343,8 @@ const AnimeSamaPage: React.FC = () => {
         headers: {
           'Accept': 'application/json',
           'Cache-Control': 'no-cache'
-        }
+        },
+        signal: AbortSignal.timeout(8000)
       });
       
       if (vfResponse.ok) {
@@ -354,8 +362,8 @@ const AnimeSamaPage: React.FC = () => {
           console.log(`✅ VF confirmed: ${vfData.data.episodes.length} episodes detected`);
         }
       }
-    } catch (err) {
-      console.warn('VF detection failed:', err);
+    } catch (err: any) {
+      console.warn('VF detection failed:', err?.message || 'Network error');
     }
     
     console.log(`🏷️ Languages detected: ${languages.join(', ') || 'None - will use universal fallback'}`);
@@ -696,10 +704,7 @@ const AnimeSamaPage: React.FC = () => {
           clearTimeout(timeoutId);
           throw fetchError;
         }
-      }, API_CONFIG.cacheTTL).catch(error => {
-        console.warn('Episode sources fetch failed:', error);
-        return { success: false, data: null };
-      });
+      }, API_CONFIG.cacheTTL);
       
       if (!apiResponse.success || !apiResponse.data) {
         throw new Error('Sources vidéo non disponibles pour cet épisode');
