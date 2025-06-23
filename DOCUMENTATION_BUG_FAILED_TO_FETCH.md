@@ -8,7 +8,7 @@
 - **API Status** : L'API fonctionne parfaitement (testé manuellement avec curl)
 - **Comportement** : La requête VOSTFR fonctionne, mais VF échoue systématiquement
 
-### Logs Détaillés
+### Logs Détaillés Observés
 ```javascript
 // Succès VOSTFR
 "Requesting episodes from: https://api-anime-sama.onrender.com/api/seasons?animeId=one-piece&season=11&language=vostfr"
@@ -27,6 +27,14 @@
 }"
 ```
 
+### Stack Trace Complet
+```
+TypeError: Failed to fetch
+    at window.fetch (https://44b5b607-aac2-4cfd-811d-491d787d6ec3-00-10jwh68ajwu3o.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:218642)
+    at changeLanguage (https://44b5b607-aac2-4cfd-811d-491d787d6ec3-00-10jwh68ajwu3o.spock.replit.dev/src/pages/anime-sama.tsx:654:32)
+    at onClick (https://44b5b607-aac2-4cfd-811d-491d787d6ec3-00-10jwh68ajwu3o.spock.replit.dev/src/pages/anime-sama.tsx:1517:30)
+```
+
 ### Tests API Manuels (Fonctionnels)
 ```bash
 # Test VF - Succès ✅
@@ -40,160 +48,77 @@ curl "https://api-anime-sama.onrender.com/api/episode/one-piece-episode-1087-vf"
 
 ## Analyse Technique
 
-### Hypothèses du Problème
+### Différences Comportementales
+- **VOSTFR** : Succès systématique
+- **VF** : Échec systématique avec "Failed to fetch"
+- **API** : Fonctionne pour les deux langues en test manuel
+- **Environnement** : Problème spécifique à Replit + JavaScript fetch
 
-#### 1. **Conflit CORS/Fetch dans Replit**
-- L'environnement Replit peut avoir des restrictions spéciales
-- Le fetch JavaScript peut être bloqué par des proxies internes
-- Les requêtes simultanées peuvent être limitées
-
-#### 2. **Race Condition**
-- Requête VOSTFR encore en cours quand VF démarre
-- AbortController qui interfère entre les requêtes
-- Cache corrompu entre les langues
-
-#### 3. **Headers ou Configuration**
-- Différence subtile entre les requêtes VOSTFR et VF
-- Timeout ou signal abort qui échoue spécifiquement sur VF
-- Configuration fetch différente
-
-### Code Problématique Identifié
+### Code Concerné
 ```javascript
-// Dans changeLanguage() - ligne ~885
-const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`, {
-  headers: {
-    'Accept': 'application/json',
-    'Cache-Control': 'no-cache'
-  },
-  signal: controller.signal  // ← Potentiel problème ici
-});
-```
-
-## Solutions Proposées
-
-### Solution 1: Éliminer AbortController
-```javascript
-// Remplacer par un fetch simple
+// Ligne 882 dans changeLanguage()
 const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`, {
   headers: {
     'Accept': 'application/json',
     'Cache-Control': 'no-cache'
   }
-  // Supprimer signal: controller.signal
 });
 ```
 
-### Solution 2: Délai Entre Requêtes
-```javascript
-// Ajouter un délai avant la requête VF
-if (newLanguage === 'VF') {
-  await new Promise(resolve => setTimeout(resolve, 1000));
-}
-```
+### URLs Testées
+- **Succès** : `https://api-anime-sama.onrender.com/api/seasons?animeId=one-piece&season=11&language=vostfr`
+- **Échec** : `https://api-anime-sama.onrender.com/api/seasons?animeId=one-piece&season=11&language=vf`
 
-### Solution 3: Requête Alternative via Proxy Local
-```javascript
-// Utiliser le serveur Express comme proxy
-const proxyUrl = `/api/proxy-seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`;
-const response = await fetch(proxyUrl);
-```
+## Hypothèses Techniques
 
-### Solution 4: Fallback XMLHttpRequest
-```javascript
-// Fallback si fetch échoue
-const makeRequest = (url, headers) => {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', url);
-    Object.entries(headers).forEach(([key, value]) => {
-      xhr.setRequestHeader(key, value);
-    });
-    xhr.onload = () => resolve({
-      ok: xhr.status >= 200 && xhr.status < 300,
-      status: xhr.status,
-      json: () => Promise.resolve(JSON.parse(xhr.responseText))
-    });
-    xhr.onerror = () => reject(new Error('XMLHttpRequest failed'));
-    xhr.send();
-  });
-};
-```
+### 1. Restriction Environnement Replit
+- Proxy interne bloquant certaines requêtes
+- Limitation de connexions simultanées
+- Configuration CORS spécifique
 
-## Tests de Diagnostic
+### 2. Race Condition
+- Requête précédente (VOSTFR) interfère avec VF
+- État JavaScript corrompu entre les appels
+- Timing critique entre les requêtes
 
-### Test 1: Isolation de la Requête VF
-```javascript
-// Test direct sans cache ni AbortController
-const testVF = async () => {
-  try {
-    const response = await fetch('https://api-anime-sama.onrender.com/api/seasons?animeId=one-piece&season=11&language=vf');
-    const data = await response.json();
-    console.log('Test VF direct:', data);
-  } catch (err) {
-    console.error('Test VF failed:', err);
-  }
-};
-```
+### 3. Configuration Fetch
+- Headers différents selon la langue
+- Cache browser interférant
+- State management React problématique
 
-### Test 2: Comparaison Timing
-```javascript
-// Mesurer le temps entre VOSTFR et VF
-console.time('VOSTFR-request');
-// ... requête VOSTFR
-console.timeEnd('VOSTFR-request');
+## Diagnostics Possibles
 
-console.time('VF-request'); 
-// ... requête VF
-console.timeEnd('VF-request');
-```
+### Tests à Effectuer
+1. **Network Tab Analysis** : Vérifier si la requête VF apparaît dans DevTools
+2. **Timing Test** : Mesurer le délai entre VOSTFR et VF
+3. **Isolation Test** : Tester VF directement sans changement de langue
+4. **Browser Console** : Tester fetch VF manuellement dans la console
 
-### Test 3: Vérification Network Tab
-- Ouvrir DevTools → Network
-- Observer les requêtes pendant le changement de langue
-- Vérifier si la requête VF apparaît dans l'onglet réseau
+### Points d'Investigation
+- La requête VF est-elle réellement envoyée ?
+- Y a-t-il une différence de timing critique ?
+- Le problème persiste-t-il avec un délai entre les requêtes ?
+- XMLHttpRequest fonctionne-t-il à la place de fetch ?
 
-## Workarounds Temporaires
+## État Actuel
 
-### Workaround 1: Bypass Client-Side
-```javascript
-// Forcer la requête côté serveur
-app.get('/api/anime-sama-proxy/seasons', async (req, res) => {
-  try {
-    const { animeId, season, language } = req.query;
-    const response = await fetch(`https://api-anime-sama.onrender.com/api/seasons?animeId=${animeId}&season=${season}&language=${language}`);
-    const data = await response.json();
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-```
+### Tentatives de Correction
+- ❌ Suppression AbortController : Échec persistant
+- ❌ Gestion d'erreurs améliorée : Échec persistant
+- ❌ Cache simplifié : Échec persistant
 
-### Workaround 2: Force Reload Page
-```javascript
-// En dernier recours
-if (fetchError.message === 'Failed to fetch' && newLanguage === 'VF') {
-  console.log('Forcing page reload for VF compatibility...');
-  window.location.reload();
-}
-```
+### Constantes
+- ✅ API externe fonctionnelle (curl)
+- ✅ VOSTFR fonctionne systématiquement
+- ❌ VF échoue systématiquement en JavaScript
+- ❌ "Failed to fetch" sans détails techniques
 
-## Next Steps pour Investigation
+## Conclusion
 
-1. **Tester Solution 1** (éliminer AbortController)
-2. **Implémenter proxy côté serveur** si fetch client continue d'échouer  
-3. **Analyser Network Tab** pour voir si la requête est réellement envoyée
-4. **Tester avec XMLHttpRequest** comme fallback
-5. **Vérifier les logs serveur** pour voir si la requête arrive
+Le bug "Failed to fetch" est reproductible et spécifique à :
+- Environnement Replit
+- Requêtes JavaScript fetch côté client
+- Paramètre `language=vf` uniquement
+- Contexte de changement de langue
 
-## Informations Environnement
-
-- **Plateforme** : Replit
-- **Framework** : React + Express
-- **API Externe** : api-anime-sama.onrender.com
-- **Statut API** : ✅ Fonctionnelle (vérifiée manuellement)
-- **Problème** : ❌ Fetch JavaScript côté client uniquement
-
-## Conclusion Temporaire
-
-Le bug "Failed to fetch" est spécifique à l'environnement Replit et/ou à la configuration fetch côté client. L'API fonctionne parfaitement, le problème est dans la couche transport JavaScript. Les solutions proposées ciblent cette couche problématique.
+L'API backend fonctionne parfaitement, confirmant que le problème se situe dans la couche transport JavaScript du navigateur dans l'environnement Replit.
