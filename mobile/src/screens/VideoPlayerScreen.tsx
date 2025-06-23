@@ -35,16 +35,27 @@ const VideoPlayerScreen = () => {
     retry: 3,
   });
 
-  const handlePlayVideo = useCallback(async (source: any) => {
+  const handlePlayVideo = useCallback(async (source?: any) => {
     setIsLoading(true);
     try {
-      const videoUrl = source.embedUrl || source.url;
+      // Priorité aux sources embed pour une meilleure compatibilité
+      let videoUrl = episodeData?.embedUrl;
+      
+      if (!videoUrl && source) {
+        videoUrl = source.embedUrl || source.url;
+      }
+      
+      if (!videoUrl && episodeData?.sources?.length > 0) {
+        const bestSource = episodeData.sources.find(s => s.embedUrl) || episodeData.sources[0];
+        videoUrl = bestSource.embedUrl || bestSource.url;
+      }
+      
       if (!videoUrl) {
-        Alert.alert('Erreur', 'URL de la vidéo non disponible');
+        Alert.alert('Erreur', 'Aucune source vidéo disponible pour cet épisode');
         return;
       }
 
-      // Ouvrir le lecteur vidéo dans le navigateur pour une meilleure compatibilité
+      // Lecture directe dans le navigateur pour reproduire le comportement anime-sama.fr
       await WebBrowser.openBrowserAsync(videoUrl, {
         presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
         showTitle: true,
@@ -61,7 +72,7 @@ const VideoPlayerScreen = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [episodeData]);
 
   const handleExternalLink = useCallback(async (url: string) => {
     try {

@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Configuration pour Android Emulator et production
-const BASE_URL = __DEV__ ? 'http://10.0.2.2:5000' : 'https://your-production-url.replit.app';
+const BASE_URL = __DEV__ ? 'http://10.0.2.2:5000' : 'https://otaku-nexus.replit.app';
 
 interface ApiResponse<T = any> {
   success: boolean;
@@ -114,8 +114,12 @@ class ApiService {
 
   private async makeRequest<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    retryCount = 0
   ): Promise<ApiResponse<T>> {
+    const maxRetries = 3;
+    const retryDelay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+    
     try {
       const token = await this.getAuthToken();
       const headers: Record<string, string> = {
@@ -145,7 +149,16 @@ class ApiService {
       const data = await response.json();
       return { success: true, data };
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error(`API request failed (attempt ${retryCount + 1}):`, error);
+      
+      // Retry logic with exponential backoff
+      if (retryCount < maxRetries && 
+          (error instanceof TypeError || 
+           (error instanceof Error && error.message.includes('Failed to fetch')))) {
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        return this.makeRequest(endpoint, options, retryCount + 1);
+      }
+      
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error' 
@@ -289,15 +302,48 @@ class ApiService {
         episodeCount: number;
       }>(`/api/anime-sama/episodes/${animeId}/${season}/${language}`);
       
-      if (response.success && response.data) {
-        this.setCachedData(cacheKey, response.data.episodes, this.cacheConfig.episode);
-        return response.data.episodes;
+      if (response.success && response.data?.episodes) {
+        // Apply One Piece episode correction if needed
+        let episodes = response.data.episodes;
+        if (animeId === 'one-piece' && episodes.length > 0) {
+          episodes = this.correctOnePieceEpisodes(episodes, season);
+        }
+        
+        this.setCachedData(cacheKey, episodes, this.cacheConfig.episode);
+        return episodes;
       }
+      
+      // Fallback to alternative language if no episodes found
+      if (language === 'vf') {
+        console.log(`No VF episodes found, trying VOSTFR fallback for ${animeId} season ${season}`);
+        return this.getSeasonEpisodes(animeId, season, 'vostfr');
+      }
+      
       return [];
     } catch (error) {
       console.error('Get season episodes failed:', error);
+      
+      // Fallback to alternative language on error
+      if (language === 'vf') {
+        console.log(`VF request failed, trying VOSTFR fallback for ${animeId} season ${season}`);
+        return this.getSeasonEpisodes(animeId, season, 'vostfr');
+      }
+      
       return [];
     }
+  }
+
+  // Correction des numéros d'épisodes One Piece
+  private correctOnePieceEpisodes(episodes: AnimeSamaEpisode[], season: number): AnimeSamaEpisode[] {
+    if (season === 11) { // Saga 11: Egghead Island
+      return episodes.map((episode, index) => ({
+        ...episode,
+        episodeNumber: 1087 + index, // Episodes 1087-1122
+        title: episode.title || `Episode ${1087 + index}`,
+        id: this.formatEpisodeId('one-piece', 1087 + index, episode.language)
+      }));
+    }
+    return episodes;
   }
 
   async getEpisodeDetails(episodeId: string): Promise<AnimeSamaEpisodeDetail | null> {

@@ -67,16 +67,21 @@ const AnimeDetailScreen = () => {
     setSelectedLanguage(prev => prev === 'vf' ? 'vostfr' : 'vf');
   }, []);
 
-  const correctEpisodeNumber = useCallback((episodeNumber: number) => {
+  const correctEpisodeNumber = useCallback((episodeNumber: number, originalEpisode: AnimeSamaEpisode) => {
     // Correction spéciale pour One Piece Saga 11
     if (animeId.includes('one-piece') && selectedSeason === 11) {
-      return episodeNumber + 1026; // Ajustement pour afficher 1087-1122 au lieu de 61-96
+      // Utiliser le numéro d'épisode corrigé s'il est déjà présent
+      if (originalEpisode.episodeNumber >= 1087) {
+        return originalEpisode.episodeNumber;
+      }
+      // Sinon appliquer la correction
+      return episodeNumber + 1026;
     }
     return episodeNumber;
   }, [animeId, selectedSeason]);
 
   const renderEpisodeItem = useCallback(({ item: episode }: { item: AnimeSamaEpisode }) => {
-    const correctedNumber = correctEpisodeNumber(episode.episodeNumber);
+    const correctedNumber = correctEpisodeNumber(episode.episodeNumber, episode);
     
     return (
       <TouchableOpacity
