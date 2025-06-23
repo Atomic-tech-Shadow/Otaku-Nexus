@@ -698,19 +698,14 @@ const AnimeSamaPage: React.FC = () => {
     setEpisodeDetails(null);
     
     try {
-      console.log('Loading season episodes:', { animeId: selectedAnime.id, seasonNumber: season.number });
-      
       const availLangs = await detectAvailableLanguages(selectedAnime.id, season.number);
-      console.log('Available languages detected:', availLangs);
       
       // Si système universel détecté, utiliser les endpoints de fallback intelligents
       if (availLangs.includes('UNIVERSAL')) {
-        console.log('🚀 Activating universal system for comprehensive episode detection');
         try {
           await loadEpisodesWithUniversalSystem(selectedAnime.id, season);
           return;
         } catch (universalError) {
-          console.error('Universal system failed:', universalError);
           throw universalError;
         }
       }
@@ -725,7 +720,6 @@ const AnimeSamaPage: React.FC = () => {
       
       const language = languageToUse.toLowerCase();
       const requestUrl = `${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${language}`;
-      console.log('Requesting episodes from:', requestUrl);
       
       const response = await fetch(requestUrl, {
         headers: {
@@ -734,8 +728,6 @@ const AnimeSamaPage: React.FC = () => {
         },
         signal: AbortSignal.timeout(15000)
       });
-      
-      console.log('Episodes response status:', response.status);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -757,7 +749,6 @@ const AnimeSamaPage: React.FC = () => {
       
       // CORRECTION 8: Épisodes Vides API - Fallback intelligent
       if (!apiResponse.data || !apiResponse.data.episodes || apiResponse.data.episodes.length === 0) {
-        console.log('API returned empty episodes, attempting intelligent fallback...');
         
         // Tenter plusieurs langues et méthodes
         const languages = ['VOSTFR', 'VF'];
@@ -772,11 +763,10 @@ const AnimeSamaPage: React.FC = () => {
             if (data.success && data.data && data.data.episodes && data.data.episodes.length > 0) {
               validEpisodes = data.data.episodes;
               setSelectedLanguage(lang as 'VF' | 'VOSTFR');
-              console.log(`Found ${validEpisodes.length} episodes in ${lang}`);
               break;
             }
           } catch (err) {
-            console.warn(`Failed to fetch episodes in ${lang}:`, err);
+            // Continue to next language
           }
         }
         
@@ -788,10 +778,9 @@ const AnimeSamaPage: React.FC = () => {
             
             if (contentData.success && contentData.data && contentData.data.length > 0) {
               validEpisodes = contentData.data;
-              console.log(`Found ${validEpisodes.length} episodes via content endpoint`);
             }
           } catch (contentErr) {
-            console.warn('Content endpoint failed:', contentErr);
+            // Continue to catalogue
           }
         }
         
@@ -814,11 +803,10 @@ const AnimeSamaPage: React.FC = () => {
                   url: '',
                   available: true
                 }));
-                console.log(`Generated ${validEpisodes.length} episodes from catalogue info`);
               }
             }
           } catch (catalogueErr) {
-            console.warn('Catalogue endpoint failed:', catalogueErr);
+            // Final fallback failed
           }
         }
         
@@ -840,8 +828,6 @@ const AnimeSamaPage: React.FC = () => {
         return;
       }
       
-      console.log('Episodes loaded successfully:', apiResponse.data.episodes.length);
-      
       // ✅ CORRECTION CRITIQUE: Appliquer la correction des numéros d'épisodes
       const correctedEpisodes = correctEpisodeNumbers(selectedAnime.id, season.number, apiResponse.data.episodes);
       
@@ -850,18 +836,11 @@ const AnimeSamaPage: React.FC = () => {
       
       // Charger automatiquement le premier épisode
       const firstEpisode = correctedEpisodes[0];
-      console.log('Loading first episode:', firstEpisode);
       setSelectedEpisode(firstEpisode);
       await loadEpisodeSources(firstEpisode.id);
       
-      const originalRange = `${apiResponse.data.episodes[0].episodeNumber}-${apiResponse.data.episodes[apiResponse.data.episodes.length-1].episodeNumber}`;
-      const correctedRange = `${correctedEpisodes[0].episodeNumber}-${correctedEpisodes[correctedEpisodes.length-1].episodeNumber}`;
-      console.log(`✅ Episodes corrected: ${originalRange} → ${correctedRange}`);
-      
     } catch (err) {
-      console.error('Erreur épisodes:', err);
       const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue';
-      console.error('Détails erreur épisodes:', errorMessage);
       setError(errorMessage);
       
       // Revenir à la vue anime si échec total
@@ -881,14 +860,11 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      console.log(`Loading sources for episode: ${episodeId}`);
-      
       // Générer l'ID d'épisode correct selon documentation: {anime}-episode-{numero}-{langue}
       let correctEpisodeId = episodeId;
       if (selectedAnime && selectedEpisode) {
         const lang = selectedLanguage.toLowerCase();
         correctEpisodeId = `${selectedAnime.id}-episode-${selectedEpisode.episodeNumber}-${lang}`;
-        console.log(`Using correct episode ID format: ${correctEpisodeId}`);
       }
       
       // Essayer d'abord l'endpoint /api/episode/{episodeId} avec gestion d'erreurs robuste
@@ -1472,8 +1448,8 @@ const AnimeSamaPage: React.FC = () => {
               ))}
             </div>
 
-            {/* Dropdowns */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Sélecteurs simplifiés */}
+            <div className="space-y-3">
               <select
                 value={selectedEpisode?.id || ""}
                 onChange={(e) => {
@@ -1487,59 +1463,33 @@ const AnimeSamaPage: React.FC = () => {
                 style={{ backgroundColor: '#1e40af', border: '1px solid #3b82f6' }}
               >
                 {episodes.length > 0 ? (
-                  <>
-                    <option value="" disabled>
-                      {selectedEpisode ? `EPISODE ${selectedEpisode.episodeNumber}` : 'Sélectionner un épisode'}
-                    </option>
-                    {episodes.map((episode) => (
-                      <option key={episode.id} value={episode.id}>
-                        EPISODE {episode.episodeNumber}
-                      </option>
-                    ))}
-                  </>
-                ) : (
-                  <option value="" disabled>Chargement des épisodes...</option>
-                )}
-              </select>
-
-              <select
-                value={selectedServer}
-                onChange={(e) => setSelectedServer(Number(e.target.value))}
-                className="w-full p-3 text-white rounded text-sm font-medium"
-                style={{ backgroundColor: '#1e40af', border: '1px solid #3b82f6' }}
-              >
-                {currentSources.length > 0 ? (
-                  currentSources.map((source, index) => (
-                    <option key={index} value={index}>
-                      LECTEUR {index + 1} - {source.server}
-                      {source.quality && ` (${source.quality})`}
+                  episodes.map((episode) => (
+                    <option key={episode.id} value={episode.id}>
+                      Episode {episode.episodeNumber}
                     </option>
                   ))
                 ) : (
-                  <option value={0}>LECTEUR 1</option>
+                  <option value="" disabled>Chargement...</option>
                 )}
               </select>
+
+              {currentSources.length > 1 && (
+                <select
+                  value={selectedServer}
+                  onChange={(e) => setSelectedServer(Number(e.target.value))}
+                  className="w-full p-3 text-white rounded text-sm font-medium"
+                  style={{ backgroundColor: '#1e40af', border: '1px solid #3b82f6' }}
+                >
+                  {currentSources.map((source, index) => (
+                    <option key={index} value={index}>
+                      Serveur {index + 1}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
-            {/* Dernière sélection */}
-            <div className="text-gray-400 text-sm">
-              DERNIÈRE SÉLECTION : <span className="text-white italic">
-                {selectedEpisode ? `${selectedSeason?.name} - EPISODE ${selectedEpisode.episodeNumber}` : 'Aucun épisode sélectionné'}
-              </span>
-            </div>
 
-            {/* Message d'information sur la langue */}
-            {currentSources.length > 0 && episodeDetails && (
-              <div className="text-center">
-                {episodeDetails.sources.every(s => s.language.toUpperCase() !== selectedLanguage) ? (
-                  <div className="bg-yellow-600/20 border border-yellow-600/30 rounded-lg p-2">
-                    <p className="text-yellow-200 text-xs">
-                      Aucune source {selectedLanguage} disponible. Affichage des sources {episodeDetails.sources[0]?.language || 'disponibles'}.
-                    </p>
-                  </div>
-                ) : null}
-              </div>
-            )}
 
             {/* Boutons navigation */}
             <div className="flex justify-center gap-4">
@@ -1574,13 +1524,7 @@ const AnimeSamaPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Message d'information utilisateur simplifié */}
-            <div className="text-center py-4">
-              <p className="text-white text-sm">
-                <span className="italic">Pub insistante ou vidéo indisponible ?</span><br />
-                <span className="font-bold">Changez de lecteur.</span>
-              </p>
-            </div>
+
 
             {/* CORRECTION 5: Lecteur vidéo optimisé avec gestion d'erreurs améliorée */}
             {(() => {
@@ -1589,10 +1533,7 @@ const AnimeSamaPage: React.FC = () => {
               
               if (!currentSource) return null;
               
-              // Utiliser l'endpoint embed production selon documentation - SYNCHRONISATION FIXÉE
               const correctEpisodeId = selectedEpisode ? selectedEpisode.id : episodeDetails?.id || '';
-              console.log(`🎬 Video player using episode ID: ${correctEpisodeId} (Episode ${selectedEpisode?.episodeNumber})`);
-              
               const embedUrl = `${API_BASE}/api/embed/${correctEpisodeId}`;
               
               return (
@@ -1604,64 +1545,13 @@ const AnimeSamaPage: React.FC = () => {
                     allowFullScreen
                     frameBorder="0"
                     allow="autoplay; fullscreen; encrypted-media"
-                    title={`${episodeDetails?.title} - Lecteur ${selectedServer + 1}`}
+                    title={`Épisode ${selectedEpisode?.episodeNumber}`}
                     style={{ border: 'none' }}
-                    onLoad={() => {
-                      setError(null);
-                      console.log(`✅ Embed player loaded: ${embedUrl}`);
-                    }}
-                    onError={() => {
-                      console.error(`❌ Embed player failed: ${embedUrl}`);
-                      setError('Erreur de chargement du lecteur. Essayez un autre serveur.');
-                    }}
+                    onLoad={() => setError(null)}
+                    onError={() => setError('Erreur de chargement. Essayez un autre serveur.')}
                   />
                   
-                  {/* Indicateur serveur actuel */}
-                  <div className="absolute top-2 left-2">
-                    <div className="bg-black/70 text-white text-xs px-2 py-1 rounded">
-                      Serveur {selectedServer + 1}/{currentSources.length} - {currentSource.server}
-                    </div>
-                  </div>
-                  
-                  {/* Bouton d'ouverture externe */}
-                  <div className="absolute top-2 right-2">
-                    <button
-                      onClick={() => {
-                        window.open(currentSource.url, '_blank');
-                      }}
-                      className="bg-black/70 text-white text-xs px-2 py-1 rounded hover:bg-black/90 transition-colors"
-                    >
-                      ⧉ Nouvel onglet
-                    </button>
-                  </div>
-                  
-                  {/* Boutons navigation serveurs */}
-                  {currentSources.length > 1 && (
-                    <div className="absolute bottom-2 right-2 flex gap-2">
-                      <button
-                        onClick={() => {
-                          if (selectedServer > 0) {
-                            setSelectedServer(selectedServer - 1);
-                          }
-                        }}
-                        disabled={selectedServer === 0}
-                        className="bg-black/70 text-white text-xs px-2 py-1 rounded hover:bg-black/90 transition-colors disabled:opacity-50"
-                      >
-                        ← Serveur précédent
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (selectedServer < currentSources.length - 1) {
-                            setSelectedServer(selectedServer + 1);
-                          }
-                        }}
-                        disabled={selectedServer === currentSources.length - 1}
-                        className="bg-black/70 text-white text-xs px-2 py-1 rounded hover:bg-black/90 transition-colors disabled:opacity-50"
-                      >
-                        Serveur suivant →
-                      </button>
-                    </div>
-                  )}
+
                 </div>
               );
             })()}
