@@ -1526,23 +1526,21 @@ const AnimeSamaPage: React.FC = () => {
                 
                 return (
                   <div className="relative w-full">
-                    <iframe
-                      key={`${correctEpisodeId}-${selectedServer}`}
-                      src={embedUrl}
-                      className="w-full h-64 md:h-80"
-                      allowFullScreen
-                      frameBorder="0"
-                      allow="autoplay; fullscreen; encrypted-media"
-                      title="Lecteur vidéo"
-                      style={{ border: 'none', display: 'block' }}
-                      onLoad={() => setError(null)}
-                      onError={() => setError('Erreur de chargement')}
-                    />
-                    {/* Overlay transparent pour masquer les éléments indésirables */}
-                    <div 
-                      className="absolute bottom-0 left-0 right-0 pointer-events-none"
-                      style={{ height: '80px', background: 'transparent', zIndex: 10 }}
-                    />
+                    {/* Bouton direct pour ouvrir la vidéo sans overlay */}
+                    <div className="w-full h-64 md:h-80 bg-black flex flex-col items-center justify-center space-y-4">
+                      <div className="text-white text-center">
+                        <p className="text-lg mb-4">Lecteur vidéo</p>
+                        <button
+                          onClick={() => window.open(currentSource.url, '_blank')}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors"
+                        >
+                          ▶ Lancer la vidéo
+                        </button>
+                        <p className="text-sm text-gray-400 mt-2">
+                          Serveur {selectedServer + 1} - {currentSource.server}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 );
               })()}
