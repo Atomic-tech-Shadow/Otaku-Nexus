@@ -1,251 +1,437 @@
-import { 
-  User, 
-  Anime, 
-  Quiz, 
-  QuizResult, 
-  Video, 
-  AuthResponse, 
-  LoginRequest, 
-  RegisterRequest,
-  AnimeFavorite 
-} from '../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Configuration de l'API - remplacez par l'URL de votre serveur
-const API_BASE_URL = 'https://rest-express-43652320.replit.app/api';
+// Configuration pour Android Emulator et production
+const BASE_URL = __DEV__ ? 'http://10.0.2.2:5000' : 'https://your-production-url.replit.app';
+
+interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+// Interfaces Anime-Sama synchronisées avec le site web
+export interface AnimeSamaAnime {
+  id: string;
+  title: string;
+  url: string;
+  type: string;
+  status: string;
+  image: string;
+  description?: string;
+  genres?: string[];
+  year?: string;
+  seasons?: AnimeSamaSeason[];
+  progressInfo?: {
+    advancement: string;
+    correspondence: string;
+    totalEpisodes: number;
+    hasFilms: boolean;
+    hasScans: boolean;
+  };
+}
+
+export interface AnimeSamaSeason {
+  number: number;
+  name: string;
+  languages: string[];
+  episodeCount: number;
+  url: string;
+}
+
+export interface AnimeSamaEpisode {
+  id: string;
+  title: string;
+  episodeNumber: number;
+  url: string;
+  language: string;
+  available: boolean;
+}
+
+export interface AnimeSamaEpisodeDetail {
+  id: string;
+  title: string;
+  animeTitle: string;
+  episodeNumber: number;
+  language: string;
+  sources: Array<{
+    url: string;
+    proxyUrl?: string;
+    embedUrl?: string;
+    server: string;
+    quality: string;
+    language: string;
+    type: string;
+    serverIndex: number;
+  }>;
+  embedUrl?: string;
+  corsInfo?: {
+    note: string;
+    proxyEndpoint: string;
+    embedEndpoint: string;
+  };
+  availableServers: string[];
+  url: string;
+}
 
 class ApiService {
-  private token: string | null = null;
+  private baseUrl: string;
+  private cache = new Map();
+  private readonly cacheConfig = {
+    trending: 30 * 60 * 1000, // 30 minutes
+    catalogue: 60 * 60 * 1000, // 1 hour
+    search: 10 * 60 * 1000, // 10 minutes
+    episode: 5 * 60 * 1000, // 5 minutes
+  };
 
-  setToken(token: string) {
-    this.token = token;
+  constructor() {
+    this.baseUrl = BASE_URL;
   }
 
-  private async request<T>(
-    endpoint: string, 
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
-        ...options.headers,
-      },
-      ...options,
-    };
-
+  private async getAuthToken(): Promise<string | null> {
     try {
-      const response = await fetch(url, config);
+      return await AsyncStorage.getItem('authToken');
+    } catch (error) {
+      console.error('Error getting auth token:', error);
+      return null;
+    }
+  }
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+  private getCachedData<T>(key: string): T | null {
+    const cached = this.cache.get(key);
+    if (cached && Date.now() - cached.timestamp < cached.ttl) {
+      return cached.data;
+    }
+    return null;
+  }
+
+  private setCachedData<T>(key: string, data: T, ttl: number): void {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+      ttl,
+    });
+  }
+
+  private async makeRequest<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<ApiResponse<T>> {
+    try {
+      const token = await this.getAuthToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(options.headers as Record<string, string>),
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
       }
 
-      return await response.json();
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        ...options,
+        headers,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return { success: true, data };
     } catch (error) {
       console.error('API request failed:', error);
-      throw error;
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
     }
   }
 
   // Auth endpoints
-  async login(data: LoginRequest): Promise<AuthResponse> {
-    const response = await this.request<AuthResponse>('/auth/login', {
+  async login(email: string, password: string) {
+    const response = await this.makeRequest<{token: string, user: any}>('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ email, password }),
     });
-    this.setToken(response.token);
+    
+    if (response.success && response.data?.token) {
+      await AsyncStorage.setItem('authToken', response.data.token);
+    }
+    
     return response;
   }
 
-  async register(data: RegisterRequest): Promise<AuthResponse> {
-    const response = await this.request<AuthResponse>('/auth/register', {
+  async register(email: string, password: string, username: string) {
+    const response = await this.makeRequest<{token: string, user: any}>('/api/auth/register', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ email, password, username }),
     });
-    this.setToken(response.token);
+    
+    if (response.success && response.data?.token) {
+      await AsyncStorage.setItem('authToken', response.data.token);
+    }
+    
     return response;
   }
 
-  async logout(): Promise<void> {
-    await this.request('/auth/logout', { method: 'POST' });
-    this.token = null;
-  }
-
-  async getCurrentUser(): Promise<User> {
-    return this.request<User>('/auth/me');
-  }
-
-  // Anime endpoints
-  async getAnimes(limit?: number): Promise<Anime[]> {
-    const params = limit ? `?limit=${limit}` : '';
-    return this.request<Anime[]>(`/animes${params}`);
-  }
-
-  async getTrendingAnimes(): Promise<Anime[]> {
-    return this.request<Anime[]>('/animes/trending');
-  }
-
-  async searchAnimes(query: string): Promise<Anime[]> {
-    return this.request<Anime[]>(`/animes/search?q=${encodeURIComponent(query)}`);
-  }
-
-  async getAnime(id: number): Promise<Anime> {
-    return this.request<Anime>(`/animes/${id}`);
-  }
-
-  // Favorites endpoints
-  async getUserFavorites(): Promise<AnimeFavorite[]> {
-    return this.request<AnimeFavorite[]>('/favorites');
-  }
-
-  async addToFavorites(animeId: number): Promise<AnimeFavorite> {
-    return this.request<AnimeFavorite>('/favorites', {
+  async logout() {
+    await AsyncStorage.removeItem('authToken');
+    this.cache.clear(); // Clear cache on logout
+    return this.makeRequest('/api/auth/logout', {
       method: 'POST',
-      body: JSON.stringify({ animeId }),
     });
   }
 
-  async removeFromFavorites(animeId: number): Promise<void> {
-    await this.request(`/favorites/${animeId}`, { method: 'DELETE' });
+  // User endpoints
+  async getProfile() {
+    return this.makeRequest('/api/user/profile');
+  }
+
+  async updateProfile(data: any) {
+    return this.makeRequest('/api/user/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getUserStats() {
+    return this.makeRequest('/api/user/stats');
+  }
+
+  async getLeaderboard() {
+    return this.makeRequest('/api/users/leaderboard');
   }
 
   // Quiz endpoints
-  async getQuizzes(): Promise<Quiz[]> {
-    return this.request<Quiz[]>('/quizzes');
+  async getQuizzes() {
+    return this.makeRequest('/api/quizzes');
   }
 
-  async getQuiz(id: number): Promise<Quiz> {
-    return this.request<Quiz>(`/quizzes/${id}`);
+  async getFeaturedQuiz() {
+    return this.makeRequest('/api/quizzes/featured');
   }
 
-  async getFeaturedQuiz(): Promise<Quiz> {
-    return this.request<Quiz>('/quizzes/featured');
+  async getQuiz(id: string) {
+    return this.makeRequest(`/api/quizzes/${id}`);
   }
 
-  async submitQuizResult(data: {
-    quizId: number;
-    score: number;
-    timeSpent?: number;
-  }): Promise<QuizResult> {
-    return this.request<QuizResult>('/quiz-results', {
+  async submitQuiz(id: string, answers: any[]) {
+    return this.makeRequest(`/api/quizzes/${id}/submit`, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ answers }),
     });
   }
 
-  async getUserQuizResults(): Promise<QuizResult[]> {
-    return this.request<QuizResult[]>('/quiz-results');
+  // Anime-Sama endpoints avec cache intelligent
+  async searchAnime(query: string): Promise<AnimeSamaAnime[]> {
+    const cacheKey = `search_${query}`;
+    const cached = this.getCachedData<AnimeSamaAnime[]>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const response = await this.makeRequest<AnimeSamaAnime[]>(
+        `/api/anime-sama/search?q=${encodeURIComponent(query)}`
+      );
+      
+      if (response.success && response.data) {
+        this.setCachedData(cacheKey, response.data, this.cacheConfig.search);
+        return response.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('Search anime failed:', error);
+      return [];
+    }
   }
 
-  // User stats
-  async getUserStats(): Promise<{
-    totalQuizzes: number;
-    totalAnime: number;
-    totalXP: number;
-    rank: number;
-  }> {
-    return this.request('/users/stats');
+  async getAnimeById(animeId: string): Promise<AnimeSamaAnime | null> {
+    const cacheKey = `anime_${animeId}`;
+    const cached = this.getCachedData<AnimeSamaAnime>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const response = await this.makeRequest<AnimeSamaAnime>(
+        `/api/anime-sama/anime/${animeId}`
+      );
+      
+      if (response.success && response.data) {
+        this.setCachedData(cacheKey, response.data, this.cacheConfig.episode);
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Get anime failed:', error);
+      return null;
+    }
   }
 
-  // Videos endpoints
-  async getVideos(limit?: number): Promise<Video[]> {
-    const params = limit ? `?limit=${limit}` : '';
-    return this.request<Video[]>(`/videos${params}`);
+  async getSeasonEpisodes(
+    animeId: string, 
+    season: number, 
+    language: 'vf' | 'vostfr' = 'vostfr'
+  ): Promise<AnimeSamaEpisode[]> {
+    const cacheKey = `episodes_${animeId}_${season}_${language}`;
+    const cached = this.getCachedData<AnimeSamaEpisode[]>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const response = await this.makeRequest<{
+        animeId: string;
+        season: number;
+        language: string;
+        episodes: AnimeSamaEpisode[];
+        episodeCount: number;
+      }>(`/api/anime-sama/episodes/${animeId}/${season}/${language}`);
+      
+      if (response.success && response.data) {
+        this.setCachedData(cacheKey, response.data.episodes, this.cacheConfig.episode);
+        return response.data.episodes;
+      }
+      return [];
+    } catch (error) {
+      console.error('Get season episodes failed:', error);
+      return [];
+    }
   }
 
-  async getPopularVideos(): Promise<Video[]> {
-    return this.request<Video[]>('/videos/popular');
+  async getEpisodeDetails(episodeId: string): Promise<AnimeSamaEpisodeDetail | null> {
+    const cacheKey = `episode_detail_${episodeId}`;
+    const cached = this.getCachedData<AnimeSamaEpisodeDetail>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const response = await this.makeRequest<AnimeSamaEpisodeDetail>(
+        `/api/anime-sama/episode/${episodeId}`
+      );
+      
+      if (response.success && response.data) {
+        this.setCachedData(cacheKey, response.data, this.cacheConfig.episode);
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Get episode details failed:', error);
+      return null;
+    }
   }
 
-  async getVideo(id: number): Promise<Video> {
-    return this.request<Video>(`/videos/${id}`);
+  async getTrendingAnime(): Promise<AnimeSamaAnime[]> {
+    const cacheKey = 'trending_anime';
+    const cached = this.getCachedData<AnimeSamaAnime[]>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const response = await this.makeRequest<AnimeSamaAnime[]>('/api/anime-sama/trending');
+      
+      if (response.success && response.data) {
+        this.setCachedData(cacheKey, response.data, this.cacheConfig.trending);
+        return response.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('Get trending anime failed:', error);
+      return [];
+    }
   }
 
-  // Profile endpoints
-  async updateProfile(data: {
-    firstName?: string;
-    lastName?: string;
-    bio?: string;
-    profileImageUrl?: string;
-  }): Promise<User> {
-    return this.request<User>('/users/profile', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+  async getCatalogue(): Promise<AnimeSamaAnime[]> {
+    const cacheKey = 'catalogue_anime';
+    const cached = this.getCachedData<AnimeSamaAnime[]>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const response = await this.makeRequest<AnimeSamaAnime[]>('/api/anime-sama/catalogue');
+      
+      if (response.success && response.data) {
+        this.setCachedData(cacheKey, response.data, this.cacheConfig.catalogue);
+        return response.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('Get catalogue failed:', error);
+      return [];
+    }
   }
 
   // Chat endpoints
-  async getChatRooms(): Promise<any[]> {
-    return this.request<any[]>('/chat/rooms');
+  async getChatMessages(limit = 50) {
+    return this.makeRequest(`/api/chat/messages?limit=${limit}`);
   }
 
-  async getChatMessages(roomId: number, limit?: number): Promise<any[]> {
-    const params = limit ? `?limit=${limit}` : '';
-    return this.request<any[]>(`/chat/rooms/${roomId}/messages${params}`);
-  }
-
-  async sendChatMessage(data: {
-    roomId: number;
-    content: string;
-    userId: string;
-  }): Promise<any> {
-    return this.request<any>('/chat/messages', {
+  async sendMessage(message: string) {
+    return this.makeRequest('/api/chat/messages', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ message }),
     });
+  }
+
+  // Posts endpoints
+  async getPosts() {
+    return this.makeRequest('/api/posts');
   }
 
   // Admin endpoints
-  async getAdminPosts(published?: boolean): Promise<any[]> {
-    const params = published !== undefined ? `?published=${published}` : '';
-    return this.request<any[]>(`/admin/posts${params}`);
+  async getAdminStats() {
+    return this.makeRequest('/api/admin/stats');
   }
 
-  async getAdminPost(id: number): Promise<any> {
-    return this.request<any>(`/admin/posts/${id}`);
+  async getAllUsers() {
+    return this.makeRequest('/api/admin/users');
   }
 
-  async createAdminPost(data: {
-    title: string;
-    content: string;
-    type: string;
-    isPublished: boolean;
-    adminOnly?: boolean;
-  }): Promise<any> {
-    return this.request<any>('/admin/posts', {
-      method: 'POST',
-      body: JSON.stringify(data),
+  async deleteUser(userId: string) {
+    return this.makeRequest(`/api/admin/users/${userId}`, {
+      method: 'DELETE',
     });
   }
 
-  async updateAdminPost(id: number, data: {
-    title?: string;
-    content?: string;
-    type?: string;
-    isPublished?: boolean;
-    adminOnly?: boolean;
-  }): Promise<any> {
-    return this.request<any>(`/admin/posts/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
+  async getAllPosts() {
+    return this.makeRequest('/api/admin/posts');
+  }
+
+  async deletePost(postId: string) {
+    return this.makeRequest(`/api/admin/posts/${postId}`, {
+      method: 'DELETE',
     });
   }
 
-  async deleteAdminPost(id: number): Promise<void> {
-    await this.request(`/admin/posts/${id}`, { method: 'DELETE' });
+  async getAllQuizzes() {
+    return this.makeRequest('/api/admin/quizzes');
   }
 
-  async getPlatformStats(): Promise<{
-    totalUsers: number;
-    totalQuizzes: number;
-    totalAnime: number;
-    totalMessages: number;
-    totalPosts: number;
-  }> {
-    return this.request('/admin/stats');
+  async deleteQuiz(quizId: string) {
+    return this.makeRequest(`/api/admin/quizzes/${quizId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Helper methods pour correction épisodes One Piece
+  formatEpisodeId(animeId: string, episodeNumber: number, language: string): string {
+    return `${animeId}-episode-${episodeNumber}-${language}`;
+  }
+
+  extractAnimeId(input: string): string {
+    if (input.includes('one-piece')) {
+      return 'one-piece';
+    }
+    return input.split('-')[0];
+  }
+
+  // Méthodes utilitaires pour cache
+  clearCache(): void {
+    this.cache.clear();
+  }
+
+  getCacheSize(): number {
+    return this.cache.size;
   }
 }
 
 export const apiService = new ApiService();
+export default apiService;

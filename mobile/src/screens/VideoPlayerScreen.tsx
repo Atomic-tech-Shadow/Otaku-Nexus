@@ -6,150 +6,122 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Linking } from 'react-native';
+import { apiService, AnimeSamaEpisodeDetail } from '../services/api';
+import * as WebBrowser from 'expo-web-browser';
 
-interface EpisodeSource {
-  url: string;
-  proxyUrl?: string;
-  embedUrl?: string;
-  server: string;
-  quality: string;
-  language: string;
-  type: string;
-  serverIndex: number;
-}
-
-interface EpisodeDetails {
-  id: string;
-  title: string;
-  animeTitle: string;
-  episodeNumber: number;
-  language: string;
-  sources: EpisodeSource[];
-  embedUrl?: string;
-  corsInfo?: {
-    note: string;
-    proxyEndpoint: string;
-    embedEndpoint: string;
-  };
-  availableServers: string[];
-  url: string;
-}
-
-export default function VideoPlayerScreen() {
+const VideoPlayerScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { episodeId, animeTitle, episodeNumber, episodeTitle, language } = route.params as {
+  const { episodeId, episodeTitle, animeTitle, episodeNumber } = route.params as {
     episodeId: string;
+    episodeTitle: string;
     animeTitle: string;
     episodeNumber: number;
-    episodeTitle: string;
-    language: 'vf' | 'vostfr';
   };
 
-  const [selectedServer, setSelectedServer] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Détails de l'épisode avec sources de lecture
-  const { data: episodeDetails, isLoading, error } = useQuery<EpisodeDetails>({
-    queryKey: ['/api/anime-sama/episode', episodeId],
-    staleTime: 5 * 60 * 1000, // 5 minutes
+  const { data: episodeData, isLoading: episodeLoading } = useQuery({
+    queryKey: ["episodeDetail", episodeId],
+    queryFn: () => apiService.getEpisodeDetails(episodeId),
+    staleTime: 10 * 60 * 1000, // 10 minutes
     retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  const handlePlayVideo = useCallback(async () => {
-    if (!episodeDetails?.sources?.length) {
-      Alert.alert('Erreur', 'Aucune source vidéo disponible pour cet épisode.');
-      return;
-    }
-
-    const source = episodeDetails.sources[selectedServer];
-    if (!source) {
-      Alert.alert('Erreur', 'Source vidéo sélectionnée non disponible.');
-      return;
-    }
-
+  const handlePlayVideo = useCallback(async (source: any) => {
+    setIsLoading(true);
     try {
-      // Utilisation de l'URL embed ou proxy selon la disponibilité
-      const playUrl = source.embedUrl || source.proxyUrl || source.url;
-      
-      // Ouverture dans le navigateur web externe
-      const canOpen = await Linking.canOpenURL(playUrl);
-      if (canOpen) {
-        await Linking.openURL(playUrl);
-      } else {
-        throw new Error('Impossible d\'ouvrir l\'URL');
+      const videoUrl = source.embedUrl || source.url;
+      if (!videoUrl) {
+        Alert.alert('Erreur', 'URL de la vidéo non disponible');
+        return;
       }
+
+      // Ouvrir le lecteur vidéo dans le navigateur pour une meilleure compatibilité
+      await WebBrowser.openBrowserAsync(videoUrl, {
+        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+        showTitle: true,
+        toolbarColor: '#000000',
+        controlsColor: '#00D4FF',
+      });
     } catch (error) {
-      console.error('Erreur lors de l\'ouverture du lecteur:', error);
+      console.error('Error opening video:', error);
       Alert.alert(
         'Erreur de lecture',
-        'Impossible d\'ouvrir le lecteur vidéo. Vérifiez votre connexion internet.'
+        'Impossible d\'ouvrir le lecteur vidéo. Veuillez vérifier votre connexion.',
+        [{ text: 'OK' }]
       );
+    } finally {
+      setIsLoading(false);
     }
-  }, [episodeDetails, selectedServer]);
-
-  const handleServerChange = useCallback((serverIndex: number) => {
-    setSelectedServer(serverIndex);
   }, []);
 
-  if (isLoading) {
+  const handleExternalLink = useCallback(async (url: string) => {
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Erreur', 'Impossible d\'ouvrir le lien');
+      }
+    } catch (error) {
+      console.error('Error opening link:', error);
+      Alert.alert('Erreur', 'Impossible d\'ouvrir le lien');
+    }
+  }, []);
+
+  if (episodeLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <LinearGradient
-          colors={['#000000', '#1e40af', '#000000']}
+          colors={['rgba(0, 0, 0, 0.95)', 'rgba(30, 64, 175, 0.95)']}
           style={styles.header}
         >
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={24} color="#00D4FF" />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chargement...</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            Chargement...
+          </Text>
+          <View style={styles.headerSpacer} />
         </LinearGradient>
         
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#00D4FF" />
-          <Text style={styles.loadingText}>Préparation de la lecture...</Text>
+          <Text style={styles.loadingText}>Chargement de l'épisode...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  if (error || !episodeDetails) {
+  if (!episodeData) {
     return (
       <SafeAreaView style={styles.container}>
         <LinearGradient
-          colors={['#000000', '#1e40af', '#000000']}
+          colors={['rgba(0, 0, 0, 0.95)', 'rgba(30, 64, 175, 0.95)']}
           style={styles.header}
         >
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={24} color="#00D4FF" />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Erreur</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            Erreur
+          </Text>
+          <View style={styles.headerSpacer} />
         </LinearGradient>
         
         <View style={styles.errorContainer}>
-          <Ionicons name="warning-outline" size={64} color="#ec4899" />
-          <Text style={styles.errorTitle}>Épisode indisponible</Text>
-          <Text style={styles.errorText}>
-            Impossible de charger cet épisode. Il est peut-être temporairement indisponible.
-          </Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.retryButtonText}>Retour</Text>
+          <Ionicons name="alert-circle" size={48} color="#ff6b6b" />
+          <Text style={styles.errorText}>Épisode non trouvé</Text>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Text style={styles.backButtonText}>Retour</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -158,315 +130,386 @@ export default function VideoPlayerScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <LinearGradient
-        colors={['#000000', '#1e40af', '#000000']}
+        colors={['rgba(0, 0, 0, 0.95)', 'rgba(30, 64, 175, 0.95)']}
         style={styles.header}
       >
-        <View style={styles.headerContent}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={24} color="#00D4FF" />
-          </TouchableOpacity>
-          <View style={styles.headerInfo}>
-            <Text style={styles.headerTitle} numberOfLines={1}>
-              {animeTitle}
-            </Text>
-            <Text style={styles.headerSubtitle}>
-              Épisode {episodeNumber} • {language.toUpperCase()}
-            </Text>
-          </View>
-        </View>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          Épisode {episodeNumber}
+        </Text>
+        <View style={styles.headerSpacer} />
       </LinearGradient>
 
       <View style={styles.content}>
-        {/* Informations de l'épisode */}
-        <View style={styles.episodeInfo}>
-          <Text style={styles.episodeTitle}>
-            {episodeTitle || `Épisode ${episodeNumber}`}
+        {/* Episode Info */}
+        <LinearGradient
+          colors={['rgba(0, 212, 255, 0.1)', 'rgba(30, 64, 175, 0.1)']}
+          style={styles.infoCard}
+        >
+          <View style={styles.episodeInfo}>
+            <Text style={styles.animeTitle}>{animeTitle}</Text>
+            <Text style={styles.episodeTitle}>
+              {episodeData.title || `Épisode ${episodeNumber}`}
+            </Text>
+            <Text style={styles.episodeLanguage}>
+              Langue: {episodeData.language.toUpperCase()}
+            </Text>
+          </View>
+        </LinearGradient>
+
+        {/* Video Sources */}
+        <View style={styles.sourcesSection}>
+          <Text style={styles.sectionTitle}>
+            <Ionicons name="play-circle" size={20} color="#00D4FF" /> Sources vidéo
           </Text>
-          <Text style={styles.animeTitle}>{animeTitle}</Text>
+          
+          {episodeData.sources && episodeData.sources.length > 0 ? (
+            episodeData.sources.map((source, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.sourceCard}
+                onPress={() => handlePlayVideo(source)}
+                disabled={isLoading}
+              >
+                <LinearGradient
+                  colors={['rgba(0, 212, 255, 0.1)', 'rgba(30, 64, 175, 0.1)']}
+                  style={styles.sourceGradient}
+                >
+                  <View style={styles.sourceInfo}>
+                    <View style={styles.sourceHeader}>
+                      <Text style={styles.serverName}>{source.server}</Text>
+                      <Text style={styles.qualityBadge}>{source.quality}</Text>
+                    </View>
+                    <Text style={styles.sourceType}>
+                      {source.type} • {source.language.toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={styles.playButton}>
+                    {isLoading ? (
+                      <ActivityIndicator size="small" color="#00D4FF" />
+                    ) : (
+                      <Ionicons name="play" size={24} color="#00D4FF" />
+                    )}
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={styles.noSourcesContainer}>
+              <Ionicons name="videocam-off" size={48} color="#666" />
+              <Text style={styles.noSourcesText}>
+                Aucune source vidéo disponible pour cet épisode
+              </Text>
+            </View>
+          )}
         </View>
 
-        {/* Sélection du serveur */}
-        {episodeDetails.sources && episodeDetails.sources.length > 1 && (
-          <View style={styles.serverSelection}>
-            <Text style={styles.sectionTitle}>Serveurs disponibles</Text>
-            <View style={styles.serverList}>
-              {episodeDetails.sources.map((source, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.serverButton,
-                    selectedServer === index && styles.serverButtonActive
-                  ]}
-                  onPress={() => handleServerChange(index)}
-                >
-                  <Text style={[
-                    styles.serverButtonText,
-                    selectedServer === index && styles.serverButtonTextActive
-                  ]}>
-                    {source.server} ({source.quality})
-                  </Text>
-                </TouchableOpacity>
+        {/* Embed URL Fallback */}
+        {episodeData.embedUrl && (
+          <View style={styles.embedSection}>
+            <Text style={styles.sectionTitle}>
+              <Ionicons name="link" size={20} color="#00D4FF" /> Lecteur intégré
+            </Text>
+            <TouchableOpacity
+              style={styles.embedCard}
+              onPress={() => handleExternalLink(episodeData.embedUrl!)}
+            >
+              <LinearGradient
+                colors={['rgba(0, 212, 255, 0.1)', 'rgba(30, 64, 175, 0.1)']}
+                style={styles.embedGradient}
+              >
+                <Ionicons name="open-outline" size={24} color="#00D4FF" />
+                <Text style={styles.embedText}>Ouvrir dans le navigateur</Text>
+                <Ionicons name="chevron-forward" size={20} color="#00D4FF" />
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* CORS Info */}
+        {episodeData.corsInfo && (
+          <View style={styles.corsSection}>
+            <LinearGradient
+              colors={['rgba(255, 193, 7, 0.1)', 'rgba(255, 152, 0, 0.1)']}
+              style={styles.corsCard}
+            >
+              <Ionicons name="information-circle" size={24} color="#FFC107" />
+              <View style={styles.corsInfo}>
+                <Text style={styles.corsTitle}>Information technique</Text>
+                <Text style={styles.corsText}>{episodeData.corsInfo.note}</Text>
+              </View>
+            </LinearGradient>
+          </View>
+        )}
+
+        {/* Available Servers */}
+        {episodeData.availableServers && episodeData.availableServers.length > 0 && (
+          <View style={styles.serversSection}>
+            <Text style={styles.sectionTitle}>
+              <Ionicons name="server" size={20} color="#00D4FF" /> Serveurs disponibles
+            </Text>
+            <View style={styles.serversList}>
+              {episodeData.availableServers.map((server, index) => (
+                <View key={index} style={styles.serverTag}>
+                  <Text style={styles.serverText}>{server}</Text>
+                </View>
               ))}
             </View>
           </View>
         )}
 
-        {/* Bouton de lecture */}
-        <View style={styles.playerContainer}>
+        {/* Mobile Optimization Note */}
+        <View style={styles.noteSection}>
           <LinearGradient
-            colors={['#00D4FF', '#1e40af']}
-            style={styles.playButton}
+            colors={['rgba(0, 212, 255, 0.1)', 'rgba(30, 64, 175, 0.1)']}
+            style={styles.noteCard}
           >
-            <TouchableOpacity
-              style={styles.playButtonInner}
-              onPress={handlePlayVideo}
-            >
-              <Ionicons name="play" size={32} color="#fff" />
-              <Text style={styles.playButtonText}>Regarder l'épisode</Text>
-            </TouchableOpacity>
+            <Ionicons name="phone-portrait" size={24} color="#00D4FF" />
+            <Text style={styles.noteText}>
+              Le lecteur vidéo s'ouvre dans le navigateur pour une meilleure compatibilité mobile et une expérience de visionnage optimisée.
+            </Text>
           </LinearGradient>
         </View>
-
-        {/* Informations CORS si disponibles */}
-        {episodeDetails.corsInfo && (
-          <View style={styles.corsInfo}>
-            <View style={styles.corsHeader}>
-              <Ionicons name="information-circle" size={20} color="#00D4FF" />
-              <Text style={styles.corsTitle}>Information</Text>
-            </View>
-            <Text style={styles.corsNote}>{episodeDetails.corsInfo.note}</Text>
-          </View>
-        )}
-
-        {/* Informations sur la source actuelle */}
-        {episodeDetails.sources && episodeDetails.sources[selectedServer] && (
-          <View style={styles.sourceInfo}>
-            <Text style={styles.sectionTitle}>Source sélectionnée</Text>
-            <View style={styles.sourceDetails}>
-              <View style={styles.sourceRow}>
-                <Text style={styles.sourceLabel}>Serveur:</Text>
-                <Text style={styles.sourceValue}>
-                  {episodeDetails.sources[selectedServer].server}
-                </Text>
-              </View>
-              <View style={styles.sourceRow}>
-                <Text style={styles.sourceLabel}>Qualité:</Text>
-                <Text style={styles.sourceValue}>
-                  {episodeDetails.sources[selectedServer].quality}
-                </Text>
-              </View>
-              <View style={styles.sourceRow}>
-                <Text style={styles.sourceLabel}>Type:</Text>
-                <Text style={styles.sourceValue}>
-                  {episodeDetails.sources[selectedServer].type}
-                </Text>
-              </View>
-            </View>
-          </View>
-        )}
       </View>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: '#000',
   },
   header: {
-    paddingBottom: 15,
-  },
-  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 212, 255, 0.2)',
   },
   backButton: {
-    padding: 8,
-    marginRight: 15,
-  },
-  headerInfo: {
-    flex: 1,
+    padding: 5,
   },
   headerTitle: {
+    flex: 1,
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#00D4FF',
-    marginBottom: 2,
-  },
-  headerSubtitle: {
-    fontSize: 14,
     color: '#fff',
-    opacity: 0.8,
+    marginLeft: 15,
+  },
+  headerSpacer: {
+    width: 34,
   },
   content: {
     flex: 1,
     padding: 20,
   },
+  infoCard: {
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 212, 255, 0.3)',
+  },
+  episodeInfo: {
+    alignItems: 'center',
+  },
+  animeTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#00D4FF',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  episodeTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  episodeLanguage: {
+    fontSize: 14,
+    color: '#ccc',
+  },
+  sourcesSection: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#00D4FF',
+    marginBottom: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sourceCard: {
+    marginBottom: 10,
+  },
+  sourceGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 212, 255, 0.3)',
+  },
+  sourceInfo: {
+    flex: 1,
+  },
+  sourceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+  },
+  serverName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  qualityBadge: {
+    backgroundColor: 'rgba(0, 212, 255, 0.2)',
+    color: '#00D4FF',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  sourceType: {
+    fontSize: 12,
+    color: '#ccc',
+  },
+  playButton: {
+    marginLeft: 15,
+  },
+  noSourcesContainer: {
+    alignItems: 'center',
+    padding: 30,
+  },
+  noSourcesText: {
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 15,
+    fontSize: 14,
+  },
+  embedSection: {
+    marginBottom: 20,
+  },
+  embedCard: {
+    marginBottom: 10,
+  },
+  embedGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 15,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 212, 255, 0.3)',
+  },
+  embedText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#fff',
+    marginLeft: 15,
+  },
+  corsSection: {
+    marginBottom: 20,
+  },
+  corsCard: {
+    flexDirection: 'row',
+    padding: 15,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.3)',
+  },
+  corsInfo: {
+    flex: 1,
+    marginLeft: 15,
+  },
+  corsTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#FFC107',
+    marginBottom: 5,
+  },
+  corsText: {
+    fontSize: 12,
+    color: '#FFC107',
+    lineHeight: 16,
+  },
+  serversSection: {
+    marginBottom: 20,
+  },
+  serversList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  serverTag: {
+    backgroundColor: 'rgba(0, 212, 255, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
+  },
+  serverText: {
+    fontSize: 12,
+    color: '#00D4FF',
+    fontWeight: 'bold',
+  },
+  noteSection: {
+    marginTop: 20,
+  },
+  noteCard: {
+    flexDirection: 'row',
+    padding: 15,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 212, 255, 0.3)',
+  },
+  noteText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#00D4FF',
+    marginLeft: 15,
+    lineHeight: 18,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 40,
   },
   loadingText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#ccc',
     marginTop: 15,
+    fontSize: 14,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  errorTitle: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 10,
+    padding: 40,
   },
   errorText: {
-    color: '#666',
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 30,
-  },
-  retryButton: {
-    backgroundColor: '#00D4FF',
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 25,
-  },
-  retryButtonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  episodeInfo: {
-    marginBottom: 30,
-  },
-  episodeTitle: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    lineHeight: 28,
-  },
-  animeTitle: {
-    color: '#00D4FF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  serverSelection: {
-    marginBottom: 30,
-  },
-  sectionTitle: {
-    color: '#00D4FF',
+    color: '#ff6b6b',
     fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  serverList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  serverButton: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  serverButtonActive: {
-    backgroundColor: '#00D4FF',
-    borderColor: '#00D4FF',
-  },
-  serverButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  serverButtonTextActive: {
-    color: '#000',
-  },
-  playerContainer: {
-    marginBottom: 30,
-    alignItems: 'center',
-  },
-  playButton: {
-    borderRadius: 50,
-    overflow: 'hidden',
-    width: '100%',
-  },
-  playButtonInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 30,
-  },
-  playButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 10,
-  },
-  corsInfo: {
-    backgroundColor: 'rgba(0, 212, 255, 0.1)',
-    borderRadius: 10,
-    padding: 15,
+    marginTop: 15,
     marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 212, 255, 0.3)',
+    textAlign: 'center',
   },
-  corsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  corsTitle: {
+  backButtonText: {
     color: '#00D4FF',
-    fontSize: 16,
     fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  corsNote: {
-    color: '#fff',
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  sourceInfo: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 10,
-    padding: 15,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  sourceDetails: {
-    gap: 8,
-  },
-  sourceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  sourceLabel: {
-    color: '#666',
-    fontSize: 14,
-  },
-  sourceValue: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 16,
   },
 });
+
+export default VideoPlayerScreen;

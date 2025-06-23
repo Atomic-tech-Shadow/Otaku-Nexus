@@ -7,12 +7,15 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
+import { apiService } from '../services/api';
+import AppHeader from '../components/AppHeader';
 
 const { width } = Dimensions.get('window');
 
@@ -21,24 +24,60 @@ interface HomeScreenProps {
 }
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
-  const { data: userStats = {}, isLoading: statsLoading } = useQuery({
-    queryKey: ["/api/user/stats"],
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const { data: userStats = {}, isLoading: statsLoading, refetch: refetchStats } = useQuery({
+    queryKey: ["userStats"],
+    queryFn: () => apiService.getUserStats(),
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 2,
   });
 
-  const { data: featuredQuiz, isLoading: quizLoading } = useQuery({
-    queryKey: ["/api/quizzes/featured"],
+  const { data: featuredQuiz, isLoading: quizLoading, refetch: refetchQuiz } = useQuery({
+    queryKey: ["featuredQuiz"],
+    queryFn: () => apiService.getFeaturedQuiz(),
     staleTime: 30 * 60 * 1000, // 30 minutes
     retry: 2,
   });
 
-  const { data: topUsers = [], isLoading: leaderboardLoading } = useQuery({
-    queryKey: ["/api/users/leaderboard"],
+  const { data: topUsers = [], isLoading: leaderboardLoading, refetch: refetchLeaderboard } = useQuery({
+    queryKey: ["leaderboard"],
+    queryFn: () => apiService.getLeaderboard(),
     staleTime: 30 * 1000, // 30 seconds
     retry: 2,
     refetchInterval: 60 * 1000, // Actualise toutes les minutes
   });
+
+  const { data: posts = [], isLoading: postsLoading, refetch: refetchPosts } = useQuery({
+    queryKey: ["posts"],
+    queryFn: () => apiService.getPosts(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+  });
+
+  const { data: trendingAnime = [], isLoading: trendingLoading, refetch: refetchTrending } = useQuery({
+    queryKey: ["trendingAnime"],
+    queryFn: () => apiService.getTrendingAnime(),
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    retry: 2,
+  });
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        refetchStats(),
+        refetchQuiz(),
+        refetchLeaderboard(),
+        refetchPosts(),
+        refetchTrending(),
+      ]);
+    } catch (error) {
+      console.error('Refresh failed:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchStats, refetchQuiz, refetchLeaderboard, refetchPosts, refetchTrending]);
 
   const handleAnimePress = () => {
     navigation.navigate('AnimeSama');
@@ -46,6 +85,14 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   const handleQuizPress = () => {
     navigation.navigate('Quiz');
+  };
+
+  const handleChatPress = () => {
+    navigation.navigate('Chat');
+  };
+
+  const handleProfilePress = () => {
+    navigation.navigate('Profile');
   };
 
   const handleChatPress = () => {
