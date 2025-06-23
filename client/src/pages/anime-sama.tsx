@@ -126,15 +126,15 @@ const AnimeSamaPage: React.FC = () => {
       const errorMessage = error?.message || 'Unknown error';
       console.warn(`Cache fetch failed for key ${key}:`, errorMessage);
       
-      // Ne pas rejeter la promesse, retourner une structure d'erreur
+      // Structure d'erreur standardisée sans rejection
       const errorResponse = { 
         success: false, 
-        data: null, 
+        data: { episodes: [] }, // Structure compatible avec l'API
         error: errorMessage,
         cached: false 
       };
       
-      // Mettre en cache l'erreur pour éviter les requêtes répétées
+      // Mettre en cache l'erreur avec TTL réduit pour retry
       cache.set(key, { data: errorResponse, timestamp: Date.now() });
       
       return errorResponse;
@@ -898,57 +898,94 @@ const AnimeSamaPage: React.FC = () => {
       
       console.log(`🔄 Changing language to ${newLanguage} for ${selectedAnime.title}`);
       
-      // Utiliser le cache intelligent avec gestion d'erreurs robuste
+      // Utiliser le cache intelligent avec gestion d'erreurs complète
       const apiResponse = await getCachedData(cacheKey, async () => {
         try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000);
+          
           const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`, {
             headers: {
               'Accept': 'application/json',
               'Cache-Control': 'no-cache'
             },
-            signal: AbortSignal.timeout(10000)
+            signal: controller.signal
           });
           
+          clearTimeout(timeoutId);
+          
           if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            return {
+              success: false,
+              data: { episodes: [] },
+              error: `HTTP ${response.status}`,
+              cached: false
+            };
           }
           
           return await response.json();
         } catch (fetchError: any) {
-          console.warn(`Language change fetch failed for ${cacheKey}:`, fetchError.message);
-          // Retourner une réponse d'erreur structurée au lieu de rejeter
+          // Retourner une structure compatible sans rejeter
           return {
             success: false,
-            data: null,
-            error: fetchError.message
+            data: { episodes: [] },
+            error: fetchError.name === 'AbortError' ? 'Timeout' : fetchError.message || 'Network error',
+            cached: false
           };
         }
       }, API_CONFIG.cacheTTL);
       
-      if (apiResponse.success && apiResponse.data && apiResponse.data.episodes && apiResponse.data.episodes.length > 0) {
+      // Vérifier si la réponse est valide et contient des épisodes
+      if (apiResponse && apiResponse.success && apiResponse.data && 
+          apiResponse.data.episodes && Array.isArray(apiResponse.data.episodes) && 
+          apiResponse.data.episodes.length > 0) {
+        
         console.log(`✅ Language change successful: ${apiResponse.data.episodes.length} episodes in ${newLanguage}`);
-        setEpisodes(apiResponse.data.episodes);
+        
+        // Appliquer les corrections d'épisodes selon la documentation
+        const correctedEpisodes = correctEpisodeNumbers(selectedAnime.id, selectedSeason.number, apiResponse.data.episodes);
+        setEpisodes(correctedEpisodes);
         
         // Recharger le premier épisode avec la nouvelle langue
-        const firstEpisode = apiResponse.data.episodes[0];
+        const firstEpisode = correctedEpisodes[0];
         setSelectedEpisode(firstEpisode);
-        await loadEpisodeSources(firstEpisode.id);
+        
+        try {
+          await loadEpisodeSources(firstEpisode.id);
+        } catch (sourceError) {
+          console.warn('Error loading episode sources after language change:', sourceError);
+          setError('Épisodes chargés mais erreur de sources vidéo');
+        }
+        
       } else {
-        // Si la nouvelle langue n'a pas d'épisodes, garder les épisodes actuels mais changer l'interface
+        // Gestion d'erreur ou pas d'épisodes dans cette langue
+        const errorMsg = apiResponse?.error || 'No episodes found';
         console.log(`⚠️ No episodes found in ${newLanguage}, keeping current episodes with language interface change`);
         setError(`Interface changée vers ${newLanguage} - Sources ${previousLanguage} conservées`);
         
-        // Recharger les sources pour le même épisode avec la nouvelle langue
+        // Recharger les sources pour le même épisode avec la nouvelle langue si possible
         if (selectedEpisode) {
-          await loadEpisodeSources(selectedEpisode.id);
+          try {
+            await loadEpisodeSources(selectedEpisode.id);
+          } catch (sourceError) {
+            console.warn('Error reloading sources with new language:', sourceError);
+          }
         }
       }
       
-    } catch (err) {
-      console.error('Language change error:', err);
+    } catch (err: any) {
+      console.error('Language change error:', err?.message || err);
       setError(`Changement de langue vers ${newLanguage} impossible. Sources ${previousLanguage} conservées.`);
       // Revenir à la langue précédente si échec total
       setSelectedLanguage(previousLanguage);
+      
+      // S'assurer qu'aucune promesse ne reste non capturée
+      if (selectedEpisode) {
+        loadEpisodeSources(selectedEpisode.id).catch(sourceErr => {
+          console.warn('Error reverting to previous episode sources:', sourceErr?.message || sourceErr);
+        });
+      }
+      
     } finally {
       setLoading(false);
       setLanguageChangeInProgress(false);
