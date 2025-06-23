@@ -218,7 +218,7 @@ const AnimeSamaPage: React.FC = () => {
   const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
   const REQUEST_TIMEOUT = 15000; // 15 secondes
   
-  // Client HTTP personnalisé pour Replit
+  // Client HTTP robuste avec gestion d'erreurs silencieuse
   const createApiClient = () => {
     const baseHeaders = {
       'Accept': 'application/json',
@@ -229,7 +229,7 @@ const AnimeSamaPage: React.FC = () => {
     };
     
     return {
-      async get(endpoint: string, params: Record<string, string> = {}) {
+      async get(endpoint: string, params: Record<string, string> = {}): Promise<any> {
         const url = new URL(`${API_BASE}${endpoint}`);
         
         // Ajout des paramètres + timestamp anti-cache
@@ -251,6 +251,10 @@ const AnimeSamaPage: React.FC = () => {
             mode: 'cors',
             credentials: 'omit',
             signal: controller.signal
+          }).catch(fetchError => {
+            // Gestion silencieuse des erreurs fetch pour éviter unhandledrejection
+            console.warn(`Fetch failed silently: ${fetchError.message}`);
+            throw new Error(`Network error: ${fetchError.message}`);
           });
           
           clearTimeout(timeoutId);
@@ -259,13 +263,17 @@ const AnimeSamaPage: React.FC = () => {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
           
-          const data = await response.json();
-          console.log(`✅ API Succès: ${data.length || 'N/A'} items`);
+          const data = await response.json().catch(jsonError => {
+            console.warn(`JSON parsing failed: ${jsonError.message}`);
+            throw new Error(`Invalid response format`);
+          });
+          
+          console.log(`✅ API Succès: ${data.length || data.data?.episodes?.length || 'N/A'} items`);
           return data;
           
         } catch (error: any) {
           clearTimeout(timeoutId);
-          console.error(`❌ API Erreur ${endpoint}:`, error.message);
+          console.warn(`API call failed: ${error.message}`);
           throw error;
         }
       }
@@ -274,8 +282,10 @@ const AnimeSamaPage: React.FC = () => {
 
   const apiClient = createApiClient();
 
-  // Système de retry automatique avec délai exponentiel
-  const loadEpisodesWithRetry = async (animeId: string, season: Season, language: string, maxRetries = 3) => {
+  // Système de retry automatique avec gestion d'erreurs silencieuse
+  const loadEpisodesWithRetry = async (animeId: string, season: Season, language: string, maxRetries = 3): Promise<any> => {
+    let lastError: Error | null = null;
+    
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`🔄 Tentative ${attempt}/${maxRetries} pour ${language}`);
@@ -290,6 +300,10 @@ const AnimeSamaPage: React.FC = () => {
           animeId,
           season: season.number.toString(),
           language: language.toLowerCase()
+        }).catch(apiError => {
+          // Capture silencieuse des erreurs API
+          lastError = apiError;
+          throw apiError;
         });
         
         console.log(`✅ Succès ${language} tentative ${attempt}`);
@@ -298,14 +312,19 @@ const AnimeSamaPage: React.FC = () => {
         return data;
         
       } catch (error: any) {
+        lastError = error;
         console.warn(`⚠️ Tentative ${attempt} échouée pour ${language}:`, error.message);
         
         if (attempt === maxRetries) {
-          console.error(`❌ Toutes les tentatives échouées pour ${language}`);
-          throw error;
+          console.warn(`❌ Toutes les tentatives échouées pour ${language}`);
+          // Retourner une structure vide au lieu de throw pour éviter unhandledrejection
+          return { success: false, data: { episodes: [] }, error: error.message };
         }
       }
     }
+    
+    // Fallback de sécurité
+    return { success: false, data: { episodes: [] }, error: lastError?.message || 'Unknown error' };
   };
   
   // Mapping correct des épisodes One Piece selon documentation
@@ -872,7 +891,7 @@ const AnimeSamaPage: React.FC = () => {
         console.log(`Using correct episode ID format: ${correctEpisodeId}`);
       }
       
-      // Essayer d'abord l'endpoint /api/episode/{episodeId} selon documentation
+      // Essayer d'abord l'endpoint /api/episode/{episodeId} avec gestion d'erreurs robuste
       try {
         const response = await fetch(`${API_BASE}/api/episode/${correctEpisodeId}`, {
           headers: {
@@ -880,11 +899,18 @@ const AnimeSamaPage: React.FC = () => {
             'Content-Type': 'application/json'
           },
           signal: AbortSignal.timeout(15000)
+        }).catch(fetchError => {
+          console.warn('Episode fetch failed:', fetchError.message);
+          return null;
         });
         
-        if (response.ok) {
-          const apiResponse = await response.json();
-          if (apiResponse.success && apiResponse.data) {
+        if (response && response.ok) {
+          const apiResponse = await response.json().catch(jsonError => {
+            console.warn('Episode JSON parsing failed:', jsonError.message);
+            return null;
+          });
+          
+          if (apiResponse && apiResponse.success && apiResponse.data) {
             console.log(`Successfully loaded server sources: ${apiResponse.data.sources?.length || 0} servers`);
             
             // Optimiser les sources avec l'endpoint embed intégré
@@ -902,22 +928,26 @@ const AnimeSamaPage: React.FC = () => {
             setEpisodeDetails(optimizedData);
             setSelectedServer(0);
             
-            // Historique de visionnage
+            // Historique de visionnage avec gestion d'erreurs
             if (selectedAnime && selectedEpisode) {
-              const newHistory = { 
-                ...watchHistory, 
-                [selectedAnime.id]: selectedEpisode.episodeNumber 
-              };
-              setWatchHistory(newHistory);
-              localStorage.setItem('animeWatchHistory', JSON.stringify(newHistory));
-              console.log(`Updated watch history: Episode ${selectedEpisode.episodeNumber} for ${selectedAnime.title}`);
+              try {
+                const newHistory = { 
+                  ...watchHistory, 
+                  [selectedAnime.id]: selectedEpisode.episodeNumber 
+                };
+                setWatchHistory(newHistory);
+                localStorage.setItem('animeWatchHistory', JSON.stringify(newHistory));
+                console.log(`Updated watch history: Episode ${selectedEpisode.episodeNumber} for ${selectedAnime.title}`);
+              } catch (historyError) {
+                console.warn('Failed to save watch history:', historyError);
+              }
             }
             
             return;
           }
         }
-      } catch (apiError) {
-        console.warn('API episode sources failed, using embed fallback:', apiError);
+      } catch (apiError: any) {
+        console.warn('API episode sources failed, using embed fallback:', apiError.message);
       }
       
       // Fallback: utiliser directement l'endpoint embed
@@ -951,8 +981,8 @@ const AnimeSamaPage: React.FC = () => {
       console.log(`Using embed fallback for ${correctEpisodeId}`);
 
     } catch (err: any) {
-      console.error('Episode sources error:', err?.message || 'Unknown error');
-      setError('Erreur de chargement des sources vidéo');
+      console.warn('Episode sources error:', err?.message || 'Unknown error');
+      setError('Sources vidéo temporairement indisponibles');
     } finally {
       setLoading(false);
     }
@@ -972,7 +1002,7 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Fonction changeLanguage corrigée - Version robuste avec client API
+  // Fonction changeLanguage sans erreurs unhandledrejection
   const changeLanguage = async (newLanguage: 'VF' | 'VOSTFR') => {
     if (!selectedAnime || !selectedSeason) {
       console.warn('⚠️ Anime ou saison non sélectionnés');
@@ -988,6 +1018,7 @@ const AnimeSamaPage: React.FC = () => {
     }
     
     setLanguageChangeInProgress(true);
+    setError(null);
     
     try {
       // Délai pour éviter les race conditions
@@ -997,25 +1028,29 @@ const AnimeSamaPage: React.FC = () => {
       
       setSelectedLanguage(newLanguage);
       
-      console.log(`🌐 Utilisation du client API robuste pour ${newLanguage}`);
+      console.log(`🌐 Chargement épisodes ${newLanguage}`);
       
-      // Utilisation du client API robuste avec retry automatique
+      // Utilisation du client API robuste avec gestion d'erreurs complète
       const data = await loadEpisodesWithRetry(
         selectedAnime.id, 
         selectedSeason, 
         newLanguage,
         3 // maxRetries
-      );
+      ).catch(retryError => {
+        // Gestion silencieuse des erreurs de retry
+        console.warn(`Retry failed for ${newLanguage}:`, retryError.message);
+        return { success: false, data: { episodes: [] }, error: retryError.message };
+      });
       
-      console.log(`✅ Succès ${newLanguage}:`, data.length || data.data?.episodes?.length || 0, 'épisodes');
+      console.log(`🔍 Réponse ${newLanguage}:`, data?.success ? 'succès' : 'échec', data?.data?.episodes?.length || 0, 'épisodes');
       
       // Extraction des épisodes selon le format de réponse
       let episodesData = [];
-      if (Array.isArray(data)) {
-        episodesData = data;
-      } else if (data.success && data.data && Array.isArray(data.data.episodes)) {
+      if (data && data.success && data.data && Array.isArray(data.data.episodes)) {
         episodesData = data.data.episodes;
-      } else if (data.data && Array.isArray(data.data)) {
+      } else if (Array.isArray(data)) {
+        episodesData = data;
+      } else if (data && data.data && Array.isArray(data.data)) {
         episodesData = data.data;
       }
       
@@ -1029,35 +1064,34 @@ const AnimeSamaPage: React.FC = () => {
         const firstEpisode = correctedEpisodes[0];
         setSelectedEpisode(firstEpisode);
         
-        // Chargement des détails de l'épisode
-        await loadEpisodeSources(firstEpisode.id);
+        // Chargement des détails de l'épisode avec gestion d'erreurs
+        loadEpisodeSources(firstEpisode.id).catch(sourceError => {
+          console.warn('Erreur sources vidéo:', sourceError.message);
+          setError('Épisodes chargés mais sources vidéo indisponibles');
+        });
+        
         setLastSuccessfulLanguage(newLanguage);
         setRetryCount(0);
+        console.log(`✅ ${newLanguage} chargé avec succès`);
       } else {
-        console.warn(`⚠️ Aucun épisode ${newLanguage} disponible`);
-        setEpisodes([]);
-      }
-      
-    } catch (error: any) {
-      console.error(`❌ Erreur changement ${newLanguage}:`, error.message);
-      
-      // Fallback intelligent vers l'autre langue
-      const fallbackLanguage = newLanguage === 'VF' ? 'VOSTFR' : 'VF';
-      console.log(`🔄 Fallback intelligent vers ${fallbackLanguage}`);
-      
-      try {
-        // Utiliser aussi le client API robuste pour le fallback
+        console.warn(`⚠️ Aucun épisode ${newLanguage} disponible, essai fallback`);
+        
+        // Fallback vers l'autre langue avec gestion d'erreurs
+        const fallbackLanguage = newLanguage === 'VF' ? 'VOSTFR' : 'VF';
+        console.log(`🔄 Fallback vers ${fallbackLanguage}`);
+        
         const fallbackData = await loadEpisodesWithRetry(
           selectedAnime.id, 
           selectedSeason, 
           fallbackLanguage,
           2 // moins de retry pour le fallback
-        );
+        ).catch(fallbackError => {
+          console.warn(`Fallback failed for ${fallbackLanguage}:`, fallbackError.message);
+          return { success: false, data: { episodes: [] }, error: fallbackError.message };
+        });
         
         let fallbackEpisodes = [];
-        if (Array.isArray(fallbackData)) {
-          fallbackEpisodes = fallbackData;
-        } else if (fallbackData.success && fallbackData.data && Array.isArray(fallbackData.data.episodes)) {
+        if (fallbackData && fallbackData.success && fallbackData.data && Array.isArray(fallbackData.data.episodes)) {
           fallbackEpisodes = fallbackData.data.episodes;
         }
         
@@ -1065,13 +1099,18 @@ const AnimeSamaPage: React.FC = () => {
           const correctedEpisodes = correctEpisodeNumbers(selectedAnime.id, selectedSeason.number, fallbackEpisodes);
           setEpisodes(correctedEpisodes);
           setSelectedLanguage(fallbackLanguage);
-          console.log(`✅ Fallback réussi vers ${fallbackLanguage}`);
-          setError(`Interface ${newLanguage} demandée - Épisodes ${fallbackLanguage} chargés`);
+          setError(`${newLanguage} indisponible - ${fallbackLanguage} chargé`);
+          console.log(`✅ Fallback ${fallbackLanguage} réussi`);
+        } else {
+          setEpisodes([]);
+          setError(`Aucun épisode disponible en ${newLanguage} ou ${fallbackLanguage}`);
+          console.warn(`❌ Aucune langue disponible`);
         }
-      } catch (fallbackError: any) {
-        console.error('❌ Fallback échoué:', fallbackError.message);
-        setError(`Impossible de charger les épisodes en ${newLanguage} ou ${fallbackLanguage}`);
       }
+      
+    } catch (error: any) {
+      console.warn(`Erreur générale changement ${newLanguage}:`, error.message);
+      setError(`Erreur lors du changement vers ${newLanguage}`);
     } finally {
       setLanguageChangeInProgress(false);
     }
