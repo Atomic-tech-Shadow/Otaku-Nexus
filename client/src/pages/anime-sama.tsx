@@ -125,13 +125,19 @@ const AnimeSamaPage: React.FC = () => {
     } catch (error: any) {
       const errorMessage = error?.message || 'Unknown error';
       console.warn(`Cache fetch failed for key ${key}:`, errorMessage);
-      // Retourner des données d'erreur structurées
-      return { 
+      
+      // Ne pas rejeter la promesse, retourner une structure d'erreur
+      const errorResponse = { 
         success: false, 
         data: null, 
         error: errorMessage,
         cached: false 
       };
+      
+      // Mettre en cache l'erreur pour éviter les requêtes répétées
+      cache.set(key, { data: errorResponse, timestamp: Date.now() });
+      
+      return errorResponse;
     }
   };
 
@@ -148,9 +154,22 @@ const AnimeSamaPage: React.FC = () => {
       setPopularAnimes([]);
     });
     
-    // Gestionnaire global pour les promesses non capturées
+    // Gestionnaire global pour les promesses non capturées amélioré
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.warn('Unhandled promise rejection caught:', event.reason);
+      const errorReason = event.reason;
+      
+      // Filtrer les erreurs de cache spécifiques pour éviter le spam
+      if (errorReason && typeof errorReason === 'object' && errorReason.message) {
+        if (errorReason.message.includes('Cache fetch failed') || 
+            errorReason.message.includes('Failed to fetch') ||
+            errorReason.message.includes('timeout')) {
+          // Erreurs de cache/réseau - déjà gérées, ne pas spammer les logs
+          event.preventDefault();
+          return;
+        }
+      }
+      
+      console.warn('Unhandled promise rejection caught:', errorReason);
       event.preventDefault();
     };
     
@@ -879,24 +898,31 @@ const AnimeSamaPage: React.FC = () => {
       
       console.log(`🔄 Changing language to ${newLanguage} for ${selectedAnime.title}`);
       
-      // Utiliser le cache intelligent avec gestion d'erreurs
+      // Utiliser le cache intelligent avec gestion d'erreurs robuste
       const apiResponse = await getCachedData(cacheKey, async () => {
-        const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`, {
-          headers: {
-            'Accept': 'application/json',
-            'Cache-Control': 'no-cache'
-          },
-          signal: AbortSignal.timeout(10000)
-        }).catch(err => {
-          console.warn(`Cache fetch failed for key ${cacheKey}:`, err.message);
-          throw err;
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        try {
+          const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`, {
+            headers: {
+              'Accept': 'application/json',
+              'Cache-Control': 'no-cache'
+            },
+            signal: AbortSignal.timeout(10000)
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
+          return await response.json();
+        } catch (fetchError: any) {
+          console.warn(`Language change fetch failed for ${cacheKey}:`, fetchError.message);
+          // Retourner une réponse d'erreur structurée au lieu de rejeter
+          return {
+            success: false,
+            data: null,
+            error: fetchError.message
+          };
         }
-        
-        return await response.json();
       }, API_CONFIG.cacheTTL);
       
       if (apiResponse.success && apiResponse.data && apiResponse.data.episodes && apiResponse.data.episodes.length > 0) {
