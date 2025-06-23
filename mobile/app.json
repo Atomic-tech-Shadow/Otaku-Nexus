@@ -1,8 +1,8 @@
 
 {
   "expo": {
-    "name": "Otaku App",
-    "slug": "otaku-app",
+    "name": "Otaku Nexus",
+    "slug": "otaku-nexus-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#000000"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -21,9 +21,9 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#000000"
       },
-      "package": "com.otaku.app"
+      "package": "com.otakunexus.mobile"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -32,7 +32,7 @@
     "plugins": [
       "expo-router"
     ],
-    "scheme": "otaku-app",
+    "scheme": "otaku-nexus",
     "experiments": {
       "typedRoutes": true
     }

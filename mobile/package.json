@@ -26,10 +26,10 @@
     "react-native-screens": "3.31.1",
     "react-native-reanimated": "~3.10.0",
     "react-native-video": "^6.0.0",
-    "@react-navigation/native": "^6.1.9",
-    "@react-navigation/stack": "^6.3.20",
-    "@react-navigation/bottom-tabs": "^6.5.11",
-    "@react-navigation/drawer": "^6.6.0",
+    "@react-navigation/native": "^7.1.6",
+    "@react-navigation/stack": "^7.4.1",
+    "@react-navigation/bottom-tabs": "^7.3.10",
+    "@react-navigation/drawer": "^7.3.9",
     "react-native-gesture-handler": "~2.16.1",
     "@expo/vector-icons": "^14.0.0",
     "react-hook-form": "^7.48.0",
@@ -37,8 +37,14 @@
     "@tanstack/react-query": "^5.0.0",
     "@react-native-community/netinfo": "^11.0.0",
     "react-native-toast-message": "^2.2.0",
-    "react-native-vector-icons": "^10.0.0",
     "zod": "^3.22.0"
+  },
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "listUnknownPackages": false
+      }
+    }
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
