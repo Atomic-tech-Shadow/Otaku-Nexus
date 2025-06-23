@@ -930,6 +930,17 @@ const AnimeSamaPage: React.FC = () => {
         }
       }, API_CONFIG.cacheTTL);
       
+      // Diagnostic détaillé de la réponse API
+      console.log(`🔍 API Response diagnosis for ${newLanguage}:`, {
+        hasResponse: !!apiResponse,
+        isSuccess: apiResponse?.success,
+        hasData: !!apiResponse?.data,
+        hasEpisodes: !!apiResponse?.data?.episodes,
+        isArray: Array.isArray(apiResponse?.data?.episodes),
+        episodeCount: apiResponse?.data?.episodes?.length || 0,
+        error: apiResponse?.error
+      });
+      
       // Vérifier si la réponse est valide et contient des épisodes
       if (apiResponse && apiResponse.success && apiResponse.data && 
           apiResponse.data.episodes && Array.isArray(apiResponse.data.episodes) && 
