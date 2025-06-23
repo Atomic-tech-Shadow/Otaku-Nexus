@@ -161,42 +161,40 @@ const AnimeSamaPage: React.FC = () => {
     };
   }, []);
 
-  // Système universel pour animes populaires optimisé
+  // Chargement des animes populaires avec API déployée
   const loadPopularAnimes = async () => {
     try {
-      // Tester directement l'API trending locale d'abord
-      console.log('Loading trending animes from local API');
-      const response = await fetch(`${window.location.origin}/api/trending`, {
+      console.log('Loading trending animes from deployed API');
+      const response = await fetch(`${API_BASE}/api/trending`, {
         headers: {
           'Accept': 'application/json',
-          'Cache-Control': 'no-cache'
+          'Content-Type': 'application/json'
         },
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(10000)
       });
       
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data && Array.isArray(result.data)) {
           const trendingAnimes = result.data.slice(0, 12);
-          console.log(`Successfully loaded ${trendingAnimes.length} trending animes`);
+          console.log(`Successfully loaded ${trendingAnimes.length} trending animes from deployed API`);
           setPopularAnimes(trendingAnimes);
           return;
         }
       }
       
-      // Si l'API locale échoue, ne pas afficher d'animes populaires plutôt que d'avoir des erreurs
-      console.log('Trending API not available, continuing without popular animes');
+      console.log('Deployed API trending not available, using empty state');
       setPopularAnimes([]);
       
     } catch (error: any) {
-      console.warn('Trending API unavailable:', error?.message || 'Unknown error');
+      console.warn('Deployed API trending failed:', error?.message || 'Network error');
       setPopularAnimes([]);
     }
   };
 
 
 
-  const API_BASE = 'http://localhost:5000';
+  const API_BASE = 'https://api-anime-sama.onrender.com';
   
   // Configuration optimisée selon le guide de configuration API
   const API_CONFIG = {
