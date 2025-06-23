@@ -323,14 +323,56 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Système universel de détection des langues - Version optimisée sans erreurs
+  // Détection des langues selon documentation validée
   const detectAvailableLanguages = async (animeId: string, seasonNumber: number): Promise<string[]> => {
-    console.log(`Detecting languages for ${animeId} season ${seasonNumber} using universal system`);
+    console.log(`Detecting languages for ${animeId} season ${seasonNumber}`);
     
-    // Selon la documentation, utiliser directement le système universel pour éviter les erreurs
-    // L'API externe peut être instable, donc on active directement le mode universel
-    console.log('Using universal system for reliable episode detection');
-    return ['UNIVERSAL'];
+    const languages: string[] = [];
+    
+    // Tester VF d'abord selon documentation (One Piece 1093 confirmé en VF)
+    try {
+      const vfResponse = await fetch(`${API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vf`, {
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(8000)
+      });
+      
+      if (vfResponse.ok) {
+        const vfData = await vfResponse.json();
+        if (vfData.success && vfData.data?.episodes?.length > 0) {
+          languages.push('VF');
+          console.log(`✅ VF detected: ${vfData.data.episodes.length} episodes`);
+        }
+      }
+    } catch (err) {
+      console.warn('VF detection failed');
+    }
+    
+    // Tester VOSTFR
+    try {
+      const vostfrResponse = await fetch(`${API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vostfr`, {
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(8000)
+      });
+      
+      if (vostfrResponse.ok) {
+        const vostfrData = await vostfrResponse.json();
+        if (vostfrData.success && vostfrData.data?.episodes?.length > 0) {
+          languages.push('VOSTFR');
+          console.log(`✅ VOSTFR detected: ${vostfrData.data.episodes.length} episodes`);
+        }
+      }
+    } catch (err) {
+      console.warn('VOSTFR detection failed');
+    }
+    
+    // Si aucune langue détectée, utiliser le système universel
+    if (languages.length === 0) {
+      console.log('No standard languages detected, using universal system');
+      return ['UNIVERSAL'];
+    }
+    
+    console.log(`Languages available: ${languages.join(', ')}`);
+    return languages;
   };
 
   // Système universel optimisé selon la documentation API
@@ -1286,15 +1328,19 @@ const AnimeSamaPage: React.FC = () => {
               
               if (!currentSource) return null;
               
+              // Utiliser l'endpoint embed sécurisé selon documentation
+              const embedUrl = episodeDetails?.embedUrl || currentSource.embedUrl || `${API_BASE}/api/embed/${episodeDetails?.id}`;
+              
               return (
                 <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: '#000', minHeight: '400px' }}>
                   <iframe
                     key={`${selectedEpisode?.id}-${selectedServer}`}
-                    src={currentSource.url}
+                    src={embedUrl}
                     className="w-full h-64 md:h-80 lg:h-96"
                     allowFullScreen
                     frameBorder="0"
-                    allow="autoplay; fullscreen"
+                    allow="autoplay; fullscreen; encrypted-media"
+                    sandbox="allow-scripts allow-same-origin allow-forms"
                     title={`${episodeDetails?.title} - ${currentSource.server}`}
                     onLoad={() => {
                       setError(null);
