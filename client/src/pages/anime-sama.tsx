@@ -1364,7 +1364,7 @@ const AnimeSamaPage: React.FC = () => {
 
       {/* Page lecteur - Interface exacte anime-sama */}
       {currentView === 'player' && selectedAnime && selectedSeason && (
-        <div className="p-0">
+        <div className="p-0 min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
           {/* Image avec titre superposé */}
           <div className="relative">
             <img
@@ -1377,35 +1377,35 @@ const AnimeSamaPage: React.FC = () => {
               style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.9) 100%)' }}
             />
             <div className="absolute bottom-4 left-4">
-              <h1 className="text-white text-2xl font-bold">{selectedAnime.title}</h1>
-              <h2 className="text-gray-300 text-lg uppercase tracking-wider">{selectedSeason.name}</h2>
+              <h1 className="text-white text-2xl font-bold uppercase tracking-wide">{selectedAnime.title}</h1>
+              <h2 className="text-gray-400 text-lg uppercase tracking-wider font-medium">{selectedSeason.name}</h2>
             </div>
           </div>
 
           {/* Interface de contrôle */}
-          <div className="p-4 space-y-4">
-            {/* Drapeaux VF/VOSTFR basés sur les langues disponibles */}
-            <div className="flex gap-2">
+          <div className="p-4 space-y-6">
+            {/* Drapeaux VF/VOSTFR - Style capture d'écran */}
+            <div className="flex gap-3">
               {availableLanguages.map((lang) => (
                 <button
                   key={lang}
                   onClick={() => changeLanguage(lang as 'VF' | 'VOSTFR')}
-                  className="flex items-center justify-center w-12 h-10 rounded border-2"
+                  className="flex items-center justify-center w-16 h-12 rounded-lg border-2 transition-all"
                   style={{
-                    backgroundColor: selectedLanguage === lang ? 
-                      (lang === 'VF' ? '#1e40af' : '#dc2626') : '#374151',
-                    borderColor: selectedLanguage === lang ? '#ffffff' : '#6b7280'
+                    backgroundColor: selectedLanguage === lang ? '#1e40af' : '#2a2a2a',
+                    borderColor: selectedLanguage === lang ? '#3b82f6' : '#404040',
+                    color: 'white'
                   }}
                 >
-                  <span className="text-white font-bold text-xs">
-                    {lang === 'VF' ? '🇫🇷' : '🇯🇵'}
+                  <span className="font-bold text-sm">
+                    {lang}
                   </span>
                 </button>
               ))}
             </div>
 
-            {/* Sélecteurs simplifiés */}
-            <div className="space-y-3">
+            {/* Sélecteurs - Style exact de la capture */}
+            <div className="grid grid-cols-2 gap-4">
               <select
                 value={selectedEpisode?.id || ""}
                 onChange={(e) => {
@@ -1415,47 +1415,63 @@ const AnimeSamaPage: React.FC = () => {
                     loadEpisodeSources(episode.id);
                   }
                 }}
-                className="w-full p-3 text-white rounded text-sm font-medium"
-                style={{ backgroundColor: '#1e40af', border: '1px solid #3b82f6' }}
+                className="w-full p-3 text-white rounded-lg text-sm font-bold border-2 uppercase"
+                style={{ 
+                  backgroundColor: '#1e40af', 
+                  borderColor: '#3b82f6',
+                  color: 'white'
+                }}
               >
                 {episodes.length > 0 ? (
                   episodes.map((episode) => (
-                    <option key={episode.id} value={episode.id}>
-                      Episode {episode.episodeNumber}
+                    <option key={episode.id} value={episode.id} style={{ backgroundColor: '#1e40af', color: 'white' }}>
+                      EPISODE {episode.episodeNumber}
                     </option>
                   ))
                 ) : (
-                  <option value="" disabled>Chargement...</option>
+                  <option value="" disabled style={{ backgroundColor: '#1e40af', color: 'white' }}>EPISODE 1</option>
                 )}
               </select>
 
-              {currentSources.length > 1 && (
-                <select
-                  value={selectedServer}
-                  onChange={(e) => setSelectedServer(Number(e.target.value))}
-                  className="w-full p-3 text-white rounded text-sm font-medium"
-                  style={{ backgroundColor: '#1e40af', border: '1px solid #3b82f6' }}
-                >
-                  {currentSources.map((source, index) => (
-                    <option key={index} value={index}>
-                      Serveur {index + 1}
+              <select
+                value={selectedServer}
+                onChange={(e) => setSelectedServer(Number(e.target.value))}
+                className="w-full p-3 text-white rounded-lg text-sm font-bold border-2 uppercase"
+                style={{ 
+                  backgroundColor: '#1e40af', 
+                  borderColor: '#3b82f6',
+                  color: 'white'
+                }}
+              >
+                {currentSources.length > 0 ? (
+                  currentSources.map((source, index) => (
+                    <option key={index} value={index} style={{ backgroundColor: '#1e40af', color: 'white' }}>
+                      LECTEUR {index + 1}
                     </option>
-                  ))}
-                </select>
-              )}
+                  ))
+                ) : (
+                  <option value={0} style={{ backgroundColor: '#1e40af', color: 'white' }}>LECTEUR 1</option>
+                )}
+              </select>
             </div>
 
+            {/* Dernière sélection */}
+            <div className="text-left">
+              <span className="text-white font-bold text-sm">DERNIÈRE SÉLECTION : </span>
+              <span className="text-gray-300 italic text-sm">
+                {selectedEpisode ? `EPISODE ${selectedEpisode.episodeNumber}` : 'EPISODE 1'}
+              </span>
+            </div>
 
-
-            {/* Boutons navigation */}
-            <div className="flex justify-center gap-4">
+            {/* Navigation épisodes - Boutons circulaires style capture */}
+            <div className="flex justify-center gap-6 py-2">
               <button
                 onClick={() => navigateEpisode('prev')}
                 disabled={!selectedEpisode || episodes.findIndex(ep => ep.id === selectedEpisode.id) === 0}
-                className="flex items-center justify-center w-14 h-14 text-white rounded-lg disabled:opacity-50 transition-colors"
+                className="flex items-center justify-center w-16 h-16 rounded-full text-white text-xl font-bold disabled:opacity-40 transition-all"
                 style={{ backgroundColor: '#1e40af' }}
               >
-                ◀
+                ←
               </button>
               
               <button
@@ -1464,53 +1480,99 @@ const AnimeSamaPage: React.FC = () => {
                     loadEpisodeSources(selectedEpisode.id);
                   }
                 }}
-                className="flex items-center justify-center w-14 h-14 text-white rounded-lg transition-colors"
+                className="flex items-center justify-center w-16 h-16 rounded-full text-white text-xl font-bold transition-all"
                 style={{ backgroundColor: '#374151' }}
               >
-                <Download size={20} />
+                ↓
               </button>
               
               <button
                 onClick={() => navigateEpisode('next')}
                 disabled={!selectedEpisode || episodes.findIndex(ep => ep.id === selectedEpisode.id) === episodes.length - 1}
-                className="flex items-center justify-center w-14 h-14 text-white rounded-lg disabled:opacity-50 transition-colors"
+                className="flex items-center justify-center w-16 h-16 rounded-full text-white text-xl font-bold disabled:opacity-40 transition-all"
                 style={{ backgroundColor: '#1e40af' }}
               >
-                ▶
+                →
               </button>
+            </div>
+
+            {/* Message d'information - Style exact de la capture */}
+            <div className="text-center py-4">
+              <p className="text-white text-sm leading-relaxed">
+                <span className="italic">Pub insistante ou vidéo indisponible ?</span><br />
+                <span className="font-bold">Changez de lecteur.</span>
+              </p>
             </div>
 
 
 
-            {/* CORRECTION 5: Lecteur vidéo optimisé avec gestion d'erreurs améliorée */}
-            {(() => {
-              const currentSources = episodeDetails?.sources || [];
-              const currentSource = currentSources[selectedServer];
-              
-              if (!currentSource) return null;
-              
-              const correctEpisodeId = selectedEpisode ? selectedEpisode.id : episodeDetails?.id || '';
-              const embedUrl = `${API_BASE}/api/embed/${correctEpisodeId}`;
-              
-              return (
-                <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: '#000', minHeight: '400px' }}>
+            {/* Zone lecteur vidéo */}
+            <div 
+              className="w-full rounded-lg overflow-hidden" 
+              style={{ backgroundColor: '#000', minHeight: '300px' }}
+            >
+              {(() => {
+                const currentSources = episodeDetails?.sources || [];
+                const currentSource = currentSources[selectedServer];
+                
+                if (!currentSource) return (
+                  <div className="w-full h-64 flex items-center justify-center text-gray-500 text-sm">
+                    Chargement du lecteur...
+                  </div>
+                );
+                
+                const correctEpisodeId = selectedEpisode ? selectedEpisode.id : episodeDetails?.id || '';
+                const embedUrl = `${API_BASE}/api/embed/${correctEpisodeId}`;
+                
+                return (
                   <iframe
                     key={`${correctEpisodeId}-${selectedServer}`}
                     src={embedUrl}
-                    className="w-full h-64 md:h-80 lg:h-96"
+                    className="w-full h-64 md:h-80"
                     allowFullScreen
                     frameBorder="0"
                     allow="autoplay; fullscreen; encrypted-media"
                     title={`Épisode ${selectedEpisode?.episodeNumber}`}
                     style={{ border: 'none' }}
                     onLoad={() => setError(null)}
-                    onError={() => setError('Erreur de chargement. Essayez un autre serveur.')}
+                    onError={() => setError('Erreur de chargement')}
                   />
-                  
+                );
+              })()}
+            </div>
 
-                </div>
-              );
-            })()}
+            {/* Navigation épisodes en bas - Répétition style capture */}
+            <div className="flex justify-center gap-6 py-4">
+              <button
+                onClick={() => navigateEpisode('prev')}
+                disabled={!selectedEpisode || episodes.findIndex(ep => ep.id === selectedEpisode.id) === 0}
+                className="flex items-center justify-center w-16 h-16 rounded-full text-white text-xl font-bold disabled:opacity-40 transition-all"
+                style={{ backgroundColor: '#1e40af' }}
+              >
+                ←
+              </button>
+              
+              <button
+                onClick={() => {
+                  if (selectedEpisode) {
+                    loadEpisodeSources(selectedEpisode.id);
+                  }
+                }}
+                className="flex items-center justify-center w-16 h-16 rounded-full text-white text-xl font-bold transition-all"
+                style={{ backgroundColor: '#374151' }}
+              >
+                ↓
+              </button>
+              
+              <button
+                onClick={() => navigateEpisode('next')}
+                disabled={!selectedEpisode || episodes.findIndex(ep => ep.id === selectedEpisode.id) === episodes.length - 1}
+                className="flex items-center justify-center w-16 h-16 rounded-full text-white text-xl font-bold disabled:opacity-40 transition-all"
+                style={{ backgroundColor: '#1e40af' }}
+              >
+                →
+              </button>
+            </div>
 
 
 
