@@ -695,27 +695,37 @@ const AnimeSamaPage: React.FC = () => {
           throw new Error(`Aucun épisode disponible pour ${season.name}. Cet anime pourrait ne pas être encore disponible.`);
         }
         
-        // Continuer avec les épisodes trouvés
-        setEpisodes(validEpisodes);
+        // Continuer avec les épisodes trouvés - Appliquer correction numérotation
+        const correctedValidEpisodes = correctEpisodeNumbers(selectedAnime.id, season.number, validEpisodes);
+        
+        setEpisodes(correctedValidEpisodes);
         setSelectedSeason(season);
         
-        const firstEpisode = validEpisodes[0];
+        const firstEpisode = correctedValidEpisodes[0];
         setSelectedEpisode(firstEpisode);
         await loadEpisodeSources(firstEpisode.id);
         
-        setError(`Épisodes trouvés via méthode alternative pour ${season.name}`);
+        setError(`Épisodes corrigés via méthode alternative pour ${season.name}`);
         return;
       }
       
       console.log('Episodes loaded successfully:', apiResponse.data.episodes.length);
-      setEpisodes(apiResponse.data.episodes);
+      
+      // ✅ CORRECTION CRITIQUE: Appliquer la correction des numéros d'épisodes
+      const correctedEpisodes = correctEpisodeNumbers(selectedAnime.id, season.number, apiResponse.data.episodes);
+      
+      setEpisodes(correctedEpisodes);
       setSelectedSeason(season);
       
       // Charger automatiquement le premier épisode
-      const firstEpisode = apiResponse.data.episodes[0];
+      const firstEpisode = correctedEpisodes[0];
       console.log('Loading first episode:', firstEpisode);
       setSelectedEpisode(firstEpisode);
       await loadEpisodeSources(firstEpisode.id);
+      
+      const originalRange = `${apiResponse.data.episodes[0].episodeNumber}-${apiResponse.data.episodes[apiResponse.data.episodes.length-1].episodeNumber}`;
+      const correctedRange = `${correctedEpisodes[0].episodeNumber}-${correctedEpisodes[correctedEpisodes.length-1].episodeNumber}`;
+      console.log(`✅ Episodes corrected: ${originalRange} → ${correctedRange}`);
       
     } catch (err) {
       console.error('Erreur épisodes:', err);
