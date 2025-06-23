@@ -349,69 +349,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-      // Lecteur vidéo épuré SANS aucun overlay externe
+      // Redirection automatique vers la vidéo comme anime-sama.fr
       const embedHtml = `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lecteur Vidéo</title>
+    <title>Redirection vidéo</title>
     <style>
         body { 
             margin: 0; 
             padding: 0; 
             background: #000; 
-            overflow: hidden;
+            color: white;
             font-family: Arial, sans-serif;
-        }
-        .video-container { 
-            width: 100%; 
-            height: 100vh; 
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
+            height: 100vh;
         }
-        video { 
-            max-width: 100%; 
-            max-height: 100%; 
-            background: #000;
-        }
-        .error { 
-            color: white; 
-            text-align: center; 
-            padding: 50px;
-        }
-        .loading {
-            color: white;
+        .redirect-message {
             text-align: center;
-            font-size: 18px;
         }
-        .fallback-link {
-            color: #60a5fa;
-            text-decoration: underline;
-            cursor: pointer;
-            margin-top: 20px;
-            display: inline-block;
+        .spinner {
+            border: 3px solid #333;
+            border-top: 3px solid #1e40af;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <div class="video-container">
+    <div class="redirect-message">
         ${episode.sources.length > 0 ? 
-          `<div class="loading">
-             <p>Chargement du lecteur vidéo...</p>
-             <p><a href="${episode.sources[0].url}" target="_blank" class="fallback-link">
-               Ouvrir dans un nouvel onglet si le lecteur ne fonctionne pas
-             </a></p>
-           </div>
+          `<div class="spinner"></div>
+           <p>Redirection vers la vidéo...</p>
            <script>
-             // Rediriger directement vers la source sans iframe
-             setTimeout(function() {
-               window.location.href = "${episode.sources[0].url}";
-             }, 2000);
+             // Redirection immédiate vers la source vidéo
+             window.location.href = "${episode.sources[0].url}";
            </script>` :
-          `<div class="error">Aucune source disponible pour cet épisode</div>`
+          `<p>Aucune source disponible pour cet épisode</p>`
         }
     </div>
 </body>

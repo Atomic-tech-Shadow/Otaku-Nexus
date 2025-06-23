@@ -1524,19 +1524,20 @@ const AnimeSamaPage: React.FC = () => {
                 const correctEpisodeId = selectedEpisode ? selectedEpisode.id : episodeDetails?.id || '';
                 const embedUrl = `${API_BASE}/api/embed/${correctEpisodeId}`;
                 
+                // Rediriger automatiquement vers la vidéo comme sur anime-sama.fr
+                React.useEffect(() => {
+                  if (currentSource?.url) {
+                    window.open(currentSource.url, '_blank');
+                  }
+                }, [currentSource?.url]);
+
                 return (
                   <div className="relative w-full">
-                    {/* Bouton direct pour ouvrir la vidéo sans overlay */}
-                    <div className="w-full h-64 md:h-80 bg-black flex flex-col items-center justify-center space-y-4">
+                    <div className="w-full h-64 md:h-80 bg-black flex flex-col items-center justify-center">
                       <div className="text-white text-center">
-                        <p className="text-lg mb-4">Lecteur vidéo</p>
-                        <button
-                          onClick={() => window.open(currentSource.url, '_blank')}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors"
-                        >
-                          ▶ Lancer la vidéo
-                        </button>
-                        <p className="text-sm text-gray-400 mt-2">
+                        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                        <p className="text-lg mb-2">Ouverture de la vidéo...</p>
+                        <p className="text-sm text-gray-400">
                           Serveur {selectedServer + 1} - {currentSource.server}
                         </p>
                       </div>
