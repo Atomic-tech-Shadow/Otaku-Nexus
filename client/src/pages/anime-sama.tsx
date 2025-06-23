@@ -876,21 +876,15 @@ const AnimeSamaPage: React.FC = () => {
       
       console.log(`🔄 Changing language to ${newLanguage} for ${selectedAnime.title}`);
       
-      // Appel direct à l'API avec gestion d'erreurs propre
+      // Appel direct à l'API sans AbortController (Fix Replit)
       let apiResponse;
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
         const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`, {
           headers: {
             'Accept': 'application/json',
             'Cache-Control': 'no-cache'
-          },
-          signal: controller.signal
+          }
         });
-        
-        clearTimeout(timeoutId);
         
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -904,7 +898,7 @@ const AnimeSamaPage: React.FC = () => {
         apiResponse = {
           success: false,
           data: { episodes: [] },
-          error: fetchError.name === 'AbortError' ? 'Timeout' : fetchError.message || 'Network error'
+          error: fetchError.message || 'Network error'
         };
       }
       
