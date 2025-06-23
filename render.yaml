@@ -1,10 +1,12 @@
 services:
+  # Application Web principale
   - type: web
     name: otaku-nexus
     env: node
-    buildCommand: chmod +x build.sh && ./build.sh
-    startCommand: npm start
     plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
@@ -14,10 +16,15 @@ services:
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
-    autoDeploy: false
-    
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: PORT
+        value: 10000
+    autoDeploy: true
+
+  # Base de données PostgreSQL
 databases:
   - name: otaku-nexus-db
     databaseName: otaku_nexus
-    user: otaku_user
+    user: otaku_nexus_user
     plan: starter

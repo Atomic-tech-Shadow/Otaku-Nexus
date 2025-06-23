@@ -1,18 +1,20 @@
 #!/bin/bash
 
-# Build script for Render deployment
-echo "Starting build process for Otaku Nexus..."
+# Script de build pour Render
+set -o errexit
 
-# Install dependencies
-echo "Installing dependencies..."
-npm install
+echo "🚀 Starting Render build process..."
 
-# Run database migrations
-echo "Running database migrations..."
-npm run db:push
+# Installer les dépendances
+echo "📦 Installing dependencies..."
+npm ci
 
-# Build the application
-echo "Building application..."
+# Build de l'application frontend
+echo "🔨 Building frontend..."
 npm run build
 
-echo "Build completed successfully!"
+# Exécuter les migrations de base de données
+echo "🗃️ Running database migrations..."
+npm run db:push
+
+echo "✅ Build completed successfully!"

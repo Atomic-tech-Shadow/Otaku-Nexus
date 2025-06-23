@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Configuration pour Android Emulator et production
-const BASE_URL = __DEV__ ? 'http://10.0.2.2:5000' : 'https://otaku-nexus.replit.app';
+const BASE_URL = __DEV__ ? 'http://10.0.2.2:5000' : 'https://otaku-nexus.onrender.com';
 
 interface ApiResponse<T = any> {
   success: boolean;

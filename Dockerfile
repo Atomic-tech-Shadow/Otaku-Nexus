@@ -1,23 +1,30 @@
-# Use the official Node.js 20 image
+# Dockerfile pour déploiement Render
 FROM node:20-alpine
 
-# Set working directory
+# Installer les dépendances système
+RUN apk add --no-cache python3 make g++
+
+# Créer le répertoire de travail
 WORKDIR /app
 
-# Copy package files
+# Copier les fichiers de configuration
 COPY package*.json ./
 
-# Install dependencies
+# Installer les dépendances
 RUN npm ci --only=production
 
-# Copy source code
+# Copier le code source
 COPY . .
 
-# Build the application
+# Build l'application
 RUN npm run build
 
-# Expose the port
-EXPOSE 5000
+# Exposer le port
+EXPOSE 10000
 
-# Start the application
+# Variables d'environnement
+ENV NODE_ENV=production
+ENV PORT=10000
+
+# Commande de démarrage
 CMD ["npm", "start"]
