@@ -399,6 +399,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Proxy anti-blocage pour anime-sama.fr
   app.get('/api/proxy/:encodedUrl', async (req, res) => {
     try {
       const targetUrl = decodeURIComponent(req.params.encodedUrl);
@@ -408,27 +409,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "URL not allowed" });
       }
       
+      // Headers pour contourner les restrictions
       const response = await fetch(targetUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Referer': 'https://anime-sama.fr/',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-        }
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+          'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'DNT': '1',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'same-origin'
+        },
+        timeout: 10000
       });
       
-      // Copier les headers appropriés
+      // Headers CORS optimisés
       res.set({
         'Content-Type': response.headers.get('content-type') || 'text/html',
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+        'Access-Control-Allow-Credentials': 'true',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'X-Content-Type-Options': 'nosniff'
       });
       
       const content = await response.text();
       res.send(content);
     } catch (error) {
       console.error("Proxy error:", error);
-      res.status(500).json({ message: "Proxy failed" });
+      res.status(500).json({ 
+        success: false,
+        message: "Proxy failed - anime-sama.fr temporarily unavailable",
+        error: error.message 
+      });
+    }
+  });
+
+  // Endpoint embed local pour contourner les restrictions
+  app.get('/api/embed/:episodeId', async (req, res) => {
+    try {
+      const { episodeId } = req.params;
+      
+      // Essayer d'abord l'API standard
+      try {
+        const episodeData = await animeSamaService.getEpisodeDetails(episodeId);
+        if (episodeData && episodeData.sources?.length > 0) {
+          return res.json({
+            success: true,
+            data: episodeData,
+            source: 'direct'
+          });
+        }
+      } catch (directError) {
+        console.log('Direct API failed, trying embed generation');
+      }
+      
+      // Génération embed intelligente
+      const episodeParts = episodeId.split('-');
+      const animeId = episodeParts[0] + (episodeParts[1] === 'piece' ? '-piece' : '');
+      const episodeNum = episodeParts.find(part => part.match(/^\d+$/)) || '1';
+      const language = episodeId.includes('-vf') ? 'vf' : 'vostfr';
+      
+      const embedData = {
+        id: episodeId,
+        title: `Episode ${episodeNum}`,
+        animeTitle: animeId.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        episodeNumber: parseInt(episodeNum),
+        language: language.toUpperCase(),
+        sources: [{
+          url: `https://anime-sama.fr/catalogue/${animeId}/saison01/episodes.js`,
+          embedUrl: `https://anime-sama.fr/catalogue/${animeId}/`,
+          server: 'Anime-Sama',
+          quality: 'HD',
+          language: language.toUpperCase(),
+          type: 'embed',
+          serverIndex: 0
+        }],
+        embedUrl: `https://anime-sama.fr/catalogue/${animeId}/`,
+        availableServers: ['Anime-Sama'],
+        url: episodeId,
+        corsInfo: {
+          note: 'Utilise le proxy intégré pour contourner les restrictions CORS',
+          proxyEndpoint: `/api/proxy/`,
+          embedEndpoint: `/api/embed/`
+        }
+      };
+      
+      res.json({
+        success: true,
+        data: embedData,
+        source: 'generated'
+      });
+      
+    } catch (error) {
+      console.error('Embed generation error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to generate embed data',
+        error: error.message
+      });
     }
   });
 
