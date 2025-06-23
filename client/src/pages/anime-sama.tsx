@@ -1552,7 +1552,7 @@ const AnimeSamaPage: React.FC = () => {
                   <div className="relative w-full">
                     <iframe
                       key={`${correctEpisodeId}-${selectedServer}`}
-                      src={`/api/proxy/${encodeURIComponent(currentSource.url)}`}
+                      src={currentSource.embedUrl || `/api/embed/${correctEpisodeId}`}
                       className="w-full h-64 md:h-80"
                       allowFullScreen
                       frameBorder="0"
@@ -1567,40 +1567,28 @@ const AnimeSamaPage: React.FC = () => {
                       }}
                       onLoad={() => {
                         setError(null);
-                        // Injection anti-blocage après chargement
-                        try {
-                          const iframe = document.querySelector(`iframe[src*="${encodeURIComponent(currentSource.url)}"]`);
-                          if (iframe) {
-                            const style = document.createElement('style');
-                            style.textContent = `
-                              .blocked-content, .connection-error, .access-denied, .iframe-blocked {
-                                display: none !important;
-                              }
-                              video, iframe[src*="player"] {
-                                display: block !important;
-                                visibility: visible !important;
-                                opacity: 1 !important;
-                              }
-                            `;
-                            document.head.appendChild(style);
-                          }
-                        } catch (error) {
-                          // Ignore cross-origin restrictions
-                        }
+                        console.log(`Lecteur chargé: ${currentSource.server} - Episode ${selectedEpisode?.episodeNumber}`);
                       }}
                       onError={(e) => {
-                        console.log('Proxy failed, trying direct URL');
-                        // Fallback vers URL directe si proxy échoue
+                        console.log('Erreur iframe, tentative fallback API');
                         const target = e.currentTarget;
-                        setTimeout(() => {
-                          target.src = currentSource.url;
-                        }, 1000);
+                        if (target.src.includes('/api/embed/')) {
+                          // Déjà sur l'API embed, essayer le proxy
+                          const fallbackUrl = currentSource.url || currentSource.embedUrl;
+                          if (fallbackUrl) {
+                            target.src = `/api/proxy/${encodeURIComponent(fallbackUrl)}`;
+                          }
+                        } else {
+                          // Revenir à l'API embed
+                          target.src = `/api/embed/${correctEpisodeId}`;
+                        }
                       }}
                     />
                     
-                    {/* Overlay debug info */}
+                    {/* Overlay avec informations serveur */}
                     <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs p-2 rounded opacity-70 hover:opacity-100 transition-opacity">
-                      Serveur {selectedServer + 1} (Proxy)
+                      {currentSource.server || `Serveur ${selectedServer + 1}`}
+                      {currentSource.quality && ` (${currentSource.quality})`}
                     </div>
                   </div>
                 );

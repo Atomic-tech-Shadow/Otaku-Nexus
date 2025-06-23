@@ -567,36 +567,160 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint embed avancé avec contournement anime-sama.fr
+  // Endpoint embed utilisant l'API anime-sama pour récupérer les vraies URLs
   app.get('/api/embed/:episodeId', async (req, res) => {
     try {
       const { episodeId } = req.params;
+      console.log(`Récupération embed pour: ${episodeId}`);
       
-      // Méthode 1: API directe avec retry
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        try {
-          const episodeData = await animeSamaService.getEpisodeDetails(episodeId);
-          if (episodeData && episodeData.sources?.length > 0) {
-            return res.json({
-              success: true,
-              data: {
-                ...episodeData,
-                sources: episodeData.sources.map(source => ({
-                  ...source,
-                  embedUrl: `/api/proxy/${encodeURIComponent(source.embedUrl || source.url)}`,
-                  proxyUrl: `/api/proxy/${encodeURIComponent(source.url)}`
-                }))
-              },
-              source: 'direct'
-            });
-          }
-        } catch (directError) {
-          console.log(`Direct API attempt ${attempt} failed:`, directError.message);
-          if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 1000));
+      // Méthode 1: Utiliser l'API anime-sama pour récupérer les vraies sources
+      try {
+        const episodeData = await animeSamaService.getEpisodeDetails(episodeId);
+        if (episodeData && episodeData.sources?.length > 0) {
+          console.log(`API Sources trouvées: ${episodeData.sources.length} serveurs`);
+          
+          // Générer page embed HTML avec les vraies URLs des vidéos
+          const videoSources = episodeData.sources.map((source, index) => ({
+            url: source.url,
+            server: source.server || `Serveur ${index + 1}`,
+            quality: source.quality || 'HD',
+            type: source.type || 'video'
+          }));
+          
+          const embedHtml = `
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <title>Lecteur Anime-Sama</title>
+                <meta charset="utf-8">
+                <style>
+                  body { 
+                    margin: 0; 
+                    padding: 0; 
+                    background: #000; 
+                    color: #fff; 
+                    font-family: Arial, sans-serif;
+                    overflow: hidden;
+                  }
+                  .player-container { 
+                    width: 100%; 
+                    height: 100vh; 
+                    display: flex; 
+                    flex-direction: column;
+                  }
+                  .video-area { 
+                    flex: 1; 
+                    position: relative; 
+                    background: #000;
+                  }
+                  video, iframe { 
+                    width: 100%; 
+                    height: 100%; 
+                    border: none;
+                    display: block;
+                  }
+                  .controls { 
+                    padding: 10px; 
+                    background: rgba(0,0,0,0.8); 
+                    display: flex; 
+                    gap: 10px; 
+                    align-items: center;
+                  }
+                  .server-btn { 
+                    padding: 5px 10px; 
+                    background: #1e40af; 
+                    color: white; 
+                    border: none; 
+                    border-radius: 3px; 
+                    cursor: pointer; 
+                    font-size: 12px;
+                  }
+                  .server-btn:hover { background: #3b82f6; }
+                  .server-btn.active { background: #059669; }
+                  .loading { 
+                    position: absolute; 
+                    top: 50%; 
+                    left: 50%; 
+                    transform: translate(-50%, -50%); 
+                    color: #fff;
+                  }
+                </style>
+              </head>
+              <body>
+                <div class="player-container">
+                  <div class="video-area" id="videoArea">
+                    <div class="loading">Chargement du lecteur...</div>
+                  </div>
+                  <div class="controls">
+                    <span>Serveurs:</span>
+                    ${videoSources.map((source, index) => `
+                      <button 
+                        class="server-btn ${index === 0 ? 'active' : ''}" 
+                        onclick="switchServer(${index})"
+                        data-index="${index}"
+                      >
+                        ${source.server} (${source.quality})
+                      </button>
+                    `).join('')}
+                  </div>
+                </div>
+                
+                <script>
+                  const sources = ${JSON.stringify(videoSources)};
+                  let currentServer = 0;
+                  
+                  function switchServer(index) {
+                    currentServer = index;
+                    const source = sources[index];
+                    
+                    // Mettre à jour l'interface
+                    document.querySelectorAll('.server-btn').forEach((btn, i) => {
+                      btn.classList.toggle('active', i === index);
+                    });
+                    
+                    loadVideo(source.url);
+                  }
+                  
+                  function loadVideo(url) {
+                    const videoArea = document.getElementById('videoArea');
+                    
+                    if (url.includes('.m3u8') || url.includes('.mp4')) {
+                      // Vidéo directe
+                      videoArea.innerHTML = \`
+                        <video controls autoplay>
+                          <source src="\${url}" type="video/mp4">
+                          Votre navigateur ne supporte pas la vidéo HTML5.
+                        </video>
+                      \`;
+                    } else {
+                      // Embed iframe
+                      videoArea.innerHTML = \`
+                        <iframe 
+                          src="\${url}" 
+                          allowfullscreen 
+                          allow="autoplay; fullscreen"
+                        ></iframe>
+                      \`;
+                    }
+                  }
+                  
+                  // Charger le premier serveur automatiquement
+                  if (sources.length > 0) {
+                    loadVideo(sources[0].url);
+                  }
+                </script>
+              </body>
+            </html>
+          `;
+          
+          res.set('Content-Type', 'text/html; charset=utf-8');
+          return res.send(embedHtml);
         }
+      } catch (apiError) {
+        console.log('API anime-sama échouée, génération fallback:', apiError.message);
       }
       
-      // Méthode 2: Génération embed intelligente avec URLs proxy
+      // Méthode 2: Fallback avec URL générée
       const episodeParts = episodeId.split('-');
       let animeId = episodeParts[0];
       if (episodeParts[1] === 'piece') animeId = 'one-piece';
@@ -605,72 +729,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const episodeNum = episodeMatch ? episodeMatch[1] : '1';
       const language = episodeId.includes('-vf') ? 'vf' : 'vostfr';
       
-      // URLs multiples pour maximiser les chances de connexion
-      const baseUrls = [
-        `https://anime-sama.fr/catalogue/${animeId}/`,
-        `https://player.anime-sama.fr/${animeId}/${episodeNum}/${language}`,
-        `https://streaming.anime-sama.fr/embed/${animeId}-${episodeNum}-${language}`,
-        `https://anime-sama.fr/player/${animeId}/${episodeNum}/${language}`
-      ];
+      const fallbackHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Lecteur Anime-Sama</title>
+            <meta charset="utf-8">
+            <style>
+              body { margin: 0; padding: 0; background: #000; color: #fff; }
+              .error { text-align: center; padding: 50px; }
+              .retry-btn { 
+                padding: 10px 20px; 
+                background: #1e40af; 
+                color: white; 
+                border: none; 
+                border-radius: 5px; 
+                cursor: pointer; 
+                margin-top: 20px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="error">
+              <h3>Episode ${episodeNum} - ${language.toUpperCase()}</h3>
+              <p>Chargement des sources vidéo...</p>
+              <button class="retry-btn" onclick="window.location.reload()">Réessayer</button>
+            </div>
+          </body>
+        </html>
+      `;
       
-      const embedData = {
-        id: episodeId,
-        title: `Episode ${episodeNum}`,
-        animeTitle: animeId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        episodeNumber: parseInt(episodeNum),
-        language: language.toUpperCase(),
-        sources: baseUrls.map((url, index) => ({
-          url: url,
-          embedUrl: `/api/proxy/${encodeURIComponent(url)}`,
-          proxyUrl: `/api/proxy/${encodeURIComponent(url)}`,
-          server: `Serveur ${index + 1}`,
-          quality: index === 0 ? 'HD' : 'SD',
-          language: language.toUpperCase(),
-          type: 'embed',
-          serverIndex: index,
-          fallback: true
-        })),
-        embedUrl: `/api/proxy/${encodeURIComponent(baseUrls[0])}`,
-        availableServers: baseUrls.map((_, index) => `Serveur ${index + 1}`),
-        url: episodeId,
-        corsInfo: {
-          note: 'Proxy avancé avec contournement anime-sama.fr',
-          proxyEndpoint: `/api/proxy/`,
-          embedEndpoint: `/api/embed/`,
-          bypassMode: 'active'
-        }
-      };
-      
-      res.json({
-        success: true,
-        data: embedData,
-        source: 'proxy-enhanced'
-      });
+      res.set('Content-Type', 'text/html; charset=utf-8');
+      res.send(fallbackHtml);
       
     } catch (error) {
-      console.error('Advanced embed error:', error);
-      
-      // Fallback d'urgence avec lecteur universel
-      const emergencyData = {
-        id: req.params.episodeId,
-        title: 'Episode',
-        sources: [{
-          url: `https://anime-sama.fr/`,
-          embedUrl: `/api/proxy/${encodeURIComponent('https://anime-sama.fr/')}`,
-          server: 'Lecteur Universel',
-          quality: 'Auto',
-          language: 'FR',
-          type: 'universal',
-          serverIndex: 0
-        }],
-        embedUrl: `/api/proxy/${encodeURIComponent('https://anime-sama.fr/')}`,
-        availableServers: ['Lecteur Universel']
-      };
-      
-      res.json({
-        success: true,
-        data: emergencyData,
-        source: 'emergency-fallback'
+      console.error('Embed generation error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erreur lors de la génération du lecteur',
+        error: error.message
       });
     }
   });
