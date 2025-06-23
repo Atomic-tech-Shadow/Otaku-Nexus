@@ -118,27 +118,10 @@ const AnimeSamaPage: React.FC = () => {
       }
     }
     
-    try {
-      const data = await fetcher();
-      cache.set(key, { data, timestamp: Date.now() });
-      return data;
-    } catch (error: any) {
-      const errorMessage = error?.message || 'Unknown error';
-      console.warn(`Cache fetch failed for key ${key}:`, errorMessage);
-      
-      // Structure d'erreur standardisée sans rejection
-      const errorResponse = { 
-        success: false, 
-        data: { episodes: [] }, // Structure compatible avec l'API
-        error: errorMessage,
-        cached: false 
-      };
-      
-      // Mettre en cache l'erreur avec TTL réduit pour retry
-      cache.set(key, { data: errorResponse, timestamp: Date.now() });
-      
-      return errorResponse;
-    }
+    // Exécuter le fetcher directement sans masquer les erreurs
+    const data = await fetcher();
+    cache.set(key, { data, timestamp: Date.now() });
+    return data;
   };
 
   // Charger l'historique au démarrage
@@ -893,42 +876,37 @@ const AnimeSamaPage: React.FC = () => {
       
       console.log(`🔄 Changing language to ${newLanguage} for ${selectedAnime.title}`);
       
-      // Utiliser le cache intelligent avec gestion d'erreurs complète
-      const apiResponse = await getCachedData(cacheKey, async () => {
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000);
-          
-          const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`, {
-            headers: {
-              'Accept': 'application/json',
-              'Cache-Control': 'no-cache'
-            },
-            signal: controller.signal
-          });
-          
-          clearTimeout(timeoutId);
-          
-          if (!response.ok) {
-            return {
-              success: false,
-              data: { episodes: [] },
-              error: `HTTP ${response.status}`,
-              cached: false
-            };
-          }
-          
-          return await response.json();
-        } catch (fetchError: any) {
-          // Retourner une structure compatible sans rejeter
-          return {
-            success: false,
-            data: { episodes: [] },
-            error: fetchError.name === 'AbortError' ? 'Timeout' : fetchError.message || 'Network error',
-            cached: false
-          };
+      // Appel direct à l'API avec gestion d'erreurs propre
+      let apiResponse;
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
         }
-      }, API_CONFIG.cacheTTL);
+        
+        apiResponse = await response.json();
+        console.log(`✅ Language change API success: ${apiResponse.data?.episodes?.length || 0} episodes in ${newLanguage}`);
+        
+      } catch (fetchError: any) {
+        console.warn(`Language change fetch failed for ${newLanguage}:`, fetchError.message);
+        apiResponse = {
+          success: false,
+          data: { episodes: [] },
+          error: fetchError.name === 'AbortError' ? 'Timeout' : fetchError.message || 'Network error'
+        };
+      }
       
       // Diagnostic détaillé de la réponse API
       console.log(`🔍 API Response diagnosis for ${newLanguage}:`, {
