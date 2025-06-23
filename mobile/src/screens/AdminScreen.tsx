@@ -10,10 +10,15 @@ import {
   Alert,
   Modal,
   Switch,
+  ActivityIndicator,
+  Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '../hooks/useAuth';
-import { apiService } from '../services/api';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import AppHeader from '../components/AppHeader';
 
 interface AdminPost {
   id: number;
@@ -34,20 +39,56 @@ interface PlatformStats {
   totalAnime: number;
   totalMessages: number;
   totalPosts: number;
+  activeUsers: number;
+  totalXPAwarded: number;
 }
 
-export default function AdminScreen({ navigation }: any) {
-  const { user } = useAuth();
-  const [posts, setPosts] = useState<AdminPost[]>([]);
-  const [stats, setStats] = useState<PlatformStats | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingPost, setEditingPost] = useState<AdminPost | null>(null);
-  const [loading, setLoading] = useState(true);
+interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  isAdmin: boolean;
+  level: number;
+  xp: number;
+  createdAt: string;
+}
 
-  // Form state
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [type, setType] = useState('news');
+const { width } = Dimensions.get('window');
+
+export default function AdminScreen() {
+  const navigation = useNavigation();
+  const queryClient = useQueryClient();
+  
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [newPost, setNewPost] = useState({ title: "", content: "", imageUrl: "" });
+  const [editingPost, setEditingPost] = useState<any>(null);
+  
+  // Quiz management states
+  const [newQuiz, setNewQuiz] = useState({
+    title: "",
+    description: "",
+    difficulty: "facile",
+    category: "anime",
+    imageUrl: "",
+    questions: [] as any[]
+  });
+  const [editingQuiz, setEditingQuiz] = useState<any>(null);
+  const [currentQuestion, setCurrentQuestion] = useState({
+    question: "",
+    options: ["", "", "", ""],
+    correctAnswer: 0,
+    explanation: ""
+  });
+
+  // User management states
+  const [newUser, setNewUser] = useState({
+    email: "",
+    firstName: "",
+    lastName: "",
+    password: "",
+    isAdmin: false
+  });
   const [isPublished, setIsPublished] = useState(false);
   const [adminOnly, setAdminOnly] = useState(false);
 
