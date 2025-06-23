@@ -109,6 +109,19 @@ const AnimeSamaPage: React.FC = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [lastSuccessfulLanguage, setLastSuccessfulLanguage] = useState('VOSTFR');
 
+  // Auto-redirection pour le lecteur vidéo
+  useEffect(() => {
+    if (currentView === 'player' && episodeDetails && selectedServer >= 0) {
+      const currentSource = episodeDetails.sources?.[selectedServer];
+      if (currentSource?.url) {
+        const timer = setTimeout(() => {
+          window.open(currentSource.url, '_blank');
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [currentView, episodeDetails, selectedServer]);
+
   // Hook pour débounce les changements
   const useDebounce = (value: any, delay: number) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
@@ -1524,13 +1537,6 @@ const AnimeSamaPage: React.FC = () => {
                 const correctEpisodeId = selectedEpisode ? selectedEpisode.id : episodeDetails?.id || '';
                 const embedUrl = `${API_BASE}/api/embed/${correctEpisodeId}`;
                 
-                // Rediriger automatiquement vers la vidéo comme sur anime-sama.fr
-                React.useEffect(() => {
-                  if (currentSource?.url) {
-                    window.open(currentSource.url, '_blank');
-                  }
-                }, [currentSource?.url]);
-
                 return (
                   <div className="relative w-full">
                     <div className="w-full h-64 md:h-80 bg-black flex flex-col items-center justify-center">
@@ -1540,6 +1546,7 @@ const AnimeSamaPage: React.FC = () => {
                         <p className="text-sm text-gray-400">
                           Serveur {selectedServer + 1} - {currentSource.server}
                         </p>
+
                       </div>
                     </div>
                   </div>
