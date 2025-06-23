@@ -1250,11 +1250,6 @@ const AnimeSamaPage: React.FC = () => {
                     <span className="text-white font-semibold">Correspondance :</span>
                     <span className="text-gray-400 ml-2">{selectedAnime.progressInfo.correspondence}</span>
                   </div>
-                  {selectedAnime.progressInfo.totalEpisodes && (
-                    <p className="text-gray-400 text-xs">
-                      {selectedAnime.progressInfo.totalEpisodes} épisodes disponibles
-                    </p>
-                  )}
                 </div>
               )}
               
