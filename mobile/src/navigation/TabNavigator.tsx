@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, StyleSheet } from 'react-native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -8,6 +9,8 @@ import HomeScreen from '../screens/HomeScreen';
 import QuizScreen from '../screens/QuizScreen';
 import ChatScreen from '../screens/ChatScreen';
 import AnimeSamaScreen from '../screens/AnimeSamaScreen';
+import AnimeDetailScreen from '../screens/AnimeDetailScreen';
+import VideoPlayerScreen from '../screens/VideoPlayerScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
@@ -60,7 +63,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
           const getIconName = (routeName: string): keyof typeof Ionicons.glyphMap => {
             switch (routeName) {
               case 'Home': return 'home';
-              case 'Quiz': return 'brain';
+              case 'Quiz': return 'bulb';
               case 'Chat': return 'chatbubbles';
               case 'AnimeSama': return 'play-circle';
               case 'Profile': return 'person';

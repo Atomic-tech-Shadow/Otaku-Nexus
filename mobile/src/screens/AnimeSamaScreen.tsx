@@ -44,6 +44,7 @@ export default function AnimeSamaScreen({ navigation }: any) {
 
   const API_BASE = 'https://api-anime-sama.onrender.com';
 
+  // Client API robuste mobile synchronisé avec le site web
   const searchAnime = async (query: string) => {
     if (query.trim().length < 2) {
       setSearchResults([]);
@@ -54,17 +55,40 @@ export default function AnimeSamaScreen({ navigation }: any) {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE}/api/search?query=${encodeURIComponent(query)}`);
-      const apiResponse: ApiResponse<AnimeResult[]> = await response.json();
+      const response = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(query)}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
+      }).catch(fetchError => {
+        console.warn('Mobile search fetch failed:', fetchError.message);
+        throw new Error(`Erreur réseau: ${fetchError.message}`);
+      });
       
-      if (!apiResponse.success) {
-        throw new Error('Erreur lors de la recherche');
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
-      setSearchResults(apiResponse.data);
-    } catch (err) {
-      console.error('Erreur recherche:', err);
-      setError('Impossible de rechercher les animes. Vérifiez votre connexion.');
+      const apiResponse = await response.json().catch(jsonError => {
+        console.warn('Mobile search JSON parsing failed:', jsonError.message);
+        throw new Error('Format de réponse invalide');
+      });
+      
+      // Gestion des différents formats de réponse comme sur le web
+      let resultsData = [];
+      if (apiResponse.success && Array.isArray(apiResponse.data)) {
+        resultsData = apiResponse.data;
+      } else if (Array.isArray(apiResponse)) {
+        resultsData = apiResponse;
+      }
+      
+      setSearchResults(resultsData);
+      console.log(`Mobile search found ${resultsData.length} results for "${query}"`);
+      
+    } catch (err: any) {
+      console.warn('Mobile search error:', err.message);
+      setError('Recherche temporairement indisponible. Réessayez dans quelques instants.');
       setSearchResults([]);
     } finally {
       setLoading(false);

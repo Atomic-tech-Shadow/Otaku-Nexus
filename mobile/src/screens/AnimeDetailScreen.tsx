@@ -74,19 +74,56 @@ export default function AnimeDetailScreen({ navigation }: any) {
 
   const API_BASE = 'https://api-anime-sama.onrender.com';
 
+  // Fonction de correction des numéros d'épisodes synchronisée avec le web
+  const correctEpisodeNumbers = (animeId: string, seasonNumber: number, episodes: Episode[]): Episode[] => {
+    const SEASON_MAPPINGS: any = {
+      'one-piece': {
+        11: { start: 1087, end: 1122, name: "Saga 11 (Egghead)" }
+      }
+    };
+
+    const mapping = SEASON_MAPPINGS[animeId]?.[seasonNumber];
+    if (!mapping) return episodes;
+
+    return episodes.map((episode, index) => ({
+      ...episode,
+      episodeNumber: mapping.start + index,
+      id: episode.id.replace(/episode-\d+/, `episode-${mapping.start + index}`),
+      title: `Episode ${mapping.start + index}`
+    }));
+  };
+
   useEffect(() => {
     if (!animeId) return;
     
     const loadAnimeData = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/anime/${animeId}`);
-        const apiResponse: ApiResponse<AnimeData> = await response.json();
+        const response = await fetch(`${API_BASE}/api/anime/${animeId}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        }).catch(fetchError => {
+          console.warn('Mobile anime fetch failed:', fetchError.message);
+          throw new Error(`Erreur réseau: ${fetchError.message}`);
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const apiResponse = await response.json().catch(jsonError => {
+          console.warn('Mobile anime JSON parsing failed:', jsonError.message);
+          throw new Error('Format de réponse invalide');
+        });
         
         if (!apiResponse.success) {
           throw new Error('Erreur lors du chargement de l\'anime');
         }
         
         setAnimeData(apiResponse.data);
+        console.log(`Mobile loaded anime: ${apiResponse.data.title}`);
         
         // Auto-select first season if available
         if (apiResponse.data.seasons && apiResponse.data.seasons.length > 0) {
@@ -94,9 +131,9 @@ export default function AnimeDetailScreen({ navigation }: any) {
         }
         
         setLoading(false);
-      } catch (err) {
-        console.error('Erreur API:', err);
-        setError('Impossible de charger les données de l\'anime.');
+      } catch (err: any) {
+        console.warn('Mobile anime loading error:', err.message);
+        setError('Données anime temporairement indisponibles.');
         setLoading(false);
       }
     };
@@ -110,24 +147,61 @@ export default function AnimeDetailScreen({ navigation }: any) {
     }
   }, [selectedSeason, selectedLanguage]);
 
+  // Fonction de chargement d'épisodes synchronisée avec le web
   const loadEpisodes = async () => {
     if (!selectedSeason || !animeId) return;
     
     setEpisodeLoading(true);
+    setError(null);
+    
     try {
       const language = selectedLanguage === 'VF' ? 'vf' : 'vostfr';
       const response = await fetch(
-        `${API_BASE}/api/anime/${animeId}/season/${selectedSeason.number}/episodes?language=${language}`
-      );
-      const apiResponse: ApiResponse<{ episodes: Episode[] }> = await response.json();
+        `${API_BASE}/api/seasons?animeId=${animeId}&season=${selectedSeason.number}&language=${language}`,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        }
+      ).catch(fetchError => {
+        console.warn('Mobile episodes fetch failed:', fetchError.message);
+        throw new Error(`Erreur réseau: ${fetchError.message}`);
+      });
       
-      if (apiResponse.success) {
-        setEpisodes(apiResponse.data.episodes || []);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const apiResponse = await response.json().catch(jsonError => {
+        console.warn('Mobile episodes JSON parsing failed:', jsonError.message);
+        throw new Error('Format de réponse invalide');
+      });
+      
+      // Gestion des différents formats de réponse comme sur le web
+      let episodesData: Episode[] = [];
+      if (apiResponse.success && apiResponse.data && Array.isArray(apiResponse.data.episodes)) {
+        episodesData = apiResponse.data.episodes;
+      } else if (Array.isArray(apiResponse)) {
+        episodesData = apiResponse;
+      } else if (apiResponse.data && Array.isArray(apiResponse.data)) {
+        episodesData = apiResponse.data;
+      }
+      
+      // Appliquer les corrections d'épisodes comme sur le web
+      if (episodesData.length > 0) {
+        const correctedEpisodes = correctEpisodeNumbers(animeId, selectedSeason.number, episodesData);
+        setEpisodes(correctedEpisodes);
+        console.log(`Mobile loaded ${correctedEpisodes.length} episodes for ${animeId} season ${selectedSeason.number} in ${language}`);
       } else {
         setEpisodes([]);
+        console.warn(`Mobile no episodes found for ${animeId} season ${selectedSeason.number} in ${language}`);
       }
-    } catch (err) {
-      console.error('Erreur chargement épisodes:', err);
+      
+    } catch (err: any) {
+      console.warn('Mobile episodes loading error:', err.message);
+      setError(`Épisodes ${selectedLanguage} temporairement indisponibles`);
       setEpisodes([]);
     } finally {
       setEpisodeLoading(false);
