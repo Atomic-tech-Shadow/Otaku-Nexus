@@ -1508,11 +1508,33 @@ const AnimeSamaPage: React.FC = () => {
 
 
 
-            {/* Zone lecteur vidéo - Sans overlay */}
+            {/* Zone lecteur vidéo avec contournement anime-sama.fr */}
             <div 
               className="w-full rounded-lg overflow-hidden relative" 
               style={{ backgroundColor: '#000', minHeight: '300px' }}
             >
+              <style>{`
+                /* CSS anti-blocage anime-sama.fr */
+                iframe[src*="anime-sama"] {
+                  filter: none !important;
+                  opacity: 1 !important;
+                  pointer-events: auto !important;
+                }
+                
+                .blocked-content, .connection-error, .access-denied, .iframe-blocked {
+                  display: none !important;
+                }
+                
+                video, .video-container, .player-container {
+                  display: block !important;
+                  visibility: visible !important;
+                  opacity: 1 !important;
+                }
+                
+                .error-overlay, .blocked-message, .restriction-notice {
+                  display: none !important;
+                }
+              `}</style>
               {(() => {
                 const currentSources = episodeDetails?.sources || [];
                 const currentSource = currentSources[selectedServer];
@@ -1530,20 +1552,56 @@ const AnimeSamaPage: React.FC = () => {
                   <div className="relative w-full">
                     <iframe
                       key={`${correctEpisodeId}-${selectedServer}`}
-                      src={currentSource.url}
+                      src={`/api/proxy/${encodeURIComponent(currentSource.url)}`}
                       className="w-full h-64 md:h-80"
                       allowFullScreen
                       frameBorder="0"
-                      allow="autoplay; fullscreen; encrypted-media"
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
+                      referrerPolicy="no-referrer"
+                      allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                       title="Lecteur vidéo"
                       style={{ 
                         border: 'none', 
                         display: 'block',
                         backgroundColor: '#000'
                       }}
-                      onLoad={() => setError(null)}
-                      onError={() => setError('Erreur de chargement')}
+                      onLoad={() => {
+                        setError(null);
+                        // Injection anti-blocage après chargement
+                        try {
+                          const iframe = document.querySelector(`iframe[src*="${encodeURIComponent(currentSource.url)}"]`);
+                          if (iframe) {
+                            const style = document.createElement('style');
+                            style.textContent = `
+                              .blocked-content, .connection-error, .access-denied, .iframe-blocked {
+                                display: none !important;
+                              }
+                              video, iframe[src*="player"] {
+                                display: block !important;
+                                visibility: visible !important;
+                                opacity: 1 !important;
+                              }
+                            `;
+                            document.head.appendChild(style);
+                          }
+                        } catch (error) {
+                          // Ignore cross-origin restrictions
+                        }
+                      }}
+                      onError={(e) => {
+                        console.log('Proxy failed, trying direct URL');
+                        // Fallback vers URL directe si proxy échoue
+                        const target = e.currentTarget;
+                        setTimeout(() => {
+                          target.src = currentSource.url;
+                        }, 1000);
+                      }}
                     />
+                    
+                    {/* Overlay debug info */}
+                    <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs p-2 rounded opacity-70 hover:opacity-100 transition-opacity">
+                      Serveur {selectedServer + 1} (Proxy)
+                    </div>
                   </div>
                 );
               })()}

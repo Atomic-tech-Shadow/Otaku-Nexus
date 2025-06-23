@@ -453,16 +453,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('Standard fetch failed, trying alternative method');
         
         // Tentative 2: Avec axios si disponible
-        try {
-          const axios = require('axios');
-          const axiosResponse = await axios.get(targetUrl, {
-            headers: proxyHeaders,
-            timeout: 15000,
-            maxRedirects: 5
+        // Tentative 2: Simulation browser avec headers spéciaux
+        const https = require('https');
+        const http = require('http');
+        const { URL } = require('url');
+        
+        const parsedUrl = new URL(targetUrl);
+        const module = parsedUrl.protocol === 'https:' ? https : http;
+        
+        const options = {
+          hostname: parsedUrl.hostname,
+          port: parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80),
+          path: parsedUrl.pathname + parsedUrl.search,
+          method: 'GET',
+          headers: proxyHeaders,
+          timeout: 15000
+        };
+        
+        const nodeResponse = await new Promise((resolve, reject) => {
+          const req = module.request(options, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => resolve({ data, statusCode: res.statusCode }));
           });
-          content = axiosResponse.data;
+          req.on('error', reject);
+          req.on('timeout', () => reject(new Error('Request timeout')));
+          req.setTimeout(15000);
+          req.end();
+        });
+        
+        if (nodeResponse.statusCode >= 200 && nodeResponse.statusCode < 300) {
+          content = nodeResponse.data;
           response = { ok: true, headers: { get: () => 'text/html' } };
-        } catch (axiosError) {
+        } else {
           throw new Error('All proxy methods failed');
         }
       }
