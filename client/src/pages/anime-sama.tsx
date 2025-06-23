@@ -879,13 +879,17 @@ const AnimeSamaPage: React.FC = () => {
       
       console.log(`🔄 Changing language to ${newLanguage} for ${selectedAnime.title}`);
       
-      // Utiliser le cache intelligent
+      // Utiliser le cache intelligent avec gestion d'erreurs
       const apiResponse = await getCachedData(cacheKey, async () => {
         const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`, {
           headers: {
             'Accept': 'application/json',
             'Cache-Control': 'no-cache'
-          }
+          },
+          signal: AbortSignal.timeout(10000)
+        }).catch(err => {
+          console.warn(`Cache fetch failed for key ${cacheKey}:`, err.message);
+          throw err;
         });
         
         if (!response.ok) {
@@ -1398,10 +1402,9 @@ const AnimeSamaPage: React.FC = () => {
               
               if (!currentSource) return null;
               
-              // Utiliser l'endpoint embed production selon documentation
-              const correctEpisodeId = selectedEpisode && selectedAnime ? 
-                `${selectedAnime.id}-episode-${selectedEpisode.episodeNumber}-${selectedLanguage.toLowerCase()}` : 
-                episodeDetails?.id || '';
+              // Utiliser l'endpoint embed production selon documentation - SYNCHRONISATION FIXÉE
+              const correctEpisodeId = selectedEpisode ? selectedEpisode.id : episodeDetails?.id || '';
+              console.log(`🎬 Video player using episode ID: ${correctEpisodeId} (Episode ${selectedEpisode?.episodeNumber})`);
               
               const embedUrl = `${API_BASE}/api/embed/${correctEpisodeId}`;
               
