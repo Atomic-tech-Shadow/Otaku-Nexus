@@ -109,18 +109,7 @@ const AnimeSamaPage: React.FC = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [lastSuccessfulLanguage, setLastSuccessfulLanguage] = useState('VOSTFR');
 
-  // Auto-redirection pour le lecteur vidéo
-  useEffect(() => {
-    if (currentView === 'player' && episodeDetails && selectedServer >= 0) {
-      const currentSource = episodeDetails.sources?.[selectedServer];
-      if (currentSource?.url) {
-        const timer = setTimeout(() => {
-          window.open(currentSource.url, '_blank');
-        }, 1000);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [currentView, episodeDetails, selectedServer]);
+
 
   // Hook pour débounce les changements
   const useDebounce = (value: any, delay: number) => {
@@ -1539,16 +1528,22 @@ const AnimeSamaPage: React.FC = () => {
                 
                 return (
                   <div className="relative w-full">
-                    <div className="w-full h-64 md:h-80 bg-black flex flex-col items-center justify-center">
-                      <div className="text-white text-center">
-                        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                        <p className="text-lg mb-2">Ouverture de la vidéo...</p>
-                        <p className="text-sm text-gray-400">
-                          Serveur {selectedServer + 1} - {currentSource.server}
-                        </p>
-
-                      </div>
-                    </div>
+                    <iframe
+                      key={`${correctEpisodeId}-${selectedServer}`}
+                      src={currentSource.url}
+                      className="w-full h-64 md:h-80"
+                      allowFullScreen
+                      frameBorder="0"
+                      allow="autoplay; fullscreen; encrypted-media"
+                      title="Lecteur vidéo"
+                      style={{ 
+                        border: 'none', 
+                        display: 'block',
+                        backgroundColor: '#000'
+                      }}
+                      onLoad={() => setError(null)}
+                      onError={() => setError('Erreur de chargement')}
+                    />
                   </div>
                 );
               })()}

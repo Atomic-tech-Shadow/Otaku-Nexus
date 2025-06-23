@@ -349,55 +349,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-      // Redirection automatique vers la vidéo comme anime-sama.fr
+      // Iframe intégrée comme sur anime-sama.fr - lecture directe dans le cadre
       const embedHtml = `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirection vidéo</title>
+    <title>Lecteur Vidéo</title>
     <style>
         body { 
             margin: 0; 
             padding: 0; 
             background: #000; 
-            color: white;
+            overflow: hidden;
+        }
+        iframe { 
+            width: 100%; 
+            height: 100vh; 
+            border: none; 
+            display: block;
+        }
+        .error { 
+            color: white; 
+            text-align: center; 
+            padding: 50px; 
             font-family: Arial, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-        }
-        .redirect-message {
-            text-align: center;
-        }
-        .spinner {
-            border: 3px solid #333;
-            border-top: 3px solid #1e40af;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <div class="redirect-message">
-        ${episode.sources.length > 0 ? 
-          `<div class="spinner"></div>
-           <p>Redirection vers la vidéo...</p>
-           <script>
-             // Redirection immédiate vers la source vidéo
-             window.location.href = "${episode.sources[0].url}";
-           </script>` :
-          `<p>Aucune source disponible pour cet épisode</p>`
-        }
-    </div>
+    ${episode.sources.length > 0 ? 
+      `<iframe src="${episode.sources[0].url}" allowfullscreen frameborder="0"></iframe>` :
+      `<div class="error">Aucune source disponible pour cet épisode</div>`
+    }
 </body>
 </html>`;
       
