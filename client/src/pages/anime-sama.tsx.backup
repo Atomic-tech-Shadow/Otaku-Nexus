@@ -163,7 +163,6 @@ const AnimeSamaPage: React.FC = () => {
       const errorReason = event.reason;
       
       // Logger l'erreur pour diagnostic mais toujours prévenir le crash
-      console.warn('Unhandled promise rejection caught and handled:', {
         reason: errorReason?.message || errorReason,
         stack: errorReason?.stack
       });
