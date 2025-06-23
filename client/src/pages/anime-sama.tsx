@@ -196,6 +196,23 @@ const AnimeSamaPage: React.FC = () => {
 
   const API_BASE = 'https://api-anime-sama.onrender.com';
   
+  // Mapping correct des épisodes One Piece selon documentation
+  const SEASON_MAPPINGS = {
+    'one-piece': {
+      1: { start: 1, end: 61, name: "Saga 1 (East Blue)" },
+      2: { start: 62, end: 135, name: "Saga 2 (Alabasta)" },
+      3: { start: 136, end: 206, name: "Saga 3 (Ile céleste)" },
+      4: { start: 207, end: 325, name: "Saga 4 (Water Seven)" },
+      5: { start: 326, end: 384, name: "Saga 5 (Thriller Bark)" },
+      6: { start: 385, end: 516, name: "Saga 6 (Guerre au Sommet)" },
+      7: { start: 517, end: 574, name: "Saga 7 (Ile des Hommes-Poissons)" },
+      8: { start: 575, end: 746, name: "Saga 8 (Dressrosa)" },
+      9: { start: 747, end: 889, name: "Saga 9 (Ile Tougato)" },
+      10: { start: 890, end: 1086, name: "Saga 10 (Pays des Wa)" },
+      11: { start: 1087, end: 1122, name: "Saga 11 (Egghead)" }
+    }
+  };
+  
   // Configuration optimisée selon le guide de configuration API
   const API_CONFIG = {
     timeout: 20000,
@@ -321,6 +338,44 @@ const AnimeSamaPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fonction de correction des numéros d'épisodes selon documentation
+  const correctEpisodeNumbers = (animeId: string, seasonNumber: number, episodes: Episode[]): Episode[] => {
+    // Correction spécifique pour One Piece selon documentation
+    if (animeId === 'one-piece') {
+      let start = 1, end = 1122;
+      
+      // Mapping One Piece selon documentation
+      if (seasonNumber === 11) { start = 1087; end = 1122; } // Saga 11 (Egghead)
+      else if (seasonNumber === 10) { start = 890; end = 1086; } // Saga 10 (Pays des Wa)
+      else if (seasonNumber === 9) { start = 747; end = 889; } // Saga 9 (Ile Tougato)
+      else if (seasonNumber === 8) { start = 575; end = 746; } // Saga 8 (Dressrosa)
+      else if (seasonNumber === 7) { start = 517; end = 574; } // Saga 7 (Ile des Hommes-Poissons)
+      else if (seasonNumber === 6) { start = 385; end = 516; } // Saga 6 (Guerre au Sommet)
+      else if (seasonNumber === 5) { start = 326; end = 384; } // Saga 5 (Thriller Bark)
+      else if (seasonNumber === 4) { start = 207; end = 325; } // Saga 4 (Water Seven)
+      else if (seasonNumber === 3) { start = 136; end = 206; } // Saga 3 (Ile céleste)
+      else if (seasonNumber === 2) { start = 62; end = 135; } // Saga 2 (Alabasta)
+      else if (seasonNumber === 1) { start = 1; end = 61; } // Saga 1 (East Blue)
+      
+      const correctedEpisodes: Episode[] = [];
+      for (let i = start; i <= end; i++) {
+        correctedEpisodes.push({
+          id: `${animeId}-episode-${i}-${episodes[0]?.language || 'vostfr'}`,
+          episodeNumber: i,
+          title: `Episode ${i}`,
+          language: episodes[0]?.language || 'vostfr',
+          url: `${API_BASE}/api/episode/${animeId}-episode-${i}-${episodes[0]?.language || 'vostfr'}`,
+          available: true
+        });
+      }
+      
+      console.log(`✅ One Piece corrected: Season ${seasonNumber} = Episodes ${start}-${end} (${correctedEpisodes.length} episodes)`);
+      return correctedEpisodes;
+    }
+    
+    return episodes;
   };
 
   // Détection des langues selon documentation validée
@@ -463,29 +518,34 @@ const AnimeSamaPage: React.FC = () => {
       console.warn('Catalogue endpoint failed:', catalogueErr);
     }
     
-    // Étape 3: Utiliser progressInfo de l'anime si disponible
+    // Étape 3: Utiliser progressInfo avec correction des numéros d'épisodes
     if (selectedAnime?.progressInfo?.totalEpisodes) {
-      const totalEpisodes = selectedAnime.progressInfo.totalEpisodes;
-      console.log(`📊 Using progressInfo: ${totalEpisodes} total episodes detected`);
+      console.log(`📊 Using progressInfo: ${selectedAnime.progressInfo.totalEpisodes} total episodes detected`);
       
-      const progressEpisodes = Array.from({ length: totalEpisodes }, (_, i) => ({
-        id: `${animeId}-s${season.number}-e${i + 1}-progress`,
-        episodeNumber: i + 1,
-        title: `Épisode ${i + 1}`,
-        language: 'VOSTFR',
-        url: `${API_BASE}/api/episode/${animeId}-episode-${i + 1}-vostfr`,
+      // Créer des épisodes temporaires pour la correction
+      const tempEpisodes = [{
+        id: 'temp',
+        episodeNumber: 1,
+        title: 'Episode 1',
+        language: 'vostfr',
+        url: '',
         available: true
-      }));
+      }];
       
-      setEpisodes(progressEpisodes);
-      setSelectedSeason(season);
-      setAvailableLanguages(['VOSTFR']);
-      setSelectedLanguage('VOSTFR');
-      setSelectedEpisode(progressEpisodes[0]);
-      await loadEpisodeSources(progressEpisodes[0].id);
+      // Appliquer la correction des numéros d'épisodes
+      const correctedEpisodes = correctEpisodeNumbers(animeId, season.number, tempEpisodes);
       
-      setError(`${totalEpisodes} épisodes générés depuis progressInfo authentique`);
-      return;
+      if (correctedEpisodes.length > 0) {
+        setEpisodes(correctedEpisodes);
+        setSelectedSeason(season);
+        setAvailableLanguages(['VOSTFR', 'VF']);
+        setSelectedLanguage('VOSTFR');
+        setSelectedEpisode(correctedEpisodes[0]);
+        await loadEpisodeSources(correctedEpisodes[0].id);
+        
+        setError(`${correctedEpisodes.length} épisodes générés avec numérotation correcte (${correctedEpisodes[0].episodeNumber}-${correctedEpisodes[correctedEpisodes.length-1].episodeNumber})`);
+        return;
+      }
     }
     
     // Si tout échoue
@@ -1328,27 +1388,31 @@ const AnimeSamaPage: React.FC = () => {
               
               if (!currentSource) return null;
               
-              // Utiliser l'endpoint embed sécurisé selon documentation
-              const embedUrl = episodeDetails?.embedUrl || currentSource.embedUrl || `${API_BASE}/api/embed/${episodeDetails?.id}`;
+              // Utiliser l'endpoint embed production selon documentation
+              const correctEpisodeId = selectedEpisode && selectedAnime ? 
+                `${selectedAnime.id}-episode-${selectedEpisode.episodeNumber}-${selectedLanguage.toLowerCase()}` : 
+                episodeDetails?.id || '';
+              
+              const embedUrl = `${API_BASE}/api/embed/${correctEpisodeId}`;
               
               return (
                 <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: '#000', minHeight: '400px' }}>
                   <iframe
-                    key={`${selectedEpisode?.id}-${selectedServer}`}
+                    key={`${correctEpisodeId}-${selectedServer}`}
                     src={embedUrl}
                     className="w-full h-64 md:h-80 lg:h-96"
                     allowFullScreen
                     frameBorder="0"
                     allow="autoplay; fullscreen; encrypted-media"
-                    sandbox="allow-scripts allow-same-origin allow-forms"
-                    title={`${episodeDetails?.title} - ${currentSource.server}`}
+                    title={`${episodeDetails?.title} - Lecteur ${selectedServer + 1}`}
+                    style={{ border: 'none' }}
                     onLoad={() => {
                       setError(null);
-                      console.log(`Successfully loaded server ${selectedServer + 1}`);
+                      console.log(`✅ Embed player loaded: ${embedUrl}`);
                     }}
                     onError={() => {
-                      console.error(`Failed to load server ${selectedServer + 1}`);
-                      handleVideoError(selectedServer);
+                      console.error(`❌ Embed player failed: ${embedUrl}`);
+                      setError('Erreur de chargement du lecteur. Essayez un autre serveur.');
                     }}
                   />
                   
