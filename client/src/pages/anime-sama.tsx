@@ -106,6 +106,28 @@ const AnimeSamaPage: React.FC = () => {
   
   // CORRECTION 6: Race Conditions - Variable de verrouillage
   const [languageChangeInProgress, setLanguageChangeInProgress] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastSuccessfulLanguage, setLastSuccessfulLanguage] = useState('VOSTFR');
+
+  // Hook pour débounce les changements
+  const useDebounce = (value: any, delay: number) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    
+    useEffect(() => {
+      const handler = setTimeout(() => {
+        setDebouncedValue(value);
+      }, delay);
+      
+      return () => {
+        clearTimeout(handler);
+      };
+    }, [value, delay]);
+    
+    return debouncedValue;
+  };
+
+  // Protection contre les changements rapides
+  const debouncedLanguage = useDebounce(selectedLanguage, 300);
 
   // Cache robuste avec gestion d'erreurs complète
   const cache = new Map();
@@ -191,7 +213,100 @@ const AnimeSamaPage: React.FC = () => {
 
 
 
+  // Configuration API robuste pour Replit
   const API_BASE = 'https://api-anime-sama.onrender.com';
+  const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  const REQUEST_TIMEOUT = 15000; // 15 secondes
+  
+  // Client HTTP personnalisé pour Replit
+  const createApiClient = () => {
+    const baseHeaders = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    };
+    
+    return {
+      async get(endpoint: string, params: Record<string, string> = {}) {
+        const url = new URL(`${API_BASE}${endpoint}`);
+        
+        // Ajout des paramètres + timestamp anti-cache
+        Object.entries(params).forEach(([key, value]) => {
+          url.searchParams.append(key, value);
+        });
+        url.searchParams.append('_t', Date.now().toString());
+        
+        console.log(`🌐 API GET: ${url.toString()}`);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+        
+        try {
+          const response = await fetch(url.toString(), {
+            method: 'GET',
+            headers: baseHeaders,
+            cache: 'no-store',
+            mode: 'cors',
+            credentials: 'omit',
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const data = await response.json();
+          console.log(`✅ API Succès: ${data.length || 'N/A'} items`);
+          return data;
+          
+        } catch (error: any) {
+          clearTimeout(timeoutId);
+          console.error(`❌ API Erreur ${endpoint}:`, error.message);
+          throw error;
+        }
+      }
+    };
+  };
+
+  const apiClient = createApiClient();
+
+  // Système de retry automatique avec délai exponentiel
+  const loadEpisodesWithRetry = async (animeId: string, season: Season, language: string, maxRetries = 3) => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔄 Tentative ${attempt}/${maxRetries} pour ${language}`);
+        
+        // Délai exponentiel entre les tentatives
+        if (attempt > 1) {
+          const delay = Math.pow(2, attempt - 1) * 1000; // 2s, 4s, 8s
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+        
+        const data = await apiClient.get('/api/seasons', {
+          animeId,
+          season: season.number.toString(),
+          language: language.toLowerCase()
+        });
+        
+        console.log(`✅ Succès ${language} tentative ${attempt}`);
+        setLastSuccessfulLanguage(language);
+        setRetryCount(0);
+        return data;
+        
+      } catch (error: any) {
+        console.warn(`⚠️ Tentative ${attempt} échouée pour ${language}:`, error.message);
+        
+        if (attempt === maxRetries) {
+          console.error(`❌ Toutes les tentatives échouées pour ${language}`);
+          throw error;
+        }
+      }
+    }
+  };
   
   // Mapping correct des épisodes One Piece selon documentation
   const SEASON_MAPPINGS = {
@@ -857,114 +972,133 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Système universel pour changement de langue optimisé
+  // Fonction changeLanguage corrigée selon documentation - Bug "Failed to fetch" résolu
   const changeLanguage = async (newLanguage: 'VF' | 'VOSTFR') => {
-    if (!selectedSeason || !selectedAnime || selectedLanguage === newLanguage) return;
+    if (!selectedAnime || !selectedSeason) {
+      console.warn('⚠️ Anime ou saison non sélectionnés');
+      return;
+    }
     
-    // Protection contre les race conditions
-    if (languageChangeInProgress) return;
+    console.log(`🔄 Changement vers ${newLanguage}`);
+    
+    // Protection contre les changements multiples
+    if (languageChangeInProgress) {
+      console.log('⚠️ Changement déjà en cours, ignoré');
+      return;
+    }
+    
     setLanguageChangeInProgress(true);
     
-    const previousLanguage = selectedLanguage;
-    setSelectedLanguage(newLanguage);
-    setLoading(true);
-    setError(null);
-    
     try {
-      const language = newLanguage.toLowerCase();
-      const cacheKey = `seasons_${selectedAnime.id}_${selectedSeason.number}_${language}`;
-      
-      console.log(`🔄 Changing language to ${newLanguage} for ${selectedAnime.title}`);
-      
-      // Appel direct à l'API sans AbortController (Fix Replit)
-      let apiResponse;
-      try {
-        const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`, {
-          headers: {
-            'Accept': 'application/json',
-            'Cache-Control': 'no-cache'
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        
-        apiResponse = await response.json();
-        console.log(`✅ Language change API success: ${apiResponse.data?.episodes?.length || 0} episodes in ${newLanguage}`);
-        
-      } catch (fetchError: any) {
-        console.warn(`Language change fetch failed for ${newLanguage}:`, fetchError.message);
-        apiResponse = {
-          success: false,
-          data: { episodes: [] },
-          error: fetchError.message || 'Network error'
-        };
+      // Délai pour éviter les race conditions
+      if (selectedLanguage !== newLanguage) {
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
       
-      // Diagnostic détaillé de la réponse API
-      console.log(`🔍 API Response diagnosis for ${newLanguage}:`, {
-        hasResponse: !!apiResponse,
-        isSuccess: apiResponse?.success,
-        hasData: !!apiResponse?.data,
-        hasEpisodes: !!apiResponse?.data?.episodes,
-        isArray: Array.isArray(apiResponse?.data?.episodes),
-        episodeCount: apiResponse?.data?.episodes?.length || 0,
-        error: apiResponse?.error
+      setSelectedLanguage(newLanguage);
+      
+      // URL avec timestamp pour éviter le cache
+      const timestamp = Date.now();
+      const url = `${API_BASE}/api/seasons?animeId=${selectedAnime!.id}&season=${selectedSeason!.number}&language=${newLanguage.toLowerCase()}&_t=${timestamp}`;
+      
+      console.log(`🌐 Requête: ${url}`);
+      
+      // Configuration fetch robuste pour Replit
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+        cache: 'no-store',
+        // Ajout pour Replit
+        mode: 'cors',
+        credentials: 'omit'
       });
       
-      // Vérifier si la réponse est valide et contient des épisodes
-      if (apiResponse && apiResponse.success && apiResponse.data && 
-          apiResponse.data.episodes && Array.isArray(apiResponse.data.episodes) && 
-          apiResponse.data.episodes.length > 0) {
-        
-        console.log(`✅ Language change successful: ${apiResponse.data.episodes.length} episodes in ${newLanguage}`);
-        
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log(`✅ Succès ${newLanguage}:`, data.length || data.data?.episodes?.length || 0, 'épisodes');
+      
+      // Extraction des épisodes selon le format de réponse
+      let episodesData = [];
+      if (Array.isArray(data)) {
+        episodesData = data;
+      } else if (data.success && data.data && Array.isArray(data.data.episodes)) {
+        episodesData = data.data.episodes;
+      } else if (data.data && Array.isArray(data.data)) {
+        episodesData = data.data;
+      }
+      
+      // Mise à jour d'état sécurisée
+      if (episodesData && episodesData.length > 0) {
         // Appliquer les corrections d'épisodes selon la documentation
-        const correctedEpisodes = correctEpisodeNumbers(selectedAnime.id, selectedSeason.number, apiResponse.data.episodes);
+        const correctedEpisodes = correctEpisodeNumbers(selectedAnime!.id, selectedSeason!.number, episodesData);
         setEpisodes(correctedEpisodes);
         
-        // Recharger le premier épisode avec la nouvelle langue
+        // Sélection du premier épisode
         const firstEpisode = correctedEpisodes[0];
         setSelectedEpisode(firstEpisode);
         
-        loadEpisodeSources(firstEpisode.id).catch(sourceError => {
-          console.warn('Error loading episode sources after language change:', sourceError?.message || sourceError);
-          setError('Épisodes chargés mais erreur de sources vidéo');
-        });
-        
+        // Chargement des détails de l'épisode
+        await loadEpisodeSources(firstEpisode.id);
+        setLastSuccessfulLanguage(newLanguage);
+        setRetryCount(0);
       } else {
-        // Gestion d'erreur ou pas d'épisodes dans cette langue
-        const errorMsg = apiResponse?.error || 'No episodes found';
-        console.log(`⚠️ No episodes found in ${newLanguage}, keeping current episodes with language interface change`);
-        setError(`Interface changée vers ${newLanguage} - Sources ${previousLanguage} conservées`);
-        
-        // Recharger les sources pour le même épisode avec la nouvelle langue si possible
-        if (selectedEpisode) {
-          loadEpisodeSources(selectedEpisode.id).catch(sourceError => {
-            console.warn('Error reloading sources with new language:', sourceError?.message || sourceError);
-          });
-        }
+        console.warn(`⚠️ Aucun épisode ${newLanguage} disponible`);
+        setEpisodes([]);
       }
       
-    } catch (err: any) {
-      console.error('Language change error:', err?.message || err);
-      setError(`Changement de langue vers ${newLanguage} impossible. Sources ${previousLanguage} conservées.`);
-      // Revenir à la langue précédente si échec total
-      setSelectedLanguage(previousLanguage);
+    } catch (error: any) {
+      console.error(`❌ Erreur changement ${newLanguage}:`, error.message);
       
-      // S'assurer qu'aucune promesse ne reste non capturée
-      if (selectedEpisode) {
-        loadEpisodeSources(selectedEpisode.id).catch(sourceErr => {
-          console.warn('Error reverting to previous episode sources:', sourceErr?.message || sourceErr);
+      // Fallback vers l'autre langue
+      const fallbackLanguage = newLanguage === 'VF' ? 'VOSTFR' : 'VF';
+      console.log(`🔄 Fallback vers ${fallbackLanguage}`);
+      
+      try {
+        const fallbackUrl = `${API_BASE}/api/seasons?animeId=${selectedAnime!.id}&season=${selectedSeason!.number}&language=${fallbackLanguage.toLowerCase()}&_t=${Date.now()}`;
+        const fallbackResponse = await fetch(fallbackUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          },
+          cache: 'no-store',
+          mode: 'cors'
         });
+        
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json();
+          let fallbackEpisodes = [];
+          
+          if (Array.isArray(fallbackData)) {
+            fallbackEpisodes = fallbackData;
+          } else if (fallbackData.success && fallbackData.data && Array.isArray(fallbackData.data.episodes)) {
+            fallbackEpisodes = fallbackData.data.episodes;
+          }
+          
+          if (fallbackEpisodes.length > 0) {
+            const correctedEpisodes = correctEpisodeNumbers(selectedAnime!.id, selectedSeason!.number, fallbackEpisodes);
+            setEpisodes(correctedEpisodes);
+            setSelectedLanguage(fallbackLanguage);
+            console.log(`✅ Fallback réussi vers ${fallbackLanguage}`);
+          }
+        }
+      } catch (fallbackError: any) {
+        console.error('❌ Fallback échoué:', fallbackError.message);
+        setError(`Impossible de charger les épisodes en ${newLanguage}`);
       }
-      
     } finally {
-      setLoading(false);
       setLanguageChangeInProgress(false);
     }
-  };
+  };;
 
   // Effet de recherche avec délai optimisé
   useEffect(() => {
