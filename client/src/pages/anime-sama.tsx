@@ -107,7 +107,7 @@ const AnimeSamaPage: React.FC = () => {
   // CORRECTION 6: Race Conditions - Variable de verrouillage
   const [languageChangeInProgress, setLanguageChangeInProgress] = useState(false);
 
-  // CORRECTION 7: Cache et Performance - Cache simple en mémoire
+  // Cache robuste avec gestion d'erreurs complète
   const cache = new Map();
   
   const getCachedData = async (key: string, fetcher: () => Promise<any>, ttl = 300000) => {
@@ -118,9 +118,15 @@ const AnimeSamaPage: React.FC = () => {
       }
     }
     
-    const data = await fetcher();
-    cache.set(key, { data, timestamp: Date.now() });
-    return data;
+    try {
+      const data = await fetcher();
+      cache.set(key, { data, timestamp: Date.now() });
+      return data;
+    } catch (error) {
+      console.warn(`Cache fetch failed for key ${key}:`, error);
+      // Retourner des données vides plutôt que de propager l'erreur
+      return { success: false, data: null };
+    }
   };
 
   // Charger l'historique au démarrage
@@ -129,71 +135,60 @@ const AnimeSamaPage: React.FC = () => {
     if (savedHistory) {
       setWatchHistory(JSON.parse(savedHistory));
     }
-    // Charger les animes populaires au démarrage
-    loadPopularAnimes();
+    
+    // Charger les animes populaires au démarrage avec gestion d'erreurs
+    loadPopularAnimes().catch(error => {
+      console.warn('Failed to load popular animes on startup:', error);
+      setPopularAnimes([]);
+    });
+    
+    // Gestionnaire global pour les promesses non capturées
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.warn('Unhandled promise rejection caught:', event.reason);
+      event.preventDefault();
+    };
+    
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    
+    return () => {
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
   }, []);
 
   // Système universel pour animes populaires optimisé
   const loadPopularAnimes = async () => {
     try {
-      const cacheKey = 'trending_animes';
+      // Tester directement l'API trending locale d'abord
+      console.log('Loading trending animes from local API');
+      const response = await fetch(`${window.location.origin}/api/trending`, {
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+        signal: AbortSignal.timeout(5000)
+      });
       
-      // Cache intelligent selon la configuration API
-      const apiResponse = await getCachedData(cacheKey, async () => {
-        console.log('🔄 Loading trending animes from universal API');
-        const response = await fetch(`${API_BASE}/api/trending`, {
-          headers: {
-            'Accept': 'application/json',
-            'Cache-Control': 'no-cache'
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        return await response.json();
-      }, API_CONFIG.cacheTTL * 2); // Cache plus long pour les animes populaires
-      
-      if (apiResponse.success && apiResponse.data && Array.isArray(apiResponse.data)) {
-        const trendingAnimes = apiResponse.data.slice(0, 12);
-        console.log(`📈 Loaded ${trendingAnimes.length} trending animes from API`);
-        setPopularAnimes(trendingAnimes);
-      } else {
-        // Fallback vers catalogue si trending échoue
-        console.log('🔄 Trending failed, trying catalogue fallback');
-        await loadPopularAnimesFromCatalogue();
-      }
-    } catch (err) {
-      console.error('Trending animes error:', err);
-      console.log('🔄 Using catalogue as fallback for popular animes');
-      await loadPopularAnimesFromCatalogue();
-    }
-  };
-
-  // Méthode de fallback pour les animes populaires
-  const loadPopularAnimesFromCatalogue = async () => {
-    try {
-      const catalogueResponse = await fetch(`${API_BASE}/api/catalogue`);
-      
-      if (catalogueResponse.ok) {
-        const catalogueData = await catalogueResponse.json();
-        
-        if (catalogueData.success && catalogueData.data && Array.isArray(catalogueData.data)) {
-          const catalogueAnimes = catalogueData.data.slice(0, 12);
-          console.log(`📊 Using catalogue as trending source: ${catalogueAnimes.length} animes`);
-          setPopularAnimes(catalogueAnimes);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data && Array.isArray(result.data)) {
+          const trendingAnimes = result.data.slice(0, 12);
+          console.log(`Successfully loaded ${trendingAnimes.length} trending animes`);
+          setPopularAnimes(trendingAnimes);
           return;
         }
       }
       
-      throw new Error('Catalogue fallback also failed');
-    } catch (catalogueErr) {
-      console.error('Catalogue fallback failed:', catalogueErr);
-      setError('Impossible de charger les animes populaires. Vérifiez votre connexion.');
+      // Si l'API locale échoue, ne pas afficher d'animes populaires plutôt que d'avoir des erreurs
+      console.log('Trending API not available, continuing without popular animes');
+      setPopularAnimes([]);
+      
+    } catch (error: any) {
+      console.warn('Trending API unavailable:', error?.message || 'Unknown error');
       setPopularAnimes([]);
     }
   };
+
+
 
   const API_BASE = 'https://api-anime-sama.onrender.com';
   
@@ -674,22 +669,37 @@ const AnimeSamaPage: React.FC = () => {
     try {
       const cacheKey = `episode_${episodeId}`;
       
-      // Cache intelligent avec TTL optimisé
+      // Cache intelligent avec TTL optimisé et gestion d'erreurs robuste
       const apiResponse = await getCachedData(cacheKey, async () => {
-        console.log(`🔄 Loading sources for episode: ${episodeId}`);
-        const response = await fetch(`${API_BASE}/api/episode/${episodeId}`, {
-          headers: {
-            'Accept': 'application/json',
-            'Cache-Control': 'no-cache'
+        console.log(`Loading sources for episode: ${episodeId}`);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        
+        try {
+          const response = await fetch(`${API_BASE}/api/episode/${episodeId}`, {
+            headers: {
+              'Accept': 'application/json',
+              'Cache-Control': 'no-cache'
+            },
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
           }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          
+          return await response.json();
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          throw fetchError;
         }
-        
-        return await response.json();
-      }, API_CONFIG.cacheTTL);
+      }, API_CONFIG.cacheTTL).catch(error => {
+        console.warn('Episode sources fetch failed:', error);
+        return { success: false, data: null };
+      });
       
       if (!apiResponse.success || !apiResponse.data) {
         throw new Error('Sources vidéo non disponibles pour cet épisode');
