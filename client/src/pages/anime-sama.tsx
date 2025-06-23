@@ -154,22 +154,17 @@ const AnimeSamaPage: React.FC = () => {
       setPopularAnimes([]);
     });
     
-    // Gestionnaire global pour les promesses non capturées amélioré
+    // Gestionnaire global pour les promesses non capturées - Version corrigée
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       const errorReason = event.reason;
       
-      // Filtrer les erreurs de cache spécifiques pour éviter le spam
-      if (errorReason && typeof errorReason === 'object' && errorReason.message) {
-        if (errorReason.message.includes('Cache fetch failed') || 
-            errorReason.message.includes('Failed to fetch') ||
-            errorReason.message.includes('timeout')) {
-          // Erreurs de cache/réseau - déjà gérées, ne pas spammer les logs
-          event.preventDefault();
-          return;
-        }
-      }
+      // Logger l'erreur pour diagnostic mais toujours prévenir le crash
+      console.warn('Unhandled promise rejection caught and handled:', {
+        reason: errorReason?.message || errorReason,
+        stack: errorReason?.stack
+      });
       
-      console.warn('Unhandled promise rejection caught:', errorReason);
+      // Toujours prévenir le crash de l'application
       event.preventDefault();
     };
     
@@ -950,12 +945,10 @@ const AnimeSamaPage: React.FC = () => {
         const firstEpisode = correctedEpisodes[0];
         setSelectedEpisode(firstEpisode);
         
-        try {
-          await loadEpisodeSources(firstEpisode.id);
-        } catch (sourceError) {
-          console.warn('Error loading episode sources after language change:', sourceError);
+        loadEpisodeSources(firstEpisode.id).catch(sourceError => {
+          console.warn('Error loading episode sources after language change:', sourceError?.message || sourceError);
           setError('Épisodes chargés mais erreur de sources vidéo');
-        }
+        });
         
       } else {
         // Gestion d'erreur ou pas d'épisodes dans cette langue
@@ -965,11 +958,9 @@ const AnimeSamaPage: React.FC = () => {
         
         // Recharger les sources pour le même épisode avec la nouvelle langue si possible
         if (selectedEpisode) {
-          try {
-            await loadEpisodeSources(selectedEpisode.id);
-          } catch (sourceError) {
-            console.warn('Error reloading sources with new language:', sourceError);
-          }
+          loadEpisodeSources(selectedEpisode.id).catch(sourceError => {
+            console.warn('Error reloading sources with new language:', sourceError?.message || sourceError);
+          });
         }
       }
       
