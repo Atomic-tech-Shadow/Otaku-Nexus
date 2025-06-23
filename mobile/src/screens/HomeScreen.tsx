@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { apiService } from '../services/api';
+import { queryClient } from '../services/queryClient';
 import AppHeader from '../components/AppHeader';
 
 const { width } = Dimensions.get('window');

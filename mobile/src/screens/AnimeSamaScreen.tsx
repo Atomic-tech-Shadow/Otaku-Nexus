@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,52 +21,81 @@ import { useNavigation } from '@react-navigation/native';
 import { apiService, AnimeSamaAnime } from '../services/api';
 import AppHeader from '../components/AppHeader';
 
+const { width: screenWidth } = Dimensions.get('window');
+
 const AnimeSamaScreen = () => {
   const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [searchResults, setSearchResults] = useState<AnimeSamaAnime[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [currentView, setCurrentView] = useState<'catalogue' | 'trending' | 'search'>('catalogue');
+  const [showEmptyResults, setShowEmptyResults] = useState(false);
 
-  const { data: trendingAnime = [], isLoading: trendingLoading, refetch: refetchTrending } = useQuery({
-    queryKey: ["trendingAnime"],
+  // Synchronisation avec les queries du site web
+  const { data: trendingAnime = [], isLoading: trendingLoading, refetch: refetchTrending, error: trendingError } = useQuery({
+    queryKey: ["anime-sama", "trending"],
     queryFn: () => apiService.getTrendingAnime(),
     staleTime: 30 * 60 * 1000, // 30 minutes
     retry: 3,
+    enabled: currentView === 'trending',
   });
 
-  const { data: catalogueAnime = [], isLoading: catalogueLoading, refetch: refetchCatalogue } = useQuery({
-    queryKey: ["catalogueAnime"],
+  const { data: catalogueAnime = [], isLoading: catalogueLoading, refetch: refetchCatalogue, error: catalogueError } = useQuery({
+    queryKey: ["anime-sama", "catalogue"],
     queryFn: () => apiService.getCatalogue(),
     staleTime: 60 * 60 * 1000, // 1 hour
     retry: 3,
+    enabled: currentView === 'catalogue',
   });
+
+  // Auto-load catalogue au démarrage (comme le site web)
+  useEffect(() => {
+    if (currentView === 'catalogue' && catalogueAnime.length === 0 && !catalogueLoading) {
+      refetchCatalogue();
+    }
+  }, [currentView, catalogueAnime.length, catalogueLoading, refetchCatalogue]);
 
   const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
+      setShowEmptyResults(false);
+      setCurrentView('catalogue');
       return;
     }
 
     setIsSearching(true);
+    setCurrentView('search');
+    setShowEmptyResults(false);
+    
     try {
       const results = await apiService.searchAnime(searchQuery.trim());
       setSearchResults(results);
+      setShowEmptyResults(results.length === 0);
       
       if (results.length === 0) {
-        Alert.alert(
-          'Aucun résultat',
-          `Aucun anime trouvé pour "${searchQuery}". Essayez avec d'autres termes.`,
-          [{ text: 'OK' }]
-        );
+        setTimeout(() => {
+          Alert.alert(
+            'Aucun résultat',
+            `Aucun anime trouvé pour "${searchQuery}". Essayez avec d'autres termes de recherche.`,
+            [
+              { text: 'Catalogue', onPress: () => setCurrentView('catalogue') },
+              { text: 'OK' }
+            ]
+          );
+        }, 500);
       }
     } catch (error) {
       console.error('Search failed:', error);
       Alert.alert(
         'Erreur de recherche',
-        'Impossible de rechercher les animes. Vérifiez votre connexion.',
-        [{ text: 'OK' }]
+        'Impossible de rechercher les animes. Vérifiez votre connexion internet.',
+        [
+          { text: 'Réessayer', onPress: () => handleSearch() },
+          { text: 'Annuler', onPress: () => setCurrentView('catalogue') }
+        ]
       );
+      setCurrentView('catalogue');
     } finally {
       setIsSearching(false);
     }
@@ -82,16 +112,28 @@ const AnimeSamaScreen = () => {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([
-        refetchTrending(),
-        refetchCatalogue(),
-      ]);
+      // Refresh selon la vue actuelle (comme le site web)
+      if (currentView === 'search') {
+        await handleSearch();
+      } else if (currentView === 'trending') {
+        await refetchTrending();
+      } else {
+        await refetchCatalogue();
+      }
+      
+      // Clear cache si nécessaire
+      apiService.clearCache();
     } catch (error) {
       console.error('Refresh failed:', error);
+      Alert.alert(
+        'Erreur de rafraîchissement',
+        'Impossible de rafraîchir les données. Vérifiez votre connexion.',
+        [{ text: 'OK' }]
+      );
     } finally {
       setRefreshing(false);
     }
-  }, [refetchTrending, refetchCatalogue]);
+  }, [currentView, handleSearch, refetchTrending, refetchCatalogue]);
 
   const renderAnimeCard = useCallback(({ item: anime }: { item: AnimeSamaAnime }) => (
     <TouchableOpacity
@@ -152,39 +194,111 @@ const AnimeSamaScreen = () => {
           />
         }
       >
-        {/* Header Section */}
+        {/* Header Section - Style authentique anime-sama.fr */}
         <LinearGradient
-          colors={['rgba(0, 0, 0, 0.95)', 'rgba(30, 64, 175, 0.95)']}
+          colors={['#000000', '#1a1a1a']}
           style={styles.header}
         >
-          <Text style={styles.headerTitle}>Anime-Sama Mobile</Text>
-          <Text style={styles.headerSubtitle}>
-            Streaming authentique synchronisé avec le site web
-          </Text>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>🔍 Anime-Sama</Text>
+            <Text style={styles.headerSubtitle}>
+              Streaming authentique • Données réelles
+            </Text>
+            <Text style={styles.headerInfo}>
+              {currentView === 'catalogue' && `${catalogueAnime.length} animes disponibles`}
+              {currentView === 'trending' && `${trendingAnime.length} animes populaires`}
+              {currentView === 'search' && `${searchResults.length} résultats`}
+            </Text>
+          </View>
         </LinearGradient>
 
-        {/* Search Section */}
-        <View style={styles.searchSection}>
-          <Text style={styles.sectionTitle}>Rechercher un anime</Text>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Nom de l'anime..."
-              placeholderTextColor="#666"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onSubmitEditing={handleSearch}
-              returnKeyType="search"
+        {/* Navigation Tabs - Synchronisé avec le site web */}
+        <View style={styles.navigationTabs}>
+          <TouchableOpacity
+            style={[styles.navTab, currentView === 'catalogue' && styles.navTabActive]}
+            onPress={() => setCurrentView('catalogue')}
+          >
+            <Ionicons 
+              name="library" 
+              size={20} 
+              color={currentView === 'catalogue' ? '#00D4FF' : '#666'} 
             />
+            <Text style={[styles.navTabText, currentView === 'catalogue' && styles.navTabTextActive]}>
+              Catalogue
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.navTab, currentView === 'trending' && styles.navTabActive]}
+            onPress={() => setCurrentView('trending')}
+          >
+            <Ionicons 
+              name="trending-up" 
+              size={20} 
+              color={currentView === 'trending' ? '#00D4FF' : '#666'} 
+            />
+            <Text style={[styles.navTabText, currentView === 'trending' && styles.navTabTextActive]}>
+              Tendances
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.navTab, currentView === 'search' && styles.navTabActive]}
+            onPress={() => {
+              setCurrentView('search');
+              if (searchQuery.trim()) handleSearch();
+            }}
+          >
+            <Ionicons 
+              name="search" 
+              size={20} 
+              color={currentView === 'search' ? '#00D4FF' : '#666'} 
+            />
+            <Text style={[styles.navTabText, currentView === 'search' && styles.navTabTextActive]}>
+              Recherche
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Search Section - Toujours visible comme le site web */}
+        <View style={styles.searchSection}>
+          <View style={styles.searchContainer}>
+            <View style={styles.searchInputContainer}>
+              <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Rechercher un anime... (ex: One Piece, Naruto)"
+                placeholderTextColor="#666"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onSubmitEditing={handleSearch}
+                returnKeyType="search"
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity
+                  style={styles.clearButton}
+                  onPress={() => {
+                    setSearchQuery('');
+                    setSearchResults([]);
+                    setCurrentView('catalogue');
+                    setShowEmptyResults(false);
+                  }}
+                >
+                  <Ionicons name="close-circle" size={20} color="#666" />
+                </TouchableOpacity>
+              )}
+            </View>
             <TouchableOpacity 
-              style={styles.searchButton} 
+              style={[styles.searchButton, isSearching && styles.searchButtonDisabled]} 
               onPress={handleSearch}
-              disabled={isSearching}
+              disabled={isSearching || !searchQuery.trim()}
             >
               {isSearching ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Ionicons name="search" size={20} color="#fff" />
+                <Text style={styles.searchButtonText}>Rechercher</Text>
               )}
             </TouchableOpacity>
           </View>

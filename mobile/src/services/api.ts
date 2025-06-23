@@ -457,6 +457,60 @@ class ApiService {
     });
   }
 
+  // Méthodes avancées synchronisées avec le site web
+  async advancedSearch(params: {
+    query?: string;
+    genre?: string;
+    year?: string;
+    status?: string;
+    type?: string;
+  }): Promise<AnimeSamaAnime[]> {
+    try {
+      const searchParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) searchParams.append(key, value);
+      });
+      
+      const response = await this.makeRequest<AnimeSamaAnime[]>(
+        `/api/anime-sama/advanced-search?${searchParams.toString()}`
+      );
+      
+      return response.success ? response.data : [];
+    } catch (error) {
+      console.error('Advanced search failed:', error);
+      return [];
+    }
+  }
+
+  async getGenres(): Promise<string[]> {
+    const cacheKey = 'anime_genres';
+    const cached = this.getCachedData<string[]>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const response = await this.makeRequest<string[]>('/api/anime-sama/genres');
+      
+      if (response.success && response.data) {
+        this.setCachedData(cacheKey, response.data, this.cacheConfig.catalogue);
+        return response.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('Get genres failed:', error);
+      return [];
+    }
+  }
+
+  async getRandomAnime(): Promise<AnimeSamaAnime | null> {
+    try {
+      const response = await this.makeRequest<AnimeSamaAnime>('/api/anime-sama/random');
+      return response.success ? response.data : null;
+    } catch (error) {
+      console.error('Get random anime failed:', error);
+      return null;
+    }
+  }
+
   // Helper methods pour correction épisodes One Piece
   formatEpisodeId(animeId: string, episodeNumber: number, language: string): string {
     return `${animeId}-episode-${episodeNumber}-${language}`;
@@ -476,6 +530,24 @@ class ApiService {
 
   getCacheSize(): number {
     return this.cache.size;
+  }
+
+  // Statistiques cache pour debugging (comme le site web)
+  getCacheStats(): { size: number; keys: string[] } {
+    return {
+      size: this.cache.size,
+      keys: Array.from(this.cache.keys())
+    };
+  }
+
+  // Nettoyage intelligent du cache
+  cleanExpiredCache(): void {
+    const now = Date.now();
+    for (const [key, value] of this.cache.entries()) {
+      if (now - value.timestamp > value.ttl) {
+        this.cache.delete(key);
+      }
+    }
   }
 }
 
