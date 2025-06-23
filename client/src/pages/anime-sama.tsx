@@ -196,7 +196,7 @@ const AnimeSamaPage: React.FC = () => {
 
 
 
-  const API_BASE = 'https://api-anime-sama.onrender.com';
+  const API_BASE = 'http://localhost:5000';
   
   // Configuration optimisée selon le guide de configuration API
   const API_CONFIG = {
@@ -259,43 +259,67 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE}/api/search?query=${encodeURIComponent(query)}`);
+      const response = await fetch(`${API_BASE}/api/search?query=${encodeURIComponent(query)}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        signal: AbortSignal.timeout(15000)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const apiResponse: ApiResponse<SearchResult[]> = await response.json();
       
       if (!apiResponse.success) {
         throw new Error('Erreur lors de la recherche');
       }
       
+      console.log(`Search found ${apiResponse.data.length} results for "${query}"`);
       setSearchResults(apiResponse.data);
-    } catch (err) {
-      console.error('Erreur recherche:', err);
-      setError('Impossible de rechercher les animes.');
+    } catch (err: any) {
+      console.error('Search error:', err?.message || err);
+      setError('Impossible de rechercher les animes');
       setSearchResults([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Charger les détails d'un anime
+  // Charger les détails d'un anime avec configuration validée
   const loadAnimeDetails = async (animeId: string) => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE}/api/anime/${animeId}`);
-      const apiResponse: ApiResponse<AnimeDetails> = await response.json();
+      const response = await fetch(`${API_BASE}/api/anime/${animeId}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        signal: AbortSignal.timeout(15000)
+      });
       
-      if (!apiResponse.success) {
-        throw new Error('Erreur lors du chargement de l\'anime');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
+      const apiResponse: ApiResponse<AnimeDetails> = await response.json();
+      
+      if (!apiResponse.success || !apiResponse.data) {
+        throw new Error('Données anime non disponibles');
+      }
+      
+      console.log(`Loaded anime: ${apiResponse.data.title} with ${apiResponse.data.progressInfo?.totalEpisodes || 0} total episodes`);
       setSelectedAnime(apiResponse.data);
       setCurrentView('anime');
       setSelectedSeason(null);
       setEpisodes([]);
-    } catch (err) {
-      console.error('Erreur anime:', err);
-      setError('Impossible de charger les détails de l\'anime.');
+    } catch (err: any) {
+      console.error('Anime loading error:', err?.message || err);
+      setError('Impossible de charger les détails de l\'anime');
     } finally {
       setLoading(false);
     }
@@ -472,7 +496,14 @@ const AnimeSamaPage: React.FC = () => {
       const requestUrl = `${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${language}`;
       console.log('Requesting episodes from:', requestUrl);
       
-      const response = await fetch(requestUrl);
+      const response = await fetch(requestUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        signal: AbortSignal.timeout(15000)
+      });
+      
       console.log('Episodes response status:', response.status);
       
       if (!response.ok) {
@@ -603,7 +634,7 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Système universel pour chargement des sources - Version robuste sans erreurs
+  // Système de chargement des sources selon documentation validée
   const loadEpisodeSources = async (episodeId: string) => {
     setLoading(true);
     setError(null);
@@ -611,12 +642,66 @@ const AnimeSamaPage: React.FC = () => {
     try {
       console.log(`Loading sources for episode: ${episodeId}`);
       
-      // Selon la documentation README, utiliser directement l'endpoint embed local pour éviter les erreurs d'API externe
-      const embedUrl = `/api/embed/${episodeId}`;
+      // Générer l'ID d'épisode correct selon documentation: {anime}-episode-{numero}-{langue}
+      let correctEpisodeId = episodeId;
+      if (selectedAnime && selectedEpisode) {
+        const lang = selectedLanguage.toLowerCase();
+        correctEpisodeId = `${selectedAnime.id}-episode-${selectedEpisode.episodeNumber}-${lang}`;
+        console.log(`Using correct episode ID format: ${correctEpisodeId}`);
+      }
       
-      // Créer directement les sources optimisées sans dépendre de l'API externe instable
-      const optimizedData = {
-        id: episodeId,
+      // Essayer d'abord l'endpoint /api/episode/{episodeId} selon documentation
+      try {
+        const response = await fetch(`${API_BASE}/api/episode/${correctEpisodeId}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          signal: AbortSignal.timeout(15000)
+        });
+        
+        if (response.ok) {
+          const apiResponse = await response.json();
+          if (apiResponse.success && apiResponse.data) {
+            console.log(`Successfully loaded server sources: ${apiResponse.data.sources?.length || 0} servers`);
+            
+            // Optimiser les sources avec l'endpoint embed intégré
+            const optimizedData = {
+              ...apiResponse.data,
+              sources: (apiResponse.data.sources || []).map((source: any, index: number) => ({
+                ...source,
+                serverName: `Serveur ${index + 1} - ${source.server}${source.quality ? ` (${source.quality})` : ''}`,
+                embedUrl: `/api/embed/${correctEpisodeId}`,
+                isEmbed: true,
+                priority: index === 0 ? 'high' : 'normal'
+              }))
+            };
+            
+            setEpisodeDetails(optimizedData);
+            setSelectedServer(0);
+            
+            // Historique de visionnage
+            if (selectedAnime && selectedEpisode) {
+              const newHistory = { 
+                ...watchHistory, 
+                [selectedAnime.id]: selectedEpisode.episodeNumber 
+              };
+              setWatchHistory(newHistory);
+              localStorage.setItem('animeWatchHistory', JSON.stringify(newHistory));
+              console.log(`Updated watch history: Episode ${selectedEpisode.episodeNumber} for ${selectedAnime.title}`);
+            }
+            
+            return;
+          }
+        }
+      } catch (apiError) {
+        console.warn('API episode sources failed, using embed fallback:', apiError);
+      }
+      
+      // Fallback: utiliser directement l'endpoint embed
+      const embedUrl = `/api/embed/${correctEpisodeId}`;
+      const fallbackData = {
+        id: correctEpisodeId,
         title: selectedEpisode?.title || 'Épisode',
         animeTitle: selectedAnime?.title || 'Anime',
         episodeNumber: selectedEpisode?.episodeNumber || 1,
@@ -630,57 +715,22 @@ const AnimeSamaPage: React.FC = () => {
             type: 'embed',
             serverIndex: 0,
             isEmbed: true,
-            priority: 'high'
+            priority: 'high',
+            embedUrl: embedUrl
           }
         ],
         availableServers: ['Universal'],
-        url: embedUrl
+        url: embedUrl,
+        embedUrl: embedUrl
       };
       
-      setEpisodeDetails(optimizedData);
+      setEpisodeDetails(fallbackData);
       setSelectedServer(0);
-      
-      // Historique de visionnage optimisé
-      if (selectedAnime && selectedEpisode) {
-        const newHistory = { 
-          ...watchHistory, 
-          [selectedAnime.id]: selectedEpisode.episodeNumber 
-        };
-        setWatchHistory(newHistory);
-        localStorage.setItem('animeWatchHistory', JSON.stringify(newHistory));
-        
-        console.log(`Updated watch history: Episode ${selectedEpisode.episodeNumber} for ${selectedAnime.title}`);
-      }
+      console.log(`Using embed fallback for ${correctEpisodeId}`);
 
     } catch (err: any) {
       console.error('Episode sources error:', err?.message || 'Unknown error');
-      setError('Lecteur vidéo en cours de chargement...');
-      
-      // Toujours fournir une source de secours
-      const fallbackSources = {
-        id: episodeId,
-        title: selectedEpisode?.title || 'Épisode',
-        animeTitle: selectedAnime?.title || 'Anime',
-        episodeNumber: selectedEpisode?.episodeNumber || 1,
-        sources: [
-          {
-            url: `/api/embed/${episodeId}`,
-            server: 'Fallback',
-            serverName: 'Lecteur de Secours - Système universel',
-            quality: 'Auto',
-            language: selectedLanguage,
-            type: 'embed',
-            serverIndex: 0,
-            isEmbed: true,
-            priority: 'fallback'
-          }
-        ],
-        availableServers: ['Fallback'],
-        url: `/api/embed/${episodeId}`
-      };
-      
-      setEpisodeDetails(fallbackSources);
-      setSelectedServer(0);
+      setError('Erreur de chargement des sources vidéo');
     } finally {
       setLoading(false);
     }
