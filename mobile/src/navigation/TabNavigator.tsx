@@ -8,12 +8,13 @@ import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/HomeScreen';
 import QuizScreen from '../screens/QuizScreen';
 import ChatScreen from '../screens/ChatScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 import AnimeSamaScreen from '../screens/AnimeSamaScreen';
 import AnimeDetailScreen from '../screens/AnimeDetailScreen';
 import VideoPlayerScreen from '../screens/VideoPlayerScreen';
-import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
 
 interface TabBarIconProps {
   name: keyof typeof Ionicons.glyphMap;
@@ -104,6 +105,36 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
   );
 };
 
+// Stack Navigator pour Anime-Sama avec navigation vers détail et lecteur
+function AnimeSamaStack() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        cardStyle: { backgroundColor: '#000000' },
+        cardStyleInterpolator: ({ current, layouts }) => {
+          return {
+            cardStyle: {
+              transform: [
+                {
+                  translateX: current.progress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [layouts.screen.width, 0],
+                  }),
+                },
+              ],
+            },
+          };
+        },
+      }}
+    >
+      <Stack.Screen name="AnimeSamaMain" component={AnimeSamaScreen} />
+      <Stack.Screen name="AnimeDetail" component={AnimeDetailScreen} />
+      <Stack.Screen name="VideoPlayer" component={VideoPlayerScreen} />
+    </Stack.Navigator>
+  );
+}
+
 export default function TabNavigator() {
   return (
     <Tab.Navigator
@@ -135,7 +166,7 @@ export default function TabNavigator() {
       />
       <Tab.Screen 
         name="AnimeSama" 
-        component={AnimeSamaScreen}
+        component={AnimeSamaStack}
         options={{
           tabBarLabel: 'Streaming',
         }}
