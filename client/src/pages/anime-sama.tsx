@@ -431,13 +431,13 @@ const AnimeSamaPage: React.FC = () => {
     };
   }, []);
 
-  // Configuration API avec l'API anime-sama
-  const API_BASE_URL = API_CONFIG.BASE_URL;
+  // Configuration API avec l'API anime-sama déployée sur Render
+  const API_BASE_URL = 'https://api-anime-sama.onrender.com';
   
   // Chargement des animes populaires avec gestion d'erreurs robuste
   const loadPopularAnimes = async () => {
     try {
-      // Utiliser l'API externe anime-sama
+      // Utiliser l'API externe anime-sama déployée
       const apiUrl = `${API_BASE_URL}/api/trending`;
         
       const response = await fetch(apiUrl, {
@@ -658,9 +658,13 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      const response = await fetch(API_CONFIG.buildSearchUrl(query), {
-        headers: API_CONFIG.HEADERS,
-        signal: AbortSignal.timeout(API_CONFIG.TIMEOUT)
+      const apiUrl = `${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`;
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        signal: AbortSignal.timeout(15000)
       });
       
       if (!response.ok) {
@@ -690,10 +694,8 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      // Utiliser l'API locale en développement
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? `/api/anime/${animeId}` 
-        : `${API_BASE_URL}/api/anime/${animeId}`;
+      // Utiliser l'API anime-sama déployée
+      const apiUrl = `${API_BASE_URL}/api/anime/${animeId}`;
         
       const response = await fetch(apiUrl, {
         headers: {
@@ -1134,7 +1136,7 @@ const AnimeSamaPage: React.FC = () => {
               sources: (apiResponse.data.sources || []).map((source: any, index: number) => ({
                 ...source,
                 serverName: `Serveur ${index + 1} - ${source.server}${source.quality ? ` (${source.quality})` : ''}`,
-                embedUrl: `/api/embed/${correctEpisodeId}`,
+                embedUrl: `${API_BASE_URL}/api/embed/${correctEpisodeId}`,
                 isEmbed: true,
                 priority: index === 0 ? 'high' : 'normal'
               }))
@@ -1165,7 +1167,7 @@ const AnimeSamaPage: React.FC = () => {
       }
       
       // Fallback: utiliser directement l'endpoint embed
-      const embedUrl = `/api/embed/${correctEpisodeId}`;
+      const embedUrl = `${API_BASE_URL}/api/embed/${correctEpisodeId}`;
       const fallbackData = {
         id: correctEpisodeId,
         title: selectedEpisode?.title || 'Épisode',
@@ -1839,7 +1841,7 @@ const AnimeSamaPage: React.FC = () => {
                 );
                 
                 const correctEpisodeId = selectedEpisode ? selectedEpisode.id : episodeDetails?.id || '';
-                const embedUrl = `/api/embed/${correctEpisodeId}`;
+                const embedUrl = `${API_BASE_URL}/api/embed/${correctEpisodeId}`;
                 
                 return (
                   <div className="relative w-full">
