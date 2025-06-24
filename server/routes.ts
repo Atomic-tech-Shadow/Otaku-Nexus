@@ -71,21 +71,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/anime-sama/episodes/:animeId/:season/:language', async (req, res) => {
-    try {
-      const { animeId, season, language } = req.params;
-      const episodes = await animeSamaService.getSeasonEpisodes(
-        animeId, 
-        parseInt(season), 
-        language as 'vf' | 'vostfr'
-      );
-      
-      res.json({ success: true, data: { animeId, season: parseInt(season), language, episodes } });
-    } catch (error) {
-      console.error('Error fetching episodes:', error);
-      res.status(500).json({ success: false, message: 'Failed to fetch episodes', error: error.message });
-    }
-  });
+
 
   app.get('/api/episode/:id', async (req, res) => {
     try {
@@ -218,36 +204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/seasons', async (req, res) => {
-    try {
-      const { animeId, season, language } = req.query;
 
-      if (!animeId || !season) {
-        return res.status(400).json({ success: false, message: 'animeId and season parameters required' });
-      }
-
-      const episodes = await animeSamaService.getSeasonEpisodes(
-        animeId as string, 
-        parseInt(season as string),
-        (language as 'vf' | 'vostfr') || 'vostfr'
-      );
-
-      res.json({ 
-        success: true, 
-        data: {
-          animeId,
-          season: parseInt(season as string),
-          language: language || 'vostfr',
-          episodes,
-          episodeCount: episodes.length
-        },
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Error fetching season episodes:', error);
-      res.status(500).json({ success: false, message: 'Failed to fetch episodes' });
-    }
-  });
 
   app.get('/api/anime-sama/episode/:episodeId', async (req, res) => {
     try {

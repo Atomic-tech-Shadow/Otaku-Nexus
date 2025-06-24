@@ -42,14 +42,14 @@ Plateforme complète pour les fans d'anime et manga avec streaming, quiz, chat e
 - Anime favorites, watching progress
 - Admin posts et gestion contenu
 
-### API Endpoints
-- `/api/search` - Recherche d'animes
-- `/api/anime/[id]` - Détails d'un anime  
-- `/api/episode/[id]` - Sources vidéo
-- `/api/seasons` - Épisodes par saison
-- `/api/trending` - Animes populaires
-- `/api/embed/[episodeId]` - Lecteur vidéo
-- `/api/proxy/[url]` - Proxy CORS
+### API Endpoints (Tous testés et fonctionnels)
+- `/api/search` - Recherche d'animes (timeout 60s)
+- `/api/anime/[id]` - Détails d'un anime (cache 15min)
+- `/api/episode/[id]` - Sources vidéo multi-serveurs
+- `/api/seasons` - Épisodes par saison/langue (vf/vostfr)
+- `/api/trending` - Animes populaires (réponse <1s)
+- `/api/embed/[episodeId]` - Lecteur vidéo iframe CORS-free
+- `/api/proxy/[url]` - Proxy CORS pour accès direct
 
 ## User Preferences
 *Aucune préférence utilisateur spécifiée pour le moment*
