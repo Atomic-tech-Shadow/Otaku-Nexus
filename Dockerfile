@@ -20,7 +20,8 @@ COPY . .
 RUN npx vite build --config vite.config.ts
 RUN npx esbuild server/index-production.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 
-# Pousser le schéma vers la base de données
+# Pousser le schéma vers la base de données (avec l'URL fournie)
+ENV DATABASE_URL=postgresql://neondb_owner:npg_mtSpzriYuV56@ep-round-lake-a8zn7f2c-pooler.eastus2.azure.neon.tech/neondb?sslmode=require
 RUN npm run db:push
 
 # Créer le dossier public pour les fichiers statiques  

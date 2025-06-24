@@ -13,5 +13,5 @@ services:
       - key: API_BASE_URL
         sync: false
       - key: DATABASE_URL
-        sync: false
+        value: postgresql://neondb_owner:npg_mtSpzriYuV56@ep-round-lake-a8zn7f2c-pooler.eastus2.azure.neon.tech/neondb?sslmode=require
     autoDeploy: false
