@@ -2,12 +2,17 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
-// Configuration de la base de données Neon PostgreSQL pour production et développement
-const NEON_DATABASE_URL = "postgresql://neondb_owner:npg_mtSpzriYuV56@ep-round-lake-a8zn7f2c-pooler.eastus2.azure.neon.tech/neondb?sslmode=require";
+// Use Replit-provided PostgreSQL database
+const DATABASE_URL = process.env.DATABASE_URL;
 
-// Utiliser toujours la base de données Neon fournie par l'utilisateur
-process.env.DATABASE_URL = NEON_DATABASE_URL;
-console.log("Using Neon PostgreSQL database for production and development");
+if (!DATABASE_URL) {
+  throw new Error("DATABASE_URL environment variable is required");
+}
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+console.log("Using Replit PostgreSQL database");
+
+export const pool = new Pool({ 
+  connectionString: DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 export const db = drizzle({ client: pool, schema });
