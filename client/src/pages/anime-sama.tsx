@@ -1785,17 +1785,35 @@ const AnimeSamaPage: React.FC = () => {
                   </div>
                 );
                 
-                const correctEpisodeId = selectedEpisode ? selectedEpisode.id : episodeDetails?.id || '';
-                const embedUrl = process.env.NODE_ENV === 'development' 
-                  ? `/api/embed/${correctEpisodeId}`
-                  : `${API_BASE_URL}/api/embed/${correctEpisodeId}`;
+                const getProxyUrl = async () => {
+                  if (!selectedEpisode) return '';
+                  
+                  try {
+                    const response = await fetch(`${API_BASE_URL}/api/episode/${selectedEpisode.id}`);
+                    const data = await response.json();
+                    
+                    if (data.success && data.data.sources && data.data.sources.length > 0) {
+                      const source = data.data.sources[selectedServer] || data.data.sources[0];
+                      return `${API_BASE_URL}${source.proxyUrl}`;
+                    }
+                  } catch (error) {
+                    console.error('Erreur chargement source:', error);
+                  }
+                  return '';
+                };
+                const [currentVideoUrl, setCurrentVideoUrl] = useState('');
+                useEffect(() => {
+                  if (selectedEpisode) {
+                    getProxyUrl().then(url => setCurrentVideoUrl(url));
+                  }
+                }, [selectedEpisode, selectedServer]);
                 
                 return (
                   <div className="relative w-full">
                     <iframe
                       id="video-player"
-                      key={`${correctEpisodeId}-${selectedServer}-${selectedLanguage}`}
-                      src={embedUrl}
+                      key={`${selectedEpisode?.id}-${selectedServer}-${selectedLanguage}`}
+                      src={currentVideoUrl}
                       className="w-full h-64 md:h-80"
                       allowFullScreen
                       frameBorder="0"
