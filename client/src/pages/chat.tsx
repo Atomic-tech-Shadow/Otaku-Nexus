@@ -33,6 +33,18 @@ export default function Chat() {
 
   const { data: messages = [], isLoading, refetch } = useQuery({
     queryKey: ["/api/chat/messages"],
+    queryFn: async () => {
+      const response = await fetch("/api/chat/messages", {
+        headers: {
+          "Authorization": localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : ''
+        },
+        credentials: "include"
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch messages');
+      }
+      return response.json();
+    },
     refetchInterval: 5000,
     retry: 1,
     refetchOnMount: true,
@@ -44,11 +56,17 @@ export default function Chat() {
     mutationFn: async (content: string) => {
       const response = await fetch("/api/chat/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : ''
+        },
         credentials: "include",
         body: JSON.stringify({ content }),
       });
-      if (!response.ok) throw new Error("Failed to send message");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorData.message || "Failed to send message");
+      }
       return response.json();
     },
     onMutate: async (newMessageContent) => {

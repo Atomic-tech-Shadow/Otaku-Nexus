@@ -234,8 +234,13 @@ export const isAuthenticated: RequestHandler = async (req: any, res, next) => {
 
     let userId: string | null = null;
 
+    // Check session first
+    if (sessionUser && sessionUser.id) {
+      userId = sessionUser.id;
+    }
+    
     // Check JWT token
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    else if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       try {
         const decoded = verifyToken(token);
