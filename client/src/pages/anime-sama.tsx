@@ -113,8 +113,8 @@ const AnimeSamaPage: React.FC = () => {
   const [currentEpisode, setCurrentEpisode] = useState<Episode | null>(null);
   
   // Configuration API - CORRECTION MAJEURE
-  // URL de l'API déployée sur Render
-  const API_BASE_URL = 'https://api-anime-sama.onrender.com';
+  // Utiliser les routes proxy locales au lieu de l'API externe
+  const API_BASE_URL = '';
   
   // Configuration robuste
   const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -284,7 +284,7 @@ const AnimeSamaPage: React.FC = () => {
   // Chargement des animes populaires avec API déployée - CORRECTION
   const loadPopularAnimes = async () => {
     try {
-      const data = await apiClient.get('/api/trending');
+      const data = await apiClient.get('/api/anime-sama/trending');
       
       if (data.success && data.data && Array.isArray(data.data)) {
         const trendingAnimes = data.data.slice(0, 12);
@@ -310,7 +310,7 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      const data = await apiClient.get('/api/search', { query });
+      const data = await apiClient.get('/api/anime-sama/search', { query });
       
       if (data.success && data.data) {
         setSearchResults(data.data);
