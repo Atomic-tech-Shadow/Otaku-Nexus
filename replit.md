@@ -44,6 +44,9 @@ This is an anime streaming platform built with Node.js/Express backend and React
 - ✓ Added missing quiz results API route with proper XP management
 - ✓ Corrected user statistics calculation and XP accumulation
 - ✓ Integrated automatic XP update when quiz results are saved
+- ✓ Fixed level progression system with XP-based calculation (June 24, 2025)
+- ✓ Implemented level formula: every 100 XP equals 1 level increase
+- ✓ Added proper level update logic in XP management system
 
 ## User Preferences
 - Language: French (based on documentation files)

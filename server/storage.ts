@@ -199,16 +199,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserXP(userId: string, xpToAdd: number): Promise<User> {
-    const [user] = await db
+    // Get current user data
+    const [currentUser] = await db.select().from(users).where(eq(users.id, userId));
+    if (!currentUser) throw new Error("User not found");
+
+    const newXP = (currentUser.xp || 0) + xpToAdd;
+    
+    // Calculate new level based on XP (every 100 XP = 1 level)
+    const newLevel = Math.floor(newXP / 100) + 1;
+
+    const [updatedUser] = await db
       .update(users)
       .set({
-        xp: sql`${users.xp} + ${xpToAdd}`,
-        level: sql`FLOOR(${users.xp} / 100) + 1`,
+        xp: newXP,
+        level: newLevel,
         updatedAt: new Date(),
       })
       .where(eq(users.id, userId))
       .returning();
-    return user;
+    
+    console.log(`User ${userId} XP updated: ${currentUser.xp} → ${newXP}, Level: ${currentUser.level} → ${newLevel}`);
+    return updatedUser;
   }
 
 
