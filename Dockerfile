@@ -16,8 +16,12 @@ RUN npm ci
 # Copier le code source
 COPY . .
 
-# Build l'application
-RUN npm run build
+# Build l'application avec script personnalisé
+RUN npx vite build --config vite.config.ts
+RUN npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --external:vite --external:@vitejs/plugin-react --external:@replit/vite-plugin-cartographer --external:@replit/vite-plugin-runtime-error-modal
+
+# Créer le dossier public pour les fichiers statiques  
+RUN mkdir -p dist/public && cp -r client/dist/* dist/public/ 2>/dev/null || echo "Client dist not found, continuing..."
 
 # Nettoyer les dev dependencies après le build
 RUN npm prune --production

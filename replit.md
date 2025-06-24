@@ -14,8 +14,9 @@ This is an anime streaming platform built with Node.js/Express backend and React
 - ✓ Migrated project to Replit environment (January 2025)
 - ✓ Set up PostgreSQL database with environment variables
 - ✓ Configured workflow to run application on port 5000
-- ✓ Fixed Render deployment: Docker build now includes dev dependencies
-- ✓ Added render.yaml configuration for easier deployment
+- ✓ Fixed Render deployment: External Vite dependencies in esbuild
+- ✓ Added render.yaml configuration with corrected build command
+- ✓ Verified production build works without Vite imports
 
 ## User Preferences
 - Language: French (based on documentation files)
