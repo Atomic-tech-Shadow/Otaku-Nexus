@@ -423,6 +423,12 @@ export class DatabaseStorage implements IStorage {
 
   async createQuizResult(result: InsertQuizResult): Promise<QuizResult> {
     const [newResult] = await db.insert(quizResults).values(result).returning();
+    
+    // Update user XP if xpEarned is provided
+    if (result.xpEarned && result.xpEarned > 0) {
+      await this.updateUserXP(result.userId, result.xpEarned);
+    }
+    
     return newResult;
   }
 

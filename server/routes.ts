@@ -490,6 +490,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Quiz results route
+  app.post('/api/quiz-results', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { quizId, score, totalQuestions, xpEarned } = req.body;
+
+      // Create quiz result
+      const quizResult = await storage.createQuizResult({
+        userId,
+        quizId,
+        score,
+        totalQuestions,
+        xpEarned: xpEarned || 0
+      });
+
+      // Update user XP
+      if (xpEarned > 0) {
+        await storage.updateUserXP(userId, xpEarned);
+      }
+
+      res.json(quizResult);
+    } catch (error) {
+      console.error("Error creating quiz result:", error);
+      res.status(500).json({ message: "Failed to save quiz result" });
+    }
+  });
+
   // Anime streaming routes with Anime-Sama API integration
   app.get('/api/search', async (req, res) => {
     try {

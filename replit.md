@@ -40,6 +40,10 @@ This is an anime streaming platform built with Node.js/Express backend and React
 - ✓ Improved quiz-detail question parsing with robust error handling
 - ✓ Added comprehensive error states for both quiz and chat components
 - ✓ Enhanced user feedback for authentication requirements in chat
+- ✓ Fixed XP update system for quiz completion (June 24, 2025)
+- ✓ Added missing quiz results API route with proper XP management
+- ✓ Corrected user statistics calculation and XP accumulation
+- ✓ Integrated automatic XP update when quiz results are saved
 
 ## User Preferences
 - Language: French (based on documentation files)
