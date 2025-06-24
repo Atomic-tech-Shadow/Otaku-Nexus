@@ -72,10 +72,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-
-
-
-
   // Quiz routes
   app.get('/api/quizzes', async (req, res) => {
     try {
@@ -104,7 +100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!query) {
         return res.status(400).json({ success: false, message: 'Query parameter required' });
       }
-      
+
       const results = await animeSamaService.searchAnime(query);
       res.json({ success: true, data: results, timestamp: new Date().toISOString() });
     } catch (error) {
@@ -117,11 +113,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { animeId } = req.params;
       const anime = await animeSamaService.getAnimeById(animeId);
-      
+
       if (!anime) {
         return res.status(404).json({ success: false, message: 'Anime not found' });
       }
-      
+
       res.json({ success: true, data: anime, timestamp: new Date().toISOString() });
     } catch (error) {
       console.error('Error fetching anime details:', error);
@@ -132,17 +128,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/anime-sama/seasons', async (req, res) => {
     try {
       const { animeId, season, language } = req.query;
-      
+
       if (!animeId || !season) {
         return res.status(400).json({ success: false, message: 'animeId and season parameters required' });
       }
-      
+
       const episodes = await animeSamaService.getSeasonEpisodes(
         animeId as string, 
         parseInt(season as string),
         (language as 'vf' | 'vostfr') || 'vostfr'
       );
-      
+
       res.json({ 
         success: true, 
         data: {
@@ -164,11 +160,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { episodeId } = req.params;
       const episodeDetails = await animeSamaService.getEpisodeDetails(episodeId);
-      
+
       if (!episodeDetails) {
         return res.status(404).json({ success: false, message: 'Episode not found' });
       }
-      
+
       res.json({ success: true, data: episodeDetails, timestamp: new Date().toISOString() });
     } catch (error) {
       console.error('Error fetching episode details:', error);
@@ -189,11 +185,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/anime-sama/random', async (req, res) => {
     try {
       const randomAnime = await animeSamaService.getRandomAnime();
-      
+
       if (!randomAnime) {
         return res.status(404).json({ success: false, message: 'No random anime found' });
       }
-      
+
       res.json({ success: true, data: randomAnime, timestamp: new Date().toISOString() });
     } catch (error) {
       console.error('Error fetching random anime:', error);
@@ -320,7 +316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Anime streaming routes with Anime-Sama API integration - Fixed endpoints
+  // Anime streaming routes with Anime-Sama API integration
   app.get('/api/search', async (req, res) => {
     try {
       const { query } = req.query;
@@ -362,19 +358,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching genres:", error);
       res.status(500).json({ success: false, message: "Failed to fetch genres" });
-    }
-  });
-
-  app.get('/api/health', async (req, res) => {
-    try {
-      res.json({ 
-        success: true, 
-        status: "healthy", 
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
-      });
-    } catch (error) {
-      res.status(500).json({ success: false, message: "Health check failed" });
     }
   });
 
@@ -427,8 +410,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!episode) {
         return res.status(404).json({ message: "Episode not found" });
       }
-      
-      // Ajouter les solutions CORS
+
       const enhancedEpisode = {
         success: true,
         data: {
@@ -447,7 +429,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         timestamp: new Date().toISOString()
       };
-      
+
       res.json(enhancedEpisode);
     } catch (error) {
       console.error("Error fetching episode details:", error);
@@ -455,25 +437,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Route proxy pour contourner CORS
-  // CORRECTION 1: Endpoint CORS manquant - Ajouter /api/embed/:episodeId
+  // Route embed pour iframe direct
   app.get('/api/embed/:episodeId', async (req, res) => {
     try {
       const { episodeId } = req.params;
       const episode = await animeSamaService.getEpisodeDetails(episodeId);
-      
+
       if (!episode) {
         return res.status(404).json({ message: "Episode not found" });
       }
 
-      // CORRECTION 4: Headers CORS pour Vidéo
       res.setHeader('X-Frame-Options', 'ALLOWALL');
       res.setHeader('Content-Security-Policy', "frame-ancestors *");
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-      // Iframe intégrée comme sur anime-sama.fr - lecture directe dans le cadre
       const embedHtml = `<!DOCTYPE html>
 <html>
 <head>
@@ -508,7 +487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 </body>
 </html>`;
-      
+
       return res.status(200).send(embedHtml);
     } catch (error) {
       console.error("Error in embed endpoint:", error);
@@ -520,657 +499,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           </body>
         </html>
       `);
-    }
-  });
-
-  // Proxy anti-blocage avancé pour anime-sama.fr
-  app.get('/api/proxy/:encodedUrl', async (req, res) => {
-    try {
-      const targetUrl = decodeURIComponent(req.params.encodedUrl);
-      
-      // Validation de sécurité étendue
-      const allowedDomains = [
-        'anime-sama.fr',
-        'streaming.anime-sama.fr',
-        'player.anime-sama.fr',
-        'embed.anime-sama.fr'
-      ];
-      
-      const isAllowed = allowedDomains.some(domain => targetUrl.includes(domain));
-      if (!isAllowed) {
-        return res.status(403).json({ message: "Domain not allowed" });
-      }
-      
-      // Headers complets pour bypass anime-sama.fr restrictions
-      const proxyHeaders = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': 'https://anime-sama.fr/',
-        'Origin': 'https://anime-sama.fr',
-        'Accept': '*/*',
-        'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
-        'DNT': '1',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-        'Sec-Fetch-Dest': 'iframe',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'same-origin',
-        'Sec-Fetch-User': '?1',
-        'X-Requested-With': 'XMLHttpRequest'
-      };
-      
-      let response;
-      let content;
-      
-      // Tentative 1: Fetch standard
-      try {
-        response = await fetch(targetUrl, {
-          headers: proxyHeaders,
-          timeout: 15000,
-          redirect: 'follow'
-        });
-        
-        content = await response.text();
-      } catch (fetchError) {
-        console.log('Standard fetch failed, trying alternative method');
-        
-        // Tentative 2: Avec axios si disponible
-        // Tentative 2: Simulation browser avec headers spéciaux
-        const https = require('https');
-        const http = require('http');
-        const { URL } = require('url');
-        
-        const parsedUrl = new URL(targetUrl);
-        const module = parsedUrl.protocol === 'https:' ? https : http;
-        
-        const options = {
-          hostname: parsedUrl.hostname,
-          port: parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80),
-          path: parsedUrl.pathname + parsedUrl.search,
-          method: 'GET',
-          headers: proxyHeaders,
-          timeout: 15000
-        };
-        
-        const nodeResponse = await new Promise((resolve, reject) => {
-          const req = module.request(options, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => resolve({ data, statusCode: res.statusCode }));
-          });
-          req.on('error', reject);
-          req.on('timeout', () => reject(new Error('Request timeout')));
-          req.setTimeout(15000);
-          req.end();
-        });
-        
-        if (nodeResponse.statusCode >= 200 && nodeResponse.statusCode < 300) {
-          content = nodeResponse.data;
-          response = { ok: true, headers: { get: () => 'text/html' } };
-        } else {
-          throw new Error('All proxy methods failed');
-        }
-      }
-      
-      // Modification du contenu pour supprimer les restrictions
-      if (content && typeof content === 'string') {
-        content = content
-          // Supprimer les scripts de blocage anime-sama
-          .replace(/(?:checkOrigin|blockAccess|preventEmbed)\s*\([^)]*\)\s*;?/gi, '')
-          .replace(/(?:if\s*\([^)]*(?:location|origin|referrer)[^)]*\))\s*{[^}]*}/gi, '')
-          .replace(/(?:document\.referrer|window\.location\.origin)/gi, '"https://anime-sama.fr"')
-          // Forcer les permissions iframe
-          .replace(/<iframe([^>]*?)>/gi, '<iframe$1 sandbox="allow-scripts allow-same-origin allow-forms allow-presentation">')
-          // Supprimer les vérifications CORS
-          .replace(/Access-Control-Allow-Origin[^;]*/gi, 'Access-Control-Allow-Origin: *')
-          // Injecter CSS anti-blocage
-          .replace('</head>', `
-            <style>
-              .blocked-content, .connection-error, .access-denied, .iframe-blocked {
-                display: none !important;
-              }
-              video, iframe[src*="player"] {
-                display: block !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-              }
-            </style>
-            </head>
-          `);
-      }
-      
-      // Headers CORS complets
-      res.set({
-        'Content-Type': response.headers?.get?.('content-type') || 'text/html; charset=utf-8',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE, PATCH',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Referer',
-        'Access-Control-Allow-Credentials': 'true',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'ALLOWALL',
-        'Content-Security-Policy': 'frame-ancestors *',
-        'Referrer-Policy': 'no-referrer-when-downgrade'
-      });
-      
-      res.send(content);
-      
-    } catch (error) {
-      console.error("Advanced proxy error:", error);
-      
-      // Page d'erreur personnalisée avec retry automatique
-      const errorPage = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Connexion en cours...</title>
-            <style>
-              body { background: #000; color: #fff; font-family: Arial; text-align: center; padding: 50px; }
-              .loader { border: 2px solid #333; border-top: 2px solid #00ffff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
-              @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-            </style>
-          </head>
-          <body>
-            <h2>Connexion à anime-sama.fr</h2>
-            <div class="loader"></div>
-            <p>Tentative de connexion en cours...</p>
-            <script>
-              setTimeout(() => {
-                window.location.reload();
-              }, 3000);
-            </script>
-          </body>
-        </html>
-      `;
-      
-      res.status(200).send(errorPage);
-    }
-  });
-
-  // Endpoint embed utilisant l'API anime-sama pour récupérer les vraies URLs
-  app.get('/api/embed/:episodeId', async (req, res) => {
-    try {
-      const { episodeId } = req.params;
-      console.log(`Récupération embed pour: ${episodeId}`);
-      
-      // Méthode 1: Utiliser l'API anime-sama pour récupérer les vraies sources
-      try {
-        const episodeData = await animeSamaService.getEpisodeDetails(episodeId);
-        if (episodeData && episodeData.sources?.length > 0) {
-          console.log(`API Sources trouvées: ${episodeData.sources.length} serveurs`);
-          
-          // Générer page embed HTML avec les vraies URLs des vidéos
-          const videoSources = episodeData.sources.map((source, index) => ({
-            url: source.url,
-            server: source.server || `Serveur ${index + 1}`,
-            quality: source.quality || 'HD',
-            type: source.type || 'video'
-          }));
-          
-          const embedHtml = `
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <title>Lecteur Anime-Sama</title>
-                <meta charset="utf-8">
-                <style>
-                  body { 
-                    margin: 0; 
-                    padding: 0; 
-                    background: #000; 
-                    color: #fff; 
-                    font-family: Arial, sans-serif;
-                    overflow: hidden;
-                  }
-                  .player-container { 
-                    width: 100%; 
-                    height: 100vh; 
-                    display: flex; 
-                    flex-direction: column;
-                  }
-                  .video-area { 
-                    flex: 1; 
-                    position: relative; 
-                    background: #000;
-                  }
-                  video, iframe { 
-                    width: 100%; 
-                    height: 100%; 
-                    border: none;
-                    display: block;
-                  }
-                  .controls { 
-                    padding: 10px; 
-                    background: rgba(0,0,0,0.8); 
-                    display: flex; 
-                    gap: 10px; 
-                    align-items: center;
-                  }
-                  .server-btn { 
-                    padding: 5px 10px; 
-                    background: #1e40af; 
-                    color: white; 
-                    border: none; 
-                    border-radius: 3px; 
-                    cursor: pointer; 
-                    font-size: 12px;
-                  }
-                  .server-btn:hover { background: #3b82f6; }
-                  .server-btn.active { background: #059669; }
-                  .loading { 
-                    position: absolute; 
-                    top: 50%; 
-                    left: 50%; 
-                    transform: translate(-50%, -50%); 
-                    color: #fff;
-                  }
-                </style>
-              </head>
-              <body>
-                <div class="player-container">
-                  <div class="video-area" id="videoArea">
-                    <div class="loading">Chargement du lecteur...</div>
-                  </div>
-                  <div class="controls">
-                    <span>Serveurs:</span>
-                    ${videoSources.map((source, index) => `
-                      <button 
-                        class="server-btn ${index === 0 ? 'active' : ''}" 
-                        onclick="switchServer(${index})"
-                        data-index="${index}"
-                      >
-                        ${source.server} (${source.quality})
-                      </button>
-                    `).join('')}
-                  </div>
-                </div>
-                
-                <script>
-                  const sources = ${JSON.stringify(videoSources)};
-                  let currentServer = 0;
-                  
-                  function switchServer(index) {
-                    currentServer = index;
-                    const source = sources[index];
-                    
-                    // Mettre à jour l'interface
-                    document.querySelectorAll('.server-btn').forEach((btn, i) => {
-                      btn.classList.toggle('active', i === index);
-                    });
-                    
-                    loadVideo(source.url);
-                  }
-                  
-                  function loadVideo(url) {
-                    const videoArea = document.getElementById('videoArea');
-                    
-                    if (url.includes('.m3u8') || url.includes('.mp4')) {
-                      // Vidéo directe
-                      videoArea.innerHTML = \`
-                        <video controls autoplay>
-                          <source src="\${url}" type="video/mp4">
-                          Votre navigateur ne supporte pas la vidéo HTML5.
-                        </video>
-                      \`;
-                    } else {
-                      // Embed iframe
-                      videoArea.innerHTML = \`
-                        <iframe 
-                          src="\${url}" 
-                          allowfullscreen 
-                          allow="autoplay; fullscreen"
-                        ></iframe>
-                      \`;
-                    }
-                  }
-                  
-                  // Charger le premier serveur automatiquement
-                  if (sources.length > 0) {
-                    loadVideo(sources[0].url);
-                  }
-                </script>
-              </body>
-            </html>
-          `;
-          
-          res.set('Content-Type', 'text/html; charset=utf-8');
-          return res.send(embedHtml);
-        }
-      } catch (apiError) {
-        console.log('API anime-sama échouée, génération fallback:', apiError.message);
-      }
-      
-      // Méthode 2: Fallback avec URL générée
-      const episodeParts = episodeId.split('-');
-      let animeId = episodeParts[0];
-      if (episodeParts[1] === 'piece') animeId = 'one-piece';
-      
-      const episodeMatch = episodeId.match(/episode-(\d+)/);
-      const episodeNum = episodeMatch ? episodeMatch[1] : '1';
-      const language = episodeId.includes('-vf') ? 'vf' : 'vostfr';
-      
-      const fallbackHtml = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Lecteur Anime-Sama</title>
-            <meta charset="utf-8">
-            <style>
-              body { margin: 0; padding: 0; background: #000; color: #fff; }
-              .error { text-align: center; padding: 50px; }
-              .retry-btn { 
-                padding: 10px 20px; 
-                background: #1e40af; 
-                color: white; 
-                border: none; 
-                border-radius: 5px; 
-                cursor: pointer; 
-                margin-top: 20px;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="error">
-              <h3>Episode ${episodeNum} - ${language.toUpperCase()}</h3>
-              <p>Chargement des sources vidéo...</p>
-              <button class="retry-btn" onclick="window.location.reload()">Réessayer</button>
-            </div>
-          </body>
-        </html>
-      `;
-      
-      res.set('Content-Type', 'text/html; charset=utf-8');
-      res.send(fallbackHtml);
-      
-    } catch (error) {
-      console.error('Embed generation error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erreur lors de la génération du lecteur',
-        error: error.message
-      });
-    }
-  });
-
-  // CORRECTION: Ajouter endpoints manquants pour fallback intelligent
-  app.get('/api/catalogue', async (req, res) => {
-    try {
-      const { search } = req.query;
-      const catalogue = await animeSamaService.getCatalogue();
-      
-      let results = catalogue;
-      if (search) {
-        results = catalogue.filter(anime => 
-          anime.id.includes(search as string) || 
-          anime.title.toLowerCase().includes((search as string).toLowerCase())
-        );
-      }
-      
-      res.json({ success: true, data: results, timestamp: new Date().toISOString() });
-    } catch (error) {
-      console.error("Error fetching catalogue:", error);
-      res.status(500).json({ success: false, message: "Failed to fetch catalogue" });
-    }
-  });
-
-  app.get('/api/content', async (req, res) => {
-    try {
-      const { animeId, type } = req.query;
-      
-      if (!animeId) {
-        return res.status(400).json({ success: false, message: "animeId parameter required" });
-      }
-
-      // Essayer de récupérer l'anime pour obtenir les informations de saisons
-      const anime = await animeSamaService.getAnimeById(animeId as string);
-      
-      if (!anime || !anime.seasons) {
-        return res.json({ success: true, data: [], timestamp: new Date().toISOString() });
-      }
-
-      // Générer des épisodes basés sur les informations de saisons
-      const episodes = [];
-      for (const season of anime.seasons) {
-        for (let i = 1; i <= season.episodeCount; i++) {
-          episodes.push({
-            id: `${animeId}-s${season.number}-e${i}`,
-            episodeNumber: i,
-            title: `Épisode ${i}`,
-            language: 'VOSTFR',
-            url: '',
-            available: true,
-            seasonNumber: season.number
-          });
-        }
-      }
-
-      res.json({ success: true, data: episodes, timestamp: new Date().toISOString() });
-    } catch (error) {
-      console.error("Error fetching content:", error);
-      res.status(500).json({ success: false, message: "Failed to fetch content" });
-    }
-  });
-
-  // Route embed pour iframe direct - CORRECTION CORS CRITIQUE
-  app.get('/api/embed/:episodeId', async (req, res) => {
-    try {
-      const { episodeId } = req.params;
-      
-      // Configuration CORS pour l'embed - CORRECTION 1
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-      res.setHeader('X-Frame-Options', 'ALLOWALL');
-      res.setHeader('Content-Security-Policy', "frame-ancestors *");
-      
-      const episode = await animeSamaService.getEpisodeDetails(episodeId);
-      
-      if (!episode || !episode.sources.length) {
-        return res.status(404).send(`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <meta charset="UTF-8">
-              <title>Episode non trouvé</title>
-              <style>
-                body { margin: 0; padding: 0; background: #000; color: #fff; font-family: Arial, sans-serif; }
-                .error-container { text-align: center; padding: 50px; }
-                .retry-btn { background: #1e40af; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px; }
-                .retry-btn:hover { background: #3b82f6; }
-              </style>
-            </head>
-            <body>
-              <div class="error-container">
-                <h2>Episode non trouvé</h2>
-                <p>L'épisode demandé n'est pas disponible.</p>
-                <button class="retry-btn" onclick="window.parent.location.reload()">Réessayer</button>
-              </div>
-            </body>
-          </html>
-        `);
-      }
-      
-      // Système de retry automatique avec plusieurs sources - CORRECTION 5
-      const sources = episode.sources;
-      const embedHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Episode ${episode.episodeNumber} - ${episode.animeTitle}</title>
-          <style>
-            body { margin: 0; padding: 0; background: #000; font-family: Arial, sans-serif; }
-            iframe { width: 100%; height: 100vh; border: none; display: block; }
-            .loading { 
-              position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-              color: white; text-align: center; z-index: 10; 
-            }
-            .error-overlay { 
-              position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
-              background: rgba(0,0,0,0.9); color: white; text-align: center; 
-              padding: 50px; display: none; z-index: 20; 
-            }
-            .retry-btn { 
-              background: #1e40af; color: white; border: none; 
-              padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px; 
-            }
-            .retry-btn:hover { background: #3b82f6; }
-            .server-info { 
-              position: absolute; top: 10px; left: 10px; 
-              background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; 
-              border-radius: 3px; font-size: 12px; z-index: 15; 
-            }
-          </style>
-        </head>
-        <body>
-          <div class="loading" id="loading">
-            <div>Chargement du lecteur...</div>
-          </div>
-          
-          <div class="server-info" id="serverInfo">
-            Serveur 1/${sources.length} - ${sources[0]?.server || 'Inconnu'}
-          </div>
-          
-          <iframe id="videoFrame" src="${sources[0]?.url}" allowfullscreen></iframe>
-          
-          <div class="error-overlay" id="errorOverlay">
-            <h3>Lecteur indisponible</h3>
-            <p id="errorMessage">Impossible de charger la vidéo depuis ce serveur.</p>
-            <button class="retry-btn" onclick="tryNextServer()">Essayer serveur suivant</button>
-            <button class="retry-btn" onclick="window.parent.location.reload()">Recharger</button>
-          </div>
-          
-          <script>
-            const sources = ${JSON.stringify(sources)};
-            let currentServerIndex = 0;
-            let retryAttempts = 0;
-            const maxRetries = 3;
-            
-            const videoFrame = document.getElementById('videoFrame');
-            const loading = document.getElementById('loading');
-            const errorOverlay = document.getElementById('errorOverlay');
-            const serverInfo = document.getElementById('serverInfo');
-            const errorMessage = document.getElementById('errorMessage');
-            
-            // Gestion d'erreurs vidéo avec retry automatique - CORRECTION 5
-            function loadVideoSource(serverIndex) {
-              if (serverIndex >= sources.length) {
-                displayVideoError('Aucune source disponible');
-                return;
-              }
-              
-              currentServerIndex = serverIndex;
-              const source = sources[serverIndex];
-              
-              // Mise à jour info serveur
-              serverInfo.textContent = \`Serveur \${serverIndex + 1}/\${sources.length} - \${source.server}\`;
-              
-              // Configuration iframe
-              videoFrame.src = source.url;
-              videoFrame.style.display = 'block';
-              errorOverlay.style.display = 'none';
-              loading.style.display = 'block';
-              
-              // Timeout pour détecter les échecs de chargement
-              const timeout = setTimeout(() => {
-                console.warn(\`Timeout for server \${serverIndex + 1}\`);
-                if (retryAttempts < maxRetries) {
-                  retryAttempts++;
-                  loadVideoSource(serverIndex);
-                } else if (serverIndex + 1 < sources.length) {
-                  retryAttempts = 0;
-                  loadVideoSource(serverIndex + 1);
-                } else {
-                  displayVideoError('Tous les serveurs ont échoué');
-                }
-              }, 10000); // 10 secondes timeout
-              
-              // Succès de chargement
-              videoFrame.onload = function() {
-                clearTimeout(timeout);
-                loading.style.display = 'none';
-                retryAttempts = 0;
-                console.log(\`Successfully loaded server \${serverIndex + 1}\`);
-              };
-              
-              // Erreur de chargement
-              videoFrame.onerror = function() {
-                clearTimeout(timeout);
-                console.error(\`Failed to load server \${serverIndex + 1}\`);
-                if (retryAttempts < maxRetries) {
-                  retryAttempts++;
-                  setTimeout(() => loadVideoSource(serverIndex), 2000);
-                } else if (serverIndex + 1 < sources.length) {
-                  retryAttempts = 0;
-                  loadVideoSource(serverIndex + 1);
-                } else {
-                  displayVideoError('Tous les serveurs ont échoué');
-                }
-              };
-            }
-            
-            function displayVideoError(message) {
-              loading.style.display = 'none';
-              errorOverlay.style.display = 'block';
-              errorMessage.textContent = message;
-              videoFrame.style.display = 'none';
-            }
-            
-            function tryNextServer() {
-              if (currentServerIndex + 1 < sources.length) {
-                retryAttempts = 0;
-                loadVideoSource(currentServerIndex + 1);
-              } else {
-                errorMessage.textContent = 'Aucun autre serveur disponible';
-              }
-            }
-            
-            // Démarrer le chargement
-            loadVideoSource(0);
-          </script>
-        </body>
-        </html>
-      `;
-      
-      res.setHeader('Content-Type', 'text/html');
-      res.send(embedHtml);
-    } catch (error) {
-      console.error("Embed error:", error);
-      res.status(500).send(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="UTF-8">
-            <title>Erreur</title>
-            <style>
-              body { margin: 0; padding: 0; background: #000; color: #fff; font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-              .retry-btn { background: #1e40af; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px; }
-              .retry-btn:hover { background: #3b82f6; }
-            </style>
-          </head>
-          <body>
-            <h2>Erreur du serveur</h2>
-            <p>Impossible de charger l'épisode.</p>
-            <button class="retry-btn" onclick="window.parent.location.reload()">Réessayer</button>
-          </body>
-        </html>
-      `);
-    }
-  });
-
-
-
-  app.get('/api/anime/genres', async (req, res) => {
-    try {
-      const genres = await animeSamaService.getGenres();
-      res.json(genres);
-    } catch (error) {
-      console.error("Error fetching genres:", error);
-      res.status(500).json({ message: "Failed to fetch genres" });
     }
   });
 
