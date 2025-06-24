@@ -152,20 +152,24 @@ const AnimeSamaPage: React.FC = () => {
     return debouncedValue;
   };
 
-  // Fonction pour récupérer l'URL proxy des vidéos
+  // Fonction pour récupérer l'URL proxy des vidéos avec fallback
   const getProxyUrl = async () => {
     if (!selectedEpisode) return '';
     
     try {
+      // Essayer d'abord l'API locale/déployée
       const response = await fetch(`${API_BASE_URL}/api/episode/${selectedEpisode.id}`);
       const data = await response.json();
       
       if (data.success && data.data.sources && data.data.sources.length > 0) {
         const source = data.data.sources[selectedServer] || data.data.sources[0];
-        return `${API_BASE_URL}${source.proxyUrl}`;
+        return source.proxyUrl ? `${API_BASE_URL}${source.proxyUrl}` : source.url;
       }
     } catch (error) {
       console.error('Erreur chargement source:', error);
+      // Fallback vers embed URL
+      const correctEpisodeId = selectedEpisode ? selectedEpisode.id : '';
+      return `${API_BASE_URL}/api/embed/${correctEpisodeId}`;
     }
     return '';
   };
@@ -430,8 +434,10 @@ const AnimeSamaPage: React.FC = () => {
     };
   }, []);
 
-  // Configuration API avec URL de production
-  const API_BASE_URL = 'https://api-anime-sama.onrender.com';
+  // Configuration API avec fallback vers API locale
+  const API_BASE_URL = process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:5000' 
+    : 'https://otaku-nexus.onrender.com';
   
   // Chargement des animes populaires avec gestion d'erreurs robuste
   const loadPopularAnimes = async () => {
