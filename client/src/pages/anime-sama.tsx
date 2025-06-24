@@ -1802,10 +1802,44 @@ const AnimeSamaPage: React.FC = () => {
                 }
               `}</style>
               {(() => {
+                // Debug: Afficher l'état des épisodes et sources
+                console.log('Selected episode:', selectedEpisode);
+                console.log('Episode details:', episodeDetails);
+                console.log('Current video URL:', currentVideoUrl);
+                
                 const currentSources = episodeDetails?.sources || [];
                 const currentSource = currentSources[selectedServer];
                 
-                if (!currentSource) return (
+                // Afficher les épisodes si aucun épisode sélectionné
+                if (!selectedEpisode && episodes.length > 0) {
+                  return (
+                    <div className="w-full p-4">
+                      <h3 className="text-white text-lg mb-4">Épisodes disponibles:</h3>
+                      <div className="grid grid-cols-4 gap-2">
+                        {episodes.slice(0, 12).map((episode) => (
+                          <button
+                            key={episode.id}
+                            onClick={() => {
+                              setSelectedEpisode(episode);
+                              loadEpisodeDetails(episode.id);
+                            }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded text-sm"
+                          >
+                            Ep {episode.episodeNumber}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+                
+                if (!selectedEpisode) return (
+                  <div className="w-full h-64 flex items-center justify-center text-gray-500 text-sm">
+                    Sélectionnez un épisode pour commencer la lecture
+                  </div>
+                );
+                
+                if (!currentSource && !currentVideoUrl) return (
                   <div className="w-full h-64 flex items-center justify-center text-gray-500 text-sm">
                     Chargement du lecteur...
                   </div>
