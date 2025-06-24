@@ -275,11 +275,23 @@ export default function Chat() {
                 processedMessages.map((message: any, index) => (
                   <motion.div
                     key={message.id}
-                    className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}
+                    className={`flex ${message.isOwn ? 'justify-end' : 'justify-start items-start'}`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
                   >
+                    {/* Avatar for other users */}
+                    {!message.isOwn && (
+                      <div className="flex-shrink-0 mr-3">
+                        <ProfileAvatar 
+                          imageUrl={message.userProfileImageUrl}
+                          name={message.userFirstName || message.username || 'User'}
+                          size="sm"
+                          showOnlineIndicator={false}
+                        />
+                      </div>
+                    )}
+                    
                     <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
                       message.isOwn 
                         ? 'bg-gradient-to-r from-nexus-cyan to-nexus-purple text-white' 

@@ -50,6 +50,9 @@ This is an anime streaming platform built with Node.js/Express backend and React
 - ✓ Fixed interface level display using fresh API data instead of cached auth (June 24, 2025)
 - ✓ Updated getUserStats to include level field for consistent data display
 - ✓ Synchronized level progression between backend calculation and frontend display
+- ✓ Fixed userStats error in app-header by adding proper useQuery import (June 24, 2025)
+- ✓ Corrected profile avatar display in chat messages with proper component import
+- ✓ Added profile pictures next to chat messages for better user identification
 
 ## User Preferences
 - Language: French (based on documentation files)

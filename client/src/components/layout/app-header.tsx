@@ -2,6 +2,7 @@
 import { Bell, Settings, Shield, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { TwitterVerificationBadge, FacebookVerificationBadge } from "@/components/ui/verification-badges";
 import ProfileAvatar from "@/components/ui/profile-avatar";
@@ -14,11 +15,17 @@ export default function AppHeader() {
   const { toast } = useToast();
   const [hasNewNotifications, setHasNewNotifications] = useState(true);
 
+  // Get fresh user stats from API
+  const { data: userStats } = useQuery({
+    queryKey: ["/api/user/stats"],
+    enabled: !!user,
+    refetchInterval: 30000,
+  });
+
   // Calculs sécurisés avec valeurs par défaut
-  const currentLevel = user?.level ?? 1;
-  const currentXP = user?.xp ?? 0;
-  const xpToNextLevel = currentLevel * 200; // XP requis augmente avec le niveau
-  const xpProgress = Math.min(((currentXP % xpToNextLevel) / xpToNextLevel) * 100, 100);
+  const currentLevel = userStats?.level || user?.level || 1;
+  const currentXP = userStats?.totalXP || user?.xp || 0;
+  const xpProgress = ((currentXP % 100) / 100) * 100;
 
   const handleLogout = () => {
     logout();
@@ -100,17 +107,17 @@ export default function AppHeader() {
               {/* Level and XP Bar */}
               <div className="flex items-center space-x-1">
                 <span className="text-xs text-nexus-cyan font-medium whitespace-nowrap">
-                  Niv {userStats?.level || user?.level || 1}
+                  Niv {currentLevel}
                 </span>
                 <div className="flex-1 max-w-16 h-1.5 bg-nexus-surface rounded-full overflow-hidden border border-nexus-cyan/20">
                   <motion.div 
                     initial={{ width: 0 }}
-                    animate={{ width: `${((userStats?.totalXP || user?.xp || 0) % 100)}%` }}
+                    animate={{ width: `${xpProgress}%` }}
                     transition={{ duration: 1, ease: "easeOut" }}
                     className="h-full bg-gradient-to-r from-nexus-cyan to-nexus-purple rounded-full"
                   />
                 </div>
-                <span className="text-xs text-gray-400 whitespace-nowrap">{userStats?.totalXP || user?.xp || 0}</span>
+                <span className="text-xs text-gray-400 whitespace-nowrap">{currentXP}</span>
               </div>
             </div>
           </div>
