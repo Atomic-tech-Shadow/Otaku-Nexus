@@ -103,7 +103,7 @@ const AnimeSamaPage: React.FC = () => {
   const [watchHistory, setWatchHistory] = useState<{[key: string]: number}>({});
   const [videoProgress, setVideoProgress] = useState<{[key: string]: number}>({});
   const [lastWatched, setLastWatched] = useState<string | null>(null);
-  const [popularAnimes, setPopularAnimes] = useState<SearchResult[]>([]);
+
   
   // CORRECTION 6: Race Conditions - Variable de verrouillage
   // CORRECTIONS CRITIQUES selon documentation
@@ -437,48 +437,37 @@ const AnimeSamaPage: React.FC = () => {
   // Chargement des animes populaires depuis l'API anime-sama
   const loadPopularAnimes = async () => {
     try {
-      // Charger quelques animes populaires en utilisant l'API de recherche
-      const popularQueries = ['naruto', 'one-piece', 'dragon-ball', 'attack-on-titan', 'demon-slayer'];
-      const animePromises = popularQueries.map(async (query) => {
-        try {
-          const response = await fetch(`${API_BASE_URL}/api/anime/${query}`, {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' },
-            signal: AbortSignal.timeout(10000)
-          });
-          
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success && result.data) {
-              return {
-                id: result.data.id,
-                title: result.data.title,
-                image: result.data.image,
-                type: 'Anime',
-                status: result.data.status,
-                genres: result.data.genres || [],
-                url: result.data.url
-              };
-            }
-          }
-        } catch (error) {
-          console.log(`Erreur chargement ${query}:`, error);
-        }
-        return null;
+      // Utiliser l'endpoint trending pour récupérer les animes populaires authentiques
+      const response = await fetch(`${API_BASE_URL}/api/trending`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(10000)
       });
       
-      const results = await Promise.all(animePromises);
-      const validAnimes = results.filter(anime => anime !== null);
-      
-      if (validAnimes.length > 0) {
-        setPopularAnimes(validAnimes);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data && Array.isArray(result.data)) {
+          setSearchResults(result.data.slice(0, 20)); // Limiter à 20 résultats
+        }
       } else {
-        setPopularAnimes([]);
+        // Fallback vers l'endpoint search si trending ne fonctionne pas
+        const searchResponse = await fetch(`${API_BASE_URL}/api/search?query=`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' },
+          signal: AbortSignal.timeout(10000)
+        });
+        
+        if (searchResponse.ok) {
+          const result = await searchResponse.json();
+          if (result.success && result.data && Array.isArray(result.data)) {
+            setSearchResults(result.data.slice(0, 20));
+          }
+        }
       }
       
     } catch (error: any) {
-      console.log('Erreur chargement animes populaires:', error);
-      setPopularAnimes([]);
+      console.error('Erreur chargement animes populaires:', error);
+      setSearchResults([]);
     }
   };
 
@@ -599,22 +588,7 @@ const AnimeSamaPage: React.FC = () => {
     return { success: false, data: { episodes: [] }, error: lastError?.message || 'Unknown error' };
   };
   
-  // Mapping correct des épisodes One Piece selon documentation
-  const SEASON_MAPPINGS = {
-    'one-piece': {
-      1: { start: 1, end: 61, name: "Saga 1 (East Blue)" },
-      2: { start: 62, end: 135, name: "Saga 2 (Alabasta)" },
-      3: { start: 136, end: 206, name: "Saga 3 (Ile céleste)" },
-      4: { start: 207, end: 325, name: "Saga 4 (Water Seven)" },
-      5: { start: 326, end: 384, name: "Saga 5 (Thriller Bark)" },
-      6: { start: 385, end: 516, name: "Saga 6 (Guerre au Sommet)" },
-      7: { start: 517, end: 574, name: "Saga 7 (Ile des Hommes-Poissons)" },
-      8: { start: 575, end: 746, name: "Saga 8 (Dressrosa)" },
-      9: { start: 747, end: 889, name: "Saga 9 (Ile Tougato)" },
-      10: { start: 890, end: 1086, name: "Saga 10 (Pays des Wa)" },
-      11: { start: 1087, end: 1122, name: "Saga 11 (Egghead)" }
-    }
-  };
+
   
   // Configuration optimisée selon le guide de configuration API
   const LOCAL_API_CONFIG = {
@@ -674,7 +648,7 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      const apiUrl = `${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`;
+      const apiUrl = `${API_BASE_URL}/api/search?query=${encodeURIComponent(query)}`;
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
@@ -1424,7 +1398,7 @@ const AnimeSamaPage: React.FC = () => {
                     className="w-full aspect-[3/4] object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = 'https://via.placeholder.com/300x400/1a1a1a/ffffff?text=Image+Non+Disponible';
+                      target.style.display = 'none';
                     }}
                   />
                   <div className="p-3">
@@ -1446,7 +1420,7 @@ const AnimeSamaPage: React.FC = () => {
           {!searchQuery && !searchResults.length && (
             <div>
               {/* Section Animes Populaires */}
-              {popularAnimes.length > 0 && (
+              {searchResults.length > 0 && (
                 <div className="mb-8">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-white text-lg font-bold">🔥 Animes Populaires</h2>
@@ -1458,7 +1432,7 @@ const AnimeSamaPage: React.FC = () => {
                     </button>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {popularAnimes.map((anime) => (
+                    {searchResults.map((anime) => (
                       <div
                         key={anime.id}
                         onClick={() => loadAnimeDetails(anime.id)}
@@ -1472,7 +1446,7 @@ const AnimeSamaPage: React.FC = () => {
                             className="w-full aspect-[3/4] object-cover group-hover:opacity-90 transition-opacity"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
-                              target.src = 'https://via.placeholder.com/300x400/1a1a1a/ffffff?text=Image+Non+Disponible';
+                              target.style.display = 'none';
                               target.onerror = null; // Prevent infinite loop
                             }}
                           />

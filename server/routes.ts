@@ -29,8 +29,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Anime-Sama API proxy routes
-  app.get('/api/anime-sama/search', async (req, res) => {
+  // Anime-Sama API direct proxy routes - using https://api-anime-sama.onrender.com
+  app.get('/api/search', async (req, res) => {
     try {
       const query = req.query.query as string;
       if (!query) {
@@ -45,7 +45,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/anime-sama/trending', async (req, res) => {
+  app.get('/api/trending', async (req, res) => {
     try {
       const results = await animeSamaService.getTrendingAnime();
       res.json({ success: true, data: results });
@@ -55,7 +55,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/anime-sama/anime/:id', async (req, res) => {
+  app.get('/api/anime/:id', async (req, res) => {
     try {
       const animeId = req.params.id;
       const anime = await animeSamaService.getAnimeById(animeId);
@@ -87,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/anime-sama/episode/:id', async (req, res) => {
+  app.get('/api/episode/:id', async (req, res) => {
     try {
       const episodeId = req.params.id;
       const episode = await animeSamaService.getEpisodeDetails(episodeId);
@@ -218,7 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/anime-sama/seasons', async (req, res) => {
+  app.get('/api/seasons', async (req, res) => {
     try {
       const { animeId, season, language } = req.query;
 
