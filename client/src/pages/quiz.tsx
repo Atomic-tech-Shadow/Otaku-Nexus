@@ -21,14 +21,44 @@ export default function Quiz() {
 
   const { data: quizzes = [], isLoading, error } = useQuery<any[]>({
     queryKey: ["/api/quizzes"],
-    retry: false,
+    queryFn: async () => {
+      const response = await fetch("/api/quizzes");
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    },
+    retry: 2,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const filteredQuizzes = Array.isArray(quizzes) ? quizzes.filter(quiz => {
+    if (!quiz || typeof quiz !== 'object') return false;
+    
     const difficultyMatch = selectedDifficulty === "all" || quiz.difficulty === selectedDifficulty;
     const categoryMatch = selectedCategory === "all" || quiz.category === selectedCategory;
     return difficultyMatch && categoryMatch;
   }) : [];
+
+  // Show error state if needed
+  if (error) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-96">
+          <div className="glass-morphism rounded-2xl p-6 text-center">
+            <p className="text-red-400 mb-2">Erreur de chargement des quiz</p>
+            <p className="text-gray-400 text-sm">Veuillez réessayer plus tard</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 px-4 py-2 bg-nexus-cyan rounded-lg text-white hover:bg-nexus-cyan/80 transition-colors"
+            >
+              Recharger
+            </button>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (isLoading) {
     return (

@@ -31,38 +31,59 @@ export default function Chat() {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { data: messages = [], isLoading, refetch } = useQuery({
+  const { data: messages = [], isLoading, error: messagesError, refetch } = useQuery({
     queryKey: ["/api/chat/messages"],
     queryFn: async () => {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch("/api/chat/messages", {
         headers: {
-          "Authorization": localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : ''
+          ...(token && { "Authorization": `Bearer ${token}` }),
+          "Content-Type": "application/json"
         },
         credentials: "include"
       });
+      
+      if (response.status === 401) {
+        // Try without token for public messages
+        const publicResponse = await fetch("/api/chat/messages", {
+          credentials: "include"
+        });
+        if (!publicResponse.ok) {
+          throw new Error('Authentication required');
+        }
+        return publicResponse.json();
+      }
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch messages');
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       return response.json();
     },
-    refetchInterval: 5000,
-    retry: 1,
+    refetchInterval: user ? 5000 : 10000,
+    retry: 2,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
     staleTime: 30000,
+    enabled: true,
   });
 
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
+      if (!user) {
+        throw new Error('Vous devez être connecté pour envoyer un message');
+      }
+
+      const token = localStorage.getItem('auth_token');
       const response = await fetch("/api/chat/messages", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "Authorization": localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : ''
+          ...(token && { "Authorization": `Bearer ${token}` })
         },
         credentials: "include",
         body: JSON.stringify({ content }),
       });
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
         throw new Error(errorData.message || "Failed to send message");
@@ -146,6 +167,30 @@ export default function Chat() {
       <MainLayout>
         <div className="flex items-center justify-center min-h-96">
           <LoadingSpinner size="lg" />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (messagesError) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-96">
+          <div className="glass-morphism rounded-2xl p-6 text-center">
+            <MessageCircle className="w-16 h-16 text-nexus-cyan mx-auto mb-4 opacity-50" />
+            <p className="text-red-400 mb-2">Erreur de connexion au chat</p>
+            <p className="text-gray-400 text-sm mb-4">
+              {messagesError.message.includes('Authentication') 
+                ? 'Connectez-vous pour accéder au chat' 
+                : 'Impossible de charger les messages'}
+            </p>
+            <button 
+              onClick={() => refetch()} 
+              className="px-4 py-2 bg-nexus-cyan rounded-lg text-white hover:bg-nexus-cyan/80 transition-colors"
+            >
+              Réessayer
+            </button>
+          </div>
         </div>
       </MainLayout>
     );
@@ -274,14 +319,15 @@ export default function Chat() {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Type your message..."
+                placeholder={user ? "Tapez votre message..." : "Connectez-vous pour discuter..."}
                 className="flex-1 bg-nexus-surface border-nexus-cyan/30 text-white placeholder-gray-400 focus:border-nexus-cyan"
-                disabled={sendMessageMutation.isPending}
+                disabled={sendMessageMutation.isPending || !user}
               />
               <Button
                 onClick={handleSendMessage}
-                disabled={!newMessage.trim() || sendMessageMutation.isPending}
-                className="btn-hover bg-gradient-to-r from-nexus-cyan to-nexus-purple hover:from-nexus-purple hover:to-nexus-pink"
+                disabled={!newMessage.trim() || sendMessageMutation.isPending || !user}
+                className="btn-hover bg-gradient-to-r from-nexus-cyan to-nexus-purple hover:from-nexus-purple hover:to-nexus-pink disabled:opacity-50 disabled:cursor-not-allowed"
+                title={!user ? "Connectez-vous pour envoyer un message" : ""}
               >
                 <Send className="w-4 h-4" />
               </Button>
