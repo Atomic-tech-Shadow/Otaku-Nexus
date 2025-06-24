@@ -97,6 +97,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Anime-Sama API routes
+  app.get('/api/anime-sama/search', async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      if (!query) {
+        return res.status(400).json({ success: false, message: 'Query parameter required' });
+      }
+      
+      const results = await animeSamaService.searchAnime(query);
+      res.json({ success: true, data: results, timestamp: new Date().toISOString() });
+    } catch (error) {
+      console.error('Error searching anime:', error);
+      res.status(500).json({ success: false, message: 'Search failed' });
+    }
+  });
+
+  app.get('/api/anime-sama/anime/:animeId', async (req, res) => {
+    try {
+      const { animeId } = req.params;
+      const anime = await animeSamaService.getAnimeById(animeId);
+      
+      if (!anime) {
+        return res.status(404).json({ success: false, message: 'Anime not found' });
+      }
+      
+      res.json({ success: true, data: anime, timestamp: new Date().toISOString() });
+    } catch (error) {
+      console.error('Error fetching anime details:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch anime details' });
+    }
+  });
+
+  app.get('/api/anime-sama/seasons', async (req, res) => {
+    try {
+      const { animeId, season, language } = req.query;
+      
+      if (!animeId || !season) {
+        return res.status(400).json({ success: false, message: 'animeId and season parameters required' });
+      }
+      
+      const episodes = await animeSamaService.getSeasonEpisodes(
+        animeId as string, 
+        parseInt(season as string),
+        (language as 'vf' | 'vostfr') || 'vostfr'
+      );
+      
+      res.json({ 
+        success: true, 
+        data: {
+          animeId,
+          season: parseInt(season as string),
+          language: language || 'vostfr',
+          episodes,
+          episodeCount: episodes.length
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error fetching season episodes:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch episodes' });
+    }
+  });
+
+  app.get('/api/anime-sama/episode/:episodeId', async (req, res) => {
+    try {
+      const { episodeId } = req.params;
+      const episodeDetails = await animeSamaService.getEpisodeDetails(episodeId);
+      
+      if (!episodeDetails) {
+        return res.status(404).json({ success: false, message: 'Episode not found' });
+      }
+      
+      res.json({ success: true, data: episodeDetails, timestamp: new Date().toISOString() });
+    } catch (error) {
+      console.error('Error fetching episode details:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch episode details' });
+    }
+  });
+
+  app.get('/api/anime-sama/trending', async (req, res) => {
+    try {
+      const trending = await animeSamaService.getTrendingAnime();
+      res.json({ success: true, data: trending, timestamp: new Date().toISOString() });
+    } catch (error) {
+      console.error('Error fetching trending anime:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch trending anime' });
+    }
+  });
+
+  app.get('/api/anime-sama/random', async (req, res) => {
+    try {
+      const randomAnime = await animeSamaService.getRandomAnime();
+      
+      if (!randomAnime) {
+        return res.status(404).json({ success: false, message: 'No random anime found' });
+      }
+      
+      res.json({ success: true, data: randomAnime, timestamp: new Date().toISOString() });
+    } catch (error) {
+      console.error('Error fetching random anime:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch random anime' });
+    }
+  });
+
+  app.get('/api/anime-sama/catalogue', async (req, res) => {
+    try {
+      const catalogue = await animeSamaService.getCatalogue();
+      res.json({ success: true, data: catalogue, timestamp: new Date().toISOString() });
+    } catch (error) {
+      console.error('Error fetching catalogue:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch catalogue' });
+    }
+  });
+
   // Chat routes
   app.get('/api/chat/messages', isAuthenticated, async (req: any, res) => {
     try {
