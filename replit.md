@@ -22,6 +22,9 @@ This is an anime streaming platform built with Node.js/Express backend and React
 - ✓ All tables created successfully in production database
 - ✓ Fixed anime-sama page video loading errors with corrected API routes
 - ✓ Simplified video player configuration to resolve CORS issues
+- ✓ Fixed quiz JSON parsing bug by configuring PostgreSQL database (June 2025)
+- ✓ Resolved chat authentication issues with JWT token handling
+- ✓ Updated to use Neon PostgreSQL database provided by user
 
 ## User Preferences
 - Language: French (based on documentation files)
