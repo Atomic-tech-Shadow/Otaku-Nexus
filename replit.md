@@ -4,8 +4,14 @@
 Plateforme complète pour les fans d'anime et manga avec streaming, quiz, chat et gestion de favoris. Le projet utilise React/TypeScript en frontend, Express/Node.js en backend, PostgreSQL comme base de données, et une API externe pour le contenu anime.
 
 ## Recent Changes
+- **Préparation pour déploiement** (24 juin 2025)
+  - Suppression des dépendances Replit spécifiques
+  - Configuration database Neon PostgreSQL permanente
+  - Désactivation Replit Auth pour déploiement
+  - Nettoyage des références Replit dans le code
+  - Optimisation pour environnement de production
 - **Migration Replit Agent vers Replit Environment** (24 juin 2025)
-  - Configuration de la base de données PostgreSQL Replit
+  - Configuration de la base de données PostgreSQL
   - Suppression des données de démo de la page anime-sama
   - Configuration API https://api-anime-sama.onrender.com
   - Mise à jour des endpoints pour sécurité et compatibilité

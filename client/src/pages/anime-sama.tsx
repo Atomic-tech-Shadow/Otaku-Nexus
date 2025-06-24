@@ -473,8 +473,7 @@ const AnimeSamaPage: React.FC = () => {
 
 
 
-  // Configuration API robuste pour Replit
-  // Configuration API supprimée - utilisation de API_BASE_URL globale
+  // Configuration API pour production
   const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
   const REQUEST_TIMEOUT = 15000; // 15 secondes
   
@@ -490,7 +489,7 @@ const AnimeSamaPage: React.FC = () => {
     
     return {
       async get(endpoint: string, params: Record<string, string> = {}): Promise<any> {
-        const baseUrl = process.env.NODE_ENV === 'development' ? '' : API_BASE_URL;
+        const baseUrl = API_BASE_URL;
         const url = new URL(`${baseUrl}${endpoint}`);
         
         // Ajout des paramètres + timestamp anti-cache
