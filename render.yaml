@@ -3,8 +3,8 @@ services:
     name: anime-sama-app
     env: node
     plan: free
-    buildCommand: npm ci && npx vite build --config vite.config.ts && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --external:vite --external:@vitejs/plugin-react --external:@replit/vite-plugin-cartographer --external:@replit/vite-plugin-runtime-error-modal && mkdir -p dist/public && cp -r client/dist/* dist/public/
-    startCommand: npm start
+    buildCommand: npm ci && npx vite build --config vite.config.ts && npx esbuild server/index-production.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && mkdir -p dist/public && cp -r client/dist/* dist/public/
+    startCommand: node dist/index-production.js
     envVars:
       - key: NODE_ENV
         value: production

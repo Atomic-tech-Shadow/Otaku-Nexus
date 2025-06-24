@@ -18,7 +18,7 @@ COPY . .
 
 # Build l'application avec script personnalisé
 RUN npx vite build --config vite.config.ts
-RUN npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --external:vite --external:@vitejs/plugin-react --external:@replit/vite-plugin-cartographer --external:@replit/vite-plugin-runtime-error-modal
+RUN npx esbuild server/index-production.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 
 # Créer le dossier public pour les fichiers statiques  
 RUN mkdir -p dist/public && cp -r client/dist/* dist/public/ 2>/dev/null || echo "Client dist not found, continuing..."
@@ -35,4 +35,4 @@ ENV PORT=5000
 ENV API_BASE_URL=https://api-anime-sama.onrender.com
 
 # Commande de démarrage
-CMD ["npm", "start"]
+CMD ["node", "dist/index-production.js"]
