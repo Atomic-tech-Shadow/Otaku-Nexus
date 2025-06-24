@@ -12,15 +12,14 @@ This is an anime streaming platform built with Node.js/Express backend and React
 
 ## Recent Changes
 - ✓ Successfully migrated project from Replit Agent to Replit environment (June 2025)
-- ✓ Updated anime-sama.tsx video URL handling with proxy API integration
+- ✓ Fixed anime-sama page black screen issue by correcting API endpoints
+- ✓ Updated API configuration to use deployed server instead of external anime-sama API
+- ✓ Enhanced video player with fallback mechanisms for reliable streaming
 - ✓ Configured permanent Neon PostgreSQL database for production and development
-- ✓ Enhanced video player with dynamic proxy URL fetching from episode sources
-- ✓ Improved CORS handling with source-specific proxy URLs
+- ✓ Corrected React hooks placement to resolve component rendering issues
 - ✓ Database schema migrations executed successfully
 - ✓ All dependencies and packages properly installed and working
 - ✓ Application running successfully on port 5000
-- ✓ Fixed quiz JSON parsing bug by configuring PostgreSQL database
-- ✓ Resolved chat authentication issues with JWT token handling
 
 ## User Preferences
 - Language: French (based on documentation files)
