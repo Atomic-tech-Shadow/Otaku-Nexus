@@ -288,7 +288,11 @@ const AnimeSamaPage: React.FC = () => {
         return;
       }
       
-      const response = await fetch(`${API_BASE_URL}/api/episode/${episodeId}?_=${Date.now()}`);
+      const apiUrl = process.env.NODE_ENV === 'development' 
+        ? `/api/episode/${episodeId}?_=${Date.now()}`
+        : `${API_BASE_URL}/api/episode/${episodeId}?_=${Date.now()}`;
+        
+      const response = await fetch(apiUrl);
       const data = await response.json();
       
       if (currentTask.cancel) {
@@ -374,10 +378,8 @@ const AnimeSamaPage: React.FC = () => {
       setWatchHistory(JSON.parse(savedHistory));
     }
     
-    // Charger les animes populaires au démarrage avec gestion d'erreurs
-    loadPopularAnimes().catch(error => {
-      setPopularAnimes([]);
-    });
+    // Charger les animes populaires au démarrage
+    loadPopularAnimes();
     
     // Gestionnaire global pour les promesses non capturées - Version corrigée
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
@@ -403,15 +405,18 @@ const AnimeSamaPage: React.FC = () => {
   // Configuration API avec URL de production
   const API_BASE_URL = 'https://api-anime-sama.onrender.com';
   
-  // Chargement des animes populaires avec API déployée
+  // Chargement des animes populaires avec gestion d'erreurs robuste
   const loadPopularAnimes = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/trending`, {
+      // Utiliser l'API locale en développement pour éviter les problèmes CORS
+      const apiUrl = process.env.NODE_ENV === 'development' 
+        ? '/api/trending' 
+        : `${API_BASE_URL}/api/trending`;
+        
+      const response = await fetch(apiUrl, {
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'X-Frame-Options': 'ALLOWALL'
+          'Content-Type': 'application/json'
         },
         signal: AbortSignal.timeout(10000)
       });
@@ -429,6 +434,7 @@ const AnimeSamaPage: React.FC = () => {
       setPopularAnimes([]);
       
     } catch (error: any) {
+      console.log('Erreur chargement trending:', error);
       setPopularAnimes([]);
     }
   };
@@ -452,7 +458,8 @@ const AnimeSamaPage: React.FC = () => {
     
     return {
       async get(endpoint: string, params: Record<string, string> = {}): Promise<any> {
-        const url = new URL(`${API_BASE_URL}${endpoint}`);
+        const baseUrl = process.env.NODE_ENV === 'development' ? '' : API_BASE_URL;
+        const url = new URL(`${baseUrl}${endpoint}`);
         
         // Ajout des paramètres + timestamp anti-cache
         Object.entries(params).forEach(([key, value]) => {
@@ -624,7 +631,12 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/search?query=${encodeURIComponent(query)}`, {
+      // Utiliser l'API locale en développement
+      const apiUrl = process.env.NODE_ENV === 'development' 
+        ? `/api/search?query=${encodeURIComponent(query)}` 
+        : `${API_BASE_URL}/api/search?query=${encodeURIComponent(query)}`;
+        
+      const response = await fetch(apiUrl, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
@@ -659,7 +671,12 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/anime/${animeId}`, {
+      // Utiliser l'API locale en développement
+      const apiUrl = process.env.NODE_ENV === 'development' 
+        ? `/api/anime/${animeId}` 
+        : `${API_BASE_URL}/api/anime/${animeId}`;
+        
+      const response = await fetch(apiUrl, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
@@ -1614,7 +1631,7 @@ const AnimeSamaPage: React.FC = () => {
               {availableLanguages.map((lang) => (
                 <button
                   key={lang}
-                  onClick={() => changeLanguage(lang as 'VF' | 'VOSTFR')}
+                  onClick={() => debouncedLanguageChange(lang as 'VF' | 'VOSTFR')}
                   className="flex items-center justify-center w-16 h-12 rounded-lg border-2 transition-all"
                   style={{
                     backgroundColor: selectedLanguage === lang ? '#1e40af' : '#2a2a2a',
@@ -1769,7 +1786,9 @@ const AnimeSamaPage: React.FC = () => {
                 );
                 
                 const correctEpisodeId = selectedEpisode ? selectedEpisode.id : episodeDetails?.id || '';
-                const embedUrl = `${API_BASE_URL}/api/embed/${correctEpisodeId}`;
+                const embedUrl = process.env.NODE_ENV === 'development' 
+                  ? `/api/embed/${correctEpisodeId}`
+                  : `${API_BASE_URL}/api/embed/${correctEpisodeId}`;
                 
                 return (
                   <div className="relative w-full">
