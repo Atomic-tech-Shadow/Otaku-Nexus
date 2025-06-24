@@ -692,18 +692,20 @@ export class DatabaseStorage implements IStorage {
           // Create default room with admin as creator
           await db.insert(chatRooms).values({
             id: 1,
-            name: "🌸 Otaku Community",
-            description: "Chat général de la communauté otaku - Partagez vos discussions, recommandations et découvertes !",
-            isPrivate: false,
+            name: "General Discussion",
+            description: "Welcome to the general chat! Discuss anime, manga, and more!",
+            isPublic: true,
             createdBy: adminUser[0].id
           }).onConflictDoNothing();
+          console.log("Created default chat room with ID 1");
         } else {
-          // If no admin exists, wait for a user to be created
-          console.log("No admin user found, waiting for user creation to setup default chat room");
+          console.log("No admin user found for chat room creation");
         }
       }
     } catch (error) {
-      console.error("Error ensuring default chat room:", error);
+      if (!error.message.includes('duplicate') && !error.message.includes('unique constraint')) {
+        console.error("Error ensuring default chat room:", error);
+      }
     }
   }
 
