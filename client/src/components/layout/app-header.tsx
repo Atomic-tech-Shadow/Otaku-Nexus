@@ -100,17 +100,17 @@ export default function AppHeader() {
               {/* Level and XP Bar */}
               <div className="flex items-center space-x-1">
                 <span className="text-xs text-nexus-cyan font-medium whitespace-nowrap">
-                  Niv {currentLevel}
+                  Niv {userStats?.level || user?.level || 1}
                 </span>
                 <div className="flex-1 max-w-16 h-1.5 bg-nexus-surface rounded-full overflow-hidden border border-nexus-cyan/20">
                   <motion.div 
                     initial={{ width: 0 }}
-                    animate={{ width: `${xpProgress}%` }}
+                    animate={{ width: `${((userStats?.totalXP || user?.xp || 0) % 100)}%` }}
                     transition={{ duration: 1, ease: "easeOut" }}
                     className="h-full bg-gradient-to-r from-nexus-cyan to-nexus-purple rounded-full"
                   />
                 </div>
-                <span className="text-xs text-gray-400 whitespace-nowrap">{currentXP}</span>
+                <span className="text-xs text-gray-400 whitespace-nowrap">{userStats?.totalXP || user?.xp || 0}</span>
               </div>
             </div>
           </div>

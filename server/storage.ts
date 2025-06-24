@@ -447,6 +447,7 @@ export class DatabaseStorage implements IStorage {
     totalQuizzes: number;
     totalXP: number;
     rank: number;
+    level: number;
   }> {
     const [quizCount] = await db
       .select({ count: sql<number>`count(*)` })
@@ -464,6 +465,7 @@ export class DatabaseStorage implements IStorage {
       totalQuizzes: quizCount?.count || 0,
       totalXP: user?.xp || 0,
       rank: rankResult?.rank || 1,
+      level: user?.level || 1,
     };
   }
 

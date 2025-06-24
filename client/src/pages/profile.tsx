@@ -66,8 +66,9 @@ export default function Profile() {
     );
   }
 
-  const currentLevel = user?.level || 1;
-  const currentXP = user?.xp || 0;
+  // Use fresh user data instead of cached auth data
+  const currentLevel = userStats?.level || user?.level || 1;
+  const currentXP = userStats?.totalXP || user?.xp || 0;
   const xpForNextLevel = currentLevel * 100;
   const xpProgress = ((currentXP % 100) / 100) * 100;
 
