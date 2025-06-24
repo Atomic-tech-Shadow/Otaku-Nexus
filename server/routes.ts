@@ -265,15 +265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/anime-sama/trending', async (req, res) => {
-    try {
-      const trending = await animeSamaService.getTrendingAnime();
-      res.json({ success: true, data: trending, timestamp: new Date().toISOString() });
-    } catch (error) {
-      console.error('Error fetching trending anime:', error);
-      res.status(500).json({ success: false, message: 'Failed to fetch trending anime' });
-    }
-  });
+
 
   app.get('/api/anime-sama/random', async (req, res) => {
     try {
@@ -532,15 +524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/trending', async (req, res) => {
-    try {
-      const trending = await animeSamaService.getTrendingAnime();
-      res.json({ success: true, data: trending, timestamp: new Date().toISOString() });
-    } catch (error) {
-      console.error("Error fetching trending anime:", error);
-      res.status(500).json({ success: false, message: "Failed to fetch trending anime" });
-    }
-  });
+
 
   app.get('/api/random', async (req, res) => {
     try {
