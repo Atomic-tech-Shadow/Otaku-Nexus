@@ -360,11 +360,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/chat/messages', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
+      const { content } = req.body;
+
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: "Message content is required" });
+      }
+
+      // Ensure default chat room exists
+      let defaultRoomId = 1;
+      try {
+        // Check if room exists, if not create it
+        await storage.ensureDefaultChatRoom();
+      } catch (roomError) {
+        console.log("Room creation info:", roomError.message);
+      }
+
       const messageData = {
-        message: req.body.content,
+        content: content.trim(),
         userId,
-        roomId: 1 // Global chat room
+        roomId: defaultRoomId
       };
+      
       const message = await storage.sendChatMessage(messageData);
       res.json(message);
     } catch (error) {

@@ -551,7 +551,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async sendChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
-    const [newMessage] = await db.insert(chatMessages).values(message).returning();
+    // Ensure the structure matches the database schema
+    const messageData = {
+      content: message.content,
+      userId: message.userId,
+      roomId: message.roomId || 1,
+      createdAt: new Date()
+    };
+    
+    const [newMessage] = await db.insert(chatMessages).values(messageData).returning();
     return newMessage;
   }
 

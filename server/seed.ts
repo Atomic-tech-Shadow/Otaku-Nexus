@@ -136,11 +136,12 @@ async function seedDatabase() {
     // Create default chat room
     console.log("💬 Creating default chat room...");
     await db.insert(chatRooms).values({
-      name: "General Discussion",
+      id: 1,
+      name: "General Discussion", 
       description: "Welcome to the general chat! Discuss anime, manga, and more!",
       isPublic: true,
       createdBy: adminUser[0].id
-    });
+    }).onConflictDoNothing();
 
     console.log("✅ Database seeded successfully!");
     console.log(`   - ${sampleQuizzes.length} quiz entries`);
