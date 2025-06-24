@@ -26,6 +26,8 @@ This is an anime streaming platform built with Node.js/Express backend and React
 - ✓ Updated episode ID construction to match API format requirements
 - ✓ Enhanced error handling and CORS-compatible video player
 - ✓ Corrected CSS styles to match new component structure
+- ✓ Moved anime-sama.tsx file from project root to client/src/pages/ directory (June 24, 2025)
+- ✓ Added proper imports for MainLayout and CSS styles in anime-sama page
 
 ## User Preferences
 - Language: French (based on documentation files)

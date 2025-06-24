@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ArrowLeft, Download } from 'lucide-react';
 import { Link } from 'wouter';
+import MainLayout from '@/components/layout/main-layout';
+import '../styles/anime-sama.css';
 
 interface SearchResult {
   id: string;
