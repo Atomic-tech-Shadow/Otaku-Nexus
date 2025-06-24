@@ -551,9 +551,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async sendChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
-    // Ensure the structure matches the database schema
+    // Ensure the structure matches the database schema - content maps to message column
     const messageData = {
-      content: message.content,
+      message: message.content, // Use 'message' column name from database
       userId: message.userId,
       roomId: message.roomId || 1,
       createdAt: new Date()
