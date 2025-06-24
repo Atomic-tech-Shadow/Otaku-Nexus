@@ -87,12 +87,12 @@ class AnimeSamaService {
   private baseUrl = 'https://api-anime-sama.onrender.com';
   private cache = new Map();
   private readonly cacheConfig = {
-    ttl: parseInt(process.env.CACHE_TTL || '300000'), // 5 minutes par défaut
+    ttl: parseInt(process.env.CACHE_TTL || '900000'), // 15 minutes pour déploiement
     enabled: process.env.CACHE_ENABLED !== 'false',
     maxSize: 1000 // Limite de cache
   };
   private readonly requestConfig = {
-    timeout: parseInt(process.env.REQUEST_TIMEOUT || '20000'),
+    timeout: parseInt(process.env.REQUEST_TIMEOUT || '60000'),
     maxRetries: parseInt(process.env.MAX_RETRY_ATTEMPTS || '3'),
     retryDelay: 2000, // Délai entre tentatives
     headers: {

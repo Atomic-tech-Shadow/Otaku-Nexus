@@ -441,7 +441,7 @@ const AnimeSamaPage: React.FC = () => {
       const response = await fetch(`${API_BASE_URL}/api/trending`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
-        signal: AbortSignal.timeout(10000)
+        signal: AbortSignal.timeout(60000)
       });
       
       if (response.ok) {
@@ -454,7 +454,7 @@ const AnimeSamaPage: React.FC = () => {
         const searchResponse = await fetch(`${API_BASE_URL}/api/search?query=`, {
           method: 'GET',
           headers: { 'Accept': 'application/json' },
-          signal: AbortSignal.timeout(10000)
+          signal: AbortSignal.timeout(60000)
         });
         
         if (searchResponse.ok) {
@@ -474,8 +474,8 @@ const AnimeSamaPage: React.FC = () => {
 
 
   // Configuration API pour production
-  const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-  const REQUEST_TIMEOUT = 15000; // 15 secondes
+  const CACHE_TTL = 15 * 60 * 1000; // 15 minutes pour déploiement
+  const REQUEST_TIMEOUT = 120000; // 2 minutes pour déploiement
   
   // Client HTTP robuste avec gestion d'erreurs silencieuse
   const createApiClient = () => {
@@ -654,7 +654,7 @@ const AnimeSamaPage: React.FC = () => {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         },
-        signal: AbortSignal.timeout(30000)
+        signal: AbortSignal.timeout(60000)
       });
       
       if (!response.ok) {
@@ -693,7 +693,7 @@ const AnimeSamaPage: React.FC = () => {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         },
-        signal: AbortSignal.timeout(30000)
+        signal: AbortSignal.timeout(60000)
       });
       
       if (!response.ok) {
@@ -768,7 +768,7 @@ const AnimeSamaPage: React.FC = () => {
     try {
       const vfResponse = await fetch(`${API_BASE_URL}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vf`, {
         headers: { 'Accept': 'application/json' },
-        signal: AbortSignal.timeout(8000)
+        signal: AbortSignal.timeout(60000)
       });
       
       if (vfResponse.ok) {
@@ -785,7 +785,7 @@ const AnimeSamaPage: React.FC = () => {
     try {
       const vostfrResponse = await fetch(`${API_BASE_URL}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vostfr`, {
         headers: { 'Accept': 'application/json' },
-        signal: AbortSignal.timeout(8000)
+        signal: AbortSignal.timeout(60000)
       });
       
       if (vostfrResponse.ok) {
@@ -966,7 +966,7 @@ const AnimeSamaPage: React.FC = () => {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         },
-        signal: AbortSignal.timeout(15000)
+        signal: AbortSignal.timeout(60000)
       });
       
       if (!response.ok) {
@@ -1114,7 +1114,7 @@ const AnimeSamaPage: React.FC = () => {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
           },
-          signal: AbortSignal.timeout(15000)
+          signal: AbortSignal.timeout(60000)
         }).catch(fetchError => {
           return null;
         });

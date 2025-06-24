@@ -4,6 +4,12 @@
 Plateforme complète pour les fans d'anime et manga avec streaming, quiz, chat et gestion de favoris. Le projet utilise React/TypeScript en frontend, Express/Node.js en backend, PostgreSQL comme base de données, et une API externe pour le contenu anime.
 
 ## Recent Changes
+- **Optimisation post-déploiement Render** (24 juin 2025)
+  - Suppression des restrictions de timeout dans anime-sama
+  - Augmentation des délais API (60s) pour environnement de production
+  - Optimisation du cache (15 minutes) pour Render
+  - Suppression des blocages iframe et restrictions vidéo
+  - Configuration finale pour déploiement externe
 - **Préparation pour déploiement** (24 juin 2025)
   - Suppression des dépendances Replit spécifiques
   - Configuration database Neon PostgreSQL permanente
