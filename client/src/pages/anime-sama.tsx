@@ -434,65 +434,52 @@ const AnimeSamaPage: React.FC = () => {
   // Configuration API avec l'API anime-sama déployée sur Render
   const API_BASE_URL = 'https://api-anime-sama.onrender.com';
   
-  // Chargement des animes populaires avec fallback local
+  // Chargement des animes populaires depuis l'API anime-sama
   const loadPopularAnimes = async () => {
     try {
-      // Essayer d'abord l'API externe anime-sama
-      const apiUrl = `${API_BASE_URL}/api/trending`;
-        
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        signal: AbortSignal.timeout(15000)
+      // Charger quelques animes populaires en utilisant l'API de recherche
+      const popularQueries = ['naruto', 'one-piece', 'dragon-ball', 'attack-on-titan', 'demon-slayer'];
+      const animePromises = popularQueries.map(async (query) => {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/anime/${query}`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            signal: AbortSignal.timeout(10000)
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) {
+              return {
+                id: result.data.id,
+                title: result.data.title,
+                image: result.data.image,
+                type: 'Anime',
+                status: result.data.status,
+                genres: result.data.genres || [],
+                url: result.data.url
+              };
+            }
+          }
+        } catch (error) {
+          console.log(`Erreur chargement ${query}:`, error);
+        }
+        return null;
       });
       
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data && Array.isArray(result.data)) {
-          const trendingAnimes = result.data.slice(0, 12);
-          setPopularAnimes(trendingAnimes);
-          return;
-        }
+      const results = await Promise.all(animePromises);
+      const validAnimes = results.filter(anime => anime !== null);
+      
+      if (validAnimes.length > 0) {
+        setPopularAnimes(validAnimes);
+      } else {
+        setPopularAnimes([]);
       }
+      
     } catch (error: any) {
-      console.log('API externe indisponible, utilisation du mode local');
+      console.log('Erreur chargement animes populaires:', error);
+      setPopularAnimes([]);
     }
-    
-    // Fallback: animes populaires locaux
-    const fallbackAnimes = [
-      {
-        id: 'one-piece',
-        title: 'One Piece',
-        image: 'https://cdn.myanimelist.net/images/anime/6/73245.jpg',
-        type: 'Anime',
-        status: 'En cours',
-        genres: ['Action', 'Aventure', 'Comédie'],
-        url: '/anime/one-piece'
-      },
-      {
-        id: 'naruto',
-        title: 'Naruto',
-        image: 'https://cdn.myanimelist.net/images/anime/13/17405.jpg',
-        type: 'Anime',
-        status: 'Terminé',
-        genres: ['Action', 'Arts martiaux', 'Comédie'],
-        url: '/anime/naruto'
-      },
-      {
-        id: 'attack-on-titan',
-        title: 'L\'Attaque des Titans',
-        image: 'https://cdn.myanimelist.net/images/anime/10/47347.jpg',
-        type: 'Anime',
-        status: 'Terminé',
-        genres: ['Action', 'Drame', 'Fantasy'],
-        url: '/anime/attack-on-titan'
-      }
-    ];
-    
-    setPopularAnimes(fallbackAnimes);
   };
 
 
@@ -701,7 +688,7 @@ const AnimeSamaPage: React.FC = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const apiResponse: ApiResponse<SearchResult[]> = await response.json();
+      const apiResponse = await response.json();
       
       if (!apiResponse.success) {
         throw new Error('Erreur lors de la recherche');
@@ -741,6 +728,10 @@ const AnimeSamaPage: React.FC = () => {
       }
       
       const apiResponse: ApiResponse<AnimeDetails> = await response.json();
+      
+      if (apiResponse.error) {
+        throw new Error(apiResponse.message || 'Données anime non disponibles');
+      }
       
       if (!apiResponse.success || !apiResponse.data) {
         throw new Error('Données anime non disponibles');
@@ -1895,7 +1886,7 @@ const AnimeSamaPage: React.FC = () => {
                       }}
                       onLoad={() => {
                         setError(null);
-                        console.log(`Lecteur chargé: ${currentSource.server} - Episode ${selectedEpisode?.episodeNumber} (${selectedLanguage})`);
+                        console.log(`Lecteur chargé: ${currentSource?.server || 'Serveur inconnu'} - Episode ${selectedEpisode?.episodeNumber} (${selectedLanguage})`);
                       }}
                       onError={(e) => {
                         console.log('Erreur iframe, tentative fallback');
@@ -1908,8 +1899,8 @@ const AnimeSamaPage: React.FC = () => {
                     
                     {/* Overlay avec informations serveur */}
                     <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs p-2 rounded opacity-70 hover:opacity-100 transition-opacity">
-                      {currentSource.server || `Serveur ${selectedServer + 1}`}
-                      {currentSource.quality && ` (${currentSource.quality})`}
+                      {currentSource?.server || `Serveur ${selectedServer + 1}`}
+                      {currentSource?.quality && ` (${currentSource.quality})`}
                     </div>
                   </div>
                 );
