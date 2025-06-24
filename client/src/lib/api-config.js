@@ -1,9 +1,11 @@
 // api-config.js - Configuration API Anime-Sama pour Replit
 export const API_CONFIG = {
-  // URL de base - Replit déployé
-  BASE_URL: process.env.NODE_ENV === 'development' 
-    ? 'http://localhost:5000'
-    : window.location.origin,
+  // URL de base - Replit déployé  
+  BASE_URL: typeof window !== 'undefined' 
+    ? (process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:5000'
+        : window.location.origin)
+    : 'http://localhost:5000',
   
   // Endpoints corrects
   ENDPOINTS: {

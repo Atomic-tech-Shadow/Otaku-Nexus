@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, ArrowLeft, Download } from 'lucide-react';
 import { Link } from 'wouter';
 import MainLayout from '@/components/layout/main-layout';
-import { API_CONFIG } from '@/lib/api-config.js';
+import { API_CONFIG } from '@/lib/api-config';
 import '../styles/anime-sama.css';
 
 interface SearchResult {
@@ -601,7 +601,7 @@ const AnimeSamaPage: React.FC = () => {
   };
   
   // Configuration optimisée selon le guide de configuration API
-  const API_CONFIG = {
+  const LOCAL_API_CONFIG = {
     timeout: 20000,
     maxRetries: 3,
     retryDelay: 2000,
@@ -1105,18 +1105,18 @@ const AnimeSamaPage: React.FC = () => {
       // Générer l'ID d'épisode correct selon documentation: {anime}-episode-{numero}-{langue}
       let correctEpisodeId = episodeId;
       if (selectedAnime && selectedEpisode) {
-        correctEpisodeId = API_CONFIG.buildEpisodeId(
-          selectedAnime.id, 
-          selectedEpisode.episodeNumber, 
-          selectedLanguage
-        );
+        const lang = selectedLanguage.toLowerCase();
+        correctEpisodeId = `${selectedAnime.id}-episode-${selectedEpisode.episodeNumber}-${lang}`;
       }
       
       // Essayer d'abord l'endpoint /api/episode/{episodeId} avec gestion d'erreurs robuste
       try {
-        const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.EPISODE}${correctEpisodeId}`, {
-          headers: API_CONFIG.HEADERS,
-          signal: AbortSignal.timeout(API_CONFIG.TIMEOUT)
+        const response = await fetch(`${API_BASE_URL}/api/episode/${correctEpisodeId}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          signal: AbortSignal.timeout(15000)
         }).catch(fetchError => {
           return null;
         });
@@ -1134,7 +1134,7 @@ const AnimeSamaPage: React.FC = () => {
               sources: (apiResponse.data.sources || []).map((source: any, index: number) => ({
                 ...source,
                 serverName: `Serveur ${index + 1} - ${source.server}${source.quality ? ` (${source.quality})` : ''}`,
-                embedUrl: API_CONFIG.buildEmbedUrl(correctEpisodeId),
+                embedUrl: `/api/embed/${correctEpisodeId}`,
                 isEmbed: true,
                 priority: index === 0 ? 'high' : 'normal'
               }))
@@ -1165,7 +1165,7 @@ const AnimeSamaPage: React.FC = () => {
       }
       
       // Fallback: utiliser directement l'endpoint embed
-      const embedUrl = API_CONFIG.buildEmbedUrl(correctEpisodeId);
+      const embedUrl = `/api/embed/${correctEpisodeId}`;
       const fallbackData = {
         id: correctEpisodeId,
         title: selectedEpisode?.title || 'Épisode',
@@ -1839,7 +1839,7 @@ const AnimeSamaPage: React.FC = () => {
                 );
                 
                 const correctEpisodeId = selectedEpisode ? selectedEpisode.id : episodeDetails?.id || '';
-                const embedUrl = API_CONFIG.buildEmbedUrl(correctEpisodeId);
+                const embedUrl = `/api/embed/${correctEpisodeId}`;
                 
                 return (
                   <div className="relative w-full">
