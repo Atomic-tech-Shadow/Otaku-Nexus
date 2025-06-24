@@ -199,11 +199,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/anime-sama/catalogue', async (req, res) => {
     try {
-      const catalogue = await animeSamaService.getCatalogue();
+      const { search } = req.query;
+      let catalogue;
+      
+      if (search) {
+        // Si paramètre search fourni, filtrer le catalogue
+        const fullCatalogue = await animeSamaService.getCatalogue();
+        catalogue = fullCatalogue.filter((anime: any) => 
+          anime.id === search || 
+          anime.title?.toLowerCase().includes((search as string).toLowerCase())
+        );
+      } else {
+        catalogue = await animeSamaService.getCatalogue();
+      }
+      
       res.json({ success: true, data: catalogue, timestamp: new Date().toISOString() });
     } catch (error) {
       console.error('Error fetching catalogue:', error);
       res.status(500).json({ success: false, message: 'Failed to fetch catalogue' });
+    }
+  });
+
+  // Route pour le contenu des animes (fallback universel)
+  app.get('/api/anime-sama/content', async (req, res) => {
+    try {
+      const { animeId, type } = req.query;
+      
+      if (!animeId) {
+        return res.status(400).json({ success: false, message: 'animeId parameter required' });
+      }
+
+      // Utiliser getCatalogue pour obtenir les informations d'épisodes
+      const catalogue = await animeSamaService.getCatalogue();
+      const animeInfo = catalogue.find((anime: any) => anime.id === animeId);
+      
+      if (!animeInfo) {
+        return res.status(404).json({ success: false, message: 'Anime not found in catalogue' });
+      }
+
+      let contentData = [];
+      if (type === 'episodes' && animeInfo.seasons) {
+        // Générer des épisodes basés sur les saisons du catalogue
+        animeInfo.seasons.forEach((season: any, seasonIndex: number) => {
+          if (season.episodeCount && season.episodeCount > 0) {
+            for (let ep = 1; ep <= season.episodeCount; ep++) {
+              contentData.push({
+                id: `${animeId}-s${seasonIndex + 1}-e${ep}`,
+                episodeNumber: ep,
+                seasonNumber: seasonIndex + 1,
+                title: `Épisode ${ep}`,
+                url: `/api/episode/${animeId}-episode-${ep}-vostfr`,
+                available: true
+              });
+            }
+          }
+        });
+      }
+
+      res.json({ 
+        success: true, 
+        data: contentData,
+        meta: {
+          animeId,
+          type,
+          totalEpisodes: contentData.length
+        },
+        timestamp: new Date().toISOString() 
+      });
+    } catch (error) {
+      console.error('Error fetching anime content:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch anime content' });
     }
   });
 
@@ -437,54 +502,159 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Route embed pour iframe direct
+  // Route embed pour iframe direct - Version optimisée
   app.get('/api/embed/:episodeId', async (req, res) => {
     try {
       const { episodeId } = req.params;
       const episode = await animeSamaService.getEpisodeDetails(episodeId);
 
       if (!episode) {
-        return res.status(404).json({ message: "Episode not found" });
+        return res.status(404).send(`
+          <html>
+            <head><title>Episode non trouvé</title></head>
+            <body style="background:#000;color:white;text-align:center;padding:50px;font-family:Arial,sans-serif;">
+              <h2>Épisode non trouvé</h2>
+              <p>L'épisode demandé n'existe pas ou n'est pas disponible.</p>
+            </body>
+          </html>
+        `);
       }
 
+      // Headers CORS optimisés pour anime-sama
       res.setHeader('X-Frame-Options', 'ALLOWALL');
-      res.setHeader('Content-Security-Policy', "frame-ancestors *");
+      res.setHeader('Content-Security-Policy', "frame-ancestors *; script-src 'unsafe-inline' 'unsafe-eval' *; object-src *;");
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.setHeader('Referrer-Policy', 'no-referrer');
+
+      // Sélectionner la meilleure source disponible
+      let bestSource = null;
+      if (episode.sources && episode.sources.length > 0) {
+        // Prioriser les sources par qualité et serveur
+        bestSource = episode.sources.find(s => s.quality === 'HD') || 
+                    episode.sources.find(s => s.server === 'Sibnet') ||
+                    episode.sources.find(s => s.server === 'Vidmoly') ||
+                    episode.sources[0];
+      }
 
       const embedHtml = `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lecteur Vidéo</title>
+    <title>Lecteur Vidéo - ${episode.animeTitle} Episode ${episode.episodeNumber}</title>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            margin: 0; 
-            padding: 0; 
             background: #000; 
             overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .video-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         iframe { 
             width: 100%; 
-            height: 100vh; 
+            height: 100%; 
             border: none; 
             display: block;
+        }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            text-align: center;
+        }
+        .spinner {
+            border: 2px solid #333;
+            border-top: 2px solid #fff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         .error { 
             color: white; 
             text-align: center; 
-            padding: 50px; 
-            font-family: Arial, sans-serif;
+            padding: 50px;
+            max-width: 500px;
+            margin: 0 auto;
         }
+        .retry-btn {
+            background: #1e40af;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .retry-btn:hover { background: #3b82f6; }
     </style>
 </head>
 <body>
-    ${episode.sources.length > 0 ? 
-      `<iframe src="${episode.sources[0].url}" allowfullscreen frameborder="0"></iframe>` :
-      `<div class="error">Aucune source disponible pour cet épisode</div>`
-    }
+    <div class="video-container">
+        ${bestSource ? `
+          <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Chargement du lecteur...</p>
+          </div>
+          <iframe 
+            id="videoFrame"
+            src="${bestSource.url}" 
+            allowfullscreen 
+            frameborder="0"
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+            referrerpolicy="no-referrer"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-top-navigation"
+            style="display: none;"
+            onload="document.getElementById('loading').style.display='none'; this.style.display='block';"
+            onerror="showError()"
+          ></iframe>
+        ` : `
+          <div class="error">
+            <h2>Aucune source disponible</h2>
+            <p>Cet épisode n'a pas de source vidéo disponible pour le moment.</p>
+            <button class="retry-btn" onclick="window.location.reload()">Réessayer</button>
+          </div>
+        `}
+    </div>
+    
+    <script>
+        function showError() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('videoFrame').style.display = 'none';
+            document.querySelector('.video-container').innerHTML = \`
+                <div class="error">
+                    <h2>Erreur de chargement</h2>
+                    <p>Impossible de charger la vidéo. Cela peut être dû à des restrictions du serveur.</p>
+                    <button class="retry-btn" onclick="window.location.reload()">Réessayer</button>
+                </div>
+            \`;
+        }
+        
+        // Auto-hide loading après 30 secondes
+        setTimeout(() => {
+            const loading = document.getElementById('loading');
+            if (loading && loading.style.display !== 'none') {
+                showError();
+            }
+        }, 30000);
+    </script>
 </body>
 </html>`;
 
@@ -493,12 +663,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error in embed endpoint:", error);
       res.status(500).send(`
         <html>
-          <body style="background:#000;color:white;text-align:center;padding:20px;">
+          <head><title>Erreur</title></head>
+          <body style="background:#000;color:white;text-align:center;padding:50px;font-family:Arial,sans-serif;">
             <h2>Erreur de chargement</h2>
-            <p>Impossible de charger l'épisode</p>
+            <p>Une erreur inattendue s'est produite lors du chargement de l'épisode.</p>
+            <button onclick="window.location.reload()" style="background:#1e40af;color:white;border:none;padding:12px 24px;border-radius:6px;cursor:pointer;margin-top:20px;">
+              Réessayer
+            </button>
           </body>
         </html>
       `);
+    }
+  });
+
+  // Route catalogue optimisée (dupliquée pour compatibilité)
+  app.get('/api/catalogue', async (req, res) => {
+    try {
+      const { search } = req.query;
+      let catalogue;
+      
+      if (search) {
+        const fullCatalogue = await animeSamaService.getCatalogue();
+        catalogue = fullCatalogue.filter((anime: any) => 
+          anime.id === search || 
+          anime.title?.toLowerCase().includes((search as string).toLowerCase())
+        );
+      } else {
+        catalogue = await animeSamaService.getCatalogue();
+      }
+      
+      res.json({ success: true, data: catalogue, timestamp: new Date().toISOString() });
+    } catch (error) {
+      console.error('Error fetching catalogue:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch catalogue' });
+    }
+  });
+
+  // Route content optimisée (dupliquée pour compatibilité)
+  app.get('/api/content', async (req, res) => {
+    try {
+      const { animeId, type } = req.query;
+      
+      if (!animeId) {
+        return res.status(400).json({ success: false, message: 'animeId parameter required' });
+      }
+
+      const catalogue = await animeSamaService.getCatalogue();
+      const animeInfo = catalogue.find((anime: any) => anime.id === animeId);
+      
+      if (!animeInfo) {
+        return res.status(404).json({ success: false, message: 'Anime not found in catalogue' });
+      }
+
+      let contentData = [];
+      if (type === 'episodes' && animeInfo.seasons) {
+        animeInfo.seasons.forEach((season: any, seasonIndex: number) => {
+          if (season.episodeCount && season.episodeCount > 0) {
+            for (let ep = 1; ep <= season.episodeCount; ep++) {
+              contentData.push({
+                id: `${animeId}-s${seasonIndex + 1}-e${ep}`,
+                episodeNumber: ep,
+                seasonNumber: seasonIndex + 1,
+                title: `Épisode ${ep}`,
+                url: `/api/episode/${animeId}-episode-${ep}-vostfr`,
+                available: true
+              });
+            }
+          }
+        });
+      }
+
+      res.json({ 
+        success: true, 
+        data: contentData,
+        meta: {
+          animeId,
+          type,
+          totalEpisodes: contentData.length
+        },
+        timestamp: new Date().toISOString() 
+      });
+    } catch (error) {
+      console.error('Error fetching anime content:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch anime content' });
     }
   });
 
