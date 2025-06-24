@@ -4,6 +4,12 @@
 Plateforme complète pour les fans d'anime et manga avec streaming, quiz, chat et gestion de favoris. Le projet utilise React/TypeScript en frontend, Express/Node.js en backend, PostgreSQL comme base de données, et une API externe pour le contenu anime.
 
 ## Recent Changes
+- **Mise à jour Mobile pour Render** (24 juin 2025)
+  - Synchronisation API mobile avec endpoints Render optimisés
+  - Timeouts étendus à 2 minutes pour stabilité mobile
+  - Cache intelligent optimisé pour performances Render
+  - Gestion robuste des formats de réponse API
+  - Fallbacks automatiques VF/VOSTFR et serveurs multiples
 - **Optimisation post-déploiement Render** (24 juin 2025)
   - Suppression des restrictions de timeout dans anime-sama
   - Augmentation des délais API (60s) pour environnement de production

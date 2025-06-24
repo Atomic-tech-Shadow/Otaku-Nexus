@@ -77,10 +77,10 @@ class ApiService {
   private baseUrl: string;
   private cache = new Map();
   private readonly cacheConfig = {
-    trending: 30 * 60 * 1000, // 30 minutes
+    trending: 15 * 60 * 1000, // 15 minutes (optimisé Render)
     catalogue: 60 * 60 * 1000, // 1 hour
     search: 10 * 60 * 1000, // 10 minutes
-    episode: 5 * 60 * 1000, // 5 minutes
+    episode: 15 * 60 * 1000, // 15 minutes (optimisé Render)
   };
 
   constructor() {
@@ -132,7 +132,7 @@ class ApiService {
       }
 
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      const timeout = setTimeout(() => controller.abort(), 120000); // 2 minutes timeout (optimisé Render)
 
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         ...options,
@@ -249,12 +249,13 @@ class ApiService {
 
     try {
       const response = await this.makeRequest<AnimeSamaAnime[]>(
-        `/api/anime-sama/search?q=${encodeURIComponent(query)}`
+        `/api/search?query=${encodeURIComponent(query)}`
       );
       
       if (response.success && response.data) {
-        this.setCachedData(cacheKey, response.data, this.cacheConfig.search);
-        return response.data;
+        const data = Array.isArray(response.data) ? response.data : response.data.data || [];
+        this.setCachedData(cacheKey, data, this.cacheConfig.search);
+        return data;
       }
       return [];
     } catch (error) {
@@ -270,7 +271,7 @@ class ApiService {
 
     try {
       const response = await this.makeRequest<AnimeSamaAnime>(
-        `/api/anime-sama/anime/${animeId}`
+        `/api/anime/${animeId}`
       );
       
       if (response.success && response.data) {
@@ -300,11 +301,11 @@ class ApiService {
         language: string;
         episodes: AnimeSamaEpisode[];
         episodeCount: number;
-      }>(`/api/anime-sama/episodes/${animeId}/${season}/${language}`);
+      }>(`/api/seasons?animeId=${animeId}&season=${season}&language=${language}`);
       
       if (response.success && response.data?.episodes) {
         // Apply One Piece episode correction if needed
-        let episodes = response.data.episodes;
+        let episodes = response.data.episodes || response.data;
         if (animeId === 'one-piece' && episodes.length > 0) {
           episodes = this.correctOnePieceEpisodes(episodes, season);
         }
@@ -353,7 +354,7 @@ class ApiService {
 
     try {
       const response = await this.makeRequest<AnimeSamaEpisodeDetail>(
-        `/api/anime-sama/episode/${episodeId}`
+        `/api/episode/${episodeId}`
       );
       
       if (response.success && response.data) {
@@ -373,11 +374,12 @@ class ApiService {
     if (cached) return cached;
 
     try {
-      const response = await this.makeRequest<AnimeSamaAnime[]>('/api/anime-sama/trending');
+      const response = await this.makeRequest<AnimeSamaAnime[]>('/api/trending');
       
       if (response.success && response.data) {
-        this.setCachedData(cacheKey, response.data, this.cacheConfig.trending);
-        return response.data;
+        const data = Array.isArray(response.data) ? response.data : response.data.data || [];
+        this.setCachedData(cacheKey, data, this.cacheConfig.trending);
+        return data;
       }
       return [];
     } catch (error) {
@@ -392,7 +394,7 @@ class ApiService {
     if (cached) return cached;
 
     try {
-      const response = await this.makeRequest<AnimeSamaAnime[]>('/api/anime-sama/catalogue');
+      const response = await this.makeRequest<AnimeSamaAnime[]>('/api/trending');
       
       if (response.success && response.data) {
         this.setCachedData(cacheKey, response.data, this.cacheConfig.catalogue);
@@ -472,7 +474,7 @@ class ApiService {
       });
       
       const response = await this.makeRequest<AnimeSamaAnime[]>(
-        `/api/anime-sama/advanced-search?${searchParams.toString()}`
+        `/api/search?${searchParams.toString()}`
       );
       
       return response.success ? response.data : [];
@@ -488,13 +490,17 @@ class ApiService {
     if (cached) return cached;
 
     try {
-      const response = await this.makeRequest<string[]>('/api/anime-sama/genres');
-      
-      if (response.success && response.data) {
-        this.setCachedData(cacheKey, response.data, this.cacheConfig.catalogue);
-        return response.data;
-      }
-      return [];
+      // Fallback: extract genres from trending anime
+      const trending = await this.getTrendingAnime();
+      const genres = new Set<string>();
+      trending.forEach(anime => {
+        if (anime.genres) {
+          anime.genres.forEach(genre => genres.add(genre));
+        }
+      });
+      const genreList = Array.from(genres).slice(0, 20);
+      this.setCachedData(cacheKey, genreList, this.cacheConfig.catalogue);
+      return genreList;
     } catch (error) {
       console.error('Get genres failed:', error);
       return [];
@@ -503,8 +509,13 @@ class ApiService {
 
   async getRandomAnime(): Promise<AnimeSamaAnime | null> {
     try {
-      const response = await this.makeRequest<AnimeSamaAnime>('/api/anime-sama/random');
-      return response.success ? response.data : null;
+      // Fallback: get random from trending
+      const trending = await this.getTrendingAnime();
+      if (trending.length > 0) {
+        const randomIndex = Math.floor(Math.random() * trending.length);
+        return trending[randomIndex];
+      }
+      return null;
     } catch (error) {
       console.error('Get random anime failed:', error);
       return null;
