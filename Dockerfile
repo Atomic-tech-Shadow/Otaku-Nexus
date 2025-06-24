@@ -2,12 +2,12 @@
 FROM node:20-alpine
 
 # Installer les dépendances système
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache postgresql-client
 
 # Créer le répertoire de travail
 WORKDIR /app
 
-# Copier les fichiers de configuration
+# Copier package.json et package-lock.json
 COPY package*.json ./
 
 # Installer les dépendances
@@ -20,11 +20,12 @@ COPY . .
 RUN npm run build
 
 # Exposer le port
-EXPOSE 10000
+EXPOSE 5000
 
-# Variables d'environnement
+# Variables d'environnement par défaut
 ENV NODE_ENV=production
-ENV PORT=10000
+ENV PORT=5000
+ENV API_BASE_URL=https://api-anime-sama.onrender.com
 
 # Commande de démarrage
 CMD ["npm", "start"]
