@@ -130,6 +130,9 @@ const AnimeSamaPage: React.FC = () => {
     VOSTFR: null
   });
 
+  // État pour la gestion du proxy URL
+  const [currentVideoUrl, setCurrentVideoUrl] = useState('');
+
 
 
   // Hook pour débounce les changements
@@ -148,6 +151,31 @@ const AnimeSamaPage: React.FC = () => {
     
     return debouncedValue;
   };
+
+  // Fonction pour récupérer l'URL proxy des vidéos
+  const getProxyUrl = async () => {
+    if (!selectedEpisode) return '';
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/episode/${selectedEpisode.id}`);
+      const data = await response.json();
+      
+      if (data.success && data.data.sources && data.data.sources.length > 0) {
+        const source = data.data.sources[selectedServer] || data.data.sources[0];
+        return `${API_BASE_URL}${source.proxyUrl}`;
+      }
+    } catch (error) {
+      console.error('Erreur chargement source:', error);
+    }
+    return '';
+  };
+
+  // Effet pour mettre à jour l'URL vidéo quand l'épisode ou le serveur change
+  useEffect(() => {
+    if (selectedEpisode) {
+      getProxyUrl().then(url => setCurrentVideoUrl(url));
+    }
+  }, [selectedEpisode, selectedServer]);
 
   // Protection contre les changements rapides
   const debouncedLanguage = useDebounce(selectedLanguage, 300);
@@ -1785,35 +1813,17 @@ const AnimeSamaPage: React.FC = () => {
                   </div>
                 );
                 
-                const getProxyUrl = async () => {
-                  if (!selectedEpisode) return '';
-                  
-                  try {
-                    const response = await fetch(`${API_BASE_URL}/api/episode/${selectedEpisode.id}`);
-                    const data = await response.json();
-                    
-                    if (data.success && data.data.sources && data.data.sources.length > 0) {
-                      const source = data.data.sources[selectedServer] || data.data.sources[0];
-                      return `${API_BASE_URL}${source.proxyUrl}`;
-                    }
-                  } catch (error) {
-                    console.error('Erreur chargement source:', error);
-                  }
-                  return '';
-                };
-                const [currentVideoUrl, setCurrentVideoUrl] = useState('');
-                useEffect(() => {
-                  if (selectedEpisode) {
-                    getProxyUrl().then(url => setCurrentVideoUrl(url));
-                  }
-                }, [selectedEpisode, selectedServer]);
+                const correctEpisodeId = selectedEpisode ? selectedEpisode.id : episodeDetails?.id || '';
+                const embedUrl = process.env.NODE_ENV === 'development' 
+                  ? `/api/embed/${correctEpisodeId}`
+                  : `${API_BASE_URL}/api/embed/${correctEpisodeId}`;
                 
                 return (
                   <div className="relative w-full">
                     <iframe
                       id="video-player"
-                      key={`${selectedEpisode?.id}-${selectedServer}-${selectedLanguage}`}
-                      src={currentVideoUrl}
+                      key={`${correctEpisodeId}-${selectedServer}-${selectedLanguage}`}
+                      src={currentVideoUrl || embedUrl}
                       className="w-full h-64 md:h-80"
                       allowFullScreen
                       frameBorder="0"
