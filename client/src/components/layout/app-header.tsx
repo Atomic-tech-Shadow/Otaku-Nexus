@@ -25,7 +25,7 @@ export default function AppHeader() {
   // Calculs sécurisés avec valeurs par défaut
   const currentLevel = userStats?.level || user?.level || 1;
   const currentXP = userStats?.totalXP || user?.xp || 0;
-  const xpProgress = ((currentXP % 100) / 100) * 100;
+  const xpProgress = (currentXP % 100); // Déjà en pourcentage
 
   const handleLogout = () => {
     logout();
