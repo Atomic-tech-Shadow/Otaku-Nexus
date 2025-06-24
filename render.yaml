@@ -1,24 +1,15 @@
 services:
   - type: web
-    name: otaku-nexus
+    name: anime-sama-app
     env: node
-    plan: starter
+    plan: free
     buildCommand: npm ci && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 5000
       - key: API_BASE_URL
-        value: https://api-anime-sama.onrender.com
-      - key: DATABASE_URL
-        fromDatabase:
-          name: otaku-nexus-db
-          property: connectionString
-    healthCheckPath: /api/health
-    autoDeploy: true
-    
-databases:
-  - name: otaku-nexus-db
-    databaseName: otaku_nexus
-    user: otaku_user
-    plan: starter
+        sync: false
+    autoDeploy: false
