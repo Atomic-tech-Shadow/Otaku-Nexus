@@ -20,6 +20,9 @@ COPY . .
 RUN npx vite build --config vite.config.ts
 RUN npx esbuild server/index-production.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 
+# Pousser le schéma vers la base de données
+RUN npm run db:push
+
 # Créer le dossier public pour les fichiers statiques  
 RUN mkdir -p dist/public && cp -r client/dist/* dist/public/ 2>/dev/null || echo "Client dist not found, continuing..."
 

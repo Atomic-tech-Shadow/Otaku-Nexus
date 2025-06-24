@@ -3,7 +3,7 @@ services:
     name: anime-sama-app
     env: node
     plan: free
-    buildCommand: npm ci && npx vite build --config vite.config.ts && npx esbuild server/index-production.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && mkdir -p dist/public && cp -r client/dist/* dist/public/
+    buildCommand: npm ci && npx vite build --config vite.config.ts && npx esbuild server/index-production.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && mkdir -p dist/public && cp -r client/dist/* dist/public/ && npm run db:push
     startCommand: node dist/index-production.js
     envVars:
       - key: NODE_ENV
@@ -11,5 +11,7 @@ services:
       - key: PORT
         value: 5000
       - key: API_BASE_URL
+        sync: false
+      - key: DATABASE_URL
         sync: false
     autoDeploy: false

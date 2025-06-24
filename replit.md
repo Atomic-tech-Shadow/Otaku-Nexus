@@ -17,6 +17,7 @@ This is an anime streaming platform built with Node.js/Express backend and React
 - ✓ Fixed Render deployment: Created production-specific server files
 - ✓ Added render.yaml with Vite-free build configuration  
 - ✓ Verified production build works without any Vite dependencies
+- ✓ Added database schema migration to build process for Render
 
 ## User Preferences
 - Language: French (based on documentation files)
