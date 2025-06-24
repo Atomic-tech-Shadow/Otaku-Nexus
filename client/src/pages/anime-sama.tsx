@@ -105,9 +105,30 @@ const AnimeSamaPage: React.FC = () => {
   const [popularAnimes, setPopularAnimes] = useState<SearchResult[]>([]);
   
   // CORRECTION 6: Race Conditions - Variable de verrouillage
+  // CORRECTIONS CRITIQUES selon documentation
   const [languageChangeInProgress, setLanguageChangeInProgress] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [lastSuccessfulLanguage, setLastSuccessfulLanguage] = useState('VOSTFR');
+  const [lastEpisodeId, setLastEpisodeId] = useState('');
+  const [videoSrc, setVideoSrc] = useState('');
+  const [currentEpisode, setCurrentEpisode] = useState<Episode | null>(null);
+  
+  // États séparés par langue pour éviter les conflits
+  const [episodesByLanguage, setEpisodesByLanguage] = useState<{
+    VF: {[key: string]: Episode[]};
+    VOSTFR: {[key: string]: Episode[]};
+  }>({
+    VF: {},
+    VOSTFR: {}
+  });
+  
+  const [currentVideoByLanguage, setCurrentVideoByLanguage] = useState<{
+    VF: {episode: Episode | null, videoSrc: string} | null;
+    VOSTFR: {episode: Episode | null, videoSrc: string} | null;
+  }>({
+    VF: null,
+    VOSTFR: null
+  });
 
 
 
@@ -131,7 +152,7 @@ const AnimeSamaPage: React.FC = () => {
   // Protection contre les changements rapides
   const debouncedLanguage = useDebounce(selectedLanguage, 300);
 
-  // Cache robuste avec gestion d'erreurs complète
+  // Cache robuste avec nettoyage par langue
   const cache = new Map();
   
   const getCachedData = async (key: string, fetcher: () => Promise<any>, ttl = 300000) => {
@@ -142,10 +163,208 @@ const AnimeSamaPage: React.FC = () => {
       }
     }
     
-    // Exécuter le fetcher directement sans masquer les erreurs
     const data = await fetcher();
     cache.set(key, { data, timestamp: Date.now() });
     return data;
+  };
+  
+  // CORRECTION CRITIQUE: Nettoyage cache par langue
+  const clearLanguageCache = (language: string) => {
+    console.log(`Nettoyage cache pour langue: ${language}`);
+    
+    // Vider cache Map
+    for (const [key] of cache.entries()) {
+      if (key.includes(language.toLowerCase()) || key.includes('episode') || key.includes('anime')) {
+        cache.delete(key);
+      }
+    }
+    
+    // Vider localStorage
+    Object.keys(localStorage).forEach(key => {
+      if (key.includes('episode') || key.includes('anime') || key.includes(language.toLowerCase())) {
+        localStorage.removeItem(key);
+      }
+    });
+  };
+
+  // CORRECTION CRITIQUE 1: Construction ID épisode avec langue
+  const buildEpisodeIdWithLanguage = (animeId: string, episodeNumber: number, language: string, season: number | null = null) => {
+    const langCode = language.toLowerCase(); // 'vf' ou 'vostfr'
+    
+    if (season && season > 1) {
+      return `${animeId}-saison${season}-episode-${episodeNumber}-${langCode}`;
+    }
+    return `${animeId}-episode-${episodeNumber}-${langCode}`;
+  };
+
+  // CORRECTION CRITIQUE 2: Changement de langue avec nettoyage complet
+  let languageChangeTimeout: NodeJS.Timeout | null = null;
+
+  const handleLanguageChange = async (newLanguage: 'VF' | 'VOSTFR') => {
+    if (languageChangeInProgress || newLanguage === selectedLanguage) {
+      console.log('Changement langue ignoré - déjà en cours ou même langue');
+      return;
+    }
+
+    console.log(`Changement langue: ${selectedLanguage} -> ${newLanguage}`);
+    
+    setLanguageChangeInProgress(true);
+    setLoading(true);
+    
+    try {
+      // CRITIQUE: Sauvegarder l'état actuel
+      if (currentEpisode && videoSrc) {
+        setCurrentVideoByLanguage(prev => ({
+          ...prev,
+          [selectedLanguage]: {
+            episode: currentEpisode,
+            videoSrc: videoSrc
+          }
+        }));
+      }
+
+      // CRITIQUE: Vider tout le cache d'épisodes
+      clearLanguageCache(selectedLanguage);
+      
+      // Réinitialiser état du lecteur
+      setCurrentEpisode(null);
+      setVideoSrc('');
+      setEpisodes([]);
+      setEpisodeDetails(null);
+      setSelectedEpisode(null);
+      
+      // Attendre délai pour éviter race conditions
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Mettre à jour la langue
+      setSelectedLanguage(newLanguage);
+      setLastSuccessfulLanguage(newLanguage);
+      
+      // Recharger les épisodes avec nouvelle langue
+      if (selectedAnime && selectedSeason) {
+        await loadEpisodesForLanguage(selectedAnime.id, selectedSeason, newLanguage);
+      }
+      
+    } catch (error) {
+      console.error('Erreur changement langue:', error);
+      // Fallback vers dernière langue fonctionnelle
+      setSelectedLanguage(lastSuccessfulLanguage);
+      setError(`Erreur changement langue: ${error}`);
+    } finally {
+      setLanguageChangeInProgress(false);
+      setLoading(false);
+    }
+  };
+
+  // CORRECTION CRITIQUE 3: Débounce anti-race pour changement langue
+  const debouncedLanguageChange = (newLanguage: 'VF' | 'VOSTFR') => {
+    if (languageChangeTimeout) {
+      clearTimeout(languageChangeTimeout);
+    }
+    
+    languageChangeTimeout = setTimeout(() => {
+      handleLanguageChange(newLanguage);
+    }, 300);
+  };
+
+  // CORRECTION CRITIQUE 4: Chargement épisode avec correspondance parfaite
+  let episodeLoadingQueue: {cancel: boolean, episodeId: string} | null = null;
+
+  const loadEpisodeWithQueue = async (episodeId: string) => {
+    // Annuler le chargement précédent
+    if (episodeLoadingQueue) {
+      episodeLoadingQueue.cancel = true;
+    }
+    
+    // Créer nouvelle tâche
+    const currentTask = { cancel: false, episodeId };
+    episodeLoadingQueue = currentTask;
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      if (currentTask.cancel) {
+        console.log('Chargement épisode annulé:', episodeId);
+        return;
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/api/episode/${episodeId}?_=${Date.now()}`);
+      const data = await response.json();
+      
+      if (currentTask.cancel) {
+        console.log('Chargement épisode annulé après fetch:', episodeId);
+        return;
+      }
+      
+      if (data.success && data.data.sources.length > 0) {
+        const embedUrl = `${API_BASE_URL}${data.data.sources[0].embedUrl || data.data.sources[0].proxyUrl}`;
+        updateVideoPlayer(embedUrl, episodeId);
+      }
+      
+    } catch (error) {
+      if (!currentTask.cancel) {
+        console.error('Erreur chargement épisode:', error);
+        setError('Impossible de charger cet épisode');
+      }
+    }
+  };
+
+  // CORRECTION CRITIQUE 5: Mise à jour lecteur vidéo avec CORS
+  const updateVideoPlayer = (embedUrl: string, episodeId: string) => {
+    console.log(`Mise à jour lecteur: ${episodeId} -> ${embedUrl}`);
+    
+    // Vider l'iframe avant de charger le nouveau
+    const iframe = document.querySelector('#video-player iframe') as HTMLIFrameElement;
+    if (iframe) {
+      iframe.src = 'about:blank';
+      setTimeout(() => {
+        iframe.src = embedUrl;
+        iframe.setAttribute('allowfullscreen', 'true');
+        iframe.setAttribute('allow', 'autoplay; fullscreen');
+      }, 100);
+    }
+    
+    setVideoSrc(embedUrl);
+    setLastEpisodeId(episodeId);
+  };
+
+  // CORRECTION CRITIQUE 6: Chargement épisodes par langue
+  const loadEpisodesForLanguage = async (animeId: string, season: Season, language: 'VF' | 'VOSTFR') => {
+    const langCode = language.toLowerCase() as 'vf' | 'vostfr';
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/seasons?animeId=${animeId}&season=${season.number}&language=${langCode}&_=${Date.now()}`);
+      const data = await response.json();
+      
+      if (data.success && data.data.episodes && data.data.episodes.length > 0) {
+        const correctedEpisodes = correctEpisodeNumbers(animeId, season.number, data.data.episodes);
+        
+        // Sauvegarder dans cache par langue
+        setEpisodesByLanguage(prev => ({
+          ...prev,
+          [language]: {
+            ...prev[language],
+            [`${animeId}-${season.number}`]: correctedEpisodes
+          }
+        }));
+        
+        setEpisodes(correctedEpisodes);
+        setSelectedSeason(season);
+        
+        // Charger le premier épisode
+        if (correctedEpisodes.length > 0) {
+          const firstEpisode = correctedEpisodes[0];
+          setSelectedEpisode(firstEpisode);
+          await loadEpisodeWithQueue(firstEpisode.id);
+        }
+        
+      } else {
+        throw new Error('Aucun épisode trouvé pour cette langue');
+      }
+    } catch (error) {
+      console.error(`Erreur chargement épisodes ${language}:`, error);
+      setError(`Impossible de charger les épisodes en ${language}`);
+    }
   };
 
   // Charger l'historique au démarrage
@@ -181,14 +400,18 @@ const AnimeSamaPage: React.FC = () => {
     };
   }, []);
 
+  // Configuration API avec URL de production
+  const API_BASE_URL = 'https://api-anime-sama.onrender.com';
+  
   // Chargement des animes populaires avec API déployée
   const loadPopularAnimes = async () => {
     try {
-
-      const response = await fetch(`${API_BASE}/api/trending`, {
+      const response = await fetch(`${API_BASE_URL}/api/trending`, {
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'X-Frame-Options': 'ALLOWALL'
         },
         signal: AbortSignal.timeout(10000)
       });
@@ -213,7 +436,7 @@ const AnimeSamaPage: React.FC = () => {
 
 
   // Configuration API robuste pour Replit
-  const API_BASE = 'https://api-anime-sama.onrender.com';
+  // Configuration API supprimée - utilisation de API_BASE_URL globale
   const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
   const REQUEST_TIMEOUT = 15000; // 15 secondes
   
@@ -229,7 +452,7 @@ const AnimeSamaPage: React.FC = () => {
     
     return {
       async get(endpoint: string, params: Record<string, string> = {}): Promise<any> {
-        const url = new URL(`${API_BASE}${endpoint}`);
+        const url = new URL(`${API_BASE_URL}${endpoint}`);
         
         // Ajout des paramètres + timestamp anti-cache
         Object.entries(params).forEach(([key, value]) => {
@@ -401,7 +624,7 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE}/api/search?query=${encodeURIComponent(query)}`, {
+      const response = await fetch(`${API_BASE_URL}/api/search?query=${encodeURIComponent(query)}`, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
@@ -436,7 +659,7 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE}/api/anime/${animeId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/anime/${animeId}`, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
@@ -491,7 +714,7 @@ const AnimeSamaPage: React.FC = () => {
           episodeNumber: i,
           title: `Episode ${i}`,
           language: episodes[0]?.language || 'vostfr',
-          url: `${API_BASE}/api/episode/${animeId}-episode-${i}-${episodes[0]?.language || 'vostfr'}`,
+          url: `${API_BASE_URL}/api/episode/${animeId}-episode-${i}-${episodes[0]?.language || 'vostfr'}`,
           available: true
         });
       }
@@ -510,7 +733,7 @@ const AnimeSamaPage: React.FC = () => {
     
     // Tester VF d'abord selon documentation (One Piece 1093 confirmé en VF)
     try {
-      const vfResponse = await fetch(`${API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vf`, {
+      const vfResponse = await fetch(`${API_BASE_URL}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vf`, {
         headers: { 'Accept': 'application/json' },
         signal: AbortSignal.timeout(8000)
       });
@@ -527,7 +750,7 @@ const AnimeSamaPage: React.FC = () => {
     
     // Tester VOSTFR
     try {
-      const vostfrResponse = await fetch(`${API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vostfr`, {
+      const vostfrResponse = await fetch(`${API_BASE_URL}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vostfr`, {
         headers: { 'Accept': 'application/json' },
         signal: AbortSignal.timeout(8000)
       });
@@ -557,7 +780,7 @@ const AnimeSamaPage: React.FC = () => {
     
     // Étape 1: Endpoint content avec données authentiques
     try {
-      const contentResponse = await fetch(`${API_BASE}/api/content?animeId=${animeId}&type=episodes`);
+      const contentResponse = await fetch(`${API_BASE_URL}/api/content?animeId=${animeId}&type=episodes`);
       
       if (contentResponse.ok) {
         const contentData = await contentResponse.json();
@@ -595,7 +818,7 @@ const AnimeSamaPage: React.FC = () => {
     
     // Étape 2: Endpoint catalogue pour nombre d'épisodes réel
     try {
-      const catalogueResponse = await fetch(`${API_BASE}/api/catalogue?search=${animeId}`);
+      const catalogueResponse = await fetch(`${API_BASE_URL}/api/catalogue?search=${animeId}`);
       
       if (catalogueResponse.ok) {
         const catalogueData = await catalogueResponse.json();
@@ -615,7 +838,7 @@ const AnimeSamaPage: React.FC = () => {
                 episodeNumber: i + 1,
                 title: `Épisode ${i + 1}`,
                 language: 'VOSTFR',
-                url: `${API_BASE}/api/episode/${animeId}-episode-${i + 1}-vostfr`,
+                url: `${API_BASE_URL}/api/episode/${animeId}-episode-${i + 1}-vostfr`,
                 available: true
               }));
               
@@ -703,7 +926,7 @@ const AnimeSamaPage: React.FC = () => {
       }
       
       const language = languageToUse.toLowerCase();
-      const requestUrl = `${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${language}`;
+      const requestUrl = `${API_BASE_URL}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${language}`;
       
       const response = await fetch(requestUrl, {
         headers: {
@@ -740,7 +963,7 @@ const AnimeSamaPage: React.FC = () => {
         for (const lang of languages) {
           try {
             const langCode = lang.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
-            const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${langCode}`);
+            const response = await fetch(`${API_BASE_URL}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${langCode}`);
             const data = await response.json();
             
             if (data.success && data.data && data.data.episodes && data.data.episodes.length > 0) {
@@ -756,7 +979,7 @@ const AnimeSamaPage: React.FC = () => {
         // Si aucun épisode trouvé, essayer endpoint content
         if (validEpisodes.length === 0) {
           try {
-            const contentResponse = await fetch(`${API_BASE}/api/content?animeId=${selectedAnime.id}&type=episodes`);
+            const contentResponse = await fetch(`${API_BASE_URL}/api/content?animeId=${selectedAnime.id}&type=episodes`);
             const contentData = await contentResponse.json();
             
             if (contentData.success && contentData.data && contentData.data.length > 0) {
@@ -770,7 +993,7 @@ const AnimeSamaPage: React.FC = () => {
         // Dernière tentative avec catalogue
         if (validEpisodes.length === 0) {
           try {
-            const catalogueResponse = await fetch(`${API_BASE}/api/catalogue?search=${selectedAnime.id}`);
+            const catalogueResponse = await fetch(`${API_BASE_URL}/api/catalogue?search=${selectedAnime.id}`);
             const catalogueData = await catalogueResponse.json();
             
             if (catalogueData.success && catalogueData.data) {
@@ -852,7 +1075,7 @@ const AnimeSamaPage: React.FC = () => {
       
       // Essayer d'abord l'endpoint /api/episode/{episodeId} avec gestion d'erreurs robuste
       try {
-        const response = await fetch(`${API_BASE}/api/episode/${correctEpisodeId}`, {
+        const response = await fetch(`${API_BASE_URL}/api/episode/${correctEpisodeId}`, {
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
@@ -1546,20 +1769,21 @@ const AnimeSamaPage: React.FC = () => {
                 );
                 
                 const correctEpisodeId = selectedEpisode ? selectedEpisode.id : episodeDetails?.id || '';
-                const embedUrl = `${API_BASE}/api/embed/${correctEpisodeId}`;
+                const embedUrl = `${API_BASE_URL}/api/embed/${correctEpisodeId}`;
                 
                 return (
                   <div className="relative w-full">
                     <iframe
-                      key={`${correctEpisodeId}-${selectedServer}`}
-                      src={currentSource.embedUrl || `/api/embed/${correctEpisodeId}`}
+                      id="video-player"
+                      key={`${correctEpisodeId}-${selectedServer}-${selectedLanguage}`}
+                      src={embedUrl}
                       className="w-full h-64 md:h-80"
                       allowFullScreen
                       frameBorder="0"
-                      sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-top-navigation"
                       referrerPolicy="no-referrer"
                       allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                      title="Lecteur vidéo"
+                      title={`Episode ${selectedEpisode?.episodeNumber} - ${selectedAnime.title}`}
                       style={{ 
                         border: 'none', 
                         display: 'block',
@@ -1567,20 +1791,13 @@ const AnimeSamaPage: React.FC = () => {
                       }}
                       onLoad={() => {
                         setError(null);
-                        console.log(`Lecteur chargé: ${currentSource.server} - Episode ${selectedEpisode?.episodeNumber}`);
+                        console.log(`Lecteur chargé: ${currentSource.server} - Episode ${selectedEpisode?.episodeNumber} (${selectedLanguage})`);
                       }}
                       onError={(e) => {
-                        console.log('Erreur iframe, tentative fallback API');
+                        console.log('Erreur iframe, tentative fallback');
                         const target = e.currentTarget;
-                        if (target.src.includes('/api/embed/')) {
-                          // Déjà sur l'API embed, essayer le proxy
-                          const fallbackUrl = currentSource.url || currentSource.embedUrl;
-                          if (fallbackUrl) {
-                            target.src = `/api/proxy/${encodeURIComponent(fallbackUrl)}`;
-                          }
-                        } else {
-                          // Revenir à l'API embed
-                          target.src = `/api/embed/${correctEpisodeId}`;
+                        if (!target.src.includes('/api/embed/')) {
+                          target.src = embedUrl;
                         }
                       }}
                     />
