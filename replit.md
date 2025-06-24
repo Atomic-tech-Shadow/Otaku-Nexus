@@ -11,7 +11,8 @@ This is an anime streaming platform built with Node.js/Express backend and React
 - **Styling**: Tailwind CSS with Radix UI components
 
 ## Recent Changes
-- ✓ Successfully migrated project from Replit Agent to Replit environment (June 2025)
+- ✓ Successfully migrated project from Replit Agent to Replit environment (January 2025)
+- ✓ Fixed anime-sama.tsx file placement - moved from root to client/src/pages/ directory
 - ✓ Fixed anime-sama page black screen issue by correcting API endpoints
 - ✓ Updated API configuration to use deployed server instead of external anime-sama API
 - ✓ Enhanced video player with fallback mechanisms for reliable streaming
