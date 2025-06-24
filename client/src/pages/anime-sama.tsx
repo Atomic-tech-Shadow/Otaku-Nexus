@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, ArrowLeft, Download } from 'lucide-react';
 import { Link } from 'wouter';
 import MainLayout from '@/components/layout/main-layout';
+import { API_CONFIG } from '@/lib/api-config.js';
 import '../styles/anime-sama.css';
 
 interface SearchResult {
@@ -430,8 +431,8 @@ const AnimeSamaPage: React.FC = () => {
     };
   }, []);
 
-  // Configuration API avec l'API anime-sama externe
-  const API_BASE_URL = 'https://api-anime-sama.onrender.com';
+  // Configuration API avec l'API anime-sama
+  const API_BASE_URL = API_CONFIG.BASE_URL;
   
   // Chargement des animes populaires avec gestion d'erreurs robuste
   const loadPopularAnimes = async () => {
@@ -657,17 +658,9 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      // Utiliser l'API locale en développement
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? `/api/search?query=${encodeURIComponent(query)}` 
-        : `${API_BASE_URL}/api/search?query=${encodeURIComponent(query)}`;
-        
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        signal: AbortSignal.timeout(15000)
+      const response = await fetch(API_CONFIG.buildSearchUrl(query), {
+        headers: API_CONFIG.HEADERS,
+        signal: AbortSignal.timeout(API_CONFIG.TIMEOUT)
       });
       
       if (!response.ok) {
@@ -1112,18 +1105,18 @@ const AnimeSamaPage: React.FC = () => {
       // Générer l'ID d'épisode correct selon documentation: {anime}-episode-{numero}-{langue}
       let correctEpisodeId = episodeId;
       if (selectedAnime && selectedEpisode) {
-        const lang = selectedLanguage.toLowerCase();
-        correctEpisodeId = `${selectedAnime.id}-episode-${selectedEpisode.episodeNumber}-${lang}`;
+        correctEpisodeId = API_CONFIG.buildEpisodeId(
+          selectedAnime.id, 
+          selectedEpisode.episodeNumber, 
+          selectedLanguage
+        );
       }
       
       // Essayer d'abord l'endpoint /api/episode/{episodeId} avec gestion d'erreurs robuste
       try {
-        const response = await fetch(`${API_BASE_URL}/api/episode/${correctEpisodeId}`, {
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-          signal: AbortSignal.timeout(15000)
+        const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.EPISODE}${correctEpisodeId}`, {
+          headers: API_CONFIG.HEADERS,
+          signal: AbortSignal.timeout(API_CONFIG.TIMEOUT)
         }).catch(fetchError => {
           return null;
         });
@@ -1141,7 +1134,7 @@ const AnimeSamaPage: React.FC = () => {
               sources: (apiResponse.data.sources || []).map((source: any, index: number) => ({
                 ...source,
                 serverName: `Serveur ${index + 1} - ${source.server}${source.quality ? ` (${source.quality})` : ''}`,
-                embedUrl: `/api/embed/${correctEpisodeId}`,
+                embedUrl: API_CONFIG.buildEmbedUrl(correctEpisodeId),
                 isEmbed: true,
                 priority: index === 0 ? 'high' : 'normal'
               }))
@@ -1172,7 +1165,7 @@ const AnimeSamaPage: React.FC = () => {
       }
       
       // Fallback: utiliser directement l'endpoint embed
-      const embedUrl = `/api/embed/${correctEpisodeId}`;
+      const embedUrl = API_CONFIG.buildEmbedUrl(correctEpisodeId);
       const fallbackData = {
         id: correctEpisodeId,
         title: selectedEpisode?.title || 'Épisode',
@@ -1846,9 +1839,7 @@ const AnimeSamaPage: React.FC = () => {
                 );
                 
                 const correctEpisodeId = selectedEpisode ? selectedEpisode.id : episodeDetails?.id || '';
-                const embedUrl = process.env.NODE_ENV === 'development' 
-                  ? `/api/embed/${correctEpisodeId}`
-                  : `${API_BASE_URL}/api/embed/${correctEpisodeId}`;
+                const embedUrl = API_CONFIG.buildEmbedUrl(correctEpisodeId);
                 
                 return (
                   <div className="relative w-full">
