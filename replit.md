@@ -28,6 +28,13 @@ This is an anime streaming platform built with Node.js/Express backend and React
 - ✓ Corrected CSS styles to match new component structure
 - ✓ Moved anime-sama.tsx file from project root to client/src/pages/ directory (June 24, 2025)
 - ✓ Added proper imports for MainLayout and CSS styles in anime-sama page
+- ✓ Applied anime-sama API corrections from documentation (June 24, 2025)
+- ✓ Fixed API configuration to use deployed URL: https://api-anime-sama.onrender.com
+- ✓ Implemented standardized episode ID construction format
+- ✓ Added robust HTTP client with timeout and retry mechanisms
+- ✓ Enhanced language switching with race condition prevention
+- ✓ Integrated cache management system with language-specific clearing
+- ✓ Updated video player with CORS-compatible iframe implementation
 
 ## User Preferences
 - Language: French (based on documentation files)

@@ -23,6 +23,13 @@ interface AnimeDetails {
   year: string;
   seasons: Season[];
   url: string;
+  progressInfo?: {
+    advancement: string;
+    correspondence: string;
+    totalEpisodes?: number;
+    hasFilms?: boolean;
+    hasScans?: boolean;
+  };
 }
 
 interface Season {
@@ -48,17 +55,27 @@ interface EpisodeDetails {
   animeTitle: string;
   episodeNumber: number;
   sources: VideoSource[];
+  embedUrl?: string;
+  corsInfo?: {
+    note: string;
+    proxyEndpoint: string;
+    embedEndpoint: string;
+  };
   availableServers: string[];
   url: string;
 }
 
 interface VideoSource {
   url: string;
+  proxyUrl?: string;
+  embedUrl?: string;
   server: string;
+  serverName?: string;
   quality: string;
   language: string;
   type: string;
   serverIndex: number;
+  isEmbed?: boolean;
 }
 
 interface ApiResponse<T> {
@@ -96,6 +113,7 @@ const AnimeSamaPage: React.FC = () => {
   const [currentEpisode, setCurrentEpisode] = useState<Episode | null>(null);
   
   // Configuration API - CORRECTION MAJEURE
+  // URL de l'API déployée sur Render
   const API_BASE_URL = 'https://api-anime-sama.onrender.com';
   
   // Configuration robuste
