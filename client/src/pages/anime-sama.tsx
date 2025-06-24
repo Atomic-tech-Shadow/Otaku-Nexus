@@ -197,7 +197,7 @@ const AnimeSamaPage: React.FC = () => {
     return `${animeId}-episode-${episodeNumber}-${langCode}`;
   };
 
-  // CORRECTION CRITIQUE 2: Changement de langue avec nettoyage complet
+  // CORRECTION CRITIQUE 2: Changement de langue avec nettoyage complet et retry
   let languageChangeTimeout: NodeJS.Timeout | null = null;
 
   const handleLanguageChange = async (newLanguage: 'VF' | 'VOSTFR') => {
@@ -210,9 +210,10 @@ const AnimeSamaPage: React.FC = () => {
     
     setLanguageChangeInProgress(true);
     setLoading(true);
+    setError(null);
     
     try {
-      // CRITIQUE: Sauvegarder l'état actuel
+      // CRITIQUE: Sauvegarder l'état actuel avant nettoyage
       if (currentEpisode && videoSrc) {
         setCurrentVideoByLanguage(prev => ({
           ...prev,
@@ -223,7 +224,7 @@ const AnimeSamaPage: React.FC = () => {
         }));
       }
 
-      // CRITIQUE: Vider tout le cache d'épisodes
+      // CRITIQUE: Vider complètement le cache pour l'ancienne langue
       clearLanguageCache(selectedLanguage);
       
       // Réinitialiser état du lecteur
@@ -232,99 +233,146 @@ const AnimeSamaPage: React.FC = () => {
       setEpisodes([]);
       setEpisodeDetails(null);
       setSelectedEpisode(null);
+      setSelectedServer(0);
       
       // Attendre délai pour éviter race conditions
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       // Mettre à jour la langue
       setSelectedLanguage(newLanguage);
-      setLastSuccessfulLanguage(newLanguage);
       
-      // Recharger les épisodes avec nouvelle langue
+      // Recharger les épisodes avec la nouvelle langue
       if (selectedAnime && selectedSeason) {
         await loadEpisodesForLanguage(selectedAnime.id, selectedSeason, newLanguage);
+        setLastSuccessfulLanguage(newLanguage);
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur changement langue:', error);
-      // Fallback vers dernière langue fonctionnelle
+      // Restaurer la langue précédente en cas d'erreur
       setSelectedLanguage(lastSuccessfulLanguage);
-      setError(`Erreur changement langue: ${error}`);
+      setError(`Impossible de changer vers ${newLanguage}. ${error.message || 'Erreur réseau'}`);
+      
+      // Restaurer l'état précédent si disponible
+      const previousState = currentVideoByLanguage[lastSuccessfulLanguage];
+      if (previousState) {
+        setCurrentEpisode(previousState.episode);
+        setVideoSrc(previousState.videoSrc);
+      }
     } finally {
       setLanguageChangeInProgress(false);
       setLoading(false);
     }
   };
 
-  // CORRECTION CRITIQUE 3: Débounce anti-race pour changement langue
+  // CORRECTION CRITIQUE 3: Débounce anti-race pour changement langue avec protection
   const debouncedLanguageChange = (newLanguage: 'VF' | 'VOSTFR') => {
+    // Ignorer si changement en cours ou même langue
+    if (languageChangeInProgress || newLanguage === selectedLanguage) {
+      return;
+    }
+    
+    // Annuler le changement précédent
     if (languageChangeTimeout) {
       clearTimeout(languageChangeTimeout);
     }
     
-    languageChangeTimeout = setTimeout(() => {
-      handleLanguageChange(newLanguage);
+    // Nouveau changement avec délai
+    languageChangeTimeout = setTimeout(async () => {
+      await handleLanguageChange(newLanguage);
     }, 300);
   };
 
-  // CORRECTION CRITIQUE 4: Chargement épisode avec correspondance parfaite
+  // CORRECTION CRITIQUE 4: Gestion anti-race condition pour chargement épisode
   let episodeLoadingQueue: {cancel: boolean, episodeId: string} | null = null;
 
-  const loadEpisodeWithQueue = async (episodeId: string) => {
-    // Annuler le chargement précédent
-    if (episodeLoadingQueue) {
-      episodeLoadingQueue.cancel = true;
+  const handleEpisodeClick = async (episode: Episode) => {
+    // Vérifier si ce n'est pas déjà l'épisode en cours
+    if (lastEpisodeId === episode.id && videoSrc) {
+      console.log('Épisode déjà chargé:', episode.id);
+      return;
     }
-    
-    // Créer nouvelle tâche
-    const currentTask = { cancel: false, episodeId };
-    episodeLoadingQueue = currentTask;
-    
+
+    // Réinitialiser complètement l'état
+    setCurrentEpisode(null);
+    setVideoSrc('');
+    setLoading(true);
+    setError(null);
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      if (currentTask.cancel) {
-        console.log('Chargement épisode annulé:', episodeId);
-        return;
-      }
-      
+      // Construire l'ID avec la langue actuelle
+      const episodeId = buildEpisodeIdWithLanguage(
+        selectedAnime?.id || '', 
+        episode.episodeNumber, 
+        selectedLanguage, 
+        selectedSeason?.number
+      );
+
+      console.log(`Chargement épisode: ${episodeId}`);
+
+      // Charger les détails de l'épisode avec retry
       const apiUrl = process.env.NODE_ENV === 'development' 
-        ? `/api/episode/${episodeId}?_=${Date.now()}`
-        : `${API_BASE_URL}/api/episode/${episodeId}?_=${Date.now()}`;
-        
-      const response = await fetch(apiUrl);
+        ? `/api/episode/${episodeId}?lang=${selectedLanguage.toLowerCase()}&_=${Date.now()}`
+        : `${API_BASE_URL}/api/episode/${episodeId}?lang=${selectedLanguage.toLowerCase()}&_=${Date.now()}`;
+
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: Episode non disponible`);
+      }
+
       const data = await response.json();
-      
-      if (currentTask.cancel) {
-        console.log('Chargement épisode annulé après fetch:', episodeId);
-        return;
+
+      if (data.success && data.data?.sources?.length > 0) {
+        // Utiliser embedUrl ou proxyUrl selon disponibilité
+        const source = data.data.sources[0];
+        const embedUrl = source.embedUrl 
+          ? `${API_BASE_URL}${source.embedUrl}`
+          : source.proxyUrl 
+          ? `${API_BASE_URL}${source.proxyUrl}`
+          : source.url;
+
+        // Mettre à jour l'état dans le bon ordre
+        setCurrentEpisode(episode);
+        setSelectedEpisode(episode);
+        setEpisodeDetails(data.data);
+        setVideoSrc(embedUrl);
+        setLastEpisodeId(episode.id);
+
+        console.log(`Épisode chargé: ${episode.id} -> ${embedUrl}`);
+      } else {
+        throw new Error('Aucune source vidéo disponible');
       }
-      
-      if (data.success && data.data.sources.length > 0) {
-        const embedUrl = `${API_BASE_URL}${data.data.sources[0].embedUrl || data.data.sources[0].proxyUrl}`;
-        updateVideoPlayer(embedUrl, episodeId);
-      }
-      
-    } catch (error) {
-      if (!currentTask.cancel) {
-        console.error('Erreur chargement épisode:', error);
-        setError('Impossible de charger cet épisode');
-      }
+    } catch (error: any) {
+      console.error('Erreur chargement épisode:', error);
+      setError(`Impossible de charger l'épisode ${episode.episodeNumber}: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // CORRECTION CRITIQUE 5: Mise à jour lecteur vidéo avec CORS
+  // CORRECTION CRITIQUE 5: Mise à jour lecteur vidéo avec endpoints CORS
   const updateVideoPlayer = (embedUrl: string, episodeId: string) => {
     console.log(`Mise à jour lecteur: ${episodeId} -> ${embedUrl}`);
+    
+    // Utiliser l'endpoint embed local pour contourner CORS
+    const corsProxyUrl = `/api/embed/${episodeId}`;
     
     // Vider l'iframe avant de charger le nouveau
     const iframe = document.querySelector('#video-player iframe') as HTMLIFrameElement;
     if (iframe) {
       iframe.src = 'about:blank';
       setTimeout(() => {
-        iframe.src = embedUrl;
+        // Utiliser l'endpoint CORS-safe
+        iframe.src = process.env.NODE_ENV === 'development' ? corsProxyUrl : embedUrl;
         iframe.setAttribute('allowfullscreen', 'true');
-        iframe.setAttribute('allow', 'autoplay; fullscreen');
+        iframe.setAttribute('allow', 'autoplay; fullscreen; accelerometer; gyroscope; picture-in-picture');
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
       }, 100);
     }
     
@@ -332,42 +380,65 @@ const AnimeSamaPage: React.FC = () => {
     setLastEpisodeId(episodeId);
   };
 
-  // CORRECTION CRITIQUE 6: Chargement épisodes par langue
+  // CORRECTION CRITIQUE 6: Chargement épisodes par langue avec retry automatique
   const loadEpisodesForLanguage = async (animeId: string, season: Season, language: 'VF' | 'VOSTFR') => {
     const langCode = language.toLowerCase() as 'vf' | 'vostfr';
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/seasons?animeId=${animeId}&season=${season.number}&language=${langCode}&_=${Date.now()}`);
-      const data = await response.json();
+      // Utiliser le système de retry avec fallback
+      const episodeData = await loadEpisodesWithRetry(animeId, season, langCode, 3);
       
-      if (data.success && data.data.episodes && data.data.episodes.length > 0) {
-        const correctedEpisodes = correctEpisodeNumbers(animeId, season.number, data.data.episodes);
+      if (episodeData.success && episodeData.data?.episodes?.length > 0) {
+        // Corriger les numéros d'épisodes (important pour One Piece)
+        const correctedEpisodes = correctEpisodeNumbers(animeId, season.number, episodeData.data.episodes);
+        
+        // Mettre à jour avec langue dans l'ID
+        const episodesWithCorrectLanguage = correctedEpisodes.map(ep => ({
+          ...ep,
+          id: buildEpisodeIdWithLanguage(animeId, ep.episodeNumber, language, season.number),
+          language: langCode
+        }));
         
         // Sauvegarder dans cache par langue
         setEpisodesByLanguage(prev => ({
           ...prev,
           [language]: {
             ...prev[language],
-            [`${animeId}-${season.number}`]: correctedEpisodes
+            [`${animeId}-${season.number}`]: episodesWithCorrectLanguage
           }
         }));
         
-        setEpisodes(correctedEpisodes);
+        setEpisodes(episodesWithCorrectLanguage);
         setSelectedSeason(season);
         
-        // Charger le premier épisode
-        if (correctedEpisodes.length > 0) {
-          const firstEpisode = correctedEpisodes[0];
+        // Charger le premier épisode automatiquement
+        if (episodesWithCorrectLanguage.length > 0) {
+          const firstEpisode = episodesWithCorrectLanguage[0];
           setSelectedEpisode(firstEpisode);
-          await loadEpisodeWithQueue(firstEpisode.id);
+          await handleEpisodeClick(firstEpisode);
         }
         
+        console.log(`Épisodes chargés pour ${language}:`, episodesWithCorrectLanguage.length);
+        
       } else {
-        throw new Error('Aucun épisode trouvé pour cette langue');
+        throw new Error(`Aucun épisode ${language} disponible pour cette série`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Erreur chargement épisodes ${language}:`, error);
-      setError(`Impossible de charger les épisodes en ${language}`);
+      
+      // Fallback intelligent selon documentation
+      if (language === 'VF') {
+        console.log('Tentative de fallback vers VOSTFR...');
+        try {
+          await loadEpisodesForLanguage(animeId, season, 'VOSTFR');
+          setSelectedLanguage('VOSTFR');
+          setError(`${language} non disponible, basculement vers VOSTFR`);
+        } catch (fallbackError) {
+          setError(`Impossible de charger les épisodes en ${language} ou VOSTFR`);
+        }
+      } else {
+        setError(`Impossible de charger les épisodes en ${language}`);
+      }
     }
   };
 
@@ -402,7 +473,7 @@ const AnimeSamaPage: React.FC = () => {
     };
   }, []);
 
-  // Configuration API avec URL de production
+  // Configuration API avec URL de production selon documentation
   const API_BASE_URL = 'https://api-anime-sama.onrender.com';
   
   // Chargement des animes populaires avec gestion d'erreurs robuste
