@@ -434,36 +434,65 @@ const AnimeSamaPage: React.FC = () => {
   // Configuration API avec l'API anime-sama déployée sur Render
   const API_BASE_URL = 'https://api-anime-sama.onrender.com';
   
-  // Chargement des animes populaires avec gestion d'erreurs robuste
+  // Chargement des animes populaires avec fallback local
   const loadPopularAnimes = async () => {
     try {
-      // Utiliser l'API externe anime-sama déployée
+      // Essayer d'abord l'API externe anime-sama
       const apiUrl = `${API_BASE_URL}/api/trending`;
         
       const response = await fetch(apiUrl, {
+        method: 'GET',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         },
-        signal: AbortSignal.timeout(10000)
+        signal: AbortSignal.timeout(15000)
       });
       
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data && Array.isArray(result.data)) {
           const trendingAnimes = result.data.slice(0, 12);
-    
           setPopularAnimes(trendingAnimes);
           return;
         }
       }
-      
-      setPopularAnimes([]);
-      
     } catch (error: any) {
-      console.log('Erreur chargement trending:', error);
-      setPopularAnimes([]);
+      console.log('API externe indisponible, utilisation du mode local');
     }
+    
+    // Fallback: animes populaires locaux
+    const fallbackAnimes = [
+      {
+        id: 'one-piece',
+        title: 'One Piece',
+        image: 'https://cdn.myanimelist.net/images/anime/6/73245.jpg',
+        type: 'Anime',
+        status: 'En cours',
+        genres: ['Action', 'Aventure', 'Comédie'],
+        url: '/anime/one-piece'
+      },
+      {
+        id: 'naruto',
+        title: 'Naruto',
+        image: 'https://cdn.myanimelist.net/images/anime/13/17405.jpg',
+        type: 'Anime',
+        status: 'Terminé',
+        genres: ['Action', 'Arts martiaux', 'Comédie'],
+        url: '/anime/naruto'
+      },
+      {
+        id: 'attack-on-titan',
+        title: 'L\'Attaque des Titans',
+        image: 'https://cdn.myanimelist.net/images/anime/10/47347.jpg',
+        type: 'Anime',
+        status: 'Terminé',
+        genres: ['Action', 'Drame', 'Fantasy'],
+        url: '/anime/attack-on-titan'
+      }
+    ];
+    
+    setPopularAnimes(fallbackAnimes);
   };
 
 
@@ -660,11 +689,12 @@ const AnimeSamaPage: React.FC = () => {
     try {
       const apiUrl = `${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`;
       const response = await fetch(apiUrl, {
+        method: 'GET',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         },
-        signal: AbortSignal.timeout(15000)
+        signal: AbortSignal.timeout(30000)
       });
       
       if (!response.ok) {
@@ -698,11 +728,12 @@ const AnimeSamaPage: React.FC = () => {
       const apiUrl = `${API_BASE_URL}/api/anime/${animeId}`;
         
       const response = await fetch(apiUrl, {
+        method: 'GET',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         },
-        signal: AbortSignal.timeout(15000)
+        signal: AbortSignal.timeout(30000)
       });
       
       if (!response.ok) {
@@ -1114,6 +1145,7 @@ const AnimeSamaPage: React.FC = () => {
       // Essayer d'abord l'endpoint /api/episode/{episodeId} avec gestion d'erreurs robuste
       try {
         const response = await fetch(`${API_BASE_URL}/api/episode/${correctEpisodeId}`, {
+          method: 'GET',
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
