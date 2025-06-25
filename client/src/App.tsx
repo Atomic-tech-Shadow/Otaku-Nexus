@@ -14,9 +14,7 @@ import EditProfile from "@/pages/edit-profile";
 import AuthPage from "@/pages/auth";
 import Admin from "@/pages/admin";
 import AnimePage from "@/pages/anime";
-import AnimeSearchPage from "@/pages/anime-search";
-import AnimeSamaPage from "@/pages/anime-sama";
-import WatchPage from "@/pages/watch";
+// Imports anime-sama supprimés
 
 import { ProtectedRoute } from "@/components/auth/protected-route";
 
@@ -73,23 +71,7 @@ function Router() {
           </ProtectedRoute>
         </Route>
 
-        <Route path="/anime-search">
-          <ProtectedRoute>
-            <AnimeSearchPage />
-          </ProtectedRoute>
-        </Route>
-
-        <Route path="/anime-sama">
-          <ProtectedRoute>
-            <AnimeSamaPage />
-          </ProtectedRoute>
-        </Route>
-
-        <Route path="/watch/:episodeId">
-          <ProtectedRoute>
-            <WatchPage />
-          </ProtectedRoute>
-        </Route>
+        {/* Routes anime-sama supprimées */}
 
         <Route component={NotFound} />
       </Switch>

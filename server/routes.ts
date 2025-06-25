@@ -29,31 +29,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Anime-Sama API direct proxy routes - using https://api-anime-sama.onrender.com
-  app.get('/api/search', async (req, res) => {
-    try {
-      const query = req.query.query as string;
-      if (!query) {
-        return res.status(400).json({ success: false, message: 'Query parameter required' });
-      }
-      
-      const results = await animeSamaService.searchAnime(query);
-      res.json({ success: true, data: results });
-    } catch (error) {
-      console.error('Error in anime search:', error);
-      res.status(500).json({ success: false, message: 'Search failed', error: error.message });
-    }
-  });
-
-  app.get('/api/trending', async (req, res) => {
-    try {
-      const results = await animeSamaService.getTrendingAnime();
-      res.json({ success: true, data: results });
-    } catch (error) {
-      console.error('Error fetching trending anime:', error);
-      res.status(500).json({ success: false, message: 'Failed to fetch trending anime', error: error.message });
-    }
-  });
+  // Routes anime-sama supprimées
 
   app.get('/api/anime/:id', async (req, res) => {
     try {

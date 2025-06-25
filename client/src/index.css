@@ -923,47 +923,4 @@
   }
 }
 
-/* Anime-Sama Authentic Styles */
-.anime-grid {
-  @apply grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4;
-}
-
-.season-card {
-  background: var(--anime-sama-blue);
-  border-radius: 0.5rem;
-  transition: all 0.2s ease;
-}
-
-.season-card:hover {
-  background: #1e3a8a;
-  transform: translateY(-2px);
-}
-
-.episode-dropdown {
-  @apply bg-gray-800 text-white border border-gray-600 rounded px-3 py-2;
-}
-
-/* Anime-Sama utility classes */
-.bg-anime-sama {
-  background-color: var(--anime-sama-bg);
-}
-
-.bg-anime-sama-secondary {
-  background-color: var(--anime-sama-secondary);
-}
-
-.bg-anime-sama-blue {
-  background-color: var(--anime-sama-blue);
-}
-
-.border-anime-sama {
-  border-color: var(--anime-sama-border);
-}
-
-.text-anime-sama {
-  color: var(--anime-sama-text);
-}
-
-.text-anime-sama-gray {
-  color: var(--anime-sama-text-gray);
-}
+/* Styles anime-sama supprimés */
