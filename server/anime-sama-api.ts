@@ -87,16 +87,16 @@ class AnimeSamaService {
   private baseUrl = 'https://api-anime-sama.onrender.com';
   private cache = new Map();
   private readonly cacheConfig = {
-    ttl: parseInt(process.env.CACHE_TTL || '900000'), // 15 minutes pour déploiement
-    enabled: process.env.CACHE_ENABLED !== 'false',
-    maxSize: 1000 // Limite de cache
+    ttl: 900000,        // 15 minutes
+    enabled: true,
+    maxSize: 1000
   };
   private readonly requestConfig = {
-    timeout: parseInt(process.env.REQUEST_TIMEOUT || '60000'),
-    maxRetries: parseInt(process.env.MAX_RETRY_ATTEMPTS || '3'),
-    retryDelay: 2000, // Délai entre tentatives
+    timeout: 60000,     // 60 secondes
+    maxRetries: 3,
+    retryDelay: 2000,
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
       'Accept': 'application/json, text/plain, */*',
       'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
       'Cache-Control': 'no-cache',
@@ -104,30 +104,20 @@ class AnimeSamaService {
     }
   };
 
-  // Méthode de cache avec TTL
-  private getCachedData<T>(key: string): T | null {
-    if (!this.cacheConfig.enabled) return null;
-    
+  // Méthodes de cache
+  private getFromCache<T>(key: string): T | null {
     const cached = this.cache.get(key);
-    if (!cached) return null;
-    
-    const { data, timestamp } = cached;
-    if (Date.now() - timestamp > this.cacheConfig.ttl) {
-      this.cache.delete(key);
-      return null;
+    if (cached && Date.now() - cached.timestamp < this.cacheConfig.ttl) {
+      return cached.data;
     }
-    
-    return data as T;
+    this.cache.delete(key);
+    return null;
   }
 
-  private setCachedData<T>(key: string, data: T): void {
-    if (!this.cacheConfig.enabled) return;
-    
-    // Nettoyage automatique du cache si taille maximale atteinte
+  private setCache(key: string, data: any): void {
     if (this.cache.size >= this.cacheConfig.maxSize) {
-      const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
-      console.log(`🧹 Cache cleanup: removed oldest entry ${oldestKey}`);
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
     }
     
     this.cache.set(key, {
@@ -136,9 +126,9 @@ class AnimeSamaService {
     });
   }
 
-  // Méthode de requête avec retry automatique
-  private async makeRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
-    let lastError: Error | null = null;
+  // Méthode de requête avec retry
+  private async makeRequest<T>(url: string): Promise<T> {
+    let lastError: Error;
     
     for (let attempt = 1; attempt <= this.requestConfig.maxRetries; attempt++) {
       try {
@@ -146,12 +136,8 @@ class AnimeSamaService {
         const timeoutId = setTimeout(() => controller.abort(), this.requestConfig.timeout);
         
         const response = await fetch(url, {
-          ...options,
-          headers: {
-            ...this.requestConfig.headers,
-            ...options.headers
-          },
-          signal: controller.signal
+          signal: controller.signal,
+          headers: this.requestConfig.headers
         });
         
         clearTimeout(timeoutId);
@@ -160,45 +146,81 @@ class AnimeSamaService {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
-        const data = await response.json();
-        return data as T;
-        
+        return await response.json();
       } catch (error) {
         lastError = error as Error;
-        console.warn(`Request attempt ${attempt}/${this.requestConfig.maxRetries} failed:`, error);
-        
         if (attempt < this.requestConfig.maxRetries) {
-          // Délai exponentiel entre les tentatives
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+          await new Promise(resolve => setTimeout(resolve, this.requestConfig.retryDelay));
         }
       }
     }
     
-    throw lastError || new Error('All retry attempts failed');
+    throw lastError!;
   }
 
   async searchAnime(query: string): Promise<AnimeSamaAnime[]> {
-    const cacheKey = `search_${query}`;
-    const cached = this.getCachedData<AnimeSamaAnime[]>(cacheKey);
+    const cacheKey = `search:${query}`;
+    const cached = this.getFromCache(cacheKey);
     if (cached) return cached;
+
+    const url = `${this.baseUrl}/api/search?query=${encodeURIComponent(query)}`;
+    const data = await this.makeRequest(url);
     
-    try {
-      const result = await this.makeRequest<AnimeSamaSearchResult>(
-        `${this.baseUrl}/api/search?query=${encodeURIComponent(query)}`
-      );
-      
-      const data = result.success ? result.data : [];
-      this.setCachedData(cacheKey, data);
-      return data;
-    } catch (error) {
-      console.error('Error searching anime:', error);
-      return [];
-    }
+    this.setCache(cacheKey, data.data || []);
+    return data.data || [];
+  }
+
+  async getAnimeDetails(animeId: string): Promise<AnimeSamaAnime> {
+    const cacheKey = `anime:${animeId}`;
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return cached;
+
+    const url = `${this.baseUrl}/api/anime/${animeId}`;
+    const data = await this.makeRequest(url);
+    
+    this.setCache(cacheKey, data.data);
+    return data.data;
+  }
+
+  async getSeasonEpisodes(animeId: string, season: number, language: string): Promise<AnimeSamaSeasonResult> {
+    const cacheKey = `episodes:${animeId}:${season}:${language}`;
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return cached;
+
+    const url = `${this.baseUrl}/api/seasons?animeId=${animeId}&season=${season}&language=${language.toLowerCase()}`;
+    const data = await this.makeRequest(url);
+    
+    this.setCache(cacheKey, data.data);
+    return data.data;
+  }
+
+  async getEpisodeDetails(episodeId: string): Promise<AnimeSamaEpisodeDetail> {
+    const cacheKey = `episode:${episodeId}`;
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return cached;
+
+    const url = `${this.baseUrl}/api/episode/${episodeId}`;
+    const data = await this.makeRequest(url);
+    
+    this.setCache(cacheKey, data.data);
+    return data.data;
+  }
+
+  async getTrendingAnime(): Promise<AnimeSamaAnime[]> {
+    const cacheKey = 'trending';
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return cached;
+
+    const url = `${this.baseUrl}/api/trending`;
+    const data = await this.makeRequest(url);
+    
+    this.setCache(cacheKey, data.data || []);
+    return data.data || [];
   }
 
   async getAnimeById(animeId: string): Promise<AnimeSamaAnime | null> {
     const cacheKey = `anime_${animeId}`;
-    const cached = this.getCachedData<AnimeSamaAnime>(cacheKey);
+    const cached = this.getFromCache<AnimeSamaAnime>(cacheKey);
     if (cached) return cached;
     
     try {
@@ -217,9 +239,9 @@ class AnimeSamaService {
     }
   }
 
-  async getSeasonEpisodes(animeId: string, season: number, language: 'vf' | 'vostfr' = 'vostfr'): Promise<AnimeSamaEpisode[]> {
+  async getSeasonEpisodesLegacy(animeId: string, season: number, language: 'vf' | 'vostfr' = 'vostfr'): Promise<AnimeSamaEpisode[]> {
     const cacheKey = `episodes_${animeId}_${season}_${language}`;
-    const cached = this.getCachedData<AnimeSamaEpisode[]>(cacheKey);
+    const cached = this.getFromCache<AnimeSamaEpisode[]>(cacheKey);
     if (cached) return cached;
     
     try {
@@ -233,7 +255,7 @@ class AnimeSamaService {
         return await this.getEpisodesWithFallback(animeId, season, language);
       }
       
-      this.setCachedData(cacheKey, result.data.episodes);
+      this.setCache(cacheKey, result.data.episodes);
       return result.data.episodes;
     } catch (error) {
       console.error('Error fetching season episodes:', error);

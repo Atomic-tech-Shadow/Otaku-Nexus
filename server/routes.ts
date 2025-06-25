@@ -172,7 +172,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Anime-Sama API routes
+  // Anime-Sama API routes with corrected parameters
+  app.get('/api/search', async (req, res) => {
+    try {
+      const query = req.query.query as string;
+      if (!query || query.length < 2) {
+        return res.status(400).json({ success: false, message: 'Query parameter required (min 2 chars)' });
+      }
+      
+      const results = await animeSamaService.searchAnime(query);
+      res.json({ success: true, data: results });
+    } catch (error) {
+      console.error('Error in anime search:', error);
+      res.status(500).json({ success: false, message: 'Search failed', error: error.message });
+    }
+  });
+
+  app.get('/api/trending', async (req, res) => {
+    try {
+      const results = await animeSamaService.getTrendingAnime();
+      res.json({ success: true, data: results });
+    } catch (error) {
+      console.error('Error in trending:', error);
+      res.status(500).json({ success: false, message: 'Trending failed', error: error.message });
+    }
+  });
+
+  app.get('/api/anime/:animeId', async (req, res) => {
+    try {
+      const animeId = req.params.animeId;
+      const anime = await animeSamaService.getAnimeDetails(animeId);
+      res.json({ success: true, data: anime });
+    } catch (error) {
+      console.error('Error in anime details:', error);
+      res.status(500).json({ success: false, message: 'Anime details failed', error: error.message });
+    }
+  });
+
+  app.get('/api/seasons', async (req, res) => {
+    try {
+      const { animeId, season, language } = req.query;
+      if (!animeId || !season || !language) {
+        return res.status(400).json({ success: false, message: 'animeId, season, and language parameters required' });
+      }
+      
+      const episodes = await animeSamaService.getSeasonEpisodes(
+        animeId as string, 
+        parseInt(season as string), 
+        language as string
+      );
+      res.json({ success: true, data: episodes });
+    } catch (error) {
+      console.error('Error in season episodes:', error);
+      res.status(500).json({ success: false, message: 'Season episodes failed', error: error.message });
+    }
+  });
+
+  app.get('/api/episode/:episodeId', async (req, res) => {
+    try {
+      const episodeId = req.params.episodeId;
+      const episode = await animeSamaService.getEpisodeDetails(episodeId);
+      res.json({ success: true, data: episode });
+    } catch (error) {
+      console.error('Error in episode details:', error);
+      res.status(500).json({ success: false, message: 'Episode details failed', error: error.message });
+    }
+  });
+
+  // Legacy anime-sama routes for backward compatibility
   app.get('/api/anime-sama/search', async (req, res) => {
     try {
       const query = req.query.q as string;

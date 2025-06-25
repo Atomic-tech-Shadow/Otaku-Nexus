@@ -103,10 +103,8 @@ const AnimeSamaPage: React.FC = () => {
   const [watchHistory, setWatchHistory] = useState<{[key: string]: number}>({});
   const [videoProgress, setVideoProgress] = useState<{[key: string]: number}>({});
   const [lastWatched, setLastWatched] = useState<string | null>(null);
-
   
-  // CORRECTION 6: Race Conditions - Variable de verrouillage
-  // CORRECTIONS CRITIQUES selon documentation
+  // Anti-race condition protection for language changes
   const [languageChangeInProgress, setLanguageChangeInProgress] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [lastSuccessfulLanguage, setLastSuccessfulLanguage] = useState('VOSTFR');
@@ -114,14 +112,11 @@ const AnimeSamaPage: React.FC = () => {
   const [videoSrc, setVideoSrc] = useState('');
   const [currentEpisode, setCurrentEpisode] = useState<Episode | null>(null);
   
-  // États séparés par langue pour éviter les conflits
+  // Cache séparé par langue VF/VOSTFR pour éviter les conflits
   const [episodesByLanguage, setEpisodesByLanguage] = useState<{
     VF: {[key: string]: Episode[]};
     VOSTFR: {[key: string]: Episode[]};
-  }>({
-    VF: {},
-    VOSTFR: {}
-  });
+  }>({ VF: {}, VOSTFR: {} });
   
   const [currentVideoByLanguage, setCurrentVideoByLanguage] = useState<{
     VF: {episode: Episode | null, videoSrc: string} | null;
@@ -133,8 +128,6 @@ const AnimeSamaPage: React.FC = () => {
 
   // État pour la gestion du proxy URL
   const [currentVideoUrl, setCurrentVideoUrl] = useState('');
-
-
 
   // Hook pour débounce les changements
   const useDebounce = (value: any, delay: number) => {
