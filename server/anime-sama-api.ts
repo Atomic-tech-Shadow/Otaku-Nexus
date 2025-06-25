@@ -166,8 +166,14 @@ class AnimeSamaService {
     const url = `${this.baseUrl}/api/search?query=${encodeURIComponent(query)}`;
     const data = await this.makeRequest(url);
     
-    this.setCache(cacheKey, data.data || []);
-    return data.data || [];
+    // Corriger les URLs d'images des résultats de recherche
+    const results = (data.data || []).map((anime: AnimeSamaAnime) => ({
+      ...anime,
+      image: this.fixImageUrl(anime.image, anime.id)
+    }));
+    
+    this.setCache(cacheKey, results);
+    return results;
   }
 
   async getAnimeDetails(animeId: string): Promise<AnimeSamaAnime> {
@@ -178,8 +184,14 @@ class AnimeSamaService {
     const url = `${this.baseUrl}/api/anime/${animeId}`;
     const data = await this.makeRequest(url);
     
-    this.setCache(cacheKey, data.data);
-    return data.data;
+    // Corriger l'URL d'image des détails anime
+    const correctedData = {
+      ...data.data,
+      image: this.fixImageUrl(data.data.image, animeId)
+    };
+    
+    this.setCache(cacheKey, correctedData);
+    return correctedData;
   }
 
   async getSeasonEpisodes(animeId: string, season: number, language: string): Promise<AnimeSamaSeasonResult> {
@@ -228,11 +240,16 @@ class AnimeSamaService {
         `${this.baseUrl}/api/anime/${animeId}`
       );
       
-      const data = result.success ? result.data : null;
-      if (data) {
-        this.setCachedData(cacheKey, data);
+      if (result.success && result.data) {
+        // Corriger l'URL d'image
+        const correctedData = {
+          ...result.data,
+          image: this.fixImageUrl(result.data.image, animeId)
+        };
+        this.setCache(cacheKey, correctedData);
+        return correctedData;
       }
-      return data;
+      return null;
     } catch (error) {
       console.error('Error fetching anime details:', error);
       return null;
@@ -385,15 +402,21 @@ class AnimeSamaService {
 
   async getTrendingAnime(): Promise<AnimeSamaAnime[]> {
     const cacheKey = 'trending_anime';
-    const cached = this.getCachedData<AnimeSamaAnime[]>(cacheKey);
+    const cached = this.getFromCache<AnimeSamaAnime[]>(cacheKey);
     if (cached) return cached;
     
     try {
       const result = await this.makeRequest<any>(`${this.baseUrl}/api/trending`);
       
       if (result.success && result.data && Array.isArray(result.data)) {
-        this.setCachedData(cacheKey, result.data);
-        return result.data;
+        // Corriger les URLs d'images des animes trending
+        const correctedData = result.data.map((anime: AnimeSamaAnime) => ({
+          ...anime,
+          image: this.fixImageUrl(anime.image, anime.id)
+        }));
+        
+        this.setCache(cacheKey, correctedData);
+        return correctedData;
       }
       
       // Fallback vers catalogue si trending échoue
@@ -401,15 +424,15 @@ class AnimeSamaService {
       const catalogueData = await this.getCatalogue();
       const trendingFromCatalogue = catalogueData.slice(0, 20);
       
-      this.setCachedData(cacheKey, trendingFromCatalogue);
+      this.setCache(cacheKey, trendingFromCatalogue);
       return trendingFromCatalogue;
       
     } catch (error) {
       console.error('Error fetching trending anime:', error);
       
       // Fallback final avec données de base
-      const fallbackAnimes = this.getFallbackAnimes();
-      this.setCachedData(cacheKey, fallbackAnimes);
+      const fallbackAnimes = await this.getFallbackAnimes();
+      this.setCache(cacheKey, fallbackAnimes);
       return fallbackAnimes;
     }
   }
@@ -430,34 +453,56 @@ class AnimeSamaService {
 
   async getCatalogue(): Promise<AnimeSamaAnime[]> {
     const cacheKey = 'catalogue_anime';
-    const cached = this.getCachedData<AnimeSamaAnime[]>(cacheKey);
+    const cached = this.getFromCache<AnimeSamaAnime[]>(cacheKey);
     if (cached) return cached;
     
     try {
       const result = await this.makeRequest<any>(`${this.baseUrl}/api/catalogue`);
       
       if (result.success && result.data && Array.isArray(result.data)) {
-        this.setCachedData(cacheKey, result.data);
-        return result.data;
+        // Corriger les URLs d'images du catalogue
+        const correctedData = result.data.map((anime: AnimeSamaAnime) => ({
+          ...anime,
+          image: this.fixImageUrl(anime.image, anime.id)
+        }));
+        
+        this.setCache(cacheKey, correctedData);
+        return correctedData;
       }
       
       // Fallback avec données de base si catalogue échoue
       console.log('Catalogue endpoint failed, using fallback data');
-      const fallbackAnimes = this.getFallbackAnimes();
-      this.setCachedData(cacheKey, fallbackAnimes);
+      const fallbackAnimes = await this.getFallbackAnimes();
+      this.setCache(cacheKey, fallbackAnimes);
       return fallbackAnimes;
       
     } catch (error) {
       console.error('Error fetching catalogue:', error);
       
       // Fallback final
-      const fallbackAnimes = this.getFallbackAnimes();
-      this.setCachedData(cacheKey, fallbackAnimes);
+      const fallbackAnimes = await this.getFallbackAnimes();
+      this.setCache(cacheKey, fallbackAnimes);
       return fallbackAnimes;
     }
   }
 
-  // Méthode de fallback avec données authentiques de base
+  // Méthode pour corriger les URLs d'images selon le CDN officiel anime-sama.fr
+  private fixImageUrl(imageUrl: string, animeId: string): string {
+    if (!imageUrl || imageUrl === 'N/A' || imageUrl.includes('placeholder')) {
+      // Générer URL basée sur l'ID de l'anime selon le pattern du site original
+      return `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${animeId}.jpg`;
+    }
+    
+    // Si l'URL n'utilise pas le bon CDN, la corriger
+    if (!imageUrl.includes('cdn.statically.io/gh/Anime-Sama/IMG')) {
+      const filename = imageUrl.split('/').pop() || `${animeId}.jpg`;
+      return `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${filename}`;
+    }
+    
+    return imageUrl;
+  }
+
+  // Méthode de fallback avec données authentiques de base et images correctes
   private async getFallbackAnimes(): Promise<AnimeSamaAnime[]> {
     return [
       {
@@ -466,7 +511,7 @@ class AnimeSamaService {
         url: 'https://anime-sama.fr/catalogue/one-piece/',
         type: 'TV',
         status: 'En cours',
-        image: 'https://anime-sama.fr/s1/animes/one-piece.jpg',
+        image: 'https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/one-piece.jpg',
         description: 'Les aventures de Monkey D. Luffy',
         genres: ['Action', 'Aventure', 'Comédie'],
         year: '1999',
@@ -489,11 +534,11 @@ class AnimeSamaService {
       },
       {
         id: 'demon-slayer',
-        title: 'Demon Slayer',
+        title: 'Demon Slayer: Kimetsu no Yaiba',
         url: 'https://anime-sama.fr/catalogue/demon-slayer/',
         type: 'TV',
         status: 'Terminé',
-        image: 'https://anime-sama.fr/s1/animes/demon-slayer.jpg',
+        image: 'https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/demon-slayer-kimetsu-no-yaiba.jpg',
         description: 'L\'histoire de Tanjiro Kamado',
         genres: ['Action', 'Surnaturel', 'Drame'],
         year: '2019',
@@ -520,7 +565,7 @@ class AnimeSamaService {
         url: 'https://anime-sama.fr/catalogue/chainsaw-man/',
         type: 'TV',
         status: 'Terminé',
-        image: 'https://anime-sama.fr/s1/animes/chainsaw-man.jpg',
+        image: 'https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/chainsaw-man.jpg',
         description: 'L\'histoire de Denji et Pochita',
         genres: ['Action', 'Horreur', 'Comédie'],
         year: '2022',
@@ -539,6 +584,60 @@ class AnimeSamaService {
           totalEpisodes: 12,
           hasFilms: false,
           hasScans: true
+        }
+      },
+      {
+        id: 'drcl-midnight-children',
+        title: '#DRCL midnight children',
+        url: 'https://anime-sama.fr/catalogue/drcl-midnight-children/',
+        type: 'TV',
+        status: 'En cours',
+        image: 'https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/drcl-midnight-children0.jpg',
+        description: 'Drame, Fantastique, Surnaturel Scans',
+        genres: ['Drame', 'Fantastique', 'Surnaturel'],
+        year: '2024',
+        seasons: [
+          {
+            number: 1,
+            name: 'Saison 1',
+            languages: ['VOSTFR'],
+            episodeCount: 12,
+            url: 'https://anime-sama.fr/catalogue/drcl-midnight-children/saison1/'
+          }
+        ],
+        progressInfo: {
+          advancement: '12 épisodes',
+          correspondence: 'Anime VOSTFR',
+          totalEpisodes: 12,
+          hasFilms: false,
+          hasScans: true
+        }
+      },
+      {
+        id: 'tis-time-for-torture-princess',
+        title: '\'Tis Time for "Torture," Princess',
+        url: 'https://anime-sama.fr/catalogue/tis-time-for-torture-princess/',
+        type: 'TV',
+        status: 'Terminé',
+        image: 'https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/tis-time-for-torture-princess.jpg',
+        description: 'Hime-sama, "Goumon" no Jikan desu Comédie, Fantasy, Démons, Gastronomie, Torture',
+        genres: ['Comédie', 'Fantasy', 'Démons'],
+        year: '2024',
+        seasons: [
+          {
+            number: 1,
+            name: 'Saison 1',
+            languages: ['VOSTFR'],
+            episodeCount: 12,
+            url: 'https://anime-sama.fr/catalogue/tis-time-for-torture-princess/saison1/'
+          }
+        ],
+        progressInfo: {
+          advancement: '12 épisodes',
+          correspondence: 'Anime VOSTFR',
+          totalEpisodes: 12,
+          hasFilms: false,
+          hasScans: false
         }
       }
     ];

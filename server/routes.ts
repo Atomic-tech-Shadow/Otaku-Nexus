@@ -89,6 +89,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/catalogue', async (req, res) => {
+    try {
+      const catalogue = await animeSamaService.getCatalogue();
+      res.json({ success: true, data: catalogue });
+    } catch (error) {
+      console.error('Error fetching catalogue:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch catalogue', error: error.message });
+    }
+  });
+
+  app.get('/api/seasons', async (req, res) => {
+    try {
+      const { animeId, season, language } = req.query;
+      
+      if (!animeId || !season || !language) {
+        return res.status(400).json({ success: false, message: 'animeId, season, and language parameters required' });
+      }
+      
+      const episodes = await animeSamaService.getSeasonEpisodesLegacy(
+        animeId as string, 
+        parseInt(season as string), 
+        language as 'vf' | 'vostfr'
+      );
+      
+      res.json({ 
+        success: true, 
+        data: {
+          animeId,
+          season: parseInt(season as string),
+          language,
+          episodes,
+          episodeCount: episodes.length
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching season episodes:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch season episodes', error: error.message });
+    }
+  });
+
   // Auth middleware
   await setupAuth(app);
 

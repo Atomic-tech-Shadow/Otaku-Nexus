@@ -1,70 +1,49 @@
-# Otaku Nexus - Plateforme Anime/Manga
+# Anime-Sama Mirror Application
 
-## Overview
-Plateforme complète pour les fans d'anime et manga avec streaming, quiz, chat et gestion de favoris. Le projet utilise React/TypeScript en frontend, Express/Node.js en backend, PostgreSQL comme base de données, et une API externe pour le contenu anime.
+## Project Overview
+This is a 100% mirror application of anime-sama.fr, providing anime streaming functionality with:
+- Authentic anime catalogue with correct image URLs
+- Episode streaming capabilities
+- User authentication and quiz features
+- Admin functionality
+- Real-time search and trending anime
 
-## Recent Changes
-- **Mise à jour Mobile pour Render** (24 juin 2025)
-  - Synchronisation API mobile avec endpoints Render optimisés
-  - Timeouts étendus à 2 minutes pour stabilité mobile
-  - Cache intelligent optimisé pour performances Render
-  - Gestion robuste des formats de réponse API
-  - Fallbacks automatiques VF/VOSTFR et serveurs multiples
-- **Optimisation post-déploiement Render** (24 juin 2025)
-  - Suppression des restrictions de timeout dans anime-sama
-  - Augmentation des délais API (60s) pour environnement de production
-  - Optimisation du cache (15 minutes) pour Render
-  - Suppression des blocages iframe et restrictions vidéo
-  - Configuration finale pour déploiement externe
-- **Préparation pour déploiement** (24 juin 2025)
-  - Suppression des dépendances Replit spécifiques
-  - Configuration database Neon PostgreSQL permanente
-  - Désactivation Replit Auth pour déploiement
-  - Nettoyage des références Replit dans le code
-  - Optimisation pour environnement de production
-- **Migration Replit Agent vers Replit Environment** (25 juin 2025)
-  - Configuration de la base de données PostgreSQL
-  - Suppression des données de démo de la page anime-sama
-  - Configuration API https://api-anime-sama.onrender.com
-  - Mise à jour des endpoints pour sécurité et compatibilité
-  - Amélioration séparation client/serveur
-  - Application des corrections techniques anime-sama (paramètres API, anti-race condition, cache par langue)
-  - Validation des endpoints backend avec gestion d'erreurs robuste
-  - Migration complète et fonctionnelle - Application déployable
+## User Preferences
+- Language: French (primary interface)
+- Focus: 100% fidelity to original anime-sama.fr site
+- Priority: Correct image display and streaming functionality
 
 ## Project Architecture
 
-### Frontend (client/)
-- **React + TypeScript** avec Vite
-- **Pages principales**: anime-sama, quiz, chat, profil utilisateur
-- **Styling**: TailwindCSS avec composants Radix UI
-- **Routing**: Wouter pour navigation côté client
+### Core Components
+- **Frontend**: React with TypeScript, Tailwind CSS
+- **Backend**: Express.js with TypeScript
+- **Database**: PostgreSQL (Neon)
+- **External API**: anime-sama API integration
+- **Image CDN**: https://cdn.statically.io/gh/Anime-Sama/IMG/
 
-### Backend (server/)
-- **Express.js** avec TypeScript
-- **Base de données**: PostgreSQL avec Drizzle ORM
-- **Authentication**: Passport.js avec sessions
-- **API externe**: Intégration anime-sama pour contenu streaming
+### Recent Changes (Latest First)
+- **2025-06-25**: Fixed image URLs to use correct CDN (cdn.statically.io/gh/Anime-Sama/IMG)
+- **2025-06-25**: Added image URL correction method in anime-sama-api.ts
+- **2025-06-25**: Added catalogue and seasons API routes
+- **2025-06-25**: Updated fallback anime data with authentic titles and images
+- **2025-06-25**: Migrated project from Replit Agent to Replit environment
 
-### Database Schema
-- Users, quiz system, chat rooms/messages
-- Anime favorites, watching progress
-- Admin posts et gestion contenu
+### Critical Features
+1. **Image Display**: All anime images now use the correct CDN URLs
+2. **API Integration**: Direct proxy to anime-sama API with image corrections
+3. **Search Functionality**: Real-time anime search with proper image display
+4. **Episode Streaming**: Full episode streaming capabilities
+5. **User System**: Authentication, profiles, and quiz functionality
 
-### API Endpoints (Tous testés et fonctionnels)
-- `/api/search` - Recherche d'animes (timeout 60s)
-- `/api/anime/[id]` - Détails d'un anime (cache 15min)
-- `/api/episode/[id]` - Sources vidéo multi-serveurs
-- `/api/seasons` - Épisodes par saison/langue (vf/vostfr)
-- `/api/trending` - Animes populaires (réponse <1s)
-- `/api/embed/[episodeId]` - Lecteur vidéo iframe CORS-free
-- `/api/proxy/[url]` - Proxy CORS pour accès direct
+### Technical Decisions
+- Using authentic anime-sama.fr CDN for images
+- Implementing fallback data that matches the original site
+- Correcting API responses to ensure proper image URLs
+- Maintaining 100% compatibility with original site structure
 
-## User Preferences
-*Aucune préférence utilisateur spécifiée pour le moment*
-
-## Technical Notes
-- Utilise l'API externe https://api-anime-sama.onrender.com pour le contenu anime authentique
-- Configuration sécurisée avec variables d'environnement
-- Cache intelligent côté serveur pour optimiser les performances
-- Gestion d'erreurs robuste avec fallbacks appropriés
+## Current Status
+- Application running successfully on port 5000
+- Image URLs corrected to match original site
+- API routes properly configured
+- Database connected and functional
