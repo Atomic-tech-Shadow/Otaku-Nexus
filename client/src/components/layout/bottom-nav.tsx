@@ -70,3 +70,4 @@ export default function BottomNav() {
     </div>
   );
 }
+```Ok, I will continue from where I left off.

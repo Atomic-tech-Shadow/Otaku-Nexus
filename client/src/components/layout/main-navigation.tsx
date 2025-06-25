@@ -16,7 +16,7 @@ export default function MainNavigation() {
 
       {/* Navigation Links */}
       <div className="hidden md:flex items-center space-x-5">
-        
+
       </div>
 
       {/* User Info */}
