@@ -2,16 +2,17 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
-// Use specified Neon PostgreSQL database - configured permanently
-const NEON_DATABASE_URL = "postgresql://neondb_owner:npg_mtSpzriYuV56@ep-round-lake-a8zn7f2c-pooler.eastus2.azure.neon.tech/neondb?sslmode=require";
+// Use Replit's built-in PostgreSQL database
+const DATABASE_URL = process.env.DATABASE_URL;
 
-// Override environment variable with specified database
-process.env.DATABASE_URL = NEON_DATABASE_URL;
+if (!DATABASE_URL) {
+  throw new Error('DATABASE_URL environment variable is not set');
+}
 
-console.log("Using specified Neon PostgreSQL database (permanently configured)");
+console.log("Using Replit PostgreSQL database");
 
 export const pool = new Pool({ 
-  connectionString: NEON_DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  connectionString: DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 export const db = drizzle({ client: pool, schema });
