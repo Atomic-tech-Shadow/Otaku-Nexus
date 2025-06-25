@@ -15,7 +15,6 @@ export default function BottomNav() {
     { icon: Home, label: "Accueil", path: "/" },
     { icon: Brain, label: "Quiz", path: "/quiz" },
     { icon: MessageCircle, label: "Chat", path: "/chat" },
-    { icon: Play, label: "Anime-Sama", path: "/anime-sama" },
   ];
 
   return (

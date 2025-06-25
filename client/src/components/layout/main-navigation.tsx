@@ -16,12 +16,7 @@ export default function MainNavigation() {
 
       {/* Navigation Links */}
       <div className="hidden md:flex items-center space-x-5">
-        <Button variant="ghost" asChild>
-          <Link href="/anime-sama" className="flex items-center gap-2">
-            <Play className="h-4 w-4" />
-            Anime-Sama
-          </Link>
-        </Button>
+        
       </div>
 
       {/* User Info */}
