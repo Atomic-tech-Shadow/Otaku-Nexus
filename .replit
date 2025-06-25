@@ -11,7 +11,7 @@ build = ["npm", "run", "build"]
 run = ["npm", "run", "start"]
 
 [workflows]
-runButton = "Project"
+runButton = "Start Clean"
 
 [[workflows.workflow]]
 name = "Project"
@@ -43,6 +43,15 @@ args = "npm run dev"
 [[workflows.workflow]]
 name = "Start App Fixed"
 author = 43652320
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Start Clean"
+author = 44250542
 mode = "sequential"
 
 [[workflows.workflow.tasks]]
