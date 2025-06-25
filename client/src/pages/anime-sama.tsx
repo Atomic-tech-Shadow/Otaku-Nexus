@@ -1530,83 +1530,39 @@ const AnimeSamaPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Section ANIME avec sagas, films et scans */}
+          {/* Section ANIME avec sagas, films et scans - Style authentique anime-sama.fr */}
           <div className="px-4 pb-4">
-            <h2 className="text-white text-lg font-bold mb-4 uppercase tracking-wide">ANIME</h2>
-            <div className="grid grid-cols-2 gap-3">
+            <h2 className="text-white text-xl font-bold uppercase border-b-2 mt-5 border-slate-500 mb-4">Anime</h2>
+            <div className="flex flex-wrap overflow-y-hidden text-sm justify-start bg-slate-900 bg-opacity-70 rounded mt-2 h-auto p-2 gap-2">
               {selectedAnime.seasons.map((season) => (
                 <button
                   key={season.number}
                   onClick={() => loadSeasonEpisodes(season)}
-                  className="relative overflow-hidden rounded-lg border-2 transition-all"
+                  className="text-white bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded px-3 py-2 text-sm transition-colors"
                   style={{ 
-                    aspectRatio: '16/9',
-                    borderColor: selectedSeason?.number === season.number ? '#3b82f6' : '#1e40af',
-                    backgroundColor: '#1e40af'
+                    backgroundColor: selectedSeason?.number === season.number ? '#1e40af' : '#475569',
+                    borderColor: selectedSeason?.number === season.number ? '#3b82f6' : '#64748b'
                   }}
                 >
-                  <img
-                    src={selectedAnime.image}
-                    alt={season.name}
-                    className="w-full h-full object-cover opacity-60"
-                  />
-                  <div 
-                    className="absolute inset-0"
-                    style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.9) 100%)' }}
-                  />
-                  <div className="absolute bottom-2 left-2 right-2">
-                    <div className="text-white text-sm font-bold text-left">{season.name}</div>
-                  </div>
+                  {season.name}
                 </button>
               ))}
               
               {/* Films si disponibles */}
               {selectedAnime.progressInfo?.hasFilms && (
                 <button
-                  className="relative overflow-hidden rounded-lg border-2 transition-all"
-                  style={{ 
-                    aspectRatio: '16/9',
-                    borderColor: '#dc2626',
-                    backgroundColor: '#dc2626'
-                  }}
+                  className="text-white bg-red-800 hover:bg-red-700 border border-red-600 rounded px-3 py-2 text-sm transition-colors"
                 >
-                  <img
-                    src={selectedAnime.image}
-                    alt="Films"
-                    className="w-full h-full object-cover opacity-60"
-                  />
-                  <div 
-                    className="absolute inset-0"
-                    style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.9) 100%)' }}
-                  />
-                  <div className="absolute bottom-2 left-2 right-2">
-                    <div className="text-white text-sm font-bold text-left">📽️ Films</div>
-                  </div>
+                  Films
                 </button>
               )}
               
               {/* Scans si disponibles */}
               {selectedAnime.progressInfo?.hasScans && (
                 <button
-                  className="relative overflow-hidden rounded-lg border-2 transition-all"
-                  style={{ 
-                    aspectRatio: '16/9',
-                    borderColor: '#16a34a',
-                    backgroundColor: '#16a34a'
-                  }}
+                  className="text-white bg-green-800 hover:bg-green-700 border border-green-600 rounded px-3 py-2 text-sm transition-colors"
                 >
-                  <img
-                    src={selectedAnime.image}
-                    alt="Scans"
-                    className="w-full h-full object-cover opacity-60"
-                  />
-                  <div 
-                    className="absolute inset-0"
-                    style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.9) 100%)' }}
-                  />
-                  <div className="absolute bottom-2 left-2 right-2">
-                    <div className="text-white text-sm font-bold text-left">📖 Scans Manga</div>
-                  </div>
+                  Scans
                 </button>
               )}
             </div>
@@ -1707,53 +1663,38 @@ const AnimeSamaPage: React.FC = () => {
               </select>
             </div>
 
-            {/* Dernière sélection */}
-            <div className="text-left">
-              <span className="text-white font-bold text-sm">DERNIÈRE SÉLECTION : </span>
-              <span className="text-gray-300 italic text-sm">
-                {selectedEpisode ? `EPISODE ${selectedEpisode.episodeNumber}` : 'EPISODE 1'}
-              </span>
-            </div>
-
-            {/* Navigation épisodes - Boutons circulaires style capture */}
-            <div className="flex justify-center gap-6 py-2">
-              <button
-                onClick={() => navigateEpisode('prev')}
-                disabled={!selectedEpisode || episodes.findIndex(ep => ep.id === selectedEpisode.id) === 0}
-                className="flex items-center justify-center w-16 h-16 rounded-full text-white text-xl font-bold disabled:opacity-40 transition-all"
-                style={{ backgroundColor: '#1e40af' }}
-              >
-                ←
-              </button>
+            {/* Zone de lecture vidéo - Style authentique anime-sama.fr */}
+            <div className="bg-black rounded p-4 min-h-96">
+              {episodeDetails && episodeDetails.sources && episodeDetails.sources[selectedServer] ? (
+                <div className="w-full h-64 md:h-96 bg-black rounded overflow-hidden">
+                  <iframe
+                    src={episodeDetails.sources[selectedServer].embedUrl || episodeDetails.sources[selectedServer].url}
+                    className="w-full h-full border-0"
+                    allowFullScreen
+                    allow="autoplay; encrypted-media"
+                    style={{
+                      border: 'none',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="w-full h-64 md:h-96 bg-gray-900 rounded flex items-center justify-center">
+                  <div className="text-center text-white">
+                    <div className="text-lg mb-2">Sélectionnez un épisode</div>
+                    {loading && <div className="text-sm text-gray-400">Chargement...</div>}
+                    {error && <div className="text-sm text-red-400">{error}</div>}
+                  </div>
+                </div>
+              )}
               
-              <button
-                onClick={() => {
-                  if (selectedEpisode) {
-                    loadEpisodeSources(selectedEpisode.id);
-                  }
-                }}
-                className="flex items-center justify-center w-16 h-16 rounded-full text-white text-xl font-bold transition-all"
-                style={{ backgroundColor: '#374151' }}
-              >
-                ↓
-              </button>
-              
-              <button
-                onClick={() => navigateEpisode('next')}
-                disabled={!selectedEpisode || episodes.findIndex(ep => ep.id === selectedEpisode.id) === episodes.length - 1}
-                className="flex items-center justify-center w-16 h-16 rounded-full text-white text-xl font-bold disabled:opacity-40 transition-all"
-                style={{ backgroundColor: '#1e40af' }}
-              >
-                →
-              </button>
-            </div>
-
-            {/* Message d'information - Style exact de la capture */}
-            <div className="text-center py-4">
-              <p className="text-white text-sm leading-relaxed">
-                <span className="italic">Pub insistante ou vidéo indisponible ?</span><br />
-                <span className="font-bold">Changez de lecteur.</span>
-              </p>
+              {/* Message d'information authentique */}
+              <div className="text-center mt-4">
+                <p className="text-white text-sm">
+                  <span className="italic">Pub insistante ou vidéo indisponible ?</span><br />
+                  <span className="font-bold">Changez de lecteur.</span>
+                </p>
+              </div>
             </div>
 
 

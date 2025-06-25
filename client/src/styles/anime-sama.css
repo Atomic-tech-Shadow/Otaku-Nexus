@@ -1,11 +1,12 @@
-/* Anime-Sama Page Styles - Authentic Reproduction */
+/* Anime-Sama Page Styles - Authentic Reproduction anime-sama.fr */
 
 .anime-sama-container {
   background: #000000;
   color: #ffffff;
   min-height: 100vh;
-  font-family: Arial, sans-serif;
-  padding: 20px;
+  font-family: system-ui, -apple-system, sans-serif;
+  padding: 0;
+  margin: 0;
 }
 
 .search-view, .anime-view, .player-view {
