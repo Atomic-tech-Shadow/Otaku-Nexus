@@ -425,8 +425,22 @@ const AnimeSamaPage: React.FC = () => {
     };
   }, []);
 
-  // Configuration API selon documentation officielle
-  const API_BASE_URL = 'https://api-anime-sama.onrender.com';
+  // Configuration API - Utiliser l'API locale
+  const API_BASE_URL = '';
+  
+  // Test de connectivité API locale
+  const testAPIConnection = async () => {
+    try {
+      const response = await fetch(`/api/health`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(5000)
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  };
   
   // Headers optimisés selon documentation
   const API_HEADERS = {
@@ -451,8 +465,8 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      // 1. Endpoint principal: /api/trending (selon documentation)
-      const trendingResponse = await fetch(`${API_BASE_URL}/api/trending`, {
+      // 1. Endpoint principal: /api/trending (API locale)
+      const trendingResponse = await fetch(`/api/trending`, {
         method: 'GET',
         headers: API_HEADERS,
         signal: AbortSignal.timeout(API_CONFIG.timeout)
@@ -461,18 +475,17 @@ const AnimeSamaPage: React.FC = () => {
       if (trendingResponse.ok) {
         const result = await trendingResponse.json();
         if (result.success && result.data) {
-          // Selon documentation: data peut être un array ou objet avec items
           const animes = Array.isArray(result.data) ? result.data : result.data.items || [];
           if (animes.length > 0) {
             setPopularAnimes(animes.slice(0, 20));
-            console.log(`Loaded ${animes.length} trending animes from API`);
+            console.log(`Loaded ${animes.length} trending animes from local API`);
             return;
           }
         }
       }
       
       // 2. Fallback: /api/catalogue avec pagination
-      const catalogueResponse = await fetch(`${API_BASE_URL}/api/catalogue?page=1&limit=20`, {
+      const catalogueResponse = await fetch(`/api/catalogue?page=1&limit=20`, {
         method: 'GET',
         headers: API_HEADERS,
         signal: AbortSignal.timeout(API_CONFIG.timeout)
@@ -482,72 +495,17 @@ const AnimeSamaPage: React.FC = () => {
         const result = await catalogueResponse.json();
         if (result.success && result.data && result.data.items) {
           setPopularAnimes(result.data.items);
-          console.log(`Loaded ${result.data.items.length} catalogue animes from API`);
+          console.log(`Loaded ${result.data.items.length} catalogue animes from local API`);
           return;
         }
       }
       
-      // 3. Dernier fallback: /api/search avec terme populaire
-      const searchResponse = await fetch(`${API_BASE_URL}/api/search?query=naruto`, {
-        method: 'GET',
-        headers: API_HEADERS,
-        signal: AbortSignal.timeout(API_CONFIG.timeout)
-      });
-      
-      if (searchResponse.ok) {
-        const result = await searchResponse.json();
-        if (result.success && result.data && result.data.results) {
-          setPopularAnimes(result.data.results.slice(0, 15));
-          console.log(`Loaded ${result.data.results.length} search results as fallback`);
-          return;
-        }
-      }
-      
-      throw new Error('Tous les endpoints API ont échoué');
+      throw new Error('API locale indisponible');
       
     } catch (error: any) {
-      console.error('Erreur API:', error);
+      console.error('Erreur API locale:', error);
       setError('Service temporairement indisponible');
-      
-      // Fallback final avec données authentiques selon documentation
-      const fallbackAnimes = [
-        {
-          id: 'one-piece',
-          title: 'One Piece',
-          image: 'https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/one-piece.jpg',
-          status: 'En cours',
-          type: 'Anime',
-          url: 'https://anime-sama.fr/catalogue/one-piece/',
-          genres: ['Action', 'Aventure'],
-          languages: ['VF', 'VOSTFR'],
-          authentic: true
-        },
-        {
-          id: 'naruto',
-          title: 'Naruto',
-          image: 'https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/naruto.jpg',
-          status: 'Terminé',
-          type: 'Anime',
-          url: 'https://anime-sama.fr/catalogue/naruto/',
-          genres: ['Action', 'Aventure', 'Arts martiaux', 'Ninja'],
-          languages: ['VF', 'VOSTFR'],
-          authentic: true
-        },
-        {
-          id: 'demon-slayer-kimetsu-no-yaiba',
-          title: 'Demon Slayer: Kimetsu no Yaiba',
-          image: 'https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/demon-slayer-kimetsu-no-yaiba.jpg',
-          status: 'Terminé',
-          type: 'Anime',
-          url: 'https://anime-sama.fr/catalogue/demon-slayer/',
-          genres: ['Action', 'Surnaturel', 'Démons'],
-          languages: ['VF', 'VOSTFR'],
-          authentic: true
-        }
-      ];
-      
-      setPopularAnimes(fallbackAnimes);
-      console.log('Using authentic fallback data');
+      setPopularAnimes([]);
     } finally {
       setLoading(false);
     }
@@ -776,8 +734,8 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      // Endpoint détails anime selon documentation
-      const apiUrl = `${API_BASE_URL}/api/anime/${animeId}`;
+      // Endpoint détails anime API locale
+      const apiUrl = `/api/anime/${animeId}`;
         
       const response = await fetch(apiUrl, {
         method: 'GET',
@@ -792,7 +750,6 @@ const AnimeSamaPage: React.FC = () => {
       const apiResponse: ApiResponse<AnimeDetails> = await response.json();
       
       if (apiResponse.success && apiResponse.data) {
-        // Données authentiques depuis anime-sama.fr
         const animeData = apiResponse.data;
         
         // Enrichir avec informations manquantes si nécessaire
@@ -801,45 +758,13 @@ const AnimeSamaPage: React.FC = () => {
           image: animeData.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${animeId}.jpg`,
           url: animeData.url || `https://anime-sama.fr/catalogue/${animeId}/`,
           languages: animeData.languages || ['VF', 'VOSTFR'],
-          authentic: true
+          authentic: animeData.authentic || true
         };
         
         setSelectedAnime(enrichedAnime);
-        console.log(`Loaded authentic anime: ${enrichedAnime.title}`);
+        console.log(`Loaded anime: ${enrichedAnime.title}`);
       } else {
-        // Fallback avec données authentiques formatées selon documentation
-        const fallbackAnime: AnimeDetails = {
-          id: animeId,
-          title: animeId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-          description: `Anime disponible sur anime-sama.fr`,
-          image: `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${animeId}.jpg`,
-          genres: ['Action', 'Aventure'],
-          status: 'Disponible',
-          year: '2024',
-          url: `https://anime-sama.fr/catalogue/${animeId}/`,
-          languages: ['VF', 'VOSTFR'],
-          seasons: [
-            {
-              number: 1,
-              name: 'Saison 1',
-              languages: ['VF', 'VOSTFR'],
-              episodeCount: 12,
-              url: `https://anime-sama.fr/catalogue/${animeId}/saison1/`
-            }
-          ],
-          totalEpisodes: 12,
-          progressInfo: {
-            advancement: '12 épisodes disponibles',
-            correspondence: 'Anime complet',
-            totalEpisodes: 12,
-            hasFilms: false,
-            hasScans: false
-          },
-          authentic: false
-        };
-        
-        setSelectedAnime(fallbackAnime);
-        console.log(`Using structured fallback for: ${animeId}`);
+        throw new Error('Anime non trouvé');
       }
       
       setCurrentView('anime');
@@ -1614,12 +1539,12 @@ const AnimeSamaPage: React.FC = () => {
             </div>
           )}
 
-          {/* Message de bienvenue si pas de recherche ni animes populaires */}
+          {/* Message de bienvenue ou erreur */}
           {!searchQuery && !searchResults.length && popularAnimes.length === 0 && !loading && (
             <div className="text-center py-12">
               <div className="text-6xl mb-6">🎌</div>
               <h2 className="text-white text-2xl font-bold mb-4 uppercase">Bienvenue sur Anime-Sama</h2>
-              <p className="text-gray-400 text-lg mb-6">Streaming et catalogage d'animes et scans</p>
+              <p className="text-gray-400 text-lg mb-6">Votre plateforme de streaming d'animes</p>
               <button
                 onClick={loadPopularAnimes}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-bold uppercase transition-colors"
