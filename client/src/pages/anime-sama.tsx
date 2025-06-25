@@ -90,6 +90,7 @@ const AnimeSamaPage: React.FC = () => {
   const [currentView, setCurrentView] = useState<'search' | 'anime' | 'player'>('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [popularAnimes, setPopularAnimes] = useState<SearchResult[]>([]);
   const [selectedAnime, setSelectedAnime] = useState<AnimeDetails | null>(null);
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<'VF' | 'VOSTFR'>('VOSTFR');
@@ -427,40 +428,46 @@ const AnimeSamaPage: React.FC = () => {
   // Configuration API avec l'API anime-sama déployée sur Render
   const API_BASE_URL = 'https://api-anime-sama.onrender.com';
   
-  // Chargement des animes populaires depuis l'API anime-sama
+  // Chargement des animes populaires depuis l'API anime-sama - MIROIR 100%
   const loadPopularAnimes = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      // Utiliser l'endpoint trending pour récupérer les animes populaires authentiques
-      const response = await fetch(`${API_BASE_URL}/api/trending`, {
+      // Essayer d'abord l'endpoint trending
+      const trendingResponse = await fetch(`${API_BASE_URL}/api/trending`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
         signal: AbortSignal.timeout(60000)
       });
       
-      if (response.ok) {
-        const result = await response.json();
+      if (trendingResponse.ok) {
+        const result = await trendingResponse.json();
         if (result.success && result.data && Array.isArray(result.data)) {
-          setSearchResults(result.data.slice(0, 20)); // Limiter à 20 résultats
+          setPopularAnimes(result.data);
+          return;
         }
-      } else {
-        // Fallback vers l'endpoint search si trending ne fonctionne pas
-        const searchResponse = await fetch(`${API_BASE_URL}/api/search?query=`, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' },
-          signal: AbortSignal.timeout(60000)
-        });
-        
-        if (searchResponse.ok) {
-          const result = await searchResponse.json();
-          if (result.success && result.data && Array.isArray(result.data)) {
-            setSearchResults(result.data.slice(0, 20));
-          }
+      }
+      
+      // Fallback vers catalogue pour obtenir les données authentiques
+      const catalogueResponse = await fetch(`${API_BASE_URL}/api/catalogue`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(60000)
+      });
+      
+      if (catalogueResponse.ok) {
+        const result = await catalogueResponse.json();
+        if (result.success && result.data && Array.isArray(result.data)) {
+          setPopularAnimes(result.data.slice(0, 20));
         }
       }
       
     } catch (error: any) {
       console.error('Erreur chargement animes populaires:', error);
-      setSearchResults([]);
+      setError('Impossible de charger les animes');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1374,102 +1381,123 @@ const AnimeSamaPage: React.FC = () => {
         <div className="p-4">
 
 
-          {/* Résultats de recherche */}
+          {/* Résultats de recherche - Style anime-sama.fr */}
           {searchResults.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {searchResults.map((anime) => (
-                <div
-                  key={anime.id}
-                  onClick={() => loadAnimeDetails(anime.id)}
-                  className="rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform"
-                  style={{ backgroundColor: '#1a1a1a' }}
-                >
-                  <img
-                    src={anime.image}
-                    alt={anime.title}
-                    className="w-full aspect-[3/4] object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                    }}
-                  />
-                  <div className="p-3">
-                    <h3 className="text-white font-medium text-sm line-clamp-2">{anime.title}</h3>
-                    <div className="flex justify-between items-center mt-1">
-                      <p className="text-gray-400 text-xs">{anime.status}</p>
-                      {watchHistory[anime.id] && (
-                        <span className="text-cyan-400 text-xs bg-cyan-900/30 px-1 rounded">
-                          Ep {watchHistory[anime.id]}
-                        </span>
-                      )}
+            <div className="mb-8">
+              <h2 className="text-white text-xl font-bold mb-4 uppercase border-b-2 border-slate-500 pb-2">
+                Résultats pour "{searchQuery}"
+              </h2>
+              <div className="scrollBarStyled grabScroll flex flex-nowrap overflow-x-auto overflow-y-hidden mb-6 bg-slate-900 bg-opacity-50 rounded p-4 gap-3">
+                {searchResults.map((anime) => (
+                  <div
+                    key={anime.id}
+                    onClick={() => loadAnimeDetails(anime.id)}
+                    className="relative z-0 flex shrink-0 w-32 md:w-44 outline outline-sky-800 outline-1 bg-slate-900 rounded overflow-hidden shadow-lg shadow-black hover:shadow-zinc-900 transition-all duration-200 cursor-pointer"
+                  >
+                    <div className="w-full">
+                      <img 
+                        className="w-full h-30 md:h-42 object-cover transition-all duration-200 cursor-pointer" 
+                        src={anime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`}
+                        alt={anime.title}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`;
+                        }}
+                      />
+                      <div className="px-4 py-2">
+                        <h1 className="text-gray-200 font-semibold text-sm text-center line-clamp-2 md:line-clamp-3 uppercase hover:text-clip">
+                          {anime.title}
+                        </h1>
+                        <hr className="border-t border-slate-500 my-2" />
+                        <div className="flex flex-wrap justify-center">
+                          <button className="rounded rounded-xs bg-opacity-50 bg-blue-600 text-white text-xs font-medium mx-0.5 mt-1 px-1 py-0.5">
+                            {anime.status}
+                          </button>
+                          <button className="rounded rounded-xs bg-opacity-50 bg-cyan-600 text-white text-xs font-medium mx-0.5 mt-1 px-1 py-0.5">
+                            {anime.type}
+                          </button>
+                          {watchHistory[anime.id] && (
+                            <button className="rounded rounded-xs bg-opacity-50 bg-green-600 text-white text-xs font-medium mx-0.5 mt-1 px-1 py-0.5">
+                              Ep {watchHistory[anime.id]}
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
 
-          {!searchQuery && !searchResults.length && (
-            <div>
-              {/* Section Animes Populaires */}
-              {searchResults.length > 0 && (
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-white text-lg font-bold">🔥 Animes Populaires</h2>
-                    <button 
-                      onClick={() => loadPopularAnimes()}
-                      className="text-cyan-400 text-sm hover:text-cyan-300 transition-colors"
-                    >
-                      Actualiser
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {searchResults.map((anime) => (
-                      <div
-                        key={anime.id}
-                        onClick={() => loadAnimeDetails(anime.id)}
-                        className="rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform group"
-                        style={{ backgroundColor: '#1a1a1a' }}
-                      >
-                        <div className="relative">
-                          <img
-                            src={anime.image}
-                            alt={anime.title}
-                            className="w-full aspect-[3/4] object-cover group-hover:opacity-90 transition-opacity"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              target.onerror = null; // Prevent infinite loop
-                            }}
-                          />
+          {/* Section animes populaires - EXACTEMENT comme anime-sama.fr */}
+          {!searchQuery && popularAnimes.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-white text-xl font-bold mb-4 uppercase border-b-2 border-slate-500 pb-2">
+                Animes Populaires
+              </h2>
+              <div className="scrollBarStyled grabScroll flex flex-nowrap overflow-x-auto overflow-y-hidden mb-6 bg-slate-900 bg-opacity-50 rounded p-4 gap-3">
+                {popularAnimes.map((anime) => (
+                  <div
+                    key={anime.id}
+                    onClick={() => loadAnimeDetails(anime.id)}
+                    className="relative z-0 flex shrink-0 w-32 md:w-44 outline outline-sky-800 outline-1 bg-slate-900 rounded overflow-hidden shadow-lg shadow-black hover:shadow-zinc-900 transition-all duration-200 cursor-pointer"
+                  >
+                    <div className="w-full">
+                      <img 
+                        className="w-full h-30 md:h-42 object-cover transition-all duration-200 cursor-pointer" 
+                        src={anime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`}
+                        alt={anime.title}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`;
+                        }}
+                      />
+                      <div className="px-4 py-2">
+                        <h1 className="text-gray-200 font-semibold text-sm text-center line-clamp-2 md:line-clamp-3 uppercase hover:text-clip">
+                          {anime.title}
+                        </h1>
+                        <hr className="border-t border-slate-500 my-2" />
+                        <div className="flex flex-wrap justify-center">
+                          <button className="rounded rounded-xs bg-opacity-50 bg-blue-600 text-white text-xs font-medium mx-0.5 mt-1 px-1 py-0.5">
+                            {anime.status}
+                          </button>
+                          <button className="rounded rounded-xs bg-opacity-50 bg-cyan-600 text-white text-xs font-medium mx-0.5 mt-1 px-1 py-0.5">
+                            {anime.type}
+                          </button>
                           {watchHistory[anime.id] && (
-                            <div className="absolute top-2 right-2 bg-cyan-500 text-white text-xs px-2 py-1 rounded-full">
+                            <button className="rounded rounded-xs bg-opacity-50 bg-green-600 text-white text-xs font-medium mx-0.5 mt-1 px-1 py-0.5">
                               Ep {watchHistory[anime.id]}
-                            </div>
+                            </button>
                           )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                        <div className="p-3">
-                          <h3 className="text-white font-medium text-sm line-clamp-2 group-hover:text-cyan-400 transition-colors">
-                            {anime.title}
-                          </h3>
-                          <div className="flex justify-between items-center mt-1">
-                            <p className="text-gray-400 text-xs">{anime.status}</p>
-                            <span className="text-cyan-400 text-xs">{anime.type}</span>
-                          </div>
                         </div>
                       </div>
-                    ))}
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {/* Message de recherche */}
-              <div className="text-center py-12 border-t border-gray-800">
-                <div className="text-4xl mb-4">🔍</div>
-                <h2 className="text-white text-xl font-bold mb-2">Recherchez votre anime</h2>
-                <p className="text-gray-400 text-sm">Tapez le nom de l'anime que vous souhaitez regarder</p>
+                ))}
               </div>
+            </div>
+          )}
+
+          {/* Message de bienvenue si pas de recherche ni animes populaires */}
+          {!searchQuery && popularAnimes.length === 0 && !loading && (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-6">🎌</div>
+              <h2 className="text-white text-2xl font-bold mb-4 uppercase">Bienvenue sur Anime-Sama</h2>
+              <p className="text-gray-400 text-lg mb-6">Streaming et catalogage d'animes et scans</p>
+              <button
+                onClick={loadPopularAnimes}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-bold uppercase transition-colors"
+              >
+                Découvrir les animes
+              </button>
+            </div>
+          )}
+
+          {/* État de chargement */}
+          {loading && (
+            <div className="text-center py-12">
+              <div className="text-white text-lg">Chargement des animes...</div>
             </div>
           )}
         </div>
@@ -1481,9 +1509,13 @@ const AnimeSamaPage: React.FC = () => {
           {/* Image principale */}
           <div className="relative">
             <img
-              src={selectedAnime.image}
+              src={selectedAnime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${selectedAnime.id}.jpg`}
               alt={selectedAnime.title}
               className="w-full h-64 object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${selectedAnime.id}.jpg`;
+              }}
             />
             <div 
               className="absolute inset-0"
@@ -1576,9 +1608,13 @@ const AnimeSamaPage: React.FC = () => {
           {/* Image avec titre superposé */}
           <div className="relative">
             <img
-              src={selectedAnime.image}
+              src={selectedAnime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${selectedAnime.id}.jpg`}
               alt={selectedAnime.title}
               className="w-full h-48 object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${selectedAnime.id}.jpg`;
+              }}
             />
             <div 
               className="absolute inset-0"
