@@ -13,7 +13,8 @@ import Chat from "@/pages/chat";
 import EditProfile from "@/pages/edit-profile";
 import AuthPage from "@/pages/auth";
 import Admin from "@/pages/admin";
-// Imports anime-sama supprimés
+import AnimeSama from "@/pages/anime-sama";
+import AnimeSearch from "@/pages/anime-search";
 
 import { ProtectedRoute } from "@/components/auth/protected-route";
 
@@ -64,7 +65,17 @@ function Router() {
           </ProtectedRoute>
         </Route>
 
-        {/* Routes anime-sama supprimées */}
+        <Route path="/anime-sama">
+          <ProtectedRoute>
+            <AnimeSama />
+          </ProtectedRoute>
+        </Route>
+        
+        <Route path="/anime-search">
+          <ProtectedRoute>
+            <AnimeSearch />
+          </ProtectedRoute>
+        </Route>
 
         <Route component={NotFound} />
       </Switch>
