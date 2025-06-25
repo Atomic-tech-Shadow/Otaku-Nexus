@@ -281,6 +281,16 @@ export const insertAdminPostSchema = createInsertSchema(adminPosts).omit({
   updatedAt: true,
 });
 
+// User profile update schema
+export const updateUserProfileSchema = z.object({
+  firstName: z.string().min(1, "Le prénom est requis").optional(),
+  lastName: z.string().min(1, "Le nom est requis").optional(),
+  username: z.string().min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères").optional(),
+  bio: z.string().max(500, "La bio ne peut pas dépasser 500 caractères").optional(),
+  favoriteQuote: z.string().max(200, "La citation ne peut pas dépasser 200 caractères").optional(),
+  profileImageUrl: z.string().url("URL d'image invalide").optional(),
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
