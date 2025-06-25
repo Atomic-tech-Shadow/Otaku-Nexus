@@ -425,16 +425,16 @@ const AnimeSamaPage: React.FC = () => {
     };
   }, []);
 
-  // Configuration API - Utiliser l'API locale
-  const API_BASE_URL = '';
+  // Configuration API - Utiliser UNIQUEMENT l'API externe déployée
+  const API_BASE_URL = 'https://api-anime-sama.onrender.com';
   
-  // Test de connectivité API locale
+  // Test de connectivité API externe
   const testAPIConnection = async () => {
     try {
-      const response = await fetch(`/api/health`, {
+      const response = await fetch(`${API_BASE_URL}/api/health`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(10000)
       });
       return response.ok;
     } catch {
@@ -465,8 +465,8 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      // 1. Endpoint principal: /api/trending (API locale)
-      const trendingResponse = await fetch(`/api/trending`, {
+      // 1. Endpoint principal: /api/trending de l'API externe
+      const trendingResponse = await fetch(`${API_BASE_URL}/api/trending`, {
         method: 'GET',
         headers: API_HEADERS,
         signal: AbortSignal.timeout(API_CONFIG.timeout)
@@ -478,14 +478,14 @@ const AnimeSamaPage: React.FC = () => {
           const animes = Array.isArray(result.data) ? result.data : result.data.items || [];
           if (animes.length > 0) {
             setPopularAnimes(animes.slice(0, 20));
-            console.log(`Loaded ${animes.length} trending animes from local API`);
+            console.log(`Loaded ${animes.length} trending animes from API`);
             return;
           }
         }
       }
       
-      // 2. Fallback: /api/catalogue avec pagination
-      const catalogueResponse = await fetch(`/api/catalogue?page=1&limit=20`, {
+      // 2. Fallback: /api/catalogue de l'API externe
+      const catalogueResponse = await fetch(`${API_BASE_URL}/api/catalogue?page=1&limit=20`, {
         method: 'GET',
         headers: API_HEADERS,
         signal: AbortSignal.timeout(API_CONFIG.timeout)
@@ -495,16 +495,16 @@ const AnimeSamaPage: React.FC = () => {
         const result = await catalogueResponse.json();
         if (result.success && result.data && result.data.items) {
           setPopularAnimes(result.data.items);
-          console.log(`Loaded ${result.data.items.length} catalogue animes from local API`);
+          console.log(`Loaded ${result.data.items.length} catalogue animes from API`);
           return;
         }
       }
       
-      throw new Error('API locale indisponible');
+      throw new Error('API externe indisponible');
       
     } catch (error: any) {
-      console.error('Erreur API locale:', error);
-      setError('Service temporairement indisponible');
+      console.error('Erreur API externe:', error);
+      setError('API anime-sama temporairement indisponible');
       setPopularAnimes([]);
     } finally {
       setLoading(false);
@@ -734,8 +734,8 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      // Endpoint détails anime API locale
-      const apiUrl = `/api/anime/${animeId}`;
+      // Endpoint détails anime API externe
+      const apiUrl = `${API_BASE_URL}/api/anime/${animeId}`;
         
       const response = await fetch(apiUrl, {
         method: 'GET',
@@ -762,9 +762,9 @@ const AnimeSamaPage: React.FC = () => {
         };
         
         setSelectedAnime(enrichedAnime);
-        console.log(`Loaded anime: ${enrichedAnime.title}`);
+        console.log(`Loaded anime from API: ${enrichedAnime.title}`);
       } else {
-        throw new Error('Anime non trouvé');
+        throw new Error('Anime non trouvé dans l\'API');
       }
       
       setCurrentView('anime');
