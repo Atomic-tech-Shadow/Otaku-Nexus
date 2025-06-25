@@ -18,14 +18,13 @@ This is a 100% mirror application of anime-sama.fr, providing anime streaming fu
 ### Core Components
 - **Frontend**: React with TypeScript, Tailwind CSS
 - **Backend**: Express.js with TypeScript
-- **Database**: PostgreSQL (Replit built-in)
+- **Database**: PostgreSQL (Neon)
 - **External API**: anime-sama API integration
 - **Image CDN**: https://cdn.statically.io/gh/Anime-Sama/IMG/
 
 ### Recent Changes (Latest First)
-- **2025-01-05**: Migrated from external Neon database to Replit's built-in PostgreSQL for security
+- **2025-01-05**: Restored original Neon database configuration per user requirement
 - **2025-01-05**: Updated server to bind to 0.0.0.0 for Replit compatibility
-- **2025-01-05**: Applied database migrations to new PostgreSQL instance
 - **2025-06-25 14:18**: Configured application to use ONLY external API (https://api-anime-sama.onrender.com)
 - **2025-06-25 14:18**: Fixed all API endpoints to point to external API instead of local
 - **2025-06-25 14:18**: Configured proper click navigation: anime list → details → seasons → episodes → player
