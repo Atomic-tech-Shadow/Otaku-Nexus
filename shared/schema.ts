@@ -85,71 +85,7 @@ export const authTokens = pgTable("auth_tokens", {
 
 
 
-export const mangas = pgTable("mangas", {
-  id: serial("id").primaryKey(),
-  malId: integer("mal_id").unique().notNull(),
-  title: text("title").notNull(),
-  synopsis: text("synopsis"),
-  imageUrl: text("image_url"),
-  score: text("score"),
-  year: integer("year"),
-  status: text("status"),
-  chapters: integer("chapters"),
-  volumes: integer("volumes"),
-  genres: text("genres").array(),
-  authors: text("authors").array(),
-  serialization: text("serialization"),
-  type: text("type"), // manga, manhwa, manhua, etc.
-  createdAt: timestamp("created_at").defaultNow(),
-});
 
-
-
-export const mangaFavorites = pgTable("manga_favorites", {
-  id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  mangaId: integer("manga_id").notNull().references(() => mangas.id),
-  rating: integer("rating"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const mangaChapters = pgTable("manga_chapters", {
-  id: serial("id").primaryKey(),
-  mangadxId: varchar("mangadx_id").unique().notNull(),
-  mangaId: integer("manga_id").notNull().references(() => mangas.id),
-  chapterNumber: text("chapter_number").notNull(),
-  title: text("title"),
-  volume: text("volume"),
-  pages: integer("pages").default(0),
-  translatedLanguage: text("translated_language").default("fr"),
-  scanlationGroup: text("scanlation_group"),
-  publishAt: timestamp("publish_at"),
-  readableAt: timestamp("readable_at"),
-  version: integer("version").default(1),
-  hash: text("hash"),
-  data: text("data").array(),
-  dataSaver: text("data_saver").array(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const mangaReadingProgress = pgTable("manga_reading_progress", {
-  id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  mangaId: integer("manga_id").notNull().references(() => mangas.id),
-  lastChapterId: integer("last_chapter_id").references(() => mangaChapters.id),
-  lastPageNumber: integer("last_page_number").default(1),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-export const mangaDownloads = pgTable("manga_downloads", {
-  id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  chapterId: integer("chapter_id").notNull().references(() => mangaChapters.id),
-  downloadUrl: text("download_url"),
-  status: text("status").default("pending"), // pending, downloading, completed, failed
-  downloadedAt: timestamp("downloaded_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
 
 export const quizzes = pgTable("quizzes", {
   id: serial("id").primaryKey(),
@@ -222,31 +158,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 
 
-export const insertMangaSchema = createInsertSchema(mangas).omit({
-  id: true,
-  createdAt: true,
-});
 
-export const insertMangaFavoriteSchema = createInsertSchema(mangaFavorites).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertMangaChapterSchema = createInsertSchema(mangaChapters).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertMangaReadingProgressSchema = createInsertSchema(mangaReadingProgress).omit({
-  id: true,
-  updatedAt: true,
-});
-
-export const insertMangaDownloadSchema = createInsertSchema(mangaDownloads).omit({
-  id: true,
-  createdAt: true,
-  downloadedAt: true,
-});
 
 export const insertQuizSchema = createInsertSchema(quizzes).omit({
   id: true,
@@ -297,16 +209,7 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
 
-export type Manga = typeof mangas.$inferSelect;
-export type InsertManga = z.infer<typeof insertMangaSchema>;
-export type MangaFavorite = typeof mangaFavorites.$inferSelect;
-export type InsertMangaFavorite = z.infer<typeof insertMangaFavoriteSchema>;
-export type MangaChapter = typeof mangaChapters.$inferSelect;
-export type InsertMangaChapter = z.infer<typeof insertMangaChapterSchema>;
-export type MangaReadingProgress = typeof mangaReadingProgress.$inferSelect;
-export type InsertMangaReadingProgress = z.infer<typeof insertMangaReadingProgressSchema>;
-export type MangaDownload = typeof mangaDownloads.$inferSelect;
-export type InsertMangaDownload = z.infer<typeof insertMangaDownloadSchema>;
+
 export type Quiz = typeof quizzes.$inferSelect;
 export type InsertQuiz = z.infer<typeof insertQuizSchema>;
 export type QuizResult = typeof quizResults.$inferSelect;

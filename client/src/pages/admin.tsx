@@ -311,29 +311,29 @@ export default function Admin() {
           {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              {stats && (
+              {stats && typeof stats === 'object' && (
                 <>
                   <Card className="bg-gray-800/50 border-gray-700">
                     <CardContent className="p-4 text-center">
-                      <div className="text-2xl font-bold text-blue-400">{stats.totalUsers || 0}</div>
+                      <div className="text-2xl font-bold text-blue-400">{(stats as any).totalUsers || 0}</div>
                       <div className="text-sm text-gray-400">Utilisateurs</div>
                     </CardContent>
                   </Card>
                   <Card className="bg-gray-800/50 border-gray-700">
                     <CardContent className="p-4 text-center">
-                      <div className="text-2xl font-bold text-purple-400">{stats.totalQuizzes || 0}</div>
+                      <div className="text-2xl font-bold text-purple-400">{(stats as any).totalQuizzes || 0}</div>
                       <div className="text-sm text-gray-400">Quiz</div>
                     </CardContent>
                   </Card>
                   <Card className="bg-gray-800/50 border-gray-700">
                     <CardContent className="p-4 text-center">
-                      <div className="text-2xl font-bold text-green-400">{stats.totalPosts || 0}</div>
+                      <div className="text-2xl font-bold text-green-400">{(stats as any).totalPosts || 0}</div>
                       <div className="text-sm text-gray-400">Publications</div>
                     </CardContent>
                   </Card>
                   <Card className="bg-gray-800/50 border-gray-700">
                     <CardContent className="p-4 text-center">
-                      <div className="text-2xl font-bold text-yellow-400">{stats.totalMessages || 0}</div>
+                      <div className="text-2xl font-bold text-yellow-400">{(stats as any).totalMessages || 0}</div>
                       <div className="text-sm text-gray-400">Messages</div>
                     </CardContent>
                   </Card>
@@ -383,7 +383,7 @@ export default function Admin() {
 
             {/* Posts List */}
             <div className="space-y-3">
-              {posts.map((post: any) => (
+              {Array.isArray(posts) && posts.map((post: any) => (
                 <Card key={post.id} className="bg-gray-800/50 border-gray-700">
                   <CardContent className="p-4">
                     {editingPost?.id === post.id ? (
@@ -466,7 +466,7 @@ export default function Admin() {
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-4">
             <div className="space-y-3">
-              {users.map((user: any) => (
+              {Array.isArray(users) && users.map((user: any) => (
                 <Card key={user.id} className="bg-gray-800/50 border-gray-700">
                   <CardContent className="p-4">
                     <div className="flex justify-between items-center">

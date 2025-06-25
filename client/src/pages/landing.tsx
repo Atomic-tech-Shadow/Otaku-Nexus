@@ -22,7 +22,7 @@ export default function Landing() {
             The Ultimate Quiz Experience
           </p>
           <p className="text-gray-400 max-w-md mx-auto">
-            Test your knowledge with quizzes, read manga, and connect with fellow users in one amazing app.
+            Test your knowledge with quizzes and connect with fellow users in one amazing app.
           </p>
         </div>
 

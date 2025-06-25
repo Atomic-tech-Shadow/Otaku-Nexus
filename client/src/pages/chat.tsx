@@ -283,12 +283,9 @@ export default function Chat() {
                     {/* Avatar for other users */}
                     {!message.isOwn && (
                       <div className="flex-shrink-0 mr-3">
-                        <ProfileAvatar 
-                          imageUrl={message.userProfileImageUrl}
-                          name={message.userFirstName || message.username || 'User'}
-                          size="sm"
-                          showOnlineIndicator={false}
-                        />
+                        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-semibold">
+                          {(message.userFirstName || message.username || 'U').charAt(0).toUpperCase()}
+                        </div>
                       </div>
                     )}
                     
