@@ -23,6 +23,11 @@ This is a 100% mirror application of anime-sama.fr, providing anime streaming fu
 - **Image CDN**: https://cdn.statically.io/gh/Anime-Sama/IMG/
 
 ### Recent Changes (Latest First)
+- **2025-06-25 14:03**: Implemented complete API configuration overhaul using official documentation
+- **2025-06-25 14:03**: Updated all endpoints to use proper headers, timeouts, and error handling
+- **2025-06-25 14:03**: Enhanced search functionality with fallback to catalogue endpoint
+- **2025-06-25 14:03**: Improved episode loading with proper proxy and embed URL handling
+- **2025-06-25 14:03**: Added rate limiting compliance (100 requests/minute per documentation)
 - **2025-06-25**: Fixed image URLs to use correct CDN (cdn.statically.io/gh/Anime-Sama/IMG)
 - **2025-06-25**: Added image URL correction method in anime-sama-api.ts
 - **2025-06-25**: Added catalogue and seasons API routes
@@ -37,10 +42,13 @@ This is a 100% mirror application of anime-sama.fr, providing anime streaming fu
 5. **User System**: Authentication, profiles, and quiz functionality
 
 ### Technical Decisions
-- Using authentic anime-sama.fr CDN for images
-- Implementing fallback data that matches the original site
-- Correcting API responses to ensure proper image URLs
-- Maintaining 100% compatibility with original site structure
+- **API Integration**: Using official anime-sama API with complete endpoint coverage
+- **Headers**: Optimized request headers according to API documentation
+- **Error Handling**: Structured fallbacks for all API endpoints with authentic data
+- **Rate Limiting**: Compliant with 100 requests/minute limit
+- **Image CDN**: Using authentic anime-sama.fr CDN for all images
+- **Video Sources**: Implementing proxy and embed endpoints for CORS handling
+- **Caching**: 5-minute TTL for API responses as per documentation
 
 ## Current Status
 - Application running successfully on port 5000
