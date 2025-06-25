@@ -1,2 +1,2 @@
-<replit_final_file>
-</replit_final_file>
+
+// Ce fichier est désactivé - toutes les fonctionnalités anime-sama ont été supprimées
