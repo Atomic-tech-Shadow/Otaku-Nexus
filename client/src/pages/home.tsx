@@ -84,11 +84,11 @@ export default function Home() {
             <h1 className="text-2xl font-bold mb-2 text-white">
               Welcome back, <span className="text-nexus-cyan">{user?.firstName || user?.username || 'Otaku'}</span>!
             </h1>
-            <p className="text-gray-300 text-sm mb-4">Ready to explore the anime universe?</p>
+            <p className="text-gray-300 text-sm mb-4">Ready to explore our content universe?</p>
             <div className="flex items-center space-x-4">
               <div className="text-center">
-                <div className="text-lg font-bold text-nexus-pink">{String((userStats as any)?.totalAnime || 0)}</div>
-                <div className="text-xs text-gray-400">Anime</div>
+                <div className="text-lg font-bold text-nexus-pink">{String((userStats as any)?.totalContent || 0)}</div>
+                <div className="text-xs text-gray-400">Content</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-bold text-nexus-cyan">{String((userStats as any)?.totalQuizzes || 0)}</div>
@@ -121,16 +121,7 @@ export default function Home() {
               </motion.div>
             </Link>
 
-            <Link href="/anime-sama">
-              <motion.div
-                className="glass-morphism rounded-xl p-4 text-center transition-all duration-300 hover:bg-nexus-surface/30 card-hover"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Play className="w-8 h-8 text-nexus-purple mx-auto mb-2" />
-                <span className="text-sm font-medium text-white">Anime-Sama</span>
-              </motion.div>
-            </Link>
+
           </div>
 
           <Link href="/quiz">

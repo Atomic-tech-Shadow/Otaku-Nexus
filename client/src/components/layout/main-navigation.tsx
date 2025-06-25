@@ -1,4 +1,4 @@
-// Simplified navigation for the header, now linking to anime-sama
+// Simplified navigation for the header
 import { useAuth } from "@/hooks/useAuth";
 import { User, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";

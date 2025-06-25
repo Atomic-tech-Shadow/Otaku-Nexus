@@ -102,7 +102,7 @@ export default function Quiz() {
           <div className="glass-morphism rounded-2xl p-6 relative overflow-hidden card-hover">
             <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-nexus-pink to-transparent rounded-full opacity-30" />
             <h1 className="text-2xl font-bold mb-2 text-nexus-pink">Quiz Arena</h1>
-            <p className="text-gray-300 text-sm mb-4">Test your anime knowledge and earn XP!</p>
+            <p className="text-gray-300 text-sm mb-4">Test your knowledge and earn XP!</p>
             <div className="flex items-center space-x-4">
               <div className="text-center">
                 <div className="text-lg font-bold text-nexus-cyan">🧠</div>

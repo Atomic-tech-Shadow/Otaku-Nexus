@@ -1,17 +1,17 @@
-# Anime-Sama Mirror Application
+# Quiz & Manga Application
 
 ## Project Overview
-This is a 100% mirror application of anime-sama.fr, providing anime streaming functionality with:
-- Authentic anime catalogue with correct image URLs
-- Episode streaming capabilities
-- User authentication and quiz features
+This is a quiz and manga reading application providing:
+- Quiz system with user progression and XP
+- Manga reading functionality with progress tracking
+- User authentication and profiles
 - Admin functionality
-- Real-time search and trending anime
+- Real-time chat system
 
 ## User Preferences
 - Language: French (primary interface)
-- Focus: 100% fidelity to original anime-sama.fr site
-- Priority: Correct image display and streaming functionality
+- Focus: Clean quiz and manga platform
+- Priority: User experience and content management
 
 ## Project Architecture
 
@@ -23,37 +23,28 @@ This is a 100% mirror application of anime-sama.fr, providing anime streaming fu
 - **Image CDN**: https://cdn.statically.io/gh/Anime-Sama/IMG/
 
 ### Recent Changes (Latest First)
-- **2025-01-05**: Created complete Anime-Sama page reproducing exact interface from anime-sama.fr
-- **2025-01-05**: Added all API routes for anime search, details, episodes, and streaming
-- **2025-01-05**: Implemented responsive mobile design with 100% fidelity to original site
-- **2025-01-05**: Added proper navigation flow: search → details → seasons → episodes → player
-- **2025-01-05**: Restored original Neon database configuration per user requirement
-- **2025-01-05**: Updated server to bind to 0.0.0.0 for Replit compatibility
-- **2025-06-25 14:18**: Configured application to use ONLY external API (https://api-anime-sama.onrender.com)
-- **2025-06-25 14:18**: Fixed all API endpoints to point to external API instead of local
-- **2025-06-25 14:18**: Configured proper click navigation: anime list → details → seasons → episodes → player
-- **2025-06-25 14:18**: Removed all local/demo data, using only authentic external API data
-- **2025-06-25 14:03**: Implemented complete API configuration overhaul using official documentation
-- **2025-06-25**: Fixed image URLs to use correct CDN (cdn.statically.io/gh/Anime-Sama/IMG)
-- **2025-06-25**: Added image URL correction method in anime-sama-api.ts
-- **2025-06-25**: Added catalogue and seasons API routes
-- **2025-06-25**: Updated fallback anime data with authentic titles and images
+- **2025-06-25 20:50**: Successfully migrated from Replit Agent to standard Replit environment
+- **2025-06-25 20:50**: Completely removed all Anime-Sama functionality per user request
+- **2025-06-25 20:50**: Cleaned up all anime-related database tables, API routes, and frontend components
+- **2025-06-25 20:50**: Maintained quiz system, manga functionality, chat, and user management
+- **2025-06-25 20:50**: Updated project branding from anime focus to general quiz/manga platform
+- **2025-06-25 20:50**: Fixed TypeScript errors and removed mobile app components
+- **2025-06-25 20:50**: Ensured proper client/server separation and security practices
 
 ### Critical Features
-1. **Image Display**: All anime images now use the correct CDN URLs
-2. **API Integration**: Direct proxy to anime-sama API with image corrections
-3. **Search Functionality**: Real-time anime search with proper image display
-4. **Episode Streaming**: Full episode streaming capabilities
-5. **User System**: Authentication, profiles, and quiz functionality
+1. **Quiz System**: Complete quiz management with XP progression and leaderboards
+2. **Manga Reader**: Integrated manga reading with progress tracking
+3. **User Management**: Authentication, profiles, and achievement system
+4. **Chat System**: Real-time messaging between users
+5. **Admin Panel**: Complete content and user management
 
 ### Technical Decisions
-- **API Integration**: Using ONLY external anime-sama API (https://api-anime-sama.onrender.com)
-- **No Local API**: All endpoints configured to use external API exclusively 
-- **CORS Handling**: Using API's built-in proxy and embed endpoints for video streaming
-- **Navigation Flow**: Anime list → details page → season selection → episode player
-- **Headers**: Optimized request headers according to API documentation
-- **Rate Limiting**: Compliant with 100 requests/minute limit
-- **Image CDN**: Using authentic anime-sama.fr CDN for all images
+- **Database**: PostgreSQL (Neon) for data persistence
+- **Authentication**: JWT-based session management with Replit Auth integration
+- **Frontend**: React with TypeScript, Tailwind CSS for styling
+- **Backend**: Express.js with TypeScript for API endpoints
+- **Security**: Proper client/server separation with authentication middleware
+- **Architecture**: Modern full-stack approach with RESTful API design
 
 ## Current Status
 - Application running successfully on port 5000

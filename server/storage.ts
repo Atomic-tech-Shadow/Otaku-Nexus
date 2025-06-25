@@ -6,11 +6,6 @@ import {
   chatMessages,
   chatRoomMembers,
   adminPosts,
-  animes,
-  animeSeasons,
-  animeEpisodes,
-  animeFavorites,
-  animeWatchingProgress,
   mangas,
   mangaChapters,
   mangaReadingProgress,
@@ -18,16 +13,6 @@ import {
   type User,
   type UpsertUser,
   type UpdateUserProfile,
-  type Anime,
-  type InsertAnime,
-  type AnimeSeason,
-  type InsertAnimeSeason,
-  type AnimeEpisode,
-  type InsertAnimeEpisode,
-  type AnimeFavorite,
-  type InsertAnimeFavorite,
-  type AnimeWatchingProgress,
-  type InsertAnimeWatchingProgress,
   type Quiz,
   type InsertQuiz,
   type QuizResult,
@@ -64,22 +49,7 @@ export interface IStorage {
 
 
 
-  // Anime operations
-  getAnimes(limit?: number): Promise<Anime[]>;
-  getAnimeByAnimeId(animeId: string): Promise<Anime | undefined>;
-  createAnime(anime: InsertAnime): Promise<Anime>;
-  getTrendingAnimes(): Promise<Anime[]>;
-  searchAnimes(query: string): Promise<Anime[]>;
-  getAnimeSeasons(animeId: number): Promise<AnimeSeason[]>;
-  createAnimeSeason(season: InsertAnimeSeason): Promise<AnimeSeason>;
-  getSeasonEpisodes(seasonId: number, language?: string): Promise<AnimeEpisode[]>;
-  createAnimeEpisode(episode: InsertAnimeEpisode): Promise<AnimeEpisode>;
-  getEpisodeById(episodeId: string): Promise<AnimeEpisode | undefined>;
-  getUserAnimeFavorites(userId: string): Promise<AnimeFavorite[]>;
-  addAnimeFavorite(favorite: InsertAnimeFavorite): Promise<AnimeFavorite>;
-  removeAnimeFavorite(userId: string, animeId: number): Promise<void>;
-  getUserWatchingProgress(userId: string, animeId?: number): Promise<AnimeWatchingProgress[]>;
-  updateWatchingProgress(progress: InsertAnimeWatchingProgress): Promise<AnimeWatchingProgress>;
+
 
   // Manga operations
   getMangas(limit?: number): Promise<Manga[]>;
@@ -570,12 +540,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async sendChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
-    // Ensure the structure matches the database schema - content maps to message column
+    // Ensure the structure matches the database schema
     const messageData = {
-      message: message.content, // Use 'message' column name from database
+      message: message.message,
       userId: message.userId,
       roomId: message.roomId || 1,
-      createdAt: new Date()
+      messageType: message.messageType || 'text'
     };
     
     const [newMessage] = await db.insert(chatMessages).values(messageData).returning();
@@ -710,10 +680,9 @@ export class DatabaseStorage implements IStorage {
         if (adminUser.length > 0) {
           // Create default room with admin as creator
           await db.insert(chatRooms).values({
-            id: 1,
             name: "General Discussion",
-            description: "Welcome to the general chat! Discuss anime, manga, and more!",
-            isPublic: true,
+            description: "Welcome to the general chat! Discuss quiz, manga, and more!",
+            isPrivate: false,
             createdBy: adminUser[0].id
           }).onConflictDoNothing();
           console.log("Created default chat room with ID 1");
@@ -721,7 +690,7 @@ export class DatabaseStorage implements IStorage {
           console.log("No admin user found for chat room creation");
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       if (!error.message.includes('duplicate') && !error.message.includes('unique constraint')) {
         console.error("Error ensuring default chat room:", error);
       }

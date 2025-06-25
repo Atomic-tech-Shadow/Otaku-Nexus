@@ -1,13 +1,6 @@
 import { apiRequest } from "./queryClient";
 
-// Anime API functions
-export const animeApi = {
-  getTrending: () => fetch("/api/anime/trending").then(res => res.json()),
-  search: (query: string) => fetch(`/api/anime/search?q=${encodeURIComponent(query)}`).then(res => res.json()),
-  getExternal: (query: string) => fetch(`/api/external/anime/search?q=${encodeURIComponent(query)}`).then(res => res.json()),
-  getTopExternal: () => fetch("/api/external/anime/top").then(res => res.json()),
-  create: (anime: any) => apiRequest("/api/anime", { method: "POST", body: anime }),
-};
+
 
 // Quiz API functions
 export const quizApi = {
@@ -30,12 +23,7 @@ export const videoApi = {
   create: (video: any) => apiRequest("/api/videos", { method: "POST", body: video }).then(res => res.json()),
 };
 
-// Favorites API functions
-export const favoritesApi = {
-  getAll: () => fetch("/api/favorites").then(res => res.json()),
-  add: (animeId: number, rating?: number) => apiRequest("/api/favorites", { method: "POST", body: { animeId, rating } }).then(res => res.json()),
-  remove: (animeId: number) => apiRequest(`/api/favorites/${animeId}`, { method: "DELETE" }).then(res => res.json()),
-};
+
 
 // User API functions
 export const userApi = {
@@ -82,32 +70,7 @@ export const mangaApi = {
   downloadChapter: (chapterId: number) => apiRequest(`/api/manga/download/${chapterId}`, { method: "POST", body: {} }).then(res => res.json()),
 };
 
-// External APIs (for real-time data)
-export const externalApi = {
-  searchJikan: async (query: string) => {
-    try {
-      const response = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=10`);
-      if (!response.ok) throw new Error("Failed to fetch from Jikan API");
-      return await response.json();
-    } catch (error) {
-      console.error("Jikan API error:", error);
-      // Fallback to our internal API
-      return await fetch(`/api/external/anime/search?q=${encodeURIComponent(query)}`).then(res => res.json());
-    }
-  },
-  
-  getTopAnime: async () => {
-    try {
-      const response = await fetch("https://api.jikan.moe/v4/top/anime?limit=10");
-      if (!response.ok) throw new Error("Failed to fetch top anime from Jikan API");
-      return await response.json();
-    } catch (error) {
-      console.error("Jikan API error:", error);
-      // Fallback to our internal API
-      return await fetch("/api/external/anime/top").then(res => res.json());
-    }
-  }
-};
+
 
 // Main API object for general HTTP requests
 export const api = {

@@ -10,11 +10,6 @@ import {
   insertChatRoomMemberSchema,
   insertAdminPostSchema,
   updateUserProfileSchema,
-  insertAnimeSchema,
-  insertAnimeSeasonSchema,
-  insertAnimeEpisodeSchema,
-  insertAnimeFavoriteSchema,
-  insertAnimeWatchingProgressSchema,
 } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
 
@@ -29,104 +24,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Routes anime-sama API
-  app.get('/api/search', async (req, res) => {
-    try {
-      const query = req.query.query as string;
-      if (!query) {
-        return res.status(400).json({ success: false, message: 'Query parameter required' });
-      }
-      
-      const response = await fetch(`https://api-anime-sama.onrender.com/api/search?query=${encodeURIComponent(query)}`);
-      const data = await response.json();
-      res.json(data);
-    } catch (error) {
-      console.error('Search error:', error);
-      res.status(500).json({ success: false, message: 'Search failed' });
-    }
-  });
 
-  app.get('/api/anime/:id', async (req, res) => {
-    try {
-      const { id } = req.params;
-      const response = await fetch(`https://api-anime-sama.onrender.com/api/anime/${id}`);
-      const data = await response.json();
-      res.json(data);
-    } catch (error) {
-      console.error('Anime detail error:', error);
-      res.status(500).json({ success: false, message: 'Failed to fetch anime details' });
-    }
-  });
-
-  app.get('/api/anime/:id/season/:num/episodes', async (req, res) => {
-    try {
-      const { id, num } = req.params;
-      const { language = 'vostfr' } = req.query;
-      const response = await fetch(`https://api-anime-sama.onrender.com/api/anime/${id}/season/${num}/episodes?language=${language}`);
-      const data = await response.json();
-      res.json(data);
-    } catch (error) {
-      console.error('Episodes error:', error);
-      res.status(500).json({ success: false, message: 'Failed to fetch episodes' });
-    }
-  });
-
-  app.get('/api/episode/:id', async (req, res) => {
-    try {
-      const { id } = req.params;
-      const response = await fetch(`https://api-anime-sama.onrender.com/api/episode/${id}`);
-      const data = await response.json();
-      res.json(data);
-    } catch (error) {
-      console.error('Episode stream error:', error);
-      res.status(500).json({ success: false, message: 'Failed to fetch episode stream' });
-    }
-  });
-
-  app.get('/api/catalogue', async (req, res) => {
-    try {
-      const { page = 1 } = req.query;
-      const response = await fetch(`https://api-anime-sama.onrender.com/api/catalogue?page=${page}`);
-      const data = await response.json();
-      res.json(data);
-    } catch (error) {
-      console.error('Catalogue error:', error);
-      res.status(500).json({ success: false, message: 'Failed to fetch catalogue' });
-    }
-  });
-
-  app.get('/api/trending', async (req, res) => {
-    try {
-      const response = await fetch('https://api-anime-sama.onrender.com/api/trending');
-      const data = await response.json();
-      res.json(data);
-    } catch (error) {
-      console.error('Trending error:', error);
-      res.status(500).json({ success: false, message: 'Failed to fetch trending' });
-    }
-  });
-
-  app.get('/api/random', async (req, res) => {
-    try {
-      const response = await fetch('https://api-anime-sama.onrender.com/api/random');
-      const data = await response.json();
-      res.json(data);
-    } catch (error) {
-      console.error('Random error:', error);
-      res.status(500).json({ success: false, message: 'Failed to fetch random anime' });
-    }
-  });
-
-  app.get('/api/genres', async (req, res) => {
-    try {
-      const response = await fetch('https://api-anime-sama.onrender.com/api/genres');
-      const data = await response.json();
-      res.json(data);
-    } catch (error) {
-      console.error('Genres error:', error);
-      res.status(500).json({ success: false, message: 'Failed to fetch genres' });
-    }
-  });
 
   
 
@@ -240,12 +138,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Check if room exists, if not create it
         await storage.ensureDefaultChatRoom();
-      } catch (roomError) {
+      } catch (roomError: any) {
         console.log("Room creation info:", roomError.message);
       }
 
       const messageData = {
-        content: content.trim(),
+        message: content.trim(),
         userId,
         roomId: defaultRoomId
       };

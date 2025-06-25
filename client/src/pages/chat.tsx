@@ -231,7 +231,7 @@ export default function Chat() {
               <MessageCircle className="w-8 h-8 text-nexus-cyan" />
               <div>
                 <h1 className="text-xl font-bold text-white">Otaku Chat</h1>
-                <p className="text-gray-300 text-sm">Connect with fellow anime fans</p>
+                <p className="text-gray-300 text-sm">Connect with fellow users</p>
               </div>
             </div>
             <div className="flex items-center space-x-4 mt-4">

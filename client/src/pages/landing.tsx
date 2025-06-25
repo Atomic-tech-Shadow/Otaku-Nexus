@@ -19,10 +19,10 @@ export default function Landing() {
             Otaku Nexus
           </h1>
           <p className="text-xl text-gray-300 mb-6">
-            The Ultimate Anime Experience
+            The Ultimate Quiz Experience
           </p>
           <p className="text-gray-400 max-w-md mx-auto">
-            Explore anime, test your knowledge with quizzes, watch AMVs, and connect with fellow otakus in one amazing app.
+            Test your knowledge with quizzes, read manga, and connect with fellow users in one amazing app.
           </p>
         </div>
 
@@ -31,8 +31,8 @@ export default function Landing() {
           <Card className="bg-card-bg border-gray-800">
             <CardContent className="p-4 text-center">
               <Search className="w-8 h-8 text-electric-blue mx-auto mb-2" />
-              <h3 className="text-sm font-semibold mb-1">Explore Anime</h3>
-              <p className="text-xs text-gray-400">Discover new series and manage your watchlist</p>
+              <h3 className="text-sm font-semibold mb-1">Explore Content</h3>
+              <p className="text-xs text-gray-400">Discover new content and manage your favorites</p>
             </CardContent>
           </Card>
 
@@ -40,7 +40,7 @@ export default function Landing() {
             <CardContent className="p-4 text-center">
               <Brain className="w-8 h-8 text-hot-pink mx-auto mb-2" />
               <h3 className="text-sm font-semibold mb-1">Take Quizzes</h3>
-              <p className="text-xs text-gray-400">Test your otaku knowledge and earn XP</p>
+              <p className="text-xs text-gray-400">Test your knowledge and earn XP</p>
             </CardContent>
           </Card>
 

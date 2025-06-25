@@ -42,7 +42,7 @@ export default function Admin() {
     title: "",
     description: "",
     difficulty: "facile",
-    category: "anime",
+    category: "general",
     imageUrl: "",
     questions: [] as any[]
   });
@@ -184,7 +184,7 @@ export default function Admin() {
       title: "",
       description: "",
       difficulty: "facile",
-      category: "anime", 
+      category: "general", 
       imageUrl: "",
       questions: [] as any[]
     });
