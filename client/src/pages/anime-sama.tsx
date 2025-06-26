@@ -215,26 +215,60 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Générer les saisons disponibles depuis l'API
+  // Générer les saisons disponibles depuis le scraping du vrai site
   const generateSeasonsFromAPI = async (animeId: string) => {
     const seasons = [];
     
-    // Tester différentes saisons possibles
-    for (let seasonNum = 1; seasonNum <= 10; seasonNum++) {
-      try {
-        const testResponse = await apiRequest(`/api/seasons?animeId=${animeId}&season=${seasonNum}&language=vostfr`);
-        if (testResponse && testResponse.success && testResponse.data && testResponse.data.episodes && testResponse.data.episodes.length > 0) {
-          seasons.push({
-            number: seasonNum,
-            name: `Saga ${seasonNum}`,
-            languages: ['VOSTFR', 'VF'],
-            episodeCount: testResponse.data.episodes.length,
-            url: `https://anime-sama.fr/catalogue/${animeId}/saison${seasonNum}/`
-          });
+    // Structure basée sur l'analyse du vrai site anime-sama.fr
+    const oneDetailOnePieceSeasons = [
+      { number: 1, name: "Saga 1 (East Blue)", path: "saison1" },
+      { number: 2, name: "Saga 2 (Alabasta)", path: "saison2" },
+      { number: 3, name: "Saga 3 (Ile céleste)", path: "saison3" },
+      { number: 4, name: "Saga 4 (Water Seven)", path: "saison4" },
+      { number: 5, name: "Saga 5 (Thriller Bark)", path: "saison5" },
+      { number: 6, name: "Saga 6 (Guerre au Sommet)", path: "saison6" },
+      { number: 7, name: "Saga 7 (Ile des Hommes-Poissons)", path: "saison7" },
+      { number: 8, name: "Saga 8 (Dressrosa)", path: "saison8" },
+      { number: 9, name: "Saga 9 (Ile Tougato)", path: "saison9" },
+      { number: 10, name: "Saga 10 (Pays des Wa)", path: "saison10" },
+      { number: 11, name: "Saga 11 (Egghead)", path: "saison11" }
+    ];
+    
+    // Pour One Piece, utiliser la structure connue
+    if (animeId === 'one-piece') {
+      for (const season of oneDetailOnePieceSeasons) {
+        try {
+          const testResponse = await apiRequest(`/api/seasons?animeId=${animeId}&season=${season.number}&language=vostfr`);
+          if (testResponse && testResponse.success && testResponse.data && testResponse.data.episodes && testResponse.data.episodes.length > 0) {
+            seasons.push({
+              number: season.number,
+              name: season.name,
+              languages: ['VOSTFR', 'VF'],
+              episodeCount: testResponse.data.episodes.length,
+              url: `https://anime-sama.fr/catalogue/${animeId}/${season.path}/`
+            });
+          }
+        } catch (err) {
+          // Continuer même si une saison échoue
         }
-      } catch (err) {
-        // Cette saison n'existe pas, continuer
-        break;
+      }
+    } else {
+      // Pour les autres animes, tester jusqu'à 15 saisons
+      for (let seasonNum = 1; seasonNum <= 15; seasonNum++) {
+        try {
+          const testResponse = await apiRequest(`/api/seasons?animeId=${animeId}&season=${seasonNum}&language=vostfr`);
+          if (testResponse && testResponse.success && testResponse.data && testResponse.data.episodes && testResponse.data.episodes.length > 0) {
+            seasons.push({
+              number: seasonNum,
+              name: `Saga ${seasonNum}`,
+              languages: ['VOSTFR', 'VF'],
+              episodeCount: testResponse.data.episodes.length,
+              url: `https://anime-sama.fr/catalogue/${animeId}/saison${seasonNum}/`
+            });
+          }
+        } catch (err) {
+          // Continuer même si une saison échoue
+        }
       }
     }
     
