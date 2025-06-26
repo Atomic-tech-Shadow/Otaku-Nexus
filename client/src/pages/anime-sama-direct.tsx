@@ -28,18 +28,18 @@ interface AnimeDetails {
 interface Season {
   number: number;
   name: string;
-  languages: string[];
-  episodeCount: number;
+  path: string;
   url: string;
+  authentic: boolean;
 }
 
 interface Episode {
   id: string;
-  title: string;
   episodeNumber: number;
+  title: string;
   url: string;
-  language: string;
-  available: boolean;
+  server: string;
+  authentic: boolean;
 }
 
 interface EpisodeDetails {
@@ -68,49 +68,29 @@ interface ApiResponse<T> {
   meta?: any;
 }
 
-const AnimeSamaPage: React.FC = () => {
+const AnimeSamaDirectPage: React.FC = () => {
   const [currentView, setCurrentView] = useState<'search' | 'anime' | 'player'>('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [selectedAnime, setSelectedAnime] = useState<AnimeDetails | null>(null);
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<'VF' | 'VOSTFR'>('VOSTFR');
-  const [availableLanguages, setAvailableLanguages] = useState<string[]>(['VOSTFR']);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
   const [episodeDetails, setEpisodeDetails] = useState<EpisodeDetails | null>(null);
   const [selectedServer, setSelectedServer] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [watchHistory, setWatchHistory] = useState<{[key: string]: number}>({});
-  const [videoProgress, setVideoProgress] = useState<{[key: string]: number}>({});
-  const [lastWatched, setLastWatched] = useState<string | null>(null);
-  const [popularAnimes, setPopularAnimes] = useState<SearchResult[]>([]);
+  const [isLanguageChangeInProgress, setIsLanguageChangeInProgress] = useState(false);
 
-  // Charger l'historique au démarrage
-  useEffect(() => {
-    const savedHistory = localStorage.getItem('animeWatchHistory');
-    if (savedHistory) {
-      setWatchHistory(JSON.parse(savedHistory));
-    }
-    // Charger les animes populaires au démarrage
-    loadPopularAnimes();
-  }, []);
-
-  // Charger les animes populaires depuis l'API
-  const loadPopularAnimes = async () => {
-    // Supprimer le contenu de démo - utiliser l'API directement
-    setPopularAnimes([]);
-  };
-
-  // Configuration API selon la documentation fournie
+  // Configuration API directe
   const API_BASE_URL = 'https://api-anime-sama.onrender.com';
   const API_HEADERS = {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
   };
 
-  // Fonction utilitaire pour les requêtes API avec retry et cache
+  // Fonction API avec gestion d'erreurs
   const apiRequest = async (endpoint: string, options = {}) => {
     const maxRetries = 3;
     let attempt = 0;
@@ -135,7 +115,6 @@ const AnimeSamaPage: React.FC = () => {
           console.error('Erreur requête API après', maxRetries, 'tentatives:', error);
           throw error;
         }
-        // Attendre avant de réessayer
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
     }
@@ -155,14 +134,7 @@ const AnimeSamaPage: React.FC = () => {
       const response = await apiRequest(`/api/search?query=${encodeURIComponent(query)}`);
       
       if (response && response.success && Array.isArray(response.data)) {
-        // Ajouter des propriétés manquantes pour l'affichage
-        const animesWithImages = response.data.map((anime: any) => ({
-          ...anime,
-          image: anime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`,
-          status: anime.status || 'Disponible',
-          type: anime.type || 'Anime'
-        }));
-        setSearchResults(animesWithImages);
+        setSearchResults(response.data);
       } else {
         throw new Error('Format de réponse invalide');
       }
@@ -175,7 +147,7 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Charger les détails d'un anime depuis l'API
+  // Charger les détails d'un anime
   const loadAnimeDetails = async (animeId: string) => {
     setLoading(true);
     setError(null);
@@ -184,13 +156,7 @@ const AnimeSamaPage: React.FC = () => {
       const response = await apiRequest(`/api/anime/${animeId}`);
       
       if (response && response.success && response.data) {
-        const animeData = {
-          ...response.data,
-          image: response.data.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${animeId}.jpg`,
-          // Utiliser les saisons directement depuis l'API selon la documentation
-          seasons: response.data.seasons || []
-        };
-        setSelectedAnime(animeData);
+        setSelectedAnime(response.data);
         setCurrentView('anime');
         setSelectedSeason(null);
         setEpisodes([]);
@@ -205,38 +171,8 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-
-
-  // Détecter les langues disponibles pour une saison
-  const detectAvailableLanguages = async (animeId: string, seasonNumber: number) => {
-    const languages = [];
-    
-    // Tester VOSTFR d'abord (plus commun)
-    try {
-      const vostfrResponse = await apiRequest(`/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vostfr`);
-      if (vostfrResponse && vostfrResponse.success && vostfrResponse.data && vostfrResponse.data.episodes && vostfrResponse.data.episodes.length > 0) {
-        languages.push('VOSTFR');
-      }
-    } catch (err) {
-      // VOSTFR non disponible
-    }
-    
-    // Tester VF
-    try {
-      const vfResponse = await apiRequest(`/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vf`);
-      if (vfResponse && vfResponse.success && vfResponse.data && vfResponse.data.episodes && vfResponse.data.episodes.length > 0) {
-        languages.push('VF');
-      }
-    } catch (err) {
-      // VF non disponible
-    }
-    
-    // Retourner au moins VOSTFR par défaut si aucune langue détectée
-    return languages.length > 0 ? languages : ['VOSTFR'];
-  };
-
-  // Charger les épisodes d'une saison selon la documentation API
-  const loadSeasonEpisodes = async (season: Season & { lang?: string }) => {
+  // Charger les épisodes d'une saison
+  const loadSeasonEpisodes = async (season: Season) => {
     if (!selectedAnime) return;
     
     setLoading(true);
@@ -244,12 +180,7 @@ const AnimeSamaPage: React.FC = () => {
     setCurrentView('player');
     
     try {
-      // Utiliser VOSTFR par défaut selon la documentation
-      const languageToUse = season.lang || selectedLanguage;
-      setSelectedLanguage(languageToUse as 'VF' | 'VOSTFR');
-      
-      // Convertir en format API: VF -> VF, VOSTFR -> VOSTFR
-      const language = languageToUse;
+      const language = selectedLanguage;
       
       const response = await apiRequest(`/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${language}`);
       
@@ -257,8 +188,6 @@ const AnimeSamaPage: React.FC = () => {
         throw new Error('Aucun épisode trouvé pour cette saison');
       }
       
-      // Mettre à jour les langues disponibles basées sur la réponse
-      setAvailableLanguages(['VOSTFR', 'VF']);
       setEpisodes(response.data.episodes);
       setSelectedSeason(season);
       
@@ -289,7 +218,7 @@ const AnimeSamaPage: React.FC = () => {
       setSelectedServer(0);
     } catch (err) {
       console.error('Erreur sources:', err);
-      setError('Impossible de charger les sources vidéo. Vérifiez que l\'épisode est disponible.');
+      setError('Impossible de charger les sources vidéo.');
       setEpisodeDetails(null);
     }
   };
@@ -308,9 +237,7 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Changer de langue avec protection contre les appels multiples
-  const [isLanguageChangeInProgress, setIsLanguageChangeInProgress] = useState(false);
-  
+  // Changer de langue
   const changeLanguage = async (newLanguage: 'VF' | 'VOSTFR') => {
     if (!selectedSeason || !selectedAnime || selectedLanguage === newLanguage || isLanguageChangeInProgress) {
       return;
@@ -323,7 +250,6 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      // Utiliser le format exact selon la documentation API
       const language = newLanguage;
       
       const response = await apiRequest(`/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`);
@@ -334,7 +260,7 @@ const AnimeSamaPage: React.FC = () => {
       
       setEpisodes(response.data.episodes);
       
-      // Conserver l'épisode actuel si possible, sinon prendre le premier
+      // Conserver l'épisode actuel si possible
       const currentEpisodeNumber = selectedEpisode?.episodeNumber || 1;
       const targetEpisode = response.data.episodes.find((ep: any) => ep.episodeNumber === currentEpisodeNumber) || response.data.episodes[0];
       
@@ -344,7 +270,6 @@ const AnimeSamaPage: React.FC = () => {
     } catch (err) {
       console.error('Erreur changement langue:', err);
       setError(`Impossible de charger les épisodes ${newLanguage}.`);
-      // Revenir à la langue précédente si échec
       setSelectedLanguage(previousLanguage);
     } finally {
       setLoading(false);
@@ -352,7 +277,7 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Effet de recherche avec délai optimisé
+  // Effet de recherche avec délai
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchQuery.trim() && currentView === 'search') {
@@ -368,7 +293,7 @@ const AnimeSamaPage: React.FC = () => {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#000000' }}>
-      {/* Header exact anime-sama avec recherche intégrée */}
+      {/* Header anime-sama exact */}
       <div className="sticky top-0 z-50" style={{ backgroundColor: '#000000', borderBottom: '1px solid #333' }}>
         <div className="flex items-center justify-between p-3">
           <div className="flex items-center flex-1">
@@ -383,10 +308,10 @@ const AnimeSamaPage: React.FC = () => {
                 <div className="text-white font-bold text-lg mr-2">🔍</div>
                 <input
                   type="text"
-                  placeholder="Rechercher un anime..."
+                  placeholder="RECHERCHER..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 bg-gray-800 text-white px-3 py-2 rounded text-sm border border-gray-700 focus:border-cyan-500 focus:outline-none"
+                  className="flex-1 bg-gray-800 text-white px-3 py-2 rounded text-sm border border-gray-700 focus:border-cyan-500 focus:outline-none uppercase placeholder-gray-500"
                 />
               </div>
             ) : (
@@ -408,8 +333,6 @@ const AnimeSamaPage: React.FC = () => {
       {/* Page de recherche */}
       {currentView === 'search' && (
         <div className="p-4">
-
-
           {/* Résultats de recherche */}
           {searchResults.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -421,7 +344,7 @@ const AnimeSamaPage: React.FC = () => {
                   style={{ backgroundColor: '#1a1a1a' }}
                 >
                   <img
-                    src={anime.image}
+                    src={anime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`}
                     alt={anime.title}
                     className="w-full aspect-[3/4] object-cover"
                     onError={(e) => {
@@ -431,112 +354,41 @@ const AnimeSamaPage: React.FC = () => {
                   />
                   <div className="p-3">
                     <h3 className="text-white font-medium text-sm line-clamp-2">{anime.title}</h3>
-                    <div className="flex justify-between items-center mt-1">
-                      <p className="text-gray-400 text-xs">{anime.status}</p>
-                      {watchHistory[anime.id] && (
-                        <span className="text-cyan-400 text-xs bg-cyan-900/30 px-1 rounded">
-                          Ep {watchHistory[anime.id]}
-                        </span>
-                      )}
-                    </div>
+                    <p className="text-gray-400 text-xs mt-1">{anime.status}</p>
                   </div>
                 </div>
               ))}
             </div>
           )}
-
-          {!searchQuery && !searchResults.length && (
-            <div>
-              {/* Section Animes Populaires */}
-              {popularAnimes.length > 0 && (
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-white text-lg font-bold">🔥 Animes Populaires</h2>
-                    <button 
-                      onClick={() => loadPopularAnimes()}
-                      className="text-cyan-400 text-sm hover:text-cyan-300 transition-colors"
-                    >
-                      Actualiser
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {popularAnimes.map((anime, index) => (
-                      <div
-                        key={`popular-${anime.id}-${index}`}
-                        onClick={() => loadAnimeDetails(anime.id)}
-                        className="rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform group"
-                        style={{ backgroundColor: '#1a1a1a' }}
-                      >
-                        <div className="relative">
-                          <img
-                            src={anime.image}
-                            alt={anime.title}
-                            className="w-full aspect-[3/4] object-cover group-hover:opacity-90 transition-opacity"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = 'https://via.placeholder.com/300x400/1a1a1a/ffffff?text=Image+Non+Disponible';
-                              target.onerror = null; // Prevent infinite loop
-                            }}
-                          />
-                          {watchHistory[anime.id] && (
-                            <div className="absolute top-2 right-2 bg-cyan-500 text-white text-xs px-2 py-1 rounded-full">
-                              Ep {watchHistory[anime.id]}
-                            </div>
-                          )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                        <div className="p-3">
-                          <h3 className="text-white font-medium text-sm line-clamp-2 group-hover:text-cyan-400 transition-colors">
-                            {anime.title}
-                          </h3>
-                          <div className="flex justify-between items-center mt-1">
-                            <p className="text-gray-400 text-xs">{anime.status}</p>
-                            <span className="text-cyan-400 text-xs">{anime.type}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Message de recherche */}
-              <div className="text-center py-12 border-t border-gray-800">
-                <div className="text-4xl mb-4">🔍</div>
-                <h2 className="text-white text-xl font-bold mb-2">Recherchez votre anime</h2>
-                <p className="text-gray-400 text-sm">Tapez le nom de l'anime que vous souhaitez regarder</p>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
-      {/* Page détails anime - APERÇU */}
+      {/* Page détails anime - Interface exacte anime-sama */}
       {currentView === 'anime' && selectedAnime && (
         <div className="p-0">
-          {/* Image principale */}
+          {/* Image principale avec informations superposées */}
           <div className="relative">
             <img
-              src={selectedAnime.image}
+              src={selectedAnime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${selectedAnime.id}.jpg`}
               alt={selectedAnime.title}
               className="w-full h-64 object-cover"
             />
             <div 
               className="absolute inset-0"
-              style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.8) 100%)' }}
+              style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.9) 100%)' }}
             />
             <div className="absolute bottom-4 left-4 right-4">
-              <h1 className="text-white text-2xl font-bold mb-2">{selectedAnime.title}</h1>
-              <div className="text-sm space-y-1">
+              <h1 className="text-white text-2xl font-bold uppercase">{selectedAnime.title}</h1>
+              
+              {/* Informations anime */}
+              <div className="mt-2 space-y-1">
                 <div>
                   <span className="text-white font-medium">Avancement :</span>
                   <span className="text-gray-300 ml-2">Aucune donnée.</span>
                 </div>
                 <div>
                   <span className="text-white font-medium">Correspondance :</span>
-                  <span className="text-gray-300 ml-2">
-                    {(selectedAnime as any).correspondence || 'Episode 1 → Chapitre 1'}
-                  </span>
+                  <span className="text-gray-300 ml-2">Episode 1122 → Chapitre 1088</span>
                 </div>
               </div>
             </div>
@@ -559,7 +411,6 @@ const AnimeSamaPage: React.FC = () => {
           <div className="px-4 pb-4">
             <h2 className="text-white text-lg font-bold mb-4 uppercase tracking-wide">ANIME</h2>
             <div className="grid grid-cols-2 gap-3">
-              {/* Saisons réelles depuis l'API */}
               {selectedAnime.seasons && selectedAnime.seasons.length > 0 ? (
                 selectedAnime.seasons.map((season, index) => (
                   <button
@@ -573,7 +424,7 @@ const AnimeSamaPage: React.FC = () => {
                     }}
                   >
                     <img
-                      src={selectedAnime.image}
+                      src={selectedAnime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${selectedAnime.id}.jpg`}
                       alt={season.name}
                       className="w-full h-full object-cover opacity-60"
                     />
@@ -601,10 +452,10 @@ const AnimeSamaPage: React.FC = () => {
       {/* Page lecteur - Interface exacte anime-sama */}
       {currentView === 'player' && selectedAnime && selectedSeason && (
         <div className="p-0">
-          {/* Image avec titre superposé */}
+          {/* Image avec titre et saison */}
           <div className="relative">
             <img
-              src={selectedAnime.image}
+              src={selectedAnime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${selectedAnime.id}.jpg`}
               alt={selectedAnime.title}
               className="w-full h-48 object-cover"
             />
@@ -613,7 +464,7 @@ const AnimeSamaPage: React.FC = () => {
               style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.9) 100%)' }}
             />
             <div className="absolute bottom-4 left-4">
-              <h1 className="text-white text-2xl font-bold">{selectedAnime.title}</h1>
+              <h1 className="text-white text-2xl font-bold uppercase">{selectedAnime.title}</h1>
               <h2 className="text-gray-300 text-lg uppercase tracking-wider">{selectedSeason.name}</h2>
             </div>
           </div>
@@ -621,25 +472,33 @@ const AnimeSamaPage: React.FC = () => {
           {/* Interface de contrôle */}
           <div className="p-4 space-y-4">
             
-            {/* Boutons de langue */}
-            <div className="flex gap-2 justify-center mb-4">
-              {availableLanguages.map((language) => (
-                <button
-                  key={language}
-                  onClick={() => changeLanguage(language as 'VF' | 'VOSTFR')}
-                  disabled={isLanguageChangeInProgress && selectedLanguage === language}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    selectedLanguage === language
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  } ${isLanguageChangeInProgress && selectedLanguage === language ? 'opacity-50' : ''}`}
-                >
-                  {language}
-                </button>
-              ))}
+            {/* Boutons de langue - Style anime-sama */}
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => changeLanguage('VOSTFR')}
+                disabled={isLanguageChangeInProgress}
+                className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-colors ${
+                  selectedLanguage === 'VOSTFR'
+                    ? 'bg-red-600 border-red-600 text-white'
+                    : 'bg-transparent border-gray-600 text-gray-400'
+                }`}
+              >
+                🇯🇵
+              </button>
+              <button
+                onClick={() => changeLanguage('VF')}
+                disabled={isLanguageChangeInProgress}
+                className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                  selectedLanguage === 'VF'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 text-gray-300'
+                }`}
+              >
+                VF
+              </button>
             </div>
 
-            {/* Dropdowns */}
+            {/* Dropdowns - Style anime-sama */}
             <div className="grid grid-cols-2 gap-4">
               <select
                 onChange={(e) => {
@@ -653,7 +512,9 @@ const AnimeSamaPage: React.FC = () => {
                 style={{ backgroundColor: '#1e40af', border: '1px solid #3b82f6' }}
                 defaultValue=""
               >
-                <option value="" disabled>EPISODE 1</option>
+                <option value="" disabled>
+                  EPISODE {selectedEpisode?.episodeNumber || 1}
+                </option>
                 {episodes.map((episode, index) => (
                   <option key={`episode-${episode.id}-${index}`} value={episode.id}>
                     EPISODE {episode.episodeNumber}
@@ -670,7 +531,7 @@ const AnimeSamaPage: React.FC = () => {
                 {currentSources.length > 0 ? (
                   currentSources.map((source, index) => (
                     <option key={`source-${index}-${source.server}`} value={index}>
-                      LECTEUR {index + 1} - {source.server}
+                      LECTEUR {index + 1}
                     </option>
                   ))
                 ) : (
@@ -682,22 +543,9 @@ const AnimeSamaPage: React.FC = () => {
             {/* Dernière sélection */}
             <div className="text-gray-400 text-sm">
               DERNIÈRE SÉLECTION : <span className="text-white italic">
-                {selectedEpisode ? `EPISODE ${selectedEpisode.episodeNumber}` : 'EPISODE 1'}
+                EPISODE {selectedEpisode?.episodeNumber || 1}
               </span>
             </div>
-
-            {/* Message d'information sur la langue */}
-            {currentSources.length > 0 && episodeDetails && (
-              <div className="text-center">
-                {episodeDetails.sources.every(s => s.language.toUpperCase() !== selectedLanguage) ? (
-                  <div className="bg-yellow-600/20 border border-yellow-600/30 rounded-lg p-2">
-                    <p className="text-yellow-200 text-xs">
-                      Aucune source {selectedLanguage} disponible. Affichage des sources {episodeDetails.sources[0]?.language || 'disponibles'}.
-                    </p>
-                  </div>
-                ) : null}
-              </div>
-            )}
 
             {/* Boutons navigation */}
             <div className="flex justify-center gap-4">
@@ -732,7 +580,7 @@ const AnimeSamaPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Message exact */}
+            {/* Message anime-sama exact */}
             <div className="text-center py-4">
               <p className="text-white text-sm">
                 <span className="italic">Pub insistante ou vidéo indisponible ?</span><br />
@@ -750,7 +598,6 @@ const AnimeSamaPage: React.FC = () => {
                   frameBorder="0"
                   title={`${episodeDetails?.title} - ${currentSource.server}`}
                 />
-
               </div>
             )}
           </div>
@@ -783,4 +630,4 @@ const AnimeSamaPage: React.FC = () => {
   );
 };
 
-export default AnimeSamaPage;
+export default AnimeSamaDirectPage;
