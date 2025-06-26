@@ -266,11 +266,11 @@ const AnimeSamaPage: React.FC = () => {
       setEpisodes(episodesList);
       setSelectedSeason(season);
       
-      // Charger automatiquement le premier épisode
+      // Sélectionner automatiquement le premier épisode sans charger les sources
       if (episodesList.length > 0) {
         const firstEpisode = episodesList[0];
         setSelectedEpisode(firstEpisode);
-        await loadEpisodeSources(firstEpisode.id);
+        // Ne pas charger automatiquement les sources - l'utilisateur cliquera sur lecture
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur de chargement épisodes';
