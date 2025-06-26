@@ -45,7 +45,7 @@ const AnimeSamaSimplePage: React.FC = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<'VF' | 'VOSTFR'>('VOSTFR');
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
-  const [selectedServer, setSelectedServer] = useState<number>(0);
+  const [selectedServer, setSelectedServer] = useState<string>('eps1');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -140,7 +140,7 @@ const AnimeSamaSimplePage: React.FC = () => {
     }
   };
 
-  // Charger les épisodes d'une saison
+  // Charger les épisodes d'une saison avec serveurs multiples
   const loadSeasonEpisodes = async (season: Season) => {
     if (!selectedAnime) return;
     
@@ -158,6 +158,7 @@ const AnimeSamaSimplePage: React.FC = () => {
         if (response.data.episodes.length > 0) {
           const firstEpisode = response.data.episodes[0];
           setSelectedEpisode(firstEpisode);
+          setSelectedServer('eps1');
         }
       } else {
         throw new Error('Aucun épisode trouvé');
@@ -208,11 +209,54 @@ const AnimeSamaSimplePage: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [searchQuery, currentView]);
 
-  const getCurrentVideoUrl = () => {
-    if (selectedEpisode && episodes.length > 0) {
+  // Récupérer l'URL vidéo basée sur le serveur sélectionné
+  const getCurrentVideoUrl = async () => {
+    if (!selectedEpisode || !selectedAnime || !selectedSeason) return null;
+    
+    try {
+      // Charger les épisodes avec le serveur spécifique depuis l'API
+      const response = await apiRequest(`/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${selectedLanguage}&server=${selectedServer}`);
+      
+      if (response && response.success && response.data && response.data.episodes) {
+        const episode = response.data.episodes.find((ep: Episode) => ep.episodeNumber === selectedEpisode.episodeNumber);
+        return episode ? episode.url : selectedEpisode.url;
+      }
+      
+      return selectedEpisode.url;
+    } catch (err) {
+      console.error('Erreur récupération URL:', err);
       return selectedEpisode.url;
     }
-    return null;
+  };
+
+  // Changer de serveur vidéo
+  const changeServer = async (newServer: string) => {
+    setSelectedServer(newServer);
+    setLoading(true);
+    
+    try {
+      // Recharger les épisodes avec le nouveau serveur
+      if (selectedAnime && selectedSeason) {
+        const response = await apiRequest(`/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${selectedLanguage}`);
+        
+        if (response && response.success && response.data && response.data.episodes) {
+          setEpisodes(response.data.episodes);
+          
+          // Garder le même épisode si possible
+          if (selectedEpisode) {
+            const episode = response.data.episodes.find((ep: Episode) => ep.episodeNumber === selectedEpisode.episodeNumber);
+            if (episode) {
+              setSelectedEpisode(episode);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Erreur changement serveur:', err);
+      setError('Impossible de changer de serveur.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -481,11 +525,14 @@ const AnimeSamaSimplePage: React.FC = () => {
 
               <select
                 value={selectedServer}
-                onChange={(e) => setSelectedServer(Number(e.target.value))}
+                onChange={(e) => changeServer(e.target.value)}
                 className="w-full p-3 text-white rounded text-sm font-medium"
                 style={{ backgroundColor: '#1e40af', border: '1px solid #3b82f6' }}
               >
-                <option value={0}>LECTEUR 1</option>
+                <option value="eps1">LECTEUR 1</option>
+                <option value="eps2">LECTEUR 2</option>
+                <option value="eps3">LECTEUR 3</option>
+                <option value="eps4">LECTEUR 4</option>
               </select>
             </div>
 
@@ -546,18 +593,70 @@ const AnimeSamaSimplePage: React.FC = () => {
               </p>
             </div>
 
-            {/* Lecteur vidéo */}
-            {getCurrentVideoUrl() && (
-              <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: '#000' }}>
-                <iframe
-                  src={getCurrentVideoUrl() || ''}
-                  className="w-full h-64 md:h-80 lg:h-96"
-                  allowFullScreen
-                  frameBorder="0"
-                  title={`${selectedAnime.title} - Episode ${selectedEpisode?.episodeNumber}`}
-                />
+            {/* Lecteur vidéo intégré - Style anime-sama exact */}
+            <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: '#000' }}>
+              <div className="w-full h-64 md:h-80 lg:h-96 bg-gray-900 relative">
+                {selectedEpisode && selectedEpisode.url ? (
+                  <>
+                    {/* Tentative d'affichage direct de la vidéo */}
+                    <iframe
+                      src={selectedEpisode.url}
+                      className="w-full h-full"
+                      allowFullScreen
+                      frameBorder="0"
+                      allow="autoplay; fullscreen; encrypted-media"
+                      title={`${selectedAnime.title} - Episode ${selectedEpisode.episodeNumber}`}
+                      style={{ 
+                        border: 'none',
+                        background: '#000'
+                      }}
+                      sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                    />
+                    
+                    {/* Overlay de contrôle pour les erreurs */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="text-center bg-black bg-opacity-75 p-4 rounded-lg max-w-sm">
+                        <div className="mb-2">
+                          <img 
+                            src="https://cdn.statically.io/gh/Anime-Sama/IMG/img/autres/erreur_videos.jpg" 
+                            alt="Erreur vidéo"
+                            className="mx-auto max-w-xs opacity-0 hover:opacity-100 transition-opacity"
+                          />
+                        </div>
+                        <p className="text-white text-xs opacity-0 hover:opacity-100 transition-opacity">
+                          Si la vidéo ne se charge pas, essayez un autre lecteur
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <div className="mb-4">
+                        <img 
+                          src="https://cdn.statically.io/gh/Anime-Sama/IMG/img/autres/erreur_videos.jpg" 
+                          alt="Erreur vidéo"
+                          className="mx-auto max-w-xs"
+                        />
+                      </div>
+                      <p className="text-white text-sm">
+                        Sélectionnez un épisode pour commencer la lecture
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+              
+              {/* Informations de l'épisode en cours */}
+              {selectedEpisode && (
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
+                  <div className="text-white text-sm">
+                    <p className="font-medium">{selectedAnime.title}</p>
+                    <p className="text-gray-300">Episode {selectedEpisode.episodeNumber} • {selectedLanguage} • Serveur {selectedServer.toUpperCase()}</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
