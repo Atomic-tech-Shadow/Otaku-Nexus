@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowLeft, Download } from 'lucide-react';
+import { Search, ArrowLeft } from 'lucide-react';
 import { Link } from 'wouter';
 
 interface SearchResult {
   id: string;
   title: string;
   url: string;
-  type: string;
-  status: string;
-  image: string;
+  authentic: boolean;
 }
 
 interface AnimeDetails {
@@ -16,13 +14,8 @@ interface AnimeDetails {
   title: string;
   description: string;
   image: string;
-  genres: string[];
-  status: string;
-  year: string;
   seasons: Season[];
   url: string;
-  correspondence?: string;
-  advancement?: string;
 }
 
 interface Season {
@@ -42,108 +35,58 @@ interface Episode {
   authentic: boolean;
 }
 
-interface EpisodeDetails {
-  id: string;
-  title: string;
-  animeTitle: string;
-  episodeNumber: number;
-  sources: VideoSource[];
-  availableServers: string[];
-  url: string;
-}
-
-interface VideoSource {
-  url: string;
-  server: string;
-  quality: string;
-  language: string;
-  type: string;
-  serverIndex: number;
-}
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  timestamp: string;
-  meta?: any;
-}
-
-const AnimeSamaDirectPage: React.FC = () => {
+const AnimeSamaSimplePage: React.FC = () => {
   const [currentView, setCurrentView] = useState<'search' | 'anime' | 'player'>('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [trendingAnimes, setTrendingAnimes] = useState<SearchResult[]>([]);
   const [selectedAnime, setSelectedAnime] = useState<AnimeDetails | null>(null);
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<'VF' | 'VOSTFR'>('VOSTFR');
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
-  const [episodeDetails, setEpisodeDetails] = useState<EpisodeDetails | null>(null);
   const [selectedServer, setSelectedServer] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isLanguageChangeInProgress, setIsLanguageChangeInProgress] = useState(false);
-  const [popularAnimes, setPopularAnimes] = useState<SearchResult[]>([]);
 
-  // Configuration API directe
+  // Configuration API
   const API_BASE_URL = 'https://api-anime-sama.onrender.com';
-  const API_HEADERS = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  };
 
-  // Fonction API avec gestion d'erreurs
-  const apiRequest = async (endpoint: string, options = {}) => {
-    const maxRetries = 3;
-    let attempt = 0;
-    
-    while (attempt < maxRetries) {
-      try {
-        const url = `${API_BASE_URL}${endpoint}`;
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: API_HEADERS,
-          ...options
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Erreur API: ${response.status}`);
-        }
-        
-        return await response.json();
-      } catch (error) {
-        attempt++;
-        if (attempt === maxRetries) {
-          console.error('Erreur requête API après', maxRetries, 'tentatives:', error);
-          throw error;
-        }
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-      }
-    }
-  };
-
-  // Charger les animes tendance
-  const loadTrendingAnimes = async () => {
+  // Fonction API simplifiée
+  const apiRequest = async (endpoint: string) => {
     try {
-      const response = await apiRequest('/api/trending');
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
       
-      if (response && response.success && Array.isArray(response.data)) {
-        const animesWithImages = response.data.map((anime: any) => ({
-          ...anime,
-          image: anime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`,
-          status: anime.status || 'Disponible',
-          type: anime.type || 'Anime'
-        }));
-        setPopularAnimes(animesWithImages.slice(0, 12));
+      if (!response.ok) {
+        throw new Error(`Erreur API: ${response.status}`);
       }
-    } catch (err) {
-      console.error('Error loading trending animes:', err);
-      setPopularAnimes([]);
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Erreur API:', error);
+      throw error;
     }
   };
 
-  // Charger les animes populaires au démarrage
+  // Charger les animes trending au démarrage
   useEffect(() => {
-    loadTrendingAnimes();
+    const loadTrending = async () => {
+      try {
+        const response = await apiRequest('/api/trending');
+        if (response && response.success && Array.isArray(response.data)) {
+          setTrendingAnimes(response.data.slice(0, 12));
+        }
+      } catch (err) {
+        console.error('Error loading trending:', err);
+      }
+    };
+    loadTrending();
   }, []);
 
   // Recherche d'animes
@@ -162,7 +105,7 @@ const AnimeSamaDirectPage: React.FC = () => {
       if (response && response.success && response.data && Array.isArray(response.data.results)) {
         setSearchResults(response.data.results);
       } else {
-        throw new Error('Format de réponse invalide');
+        setSearchResults([]);
       }
     } catch (err) {
       console.error('Erreur recherche:', err);
@@ -187,7 +130,7 @@ const AnimeSamaDirectPage: React.FC = () => {
         setSelectedSeason(null);
         setEpisodes([]);
       } else {
-        throw new Error('Format de réponse invalide');
+        throw new Error('Impossible de charger l\'anime');
       }
     } catch (err) {
       console.error('Erreur anime:', err);
@@ -206,104 +149,55 @@ const AnimeSamaDirectPage: React.FC = () => {
     setCurrentView('player');
     
     try {
-      const language = selectedLanguage;
+      const response = await apiRequest(`/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${selectedLanguage}`);
       
-      const response = await apiRequest(`/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${language}`);
-      
-      if (!response || !response.success || !response.data || !response.data.episodes) {
-        throw new Error('Aucun épisode trouvé pour cette saison');
-      }
-      
-      setEpisodes(response.data.episodes);
-      setSelectedSeason(season);
-      
-      // Charger automatiquement le premier épisode
-      if (response.data.episodes.length > 0) {
-        const firstEpisode = response.data.episodes[0];
-        setSelectedEpisode(firstEpisode);
-        await loadEpisodeSources(firstEpisode.id);
+      if (response && response.success && response.data && response.data.episodes) {
+        setEpisodes(response.data.episodes);
+        setSelectedSeason(season);
+        
+        if (response.data.episodes.length > 0) {
+          const firstEpisode = response.data.episodes[0];
+          setSelectedEpisode(firstEpisode);
+        }
+      } else {
+        throw new Error('Aucun épisode trouvé');
       }
     } catch (err) {
       console.error('Erreur épisodes:', err);
-      setError('Impossible de charger les épisodes de cette saison.');
+      setError('Impossible de charger les épisodes.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Charger les sources d'un épisode
-  const loadEpisodeSources = async (episodeId: string) => {
-    try {
-      const response = await apiRequest(`/api/episode/${episodeId}`);
-      
-      if (!response || !response.success || !response.data) {
-        throw new Error('Erreur lors du chargement des sources');
-      }
-      
-      setEpisodeDetails(response.data);
-      setSelectedServer(0);
-    } catch (err) {
-      console.error('Erreur sources:', err);
-      setError('Impossible de charger les sources vidéo.');
-      setEpisodeDetails(null);
-    }
-  };
-
-  // Navigation entre épisodes
-  const navigateEpisode = async (direction: 'prev' | 'next') => {
-    if (!selectedEpisode || episodes.length === 0) return;
-    
-    const currentIndex = episodes.findIndex(ep => ep.id === selectedEpisode.id);
-    let newIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
-    
-    if (newIndex >= 0 && newIndex < episodes.length) {
-      const newEpisode = episodes[newIndex];
-      setSelectedEpisode(newEpisode);
-      await loadEpisodeSources(newEpisode.id);
     }
   };
 
   // Changer de langue
   const changeLanguage = async (newLanguage: 'VF' | 'VOSTFR') => {
-    if (!selectedSeason || !selectedAnime || selectedLanguage === newLanguage || isLanguageChangeInProgress) {
+    if (!selectedSeason || !selectedAnime || selectedLanguage === newLanguage) {
       return;
     }
     
-    setIsLanguageChangeInProgress(true);
-    const previousLanguage = selectedLanguage;
     setSelectedLanguage(newLanguage);
     setLoading(true);
     setError(null);
     
     try {
-      const language = newLanguage;
+      const response = await apiRequest(`/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${newLanguage}`);
       
-      const response = await apiRequest(`/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`);
-      
-      if (!response || !response.success || !response.data || !response.data.episodes || response.data.episodes.length === 0) {
+      if (response && response.success && response.data && response.data.episodes && response.data.episodes.length > 0) {
+        setEpisodes(response.data.episodes);
+        setSelectedEpisode(response.data.episodes[0]);
+      } else {
         throw new Error(`Aucun épisode ${newLanguage} disponible`);
       }
-      
-      setEpisodes(response.data.episodes);
-      
-      // Conserver l'épisode actuel si possible
-      const currentEpisodeNumber = selectedEpisode?.episodeNumber || 1;
-      const targetEpisode = response.data.episodes.find((ep: any) => ep.episodeNumber === currentEpisodeNumber) || response.data.episodes[0];
-      
-      setSelectedEpisode(targetEpisode);
-      await loadEpisodeSources(targetEpisode.id);
-      
     } catch (err) {
       console.error('Erreur changement langue:', err);
       setError(`Impossible de charger les épisodes ${newLanguage}.`);
-      setSelectedLanguage(previousLanguage);
     } finally {
       setLoading(false);
-      setIsLanguageChangeInProgress(false);
     }
   };
 
-  // Effet de recherche avec délai
+  // Effet de recherche
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchQuery.trim() && currentView === 'search') {
@@ -314,12 +208,16 @@ const AnimeSamaDirectPage: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [searchQuery, currentView]);
 
-  const currentSources = episodeDetails?.sources || [];
-  const currentSource = currentSources[selectedServer];
+  const getCurrentVideoUrl = () => {
+    if (selectedEpisode && episodes.length > 0) {
+      return selectedEpisode.url;
+    }
+    return null;
+  };
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#000000' }}>
-      {/* Header anime-sama exact */}
+      {/* Header */}
       <div className="sticky top-0 z-50" style={{ backgroundColor: '#000000', borderBottom: '1px solid #333' }}>
         <div className="flex items-center justify-between p-3">
           <div className="flex items-center flex-1">
@@ -344,8 +242,7 @@ const AnimeSamaDirectPage: React.FC = () => {
               <div className="flex items-center">
                 <div className="text-white font-bold text-lg mr-2">🔍</div>
                 <span className="text-white font-medium text-sm uppercase tracking-wide">
-                  {currentView === 'anime' ? 'APERÇU' : 
-                   selectedAnime?.title || 'ANIME'}
+                  {currentView === 'anime' ? 'APERÇU' : selectedAnime?.title || 'ANIME'}
                 </span>
               </div>
             )}
@@ -359,12 +256,12 @@ const AnimeSamaDirectPage: React.FC = () => {
       {/* Page de recherche */}
       {currentView === 'search' && (
         <div className="p-4">
-          {/* Animes trending par défaut */}
-          {!searchQuery && popularAnimes.length > 0 && (
+          {/* Animes trending */}
+          {!searchQuery && trendingAnimes.length > 0 && (
             <div className="mb-6">
               <h2 className="text-white text-lg font-bold mb-3 uppercase tracking-wide">TRENDING</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {popularAnimes.map((anime, index) => (
+                {trendingAnimes.map((anime, index) => (
                   <div
                     key={`trending-${anime.id}-${index}`}
                     onClick={() => loadAnimeDetails(anime.id)}
@@ -372,7 +269,7 @@ const AnimeSamaDirectPage: React.FC = () => {
                     style={{ backgroundColor: '#1a1a1a' }}
                   >
                     <img
-                      src={anime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`}
+                      src={`https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`}
                       alt={anime.title}
                       className="w-full aspect-[3/4] object-cover"
                       onError={(e) => {
@@ -382,7 +279,7 @@ const AnimeSamaDirectPage: React.FC = () => {
                     />
                     <div className="p-3">
                       <h3 className="text-white font-medium text-sm line-clamp-2">{anime.title}</h3>
-                      <p className="text-gray-400 text-xs mt-1">{anime.status}</p>
+                      <p className="text-gray-400 text-xs mt-1">Disponible</p>
                     </div>
                   </div>
                 ))}
@@ -401,7 +298,7 @@ const AnimeSamaDirectPage: React.FC = () => {
                   style={{ backgroundColor: '#1a1a1a' }}
                 >
                   <img
-                    src={anime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`}
+                    src={`https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`}
                     alt={anime.title}
                     className="w-full aspect-[3/4] object-cover"
                     onError={(e) => {
@@ -411,7 +308,7 @@ const AnimeSamaDirectPage: React.FC = () => {
                   />
                   <div className="p-3">
                     <h3 className="text-white font-medium text-sm line-clamp-2">{anime.title}</h3>
-                    <p className="text-gray-400 text-xs mt-1">{anime.status}</p>
+                    <p className="text-gray-400 text-xs mt-1">Disponible</p>
                   </div>
                 </div>
               ))}
@@ -427,13 +324,13 @@ const AnimeSamaDirectPage: React.FC = () => {
         </div>
       )}
 
-      {/* Page détails anime - Interface exacte anime-sama */}
+      {/* Page détails anime */}
       {currentView === 'anime' && selectedAnime && (
         <div className="p-0">
-          {/* Image principale avec informations superposées */}
+          {/* Image principale */}
           <div className="relative">
             <img
-              src={selectedAnime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${selectedAnime.id}.jpg`}
+              src={`https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${selectedAnime.id}.jpg`}
               alt={selectedAnime.title}
               className="w-full h-64 object-cover"
             />
@@ -444,7 +341,6 @@ const AnimeSamaDirectPage: React.FC = () => {
             <div className="absolute bottom-4 left-4 right-4">
               <h1 className="text-white text-2xl font-bold uppercase">{selectedAnime.title}</h1>
               
-              {/* Informations anime */}
               <div className="mt-2 space-y-1">
                 <div>
                   <span className="text-white font-medium">Avancement :</span>
@@ -488,7 +384,7 @@ const AnimeSamaDirectPage: React.FC = () => {
                     }}
                   >
                     <img
-                      src={selectedAnime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${selectedAnime.id}.jpg`}
+                      src={`https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${selectedAnime.id}.jpg`}
                       alt={season.name}
                       className="w-full h-full object-cover opacity-60"
                     />
@@ -513,13 +409,13 @@ const AnimeSamaDirectPage: React.FC = () => {
         </div>
       )}
 
-      {/* Page lecteur - Interface exacte anime-sama */}
+      {/* Page lecteur */}
       {currentView === 'player' && selectedAnime && selectedSeason && (
         <div className="p-0">
-          {/* Image avec titre et saison */}
+          {/* Image avec titre */}
           <div className="relative">
             <img
-              src={selectedAnime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${selectedAnime.id}.jpg`}
+              src={`https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${selectedAnime.id}.jpg`}
               alt={selectedAnime.title}
               className="w-full h-48 object-cover"
             />
@@ -536,11 +432,10 @@ const AnimeSamaDirectPage: React.FC = () => {
           {/* Interface de contrôle */}
           <div className="p-4 space-y-4">
             
-            {/* Boutons de langue - Style anime-sama */}
+            {/* Boutons de langue */}
             <div className="flex gap-2 mb-4">
               <button
                 onClick={() => changeLanguage('VOSTFR')}
-                disabled={isLanguageChangeInProgress}
                 className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-colors ${
                   selectedLanguage === 'VOSTFR'
                     ? 'bg-red-600 border-red-600 text-white'
@@ -551,7 +446,6 @@ const AnimeSamaDirectPage: React.FC = () => {
               </button>
               <button
                 onClick={() => changeLanguage('VF')}
-                disabled={isLanguageChangeInProgress}
                 className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
                   selectedLanguage === 'VF'
                     ? 'bg-blue-600 text-white'
@@ -562,14 +456,13 @@ const AnimeSamaDirectPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Dropdowns - Style anime-sama */}
+            {/* Dropdowns */}
             <div className="grid grid-cols-2 gap-4">
               <select
                 onChange={(e) => {
                   const episode = episodes.find(ep => ep.id === e.target.value);
                   if (episode) {
                     setSelectedEpisode(episode);
-                    loadEpisodeSources(episode.id);
                   }
                 }}
                 className="w-full p-3 text-white rounded text-sm font-medium"
@@ -592,15 +485,7 @@ const AnimeSamaDirectPage: React.FC = () => {
                 className="w-full p-3 text-white rounded text-sm font-medium"
                 style={{ backgroundColor: '#1e40af', border: '1px solid #3b82f6' }}
               >
-                {currentSources.length > 0 ? (
-                  currentSources.map((source, index) => (
-                    <option key={`source-${index}-${source.server}`} value={index}>
-                      LECTEUR {index + 1}
-                    </option>
-                  ))
-                ) : (
-                  <option value={0}>LECTEUR 1</option>
-                )}
+                <option value={0}>LECTEUR 1</option>
               </select>
             </div>
 
@@ -614,7 +499,14 @@ const AnimeSamaDirectPage: React.FC = () => {
             {/* Boutons navigation */}
             <div className="flex justify-center gap-4">
               <button
-                onClick={() => navigateEpisode('prev')}
+                onClick={() => {
+                  if (selectedEpisode) {
+                    const currentIndex = episodes.findIndex(ep => ep.id === selectedEpisode.id);
+                    if (currentIndex > 0) {
+                      setSelectedEpisode(episodes[currentIndex - 1]);
+                    }
+                  }
+                }}
                 disabled={!selectedEpisode || episodes.findIndex(ep => ep.id === selectedEpisode.id) === 0}
                 className="flex items-center justify-center w-14 h-14 text-white rounded-lg disabled:opacity-50 transition-colors"
                 style={{ backgroundColor: '#1e40af' }}
@@ -623,19 +515,21 @@ const AnimeSamaDirectPage: React.FC = () => {
               </button>
               
               <button
-                onClick={() => {
-                  if (selectedEpisode) {
-                    loadEpisodeSources(selectedEpisode.id);
-                  }
-                }}
                 className="flex items-center justify-center w-14 h-14 text-white rounded-lg transition-colors"
                 style={{ backgroundColor: '#374151' }}
               >
-                <Download size={20} />
+                ⬇
               </button>
               
               <button
-                onClick={() => navigateEpisode('next')}
+                onClick={() => {
+                  if (selectedEpisode) {
+                    const currentIndex = episodes.findIndex(ep => ep.id === selectedEpisode.id);
+                    if (currentIndex < episodes.length - 1) {
+                      setSelectedEpisode(episodes[currentIndex + 1]);
+                    }
+                  }
+                }}
                 disabled={!selectedEpisode || episodes.findIndex(ep => ep.id === selectedEpisode.id) === episodes.length - 1}
                 className="flex items-center justify-center w-14 h-14 text-white rounded-lg disabled:opacity-50 transition-colors"
                 style={{ backgroundColor: '#1e40af' }}
@@ -644,7 +538,7 @@ const AnimeSamaDirectPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Message anime-sama exact */}
+            {/* Message */}
             <div className="text-center py-4">
               <p className="text-white text-sm">
                 <span className="italic">Pub insistante ou vidéo indisponible ?</span><br />
@@ -653,14 +547,14 @@ const AnimeSamaDirectPage: React.FC = () => {
             </div>
 
             {/* Lecteur vidéo */}
-            {currentSource && (
+            {getCurrentVideoUrl() && (
               <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: '#000' }}>
                 <iframe
-                  src={currentSource.url}
+                  src={getCurrentVideoUrl() || ''}
                   className="w-full h-64 md:h-80 lg:h-96"
                   allowFullScreen
                   frameBorder="0"
-                  title={`${episodeDetails?.title} - ${currentSource.server}`}
+                  title={`${selectedAnime.title} - Episode ${selectedEpisode?.episodeNumber}`}
                 />
               </div>
             )}
@@ -694,4 +588,4 @@ const AnimeSamaDirectPage: React.FC = () => {
   );
 };
 
-export default AnimeSamaDirectPage;
+export default AnimeSamaSimplePage;
