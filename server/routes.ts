@@ -369,7 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               eps4: baseUrl
             },
             selectedServer: server || 'eps1',
-            url: server && episode.servers ? episode.servers[server] || baseUrl : baseUrl
+            url: server && episode.servers ? episode.servers[server as string] || baseUrl : baseUrl
           };
         });
         

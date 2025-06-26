@@ -232,30 +232,14 @@ const AnimeSamaSimplePage: React.FC = () => {
   // Changer de serveur vidéo
   const changeServer = async (newServer: string) => {
     setSelectedServer(newServer);
-    setLoading(true);
     
-    try {
-      // Recharger les épisodes avec le nouveau serveur
-      if (selectedAnime && selectedSeason) {
-        const response = await apiRequest(`/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${selectedLanguage}`);
-        
-        if (response && response.success && response.data && response.data.episodes) {
-          setEpisodes(response.data.episodes);
-          
-          // Garder le même épisode si possible
-          if (selectedEpisode) {
-            const episode = response.data.episodes.find((ep: Episode) => ep.episodeNumber === selectedEpisode.episodeNumber);
-            if (episode) {
-              setSelectedEpisode(episode);
-            }
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Erreur changement serveur:', err);
-      setError('Impossible de changer de serveur.');
-    } finally {
-      setLoading(false);
+    // Juste changer le serveur sans recharger, l'URL sera mise à jour automatiquement
+    if (selectedEpisode && selectedEpisode.servers && selectedEpisode.servers[newServer]) {
+      setSelectedEpisode({
+        ...selectedEpisode,
+        url: selectedEpisode.servers[newServer],
+        server: newServer
+      });
     }
   };
 
