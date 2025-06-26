@@ -60,7 +60,7 @@ const AnimeSamaPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [selectedAnime, setSelectedAnime] = useState<AnimeDetails | null>(null);
-  const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
+  const [selectedSeason, setSelectedSeason] = useState<any>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<'VF' | 'VOSTFR'>('VOSTFR');
   const [availableLanguages, setAvailableLanguages] = useState<string[]>(['VOSTFR']);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
@@ -97,8 +97,12 @@ const AnimeSamaPage: React.FC = () => {
         throw new Error(`Erreur API: ${response.status}`);
       }
       
-      const data = await response.json();
-      setPopularAnimes(Array.isArray(data) ? data.slice(0, 12) : []);
+      const apiResponse = await response.json();
+      if (apiResponse.success && Array.isArray(apiResponse.data)) {
+        setPopularAnimes(apiResponse.data.slice(0, 12));
+      } else {
+        setPopularAnimes([]);
+      }
     } catch (err) {
       console.error('Error loading popular animes:', err);
       setError('Impossible de charger les animes populaires');
@@ -136,8 +140,12 @@ const AnimeSamaPage: React.FC = () => {
         throw new Error(`Erreur API: ${response.status}`);
       }
       
-      const data = await response.json();
-      setSearchResults(Array.isArray(data) ? data : []);
+      const apiResponse = await response.json();
+      if (apiResponse.success && apiResponse.data && Array.isArray(apiResponse.data.results)) {
+        setSearchResults(apiResponse.data.results);
+      } else {
+        setSearchResults([]);
+      }
     } catch (err) {
       console.error('Erreur recherche:', err);
       setError('Impossible de rechercher les animes.');
@@ -334,12 +342,12 @@ const AnimeSamaPage: React.FC = () => {
                   style={{ backgroundColor: '#1a1a1a' }}
                 >
                   <img
-                    src={anime.image}
+                    src={anime.image || `https://via.placeholder.com/300x400/1a1a1a/00bcd4?text=${encodeURIComponent(anime.title)}`}
                     alt={anime.title}
                     className="w-full aspect-[3/4] object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = 'https://via.placeholder.com/300x400/1a1a1a/ffffff?text=Image+Non+Disponible';
+                      target.src = `https://via.placeholder.com/300x400/1a1a1a/00bcd4?text=${encodeURIComponent(anime.title)}`;
                     }}
                   />
                   <div className="p-3">
@@ -382,12 +390,12 @@ const AnimeSamaPage: React.FC = () => {
                       >
                         <div className="relative">
                           <img
-                            src={anime.image}
+                            src={anime.image || `https://via.placeholder.com/300x400/1a1a1a/00bcd4?text=${encodeURIComponent(anime.title)}`}
                             alt={anime.title}
                             className="w-full aspect-[3/4] object-cover group-hover:opacity-90 transition-opacity"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
-                              target.src = 'https://via.placeholder.com/300x400/1a1a1a/ffffff?text=Image+Non+Disponible';
+                              target.src = `https://via.placeholder.com/300x400/1a1a1a/00bcd4?text=${encodeURIComponent(anime.title)}`;
                               target.onerror = null; // Prevent infinite loop
                             }}
                           />
@@ -469,11 +477,15 @@ const AnimeSamaPage: React.FC = () => {
                   <div className="md:col-span-2">
                     <span className="text-gray-400 text-sm">Genres:</span>
                     <div className="flex flex-wrap gap-2 mt-1">
-                      {selectedAnime.genres.map((genre, index) => (
-                        <span key={index} className="bg-cyan-900/30 text-cyan-400 px-2 py-1 rounded text-xs">
-                          {genre}
-                        </span>
-                      ))}
+                      {selectedAnime.genres && selectedAnime.genres.length > 0 ? (
+                        selectedAnime.genres.map((genre, index) => (
+                          <span key={index} className="bg-cyan-900/30 text-cyan-400 px-2 py-1 rounded text-xs">
+                            {genre}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-gray-400 text-xs">Genres non disponibles</span>
+                      )}
                     </div>
                   </div>
                 </div>
