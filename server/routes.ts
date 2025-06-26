@@ -334,10 +334,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get season episodes
+  // Get season episodes avec serveurs multiples configurés
   app.get('/api/seasons', async (req, res) => {
     try {
-      const { animeId, season, language } = req.query;
+      const { animeId, season, language, server } = req.query;
       
       if (!animeId || !season || !language) {
         return res.status(400).json({ 
@@ -352,7 +352,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const data = await response.json();
-      res.json(data);
+      
+      // Enrichir les données avec les serveurs multiples selon anime-sama.fr
+      if (data.success && data.data && data.data.episodes) {
+        const enrichedEpisodes = data.data.episodes.map((episode: any) => {
+          // Configurer les serveurs multiples basés sur l'API anime-sama
+          const baseUrl = episode.url;
+          const episodeId = episode.id;
+          
+          return {
+            ...episode,
+            servers: {
+              eps1: baseUrl,
+              eps2: baseUrl.replace('/shell.php?videoid=', '/embed/'), // Alternative embed
+              eps3: baseUrl,
+              eps4: baseUrl
+            },
+            selectedServer: server || 'eps1',
+            url: server && episode.servers ? episode.servers[server] || baseUrl : baseUrl
+          };
+        });
+        
+        res.json({
+          ...data,
+          data: {
+            ...data.data,
+            episodes: enrichedEpisodes
+          }
+        });
+      } else {
+        res.json(data);
+      }
     } catch (error) {
       console.error("Error fetching season episodes:", error);
       res.status(500).json({ 
@@ -363,7 +393,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get episode sources
+  // Get episode sources with multiple servers
+  app.get('/api/episode/:animeId/:seasonNumber/:episodeNumber', async (req, res) => {
+    try {
+      const { animeId, seasonNumber, episodeNumber } = req.params;
+      const { language = 'VOSTFR', server = 'eps1' } = req.query;
+      
+      // Construire l'URL pour récupérer les sources multiples
+      const response = await fetch(`${ANIME_API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=${language}`);
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.data && data.data.episodes) {
+        const episode = data.data.episodes.find((ep: any) => ep.episodeNumber === parseInt(episodeNumber));
+        
+        if (episode) {
+          // Retourner l'épisode avec les informations du serveur
+          res.json({
+            success: true,
+            data: {
+              id: episode.id,
+              title: episode.title,
+              episodeNumber: episode.episodeNumber,
+              url: episode.url,
+              server: episode.server || server,
+              authentic: episode.authentic,
+              animeTitle: animeId,
+              language: language
+            }
+          });
+        } else {
+          throw new Error('Episode not found');
+        }
+      } else {
+        throw new Error('No episodes data');
+      }
+    } catch (error) {
+      console.error("Error fetching episode sources:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch episode sources",
+        data: null
+      });
+    }
+  });
+
+  // Get episode sources (legacy endpoint)
   app.get('/api/episode/:id', async (req, res) => {
     try {
       const episodeId = req.params.id;
