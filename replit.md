@@ -22,6 +22,9 @@ This is a quiz, chat and anime streaming application providing:
 - **Database**: PostgreSQL (Neon)
 
 ### Recent Changes (Latest First)
+- **2025-06-26 02:30**: Configuration API Anime-Sama avec endpoints corrects selon documentation fournie
+- **2025-06-26 02:30**: Correction des erreurs de clés dupliquées React dans les listes d'animes
+- **2025-06-26 02:30**: Migration complète de Replit Agent vers environnement Replit standard
 - **2025-06-26 01:30**: Added anime streaming functionality with full search and playback features
 - **2025-06-26 01:30**: Migrated successfully from Replit Agent to standard Replit environment
 - **2025-06-26 01:30**: Added anime-sama page with navigation integration

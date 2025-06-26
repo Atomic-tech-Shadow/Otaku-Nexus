@@ -562,9 +562,9 @@ const AnimeSamaPage: React.FC = () => {
           <div className="px-4 pb-4">
             <h2 className="text-white text-lg font-bold mb-4 uppercase tracking-wide">ANIME</h2>
             <div className="grid grid-cols-2 gap-3">
-              {selectedAnime.seasons.map((season) => (
+              {selectedAnime.seasons.map((season, index) => (
                 <button
-                  key={season.number}
+                  key={`season-${selectedAnime.id}-${season.number}-${index}`}
                   onClick={() => loadSeasonEpisodes(season)}
                   className="relative overflow-hidden rounded-lg border-2 transition-all"
                   style={{ 
@@ -616,9 +616,9 @@ const AnimeSamaPage: React.FC = () => {
           <div className="p-4 space-y-4">
             {/* Drapeaux VF/VOSTFR basés sur les langues disponibles */}
             <div className="flex gap-2">
-              {availableLanguages.map((lang) => (
+              {availableLanguages.map((lang, index) => (
                 <button
-                  key={lang}
+                  key={`lang-${lang}-${index}`}
                   onClick={() => changeLanguage(lang as 'VF' | 'VOSTFR')}
                   className="flex items-center justify-center w-12 h-10 rounded border-2"
                   style={{
@@ -649,8 +649,8 @@ const AnimeSamaPage: React.FC = () => {
                 defaultValue=""
               >
                 <option value="" disabled>EPISODE 1</option>
-                {episodes.map((episode) => (
-                  <option key={episode.id} value={episode.id}>
+                {episodes.map((episode, index) => (
+                  <option key={`episode-${episode.id}-${index}`} value={episode.id}>
                     EPISODE {episode.episodeNumber}
                   </option>
                 ))}
@@ -664,7 +664,7 @@ const AnimeSamaPage: React.FC = () => {
               >
                 {currentSources.length > 0 ? (
                   currentSources.map((source, index) => (
-                    <option key={index} value={index}>
+                    <option key={`source-${index}-${source.server}`} value={index}>
                       LECTEUR {index + 1} - {source.server}
                     </option>
                   ))
