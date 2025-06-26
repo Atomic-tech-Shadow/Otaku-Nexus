@@ -230,17 +230,8 @@ const AnimeSamaSimplePage: React.FC = () => {
   };
 
   // Changer de serveur vidéo
-  const changeServer = async (newServer: string) => {
+  const changeServer = (newServer: string) => {
     setSelectedServer(newServer);
-    
-    // Juste changer le serveur sans recharger, l'URL sera mise à jour automatiquement
-    if (selectedEpisode && selectedEpisode.servers && selectedEpisode.servers[newServer]) {
-      setSelectedEpisode({
-        ...selectedEpisode,
-        url: selectedEpisode.servers[newServer],
-        server: newServer
-      });
-    }
   };
 
   return (

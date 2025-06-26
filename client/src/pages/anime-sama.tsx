@@ -99,8 +99,25 @@ const AnimeSamaPage: React.FC = () => {
 
   // Charger les animes populaires depuis l'API
   const loadPopularAnimes = async () => {
-    // Supprimer le contenu de démo - utiliser l'API directement
-    setPopularAnimes([]);
+    try {
+      const response = await apiRequest('/api/trending');
+      
+      if (response && response.success && Array.isArray(response.data)) {
+        const animesWithImages = response.data.map((anime: any) => ({
+          ...anime,
+          image: anime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`,
+          status: anime.status || 'Disponible',
+          type: anime.type || 'Anime'
+        }));
+        setPopularAnimes(animesWithImages.slice(0, 12));
+      } else {
+        console.warn('Format de réponse trending invalide:', response);
+        setPopularAnimes([]);
+      }
+    } catch (error) {
+      console.error('Erreur chargement trending:', error);
+      setPopularAnimes([]);
+    }
   };
 
   // Configuration API selon la documentation fournie
@@ -133,7 +150,8 @@ const AnimeSamaPage: React.FC = () => {
         attempt++;
         if (attempt === maxRetries) {
           console.error('Erreur requête API après', maxRetries, 'tentatives:', error);
-          throw error;
+          const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+          throw new Error(`API Error: ${errorMessage}`);
         }
         // Attendre avant de réessayer
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
@@ -167,8 +185,9 @@ const AnimeSamaPage: React.FC = () => {
         throw new Error('Format de réponse invalide');
       }
     } catch (err) {
-      console.error('Erreur recherche:', err);
-      setError('Impossible de rechercher les animes.');
+      const errorMessage = err instanceof Error ? err.message : 'Erreur de recherche';
+      console.error('Erreur recherche:', errorMessage);
+      setError('Impossible de rechercher les animes. Vérifiez votre connexion.');
       setSearchResults([]);
     } finally {
       setLoading(false);
@@ -198,8 +217,9 @@ const AnimeSamaPage: React.FC = () => {
         throw new Error('Format de réponse invalide');
       }
     } catch (err) {
-      console.error('Erreur anime:', err);
-      setError('Impossible de charger les détails de l\'anime.');
+      const errorMessage = err instanceof Error ? err.message : 'Erreur de chargement';
+      console.error('Erreur anime:', errorMessage);
+      setError('Impossible de charger les détails de l\'anime. Vérifiez votre connexion.');
     } finally {
       setLoading(false);
     }
@@ -253,8 +273,9 @@ const AnimeSamaPage: React.FC = () => {
         await loadEpisodeSources(firstEpisode.id);
       }
     } catch (err) {
-      console.error('Erreur épisodes:', err);
-      setError('Impossible de charger les épisodes de cette saison.');
+      const errorMessage = err instanceof Error ? err.message : 'Erreur de chargement épisodes';
+      console.error('Erreur épisodes:', errorMessage);
+      setError('Impossible de charger les épisodes de cette saison. Vérifiez votre connexion.');
     } finally {
       setLoading(false);
     }
@@ -272,7 +293,8 @@ const AnimeSamaPage: React.FC = () => {
       setEpisodeDetails(response.data);
       setSelectedServer(0);
     } catch (err) {
-      console.error('Erreur sources:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Erreur de chargement sources';
+      console.error('Erreur sources:', errorMessage);
       setError('Impossible de charger les sources vidéo. Vérifiez que l\'épisode est disponible.');
       setEpisodeDetails(null);
     }
