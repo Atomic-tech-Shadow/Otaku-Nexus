@@ -246,8 +246,8 @@ const AnimeSamaPage: React.FC = () => {
     return languages.length > 0 ? languages : ['VOSTFR'];
   };
 
-  // Charger les épisodes d'une saison
-  const loadSeasonEpisodes = async (season: Season) => {
+  // Charger les épisodes d'une saison avec langue spécifiée
+  const loadSeasonEpisodes = async (season: Season & { lang?: string }) => {
     if (!selectedAnime) return;
     
     setLoading(true);
@@ -255,14 +255,10 @@ const AnimeSamaPage: React.FC = () => {
     setCurrentView('player');
     
     try {
-      const availLangs = await detectAvailableLanguages(selectedAnime.id, season.number);
-      setAvailableLanguages(availLangs);
-      
-      let languageToUse = selectedLanguage;
-      if (!availLangs.includes(selectedLanguage)) {
-        languageToUse = availLangs[0] as 'VF' | 'VOSTFR';
-        setSelectedLanguage(languageToUse);
-      }
+      // Utiliser la langue spécifiée dans le bouton de saison
+      const languageToUse = season.lang || selectedLanguage;
+      setSelectedLanguage(languageToUse as 'VF' | 'VOSTFR');
+      setAvailableLanguages([languageToUse]);
       
       const language = languageToUse.toLowerCase();
       
@@ -562,20 +558,37 @@ const AnimeSamaPage: React.FC = () => {
           <div className="px-4 pb-4">
             <h2 className="text-white text-lg font-bold mb-4 uppercase tracking-wide">ANIME</h2>
             <div className="grid grid-cols-2 gap-3">
-              {selectedAnime.seasons.map((season, index) => (
+              {/* Générer des sagas avec langues disponibles */}
+              {[
+                { name: 'Saga 1 (East Blue)', lang: 'VOSTFR', number: 1 },
+                { name: 'Saga 1 (East Blue)', lang: 'VF', number: 1 },
+                { name: 'Saga 2 (Alabasta)', lang: 'VOSTFR', number: 2 },
+                { name: 'Saga 2 (Alabasta)', lang: 'VF', number: 2 },
+                { name: 'Saga 3 (Île céleste)', lang: 'VOSTFR', number: 3 },
+                { name: 'Saga 3 (Île céleste)', lang: 'VF', number: 3 },
+                { name: 'Saga 4 (Water Seven)', lang: 'VOSTFR', number: 4 },
+                { name: 'Saga 4 (Water Seven)', lang: 'VF', number: 4 }
+              ].map((saga, index) => (
                 <button
-                  key={`season-${selectedAnime.id}-${season.number}-${index}`}
-                  onClick={() => loadSeasonEpisodes(season)}
+                  key={`saga-${selectedAnime.id}-${saga.number}-${saga.lang}-${index}`}
+                  onClick={() => loadSeasonEpisodes({ 
+                    number: saga.number, 
+                    name: saga.name, 
+                    languages: [saga.lang], 
+                    episodeCount: 1, 
+                    url: `https://anime-sama.fr/catalogue/${selectedAnime.id}/saison${saga.number}/`,
+                    lang: saga.lang
+                  })}
                   className="relative overflow-hidden rounded-lg border-2 transition-all"
                   style={{ 
                     aspectRatio: '16/9',
-                    borderColor: selectedSeason?.number === season.number ? '#3b82f6' : '#1e40af',
+                    borderColor: '#1e40af',
                     backgroundColor: '#1e40af'
                   }}
                 >
                   <img
                     src={selectedAnime.image}
-                    alt={season.name}
+                    alt={saga.name}
                     className="w-full h-full object-cover opacity-60"
                   />
                   <div 
@@ -583,7 +596,12 @@ const AnimeSamaPage: React.FC = () => {
                     style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.9) 100%)' }}
                   />
                   <div className="absolute bottom-2 left-2 right-2">
-                    <div className="text-white text-sm font-bold text-left">{season.name}</div>
+                    <div className="text-white text-sm font-bold text-left">
+                      {saga.name}
+                    </div>
+                    <div className="text-gray-300 text-xs text-left">
+                      ({saga.lang})
+                    </div>
                   </div>
                 </button>
               ))}
@@ -614,25 +632,6 @@ const AnimeSamaPage: React.FC = () => {
 
           {/* Interface de contrôle */}
           <div className="p-4 space-y-4">
-            {/* Drapeaux VF/VOSTFR basés sur les langues disponibles */}
-            <div className="flex gap-2">
-              {availableLanguages.map((lang, index) => (
-                <button
-                  key={`lang-${lang}-${index}`}
-                  onClick={() => changeLanguage(lang as 'VF' | 'VOSTFR')}
-                  className="flex items-center justify-center w-12 h-10 rounded border-2"
-                  style={{
-                    backgroundColor: selectedLanguage === lang ? 
-                      (lang === 'VF' ? '#1e40af' : '#dc2626') : '#374151',
-                    borderColor: selectedLanguage === lang ? '#ffffff' : '#6b7280'
-                  }}
-                >
-                  <span className="text-white font-bold text-xs">
-                    {lang === 'VF' ? '🇫🇷' : '🇯🇵'}
-                  </span>
-                </button>
-              ))}
-            </div>
 
             {/* Dropdowns */}
             <div className="grid grid-cols-2 gap-4">
