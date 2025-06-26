@@ -98,18 +98,19 @@ const AnimeSamaPage: React.FC = () => {
   // Charger les animes populaires depuis l'API
   const loadPopularAnimes = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/trending`);
+      const response = await apiRequest('/api/trending');
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const apiResponse = await response.json();
-      
-      if (apiResponse.success && apiResponse.data) {
-        setPopularAnimes(apiResponse.data.slice(0, 12)); // Limiter à 12 animes
+      if (response && response.success && Array.isArray(response.data)) {
+        // Ajouter des propriétés manquantes pour l'affichage
+        const animesWithImages = response.data.map((anime: any) => ({
+          ...anime,
+          image: anime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`,
+          status: anime.status || 'Disponible',
+          type: anime.type || 'Anime'
+        }));
+        setPopularAnimes(animesWithImages.slice(0, 12));
       } else {
-        throw new Error('Invalid API response format');
+        throw new Error('Format de réponse invalide');
       }
     } catch (err) {
       console.error('Error loading popular animes:', err);
@@ -118,7 +119,35 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  const API_BASE = 'https://api-anime-sama.onrender.com';
+  // Configuration API selon la documentation
+  const API_BASE_URL = 'https://api-anime-sama.onrender.com';
+  const API_HEADERS = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Origin': window.location.origin
+  };
+
+  // Fonction utilitaire pour les requêtes API
+  const apiRequest = async (endpoint: string, options = {}) => {
+    try {
+      const url = `${API_BASE_URL}${endpoint}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: API_HEADERS,
+        mode: 'cors',
+        ...options
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erreur API: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Erreur requête API:', error);
+      throw error;
+    }
+  };
 
   // Recherche d'animes
   const searchAnimes = async (query: string) => {
@@ -131,14 +160,20 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE}/api/search?query=${encodeURIComponent(query)}`);
-      const apiResponse: ApiResponse<SearchResult[]> = await response.json();
+      const response = await apiRequest(`/api/search?query=${encodeURIComponent(query)}`);
       
-      if (!apiResponse.success) {
-        throw new Error('Erreur lors de la recherche');
+      if (response && response.success && Array.isArray(response.data)) {
+        // Ajouter des propriétés manquantes pour l'affichage
+        const animesWithImages = response.data.map((anime: any) => ({
+          ...anime,
+          image: anime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`,
+          status: anime.status || 'Disponible',
+          type: anime.type || 'Anime'
+        }));
+        setSearchResults(animesWithImages);
+      } else {
+        throw new Error('Format de réponse invalide');
       }
-      
-      setSearchResults(apiResponse.data);
     } catch (err) {
       console.error('Erreur recherche:', err);
       setError('Impossible de rechercher les animes.');
@@ -154,17 +189,27 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE}/api/anime/${animeId}`);
-      const apiResponse: ApiResponse<AnimeDetails> = await response.json();
+      const response = await apiRequest(`/api/anime/${animeId}`);
       
-      if (!apiResponse.success) {
-        throw new Error('Erreur lors du chargement de l\'anime');
+      if (response && response.success && response.data) {
+        const animeData = {
+          ...response.data,
+          image: response.data.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${animeId}.jpg`,
+          seasons: response.data.seasons || [{
+            number: 1,
+            name: 'Saison 1',
+            languages: ['VOSTFR'],
+            episodeCount: 1,
+            url: `https://anime-sama.fr/catalogue/${animeId}/saison1/`
+          }]
+        };
+        setSelectedAnime(animeData);
+        setCurrentView('anime');
+        setSelectedSeason(null);
+        setEpisodes([]);
+      } else {
+        throw new Error('Format de réponse invalide');
       }
-      
-      setSelectedAnime(apiResponse.data);
-      setCurrentView('anime');
-      setSelectedSeason(null);
-      setEpisodes([]);
     } catch (err) {
       console.error('Erreur anime:', err);
       setError('Impossible de charger les détails de l\'anime.');
@@ -177,29 +222,28 @@ const AnimeSamaPage: React.FC = () => {
   const detectAvailableLanguages = async (animeId: string, seasonNumber: number) => {
     const languages = [];
     
-    // Tester VF
+    // Tester VOSTFR d'abord (plus commun)
     try {
-      const vfResponse = await fetch(`${API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vf`);
-      const vfData = await vfResponse.json();
-      if (vfData.success && vfData.data.episodes.length > 0) {
-        languages.push('VF');
-      }
-    } catch (err) {
-      // VF non disponible
-    }
-    
-    // Tester VOSTFR
-    try {
-      const vostfrResponse = await fetch(`${API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vostfr`);
-      const vostfrData = await vostfrResponse.json();
-      if (vostfrData.success && vostfrData.data.episodes.length > 0) {
+      const vostfrResponse = await apiRequest(`/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vostfr`);
+      if (vostfrResponse && vostfrResponse.success && vostfrResponse.data && vostfrResponse.data.episodes && vostfrResponse.data.episodes.length > 0) {
         languages.push('VOSTFR');
       }
     } catch (err) {
       // VOSTFR non disponible
     }
     
-    return languages;
+    // Tester VF
+    try {
+      const vfResponse = await apiRequest(`/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vf`);
+      if (vfResponse && vfResponse.success && vfResponse.data && vfResponse.data.episodes && vfResponse.data.episodes.length > 0) {
+        languages.push('VF');
+      }
+    } catch (err) {
+      // VF non disponible
+    }
+    
+    // Retourner au moins VOSTFR par défaut si aucune langue détectée
+    return languages.length > 0 ? languages : ['VOSTFR'];
   };
 
   // Charger les épisodes d'une saison
@@ -222,25 +266,18 @@ const AnimeSamaPage: React.FC = () => {
       
       const language = languageToUse.toLowerCase();
       
-      const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${language}`);
-      const apiResponse: ApiResponse<{
-        animeId: string;
-        season: number;
-        language: string;
-        episodes: Episode[];
-        episodeCount: number;
-      }> = await response.json();
+      const response = await apiRequest(`/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${language}`);
       
-      if (!apiResponse.success) {
+      if (!response || !response.success || !response.data || !response.data.episodes) {
         throw new Error('Erreur lors du chargement des épisodes');
       }
       
-      setEpisodes(apiResponse.data.episodes);
+      setEpisodes(response.data.episodes);
       setSelectedSeason(season);
       
       // Charger automatiquement le premier épisode
-      if (apiResponse.data.episodes.length > 0) {
-        const firstEpisode = apiResponse.data.episodes[0];
+      if (response.data.episodes.length > 0) {
+        const firstEpisode = response.data.episodes[0];
         setSelectedEpisode(firstEpisode);
         await loadEpisodeSources(firstEpisode.id);
       }
@@ -255,14 +292,13 @@ const AnimeSamaPage: React.FC = () => {
   // Charger les sources d'un épisode
   const loadEpisodeSources = async (episodeId: string) => {
     try {
-      const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
-      const apiResponse: ApiResponse<EpisodeDetails> = await response.json();
+      const response = await apiRequest(`/api/episode/${episodeId}`);
       
-      if (!apiResponse.success) {
+      if (!response || !response.success || !response.data) {
         throw new Error('Erreur lors du chargement des sources');
       }
       
-      setEpisodeDetails(apiResponse.data);
+      setEpisodeDetails(response.data);
       setSelectedServer(0);
     } catch (err) {
       console.error('Erreur sources:', err);
@@ -296,23 +332,16 @@ const AnimeSamaPage: React.FC = () => {
     try {
       const language = newLanguage.toLowerCase();
       
-      const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`);
-      const apiResponse: ApiResponse<{
-        animeId: string;
-        season: number;
-        language: string;
-        episodes: Episode[];
-        episodeCount: number;
-      }> = await response.json();
+      const response = await apiRequest(`/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`);
       
-      if (!apiResponse.success || apiResponse.data.episodes.length === 0) {
+      if (!response || !response.success || !response.data || !response.data.episodes || response.data.episodes.length === 0) {
         throw new Error(`Aucun épisode ${newLanguage} disponible`);
       }
       
-      setEpisodes(apiResponse.data.episodes);
+      setEpisodes(response.data.episodes);
       
       // Recharger le premier épisode avec la nouvelle langue
-      const firstEpisode = apiResponse.data.episodes[0];
+      const firstEpisode = response.data.episodes[0];
       setSelectedEpisode(firstEpisode);
       await loadEpisodeSources(firstEpisode.id);
       
@@ -387,9 +416,9 @@ const AnimeSamaPage: React.FC = () => {
           {/* Résultats de recherche */}
           {searchResults.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {searchResults.map((anime) => (
+              {searchResults.map((anime, index) => (
                 <div
-                  key={anime.id}
+                  key={`search-${anime.id}-${index}`}
                   onClick={() => loadAnimeDetails(anime.id)}
                   className="rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform"
                   style={{ backgroundColor: '#1a1a1a' }}
@@ -434,9 +463,9 @@ const AnimeSamaPage: React.FC = () => {
                     </button>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {popularAnimes.map((anime) => (
+                    {popularAnimes.map((anime, index) => (
                       <div
-                        key={anime.id}
+                        key={`popular-${anime.id}-${index}`}
                         onClick={() => loadAnimeDetails(anime.id)}
                         className="rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform group"
                         style={{ backgroundColor: '#1a1a1a' }}
