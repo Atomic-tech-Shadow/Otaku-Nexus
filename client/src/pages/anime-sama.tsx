@@ -121,7 +121,7 @@ const AnimeSamaPage: React.FC = () => {
   };
 
   // Configuration API selon la documentation fournie
-  const API_BASE_URL = 'https://api-anime-sama.onrender.com';
+  const API_BASE_URL = 'http://localhost:5000';
   const API_HEADERS = {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
@@ -233,7 +233,7 @@ const AnimeSamaPage: React.FC = () => {
     return season.languages && season.languages.length > 0 ? season.languages : ['VOSTFR'];
   };
 
-  // Charger les épisodes d'une saison - utilise les données depuis /api/anime/{id}
+  // Charger les épisodes d'une saison en utilisant l'endpoint /api/seasons
   const loadSeasonEpisodes = async (season: Season & { lang?: string }) => {
     if (!selectedAnime) return;
     
@@ -250,27 +250,30 @@ const AnimeSamaPage: React.FC = () => {
       const languageToUse = season.lang || availableLanguages[0] || 'VOSTFR';
       setSelectedLanguage(languageToUse as 'VF' | 'VOSTFR');
       
-      // Générer les épisodes depuis les données de la saison
-      const episodesList: Episode[] = [];
-      for (let i = 1; i <= season.episodeCount; i++) {
-        episodesList.push({
-          id: `${selectedAnime.id}-s${season.number}e${i}`,
-          title: `Épisode ${i}`,
-          episodeNumber: i,
-          url: season.url,
-          language: languageToUse,
-          available: true
-        });
+      // Appeler l'endpoint /api/seasons pour récupérer les épisodes authentiques
+      const response = await apiRequest(`/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${languageToUse}`);
+      
+      if (!response || !response.success || !Array.isArray(response.data)) {
+        throw new Error('Aucun épisode trouvé pour cette saison');
       }
+      
+      // Utiliser les épisodes authentiques depuis l'API
+      const episodesList: Episode[] = response.data.map((ep: any) => ({
+        id: ep.id,
+        title: ep.title,
+        episodeNumber: ep.episodeNumber,
+        url: ep.url,
+        language: ep.language,
+        available: ep.available
+      }));
       
       setEpisodes(episodesList);
       setSelectedSeason(season);
       
-      // Sélectionner automatiquement le premier épisode sans charger les sources
+      // Sélectionner automatiquement le premier épisode
       if (episodesList.length > 0) {
         const firstEpisode = episodesList[0];
         setSelectedEpisode(firstEpisode);
-        // Ne pas charger automatiquement les sources - l'utilisateur cliquera sur lecture
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur de chargement épisodes';
