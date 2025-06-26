@@ -281,21 +281,45 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Charger les sources d'un épisode
+  // Charger les sources d'un épisode en utilisant l'API seasons
   const loadEpisodeSources = async (episodeId: string) => {
+    if (!selectedAnime || !selectedSeason || !selectedEpisode) return;
+    
     try {
-      const response = await apiRequest(`/api/episode/${episodeId}`);
+      // Extraire le numéro d'épisode depuis l'ID
+      const episodeNumber = selectedEpisode.episodeNumber;
+      const language = selectedLanguage.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
       
-      if (!response || !response.success || !response.data) {
-        throw new Error('Erreur lors du chargement des sources');
+      const response = await apiRequest(`/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`);
+      
+      if (!response || !response.success || !response.data || !response.data.episodes) {
+        throw new Error('Aucun épisode trouvé');
       }
       
-      setEpisodeDetails(response.data);
+      // Trouver l'épisode spécifique
+      const episode = response.data.episodes.find((ep: any) => ep.episodeNumber === episodeNumber);
+      
+      if (!episode) {
+        throw new Error(`Épisode ${episodeNumber} non trouvé`);
+      }
+      
+      // Créer les détails d'épisode avec les sources
+      const episodeDetails: EpisodeDetails = {
+        id: episode.id || episodeId,
+        title: episode.title || `Épisode ${episodeNumber}`,
+        animeTitle: selectedAnime.title,
+        episodeNumber: episodeNumber,
+        sources: episode.sources || [],
+        availableServers: episode.availableServers || ['Serveur 1'],
+        url: episode.url || ''
+      };
+      
+      setEpisodeDetails(episodeDetails);
       setSelectedServer(0);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur de chargement sources';
       console.error('Erreur sources:', errorMessage);
-      setError('Impossible de charger les sources vidéo. Vérifiez que l\'épisode est disponible.');
+      setError(`Impossible de charger l'épisode ${selectedEpisode.episodeNumber}. Vérifiez que l'épisode est disponible.`);
       setEpisodeDetails(null);
     }
   };
