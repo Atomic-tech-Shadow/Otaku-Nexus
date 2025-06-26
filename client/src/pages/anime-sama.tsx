@@ -207,35 +207,13 @@ const AnimeSamaPage: React.FC = () => {
 
 
 
-  // Détecter les langues disponibles pour une saison
-  const detectAvailableLanguages = async (animeId: string, seasonNumber: number) => {
-    const languages = [];
-    
-    // Tester VOSTFR d'abord (plus commun)
-    try {
-      const vostfrResponse = await apiRequest(`/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vostfr`);
-      if (vostfrResponse && vostfrResponse.success && vostfrResponse.data && vostfrResponse.data.episodes && vostfrResponse.data.episodes.length > 0) {
-        languages.push('VOSTFR');
-      }
-    } catch (err) {
-      // VOSTFR non disponible
-    }
-    
-    // Tester VF
-    try {
-      const vfResponse = await apiRequest(`/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vf`);
-      if (vfResponse && vfResponse.success && vfResponse.data && vfResponse.data.episodes && vfResponse.data.episodes.length > 0) {
-        languages.push('VF');
-      }
-    } catch (err) {
-      // VF non disponible
-    }
-    
-    // Retourner au moins VOSTFR par défaut si aucune langue détectée
-    return languages.length > 0 ? languages : ['VOSTFR'];
+  // Utiliser les langues disponibles depuis les données de saison (déjà dans /api/anime/{id})
+  const getAvailableLanguages = (season: Season) => {
+    // Les langues sont déjà disponibles dans season.languages depuis /api/anime/{id}
+    return season.languages && season.languages.length > 0 ? season.languages : ['VOSTFR'];
   };
 
-  // Charger les épisodes d'une saison selon la documentation API
+  // Charger les épisodes d'une saison - utilise les données depuis /api/anime/{id}
   const loadSeasonEpisodes = async (season: Season & { lang?: string }) => {
     if (!selectedAnime) return;
     
@@ -244,27 +222,33 @@ const AnimeSamaPage: React.FC = () => {
     setCurrentView('player');
     
     try {
-      // Utiliser VOSTFR par défaut selon la documentation
-      const languageToUse = season.lang || selectedLanguage;
+      // Utiliser les langues disponibles depuis la saison
+      const availableLanguages = getAvailableLanguages(season);
+      setAvailableLanguages(availableLanguages);
+      
+      // Utiliser la première langue disponible ou VOSTFR par défaut
+      const languageToUse = season.lang || availableLanguages[0] || 'VOSTFR';
       setSelectedLanguage(languageToUse as 'VF' | 'VOSTFR');
       
-      // Convertir en format API: VF -> VF, VOSTFR -> VOSTFR
-      const language = languageToUse;
-      
-      const response = await apiRequest(`/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${language}`);
-      
-      if (!response || !response.success || !response.data || !response.data.episodes) {
-        throw new Error('Aucun épisode trouvé pour cette saison');
+      // Générer les épisodes depuis les données de la saison
+      const episodesList: Episode[] = [];
+      for (let i = 1; i <= season.episodeCount; i++) {
+        episodesList.push({
+          id: `${selectedAnime.id}-s${season.number}e${i}`,
+          title: `Épisode ${i}`,
+          episodeNumber: i,
+          url: season.url,
+          language: languageToUse,
+          available: true
+        });
       }
       
-      // Mettre à jour les langues disponibles basées sur la réponse
-      setAvailableLanguages(['VOSTFR', 'VF']);
-      setEpisodes(response.data.episodes);
+      setEpisodes(episodesList);
       setSelectedSeason(season);
       
       // Charger automatiquement le premier épisode
-      if (response.data.episodes.length > 0) {
-        const firstEpisode = response.data.episodes[0];
+      if (episodesList.length > 0) {
+        const firstEpisode = episodesList[0];
         setSelectedEpisode(firstEpisode);
         await loadEpisodeSources(firstEpisode.id);
       }
