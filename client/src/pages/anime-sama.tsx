@@ -533,9 +533,7 @@ const AnimeSamaPage: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-white font-medium">Correspondance :</span>
-                  <span className="text-gray-300 ml-2">
-                    {selectedEpisode ? `Episode ${selectedEpisode.episodeNumber}` : 'Episode 1'}
-                  </span>
+                  <span className="text-gray-300 ml-2">Episode 1122 → Chapitre 1088</span>
                 </div>
               </div>
             </div>
@@ -558,26 +556,21 @@ const AnimeSamaPage: React.FC = () => {
           <div className="px-4 pb-4">
             <h2 className="text-white text-lg font-bold mb-4 uppercase tracking-wide">ANIME</h2>
             <div className="grid grid-cols-2 gap-3">
-              {/* Générer des sagas avec langues disponibles */}
+              {/* Sagas comme sur le vrai site - sans indication de langue */}
               {[
-                { name: 'Saga 1 (East Blue)', lang: 'VOSTFR', number: 1 },
-                { name: 'Saga 1 (East Blue)', lang: 'VF', number: 1 },
-                { name: 'Saga 2 (Alabasta)', lang: 'VOSTFR', number: 2 },
-                { name: 'Saga 2 (Alabasta)', lang: 'VF', number: 2 },
-                { name: 'Saga 3 (Île céleste)', lang: 'VOSTFR', number: 3 },
-                { name: 'Saga 3 (Île céleste)', lang: 'VF', number: 3 },
-                { name: 'Saga 4 (Water Seven)', lang: 'VOSTFR', number: 4 },
-                { name: 'Saga 4 (Water Seven)', lang: 'VF', number: 4 }
+                { name: 'Saga 1 (East Blue)', number: 1 },
+                { name: 'Saga 2 (Alabasta)', number: 2 },
+                { name: 'Saga 3 (Île céleste)', number: 3 },
+                { name: 'Saga 4 (Water Seven)', number: 4 }
               ].map((saga, index) => (
                 <button
-                  key={`saga-${selectedAnime.id}-${saga.number}-${saga.lang}-${index}`}
+                  key={`saga-${selectedAnime.id}-${saga.number}-${index}`}
                   onClick={() => loadSeasonEpisodes({ 
                     number: saga.number, 
                     name: saga.name, 
-                    languages: [saga.lang], 
+                    languages: ['VOSTFR'], 
                     episodeCount: 1, 
-                    url: `https://anime-sama.fr/catalogue/${selectedAnime.id}/saison${saga.number}/`,
-                    lang: saga.lang
+                    url: `https://anime-sama.fr/catalogue/${selectedAnime.id}/saison${saga.number}/`
                   })}
                   className="relative overflow-hidden rounded-lg border-2 transition-all"
                   style={{ 
@@ -598,9 +591,6 @@ const AnimeSamaPage: React.FC = () => {
                   <div className="absolute bottom-2 left-2 right-2">
                     <div className="text-white text-sm font-bold text-left">
                       {saga.name}
-                    </div>
-                    <div className="text-gray-300 text-xs text-left">
-                      ({saga.lang})
                     </div>
                   </div>
                 </button>
