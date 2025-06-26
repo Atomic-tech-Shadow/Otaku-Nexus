@@ -21,6 +21,8 @@ interface AnimeDetails {
   year: string;
   seasons: Season[];
   url: string;
+  correspondence?: string;
+  advancement?: string;
 }
 
 interface Season {
@@ -183,7 +185,7 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Charger les détails d'un anime
+  // Charger les détails d'un anime depuis l'API
   const loadAnimeDetails = async (animeId: string) => {
     setLoading(true);
     setError(null);
@@ -195,13 +197,8 @@ const AnimeSamaPage: React.FC = () => {
         const animeData = {
           ...response.data,
           image: response.data.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${animeId}.jpg`,
-          seasons: response.data.seasons || [{
-            number: 1,
-            name: 'Saison 1',
-            languages: ['VOSTFR'],
-            episodeCount: 1,
-            url: `https://anime-sama.fr/catalogue/${animeId}/saison1/`
-          }]
+          // Générer les saisons dynamiquement basées sur l'API
+          seasons: await generateSeasonsFromAPI(animeId)
         };
         setSelectedAnime(animeData);
         setCurrentView('anime');
@@ -216,6 +213,32 @@ const AnimeSamaPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Générer les saisons disponibles depuis l'API
+  const generateSeasonsFromAPI = async (animeId: string) => {
+    const seasons = [];
+    
+    // Tester différentes saisons possibles
+    for (let seasonNum = 1; seasonNum <= 10; seasonNum++) {
+      try {
+        const testResponse = await apiRequest(`/api/seasons?animeId=${animeId}&season=${seasonNum}&language=vostfr`);
+        if (testResponse && testResponse.success && testResponse.data && testResponse.data.episodes && testResponse.data.episodes.length > 0) {
+          seasons.push({
+            number: seasonNum,
+            name: `Saga ${seasonNum}`,
+            languages: ['VOSTFR', 'VF'],
+            episodeCount: testResponse.data.episodes.length,
+            url: `https://anime-sama.fr/catalogue/${animeId}/saison${seasonNum}/`
+          });
+        }
+      } catch (err) {
+        // Cette saison n'existe pas, continuer
+        break;
+      }
+    }
+    
+    return seasons;
   };
 
   // Détecter les langues disponibles pour une saison
@@ -533,7 +556,9 @@ const AnimeSamaPage: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-white font-medium">Correspondance :</span>
-                  <span className="text-gray-300 ml-2">Episode 1122 → Chapitre 1088</span>
+                  <span className="text-gray-300 ml-2">
+                    {(selectedAnime as any).correspondence || 'Episode 1 → Chapitre 1'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -556,45 +581,40 @@ const AnimeSamaPage: React.FC = () => {
           <div className="px-4 pb-4">
             <h2 className="text-white text-lg font-bold mb-4 uppercase tracking-wide">ANIME</h2>
             <div className="grid grid-cols-2 gap-3">
-              {/* Sagas comme sur le vrai site - sans indication de langue */}
-              {[
-                { name: 'Saga 1 (East Blue)', number: 1 },
-                { name: 'Saga 2 (Alabasta)', number: 2 },
-                { name: 'Saga 3 (Île céleste)', number: 3 },
-                { name: 'Saga 4 (Water Seven)', number: 4 }
-              ].map((saga, index) => (
-                <button
-                  key={`saga-${selectedAnime.id}-${saga.number}-${index}`}
-                  onClick={() => loadSeasonEpisodes({ 
-                    number: saga.number, 
-                    name: saga.name, 
-                    languages: ['VOSTFR'], 
-                    episodeCount: 1, 
-                    url: `https://anime-sama.fr/catalogue/${selectedAnime.id}/saison${saga.number}/`
-                  })}
-                  className="relative overflow-hidden rounded-lg border-2 transition-all"
-                  style={{ 
-                    aspectRatio: '16/9',
-                    borderColor: '#1e40af',
-                    backgroundColor: '#1e40af'
-                  }}
-                >
-                  <img
-                    src={selectedAnime.image}
-                    alt={saga.name}
-                    className="w-full h-full object-cover opacity-60"
-                  />
-                  <div 
-                    className="absolute inset-0"
-                    style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.9) 100%)' }}
-                  />
-                  <div className="absolute bottom-2 left-2 right-2">
-                    <div className="text-white text-sm font-bold text-left">
-                      {saga.name}
+              {/* Saisons réelles depuis l'API */}
+              {selectedAnime.seasons && selectedAnime.seasons.length > 0 ? (
+                selectedAnime.seasons.map((season, index) => (
+                  <button
+                    key={`season-${selectedAnime.id}-${season.number}-${index}`}
+                    onClick={() => loadSeasonEpisodes(season)}
+                    className="relative overflow-hidden rounded-lg border-2 transition-all"
+                    style={{ 
+                      aspectRatio: '16/9',
+                      borderColor: '#1e40af',
+                      backgroundColor: '#1e40af'
+                    }}
+                  >
+                    <img
+                      src={selectedAnime.image}
+                      alt={season.name}
+                      className="w-full h-full object-cover opacity-60"
+                    />
+                    <div 
+                      className="absolute inset-0"
+                      style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.9) 100%)' }}
+                    />
+                    <div className="absolute bottom-2 left-2 right-2">
+                      <div className="text-white text-sm font-bold text-left">
+                        {season.name}
+                      </div>
                     </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                ))
+              ) : (
+                <div className="col-span-2 text-center py-8">
+                  <p className="text-gray-400">Chargement des saisons...</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
