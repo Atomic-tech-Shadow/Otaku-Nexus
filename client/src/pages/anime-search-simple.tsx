@@ -49,8 +49,8 @@ const AnimeSamaSimplePage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Configuration API - Utiliser notre serveur local comme proxy
-  const API_BASE_URL = 'http://localhost:5000';
+  // Configuration API - Utiliser l'API de production
+  const API_BASE_URL = 'https://api-anime-sama.onrender.com';
 
   // Fonction API simplifiée
   const apiRequest = async (endpoint: string) => {
