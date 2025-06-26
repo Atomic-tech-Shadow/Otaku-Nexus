@@ -265,7 +265,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  
+  // Anime-Sama API Proxy Routes
+  const ANIME_API_BASE = 'https://api-anime-sama.onrender.com';
+
+  // Search animes
+  app.get('/api/search', async (req, res) => {
+    try {
+      const query = req.query.query as string;
+      if (!query) {
+        return res.status(400).json({ message: "Query parameter is required" });
+      }
+
+      const response = await fetch(`${ANIME_API_BASE}/api/search?query=${encodeURIComponent(query)}`);
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error searching animes:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to search animes",
+        data: []
+      });
+    }
+  });
+
+  // Get trending animes
+  app.get('/api/trending', async (req, res) => {
+    try {
+      const response = await fetch(`${ANIME_API_BASE}/api/trending`);
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching trending animes:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch trending animes",
+        data: []
+      });
+    }
+  });
+
+  // Get anime details with seasons
+  app.get('/api/anime/:id', async (req, res) => {
+    try {
+      const animeId = req.params.id;
+      const response = await fetch(`${ANIME_API_BASE}/api/anime/${animeId}`);
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching anime details:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch anime details",
+        data: null
+      });
+    }
+  });
+
+  // Get season episodes
+  app.get('/api/seasons', async (req, res) => {
+    try {
+      const { animeId, season, language } = req.query;
+      
+      if (!animeId || !season || !language) {
+        return res.status(400).json({ 
+          success: false,
+          message: "animeId, season, and language parameters are required" 
+        });
+      }
+
+      const response = await fetch(`${ANIME_API_BASE}/api/seasons?animeId=${animeId}&season=${season}&language=${language}`);
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching season episodes:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch episodes",
+        data: { episodes: [] }
+      });
+    }
+  });
+
+  // Get episode sources
+  app.get('/api/episode/:id', async (req, res) => {
+    try {
+      const episodeId = req.params.id;
+      const response = await fetch(`${ANIME_API_BASE}/api/episode/${episodeId}`);
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching episode sources:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch episode sources",
+        data: { sources: [] }
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

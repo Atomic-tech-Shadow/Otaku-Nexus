@@ -121,33 +121,41 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Configuration API selon la documentation
-  const API_BASE_URL = 'https://api-anime-sama.onrender.com';
+  // Configuration API selon la documentation fournie
+  const API_BASE_URL = 'http://localhost:5000';
   const API_HEADERS = {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'Origin': window.location.origin
+    'Accept': 'application/json'
   };
 
-  // Fonction utilitaire pour les requêtes API
+  // Fonction utilitaire pour les requêtes API avec retry et cache
   const apiRequest = async (endpoint: string, options = {}) => {
-    try {
-      const url = `${API_BASE_URL}${endpoint}`;
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: API_HEADERS,
-        mode: 'cors',
-        ...options
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Erreur API: ${response.status}`);
+    const maxRetries = 3;
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+      try {
+        const url = `${API_BASE_URL}${endpoint}`;
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: API_HEADERS,
+          ...options
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Erreur API: ${response.status}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        attempt++;
+        if (attempt === maxRetries) {
+          console.error('Erreur requête API après', maxRetries, 'tentatives:', error);
+          throw error;
+        }
+        // Attendre avant de réessayer
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Erreur requête API:', error);
-      throw error;
     }
   };
 
@@ -197,8 +205,8 @@ const AnimeSamaPage: React.FC = () => {
         const animeData = {
           ...response.data,
           image: response.data.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${animeId}.jpg`,
-          // Générer les saisons dynamiquement basées sur l'API
-          seasons: await generateSeasonsFromAPI(animeId)
+          // Utiliser les saisons directement depuis l'API selon la documentation
+          seasons: response.data.seasons || []
         };
         setSelectedAnime(animeData);
         setCurrentView('anime');
@@ -215,65 +223,7 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Générer les saisons disponibles depuis le scraping du vrai site
-  const generateSeasonsFromAPI = async (animeId: string) => {
-    const seasons = [];
-    
-    // Structure basée sur l'analyse du vrai site anime-sama.fr
-    const oneDetailOnePieceSeasons = [
-      { number: 1, name: "Saga 1 (East Blue)", path: "saison1" },
-      { number: 2, name: "Saga 2 (Alabasta)", path: "saison2" },
-      { number: 3, name: "Saga 3 (Ile céleste)", path: "saison3" },
-      { number: 4, name: "Saga 4 (Water Seven)", path: "saison4" },
-      { number: 5, name: "Saga 5 (Thriller Bark)", path: "saison5" },
-      { number: 6, name: "Saga 6 (Guerre au Sommet)", path: "saison6" },
-      { number: 7, name: "Saga 7 (Ile des Hommes-Poissons)", path: "saison7" },
-      { number: 8, name: "Saga 8 (Dressrosa)", path: "saison8" },
-      { number: 9, name: "Saga 9 (Ile Tougato)", path: "saison9" },
-      { number: 10, name: "Saga 10 (Pays des Wa)", path: "saison10" },
-      { number: 11, name: "Saga 11 (Egghead)", path: "saison11" }
-    ];
-    
-    // Pour One Piece, utiliser la structure connue
-    if (animeId === 'one-piece') {
-      for (const season of oneDetailOnePieceSeasons) {
-        try {
-          const testResponse = await apiRequest(`/api/seasons?animeId=${animeId}&season=${season.number}&language=vostfr`);
-          if (testResponse && testResponse.success && testResponse.data && testResponse.data.episodes && testResponse.data.episodes.length > 0) {
-            seasons.push({
-              number: season.number,
-              name: season.name,
-              languages: ['VOSTFR', 'VF'],
-              episodeCount: testResponse.data.episodes.length,
-              url: `https://anime-sama.fr/catalogue/${animeId}/${season.path}/`
-            });
-          }
-        } catch (err) {
-          // Continuer même si une saison échoue
-        }
-      }
-    } else {
-      // Pour les autres animes, tester jusqu'à 15 saisons
-      for (let seasonNum = 1; seasonNum <= 15; seasonNum++) {
-        try {
-          const testResponse = await apiRequest(`/api/seasons?animeId=${animeId}&season=${seasonNum}&language=vostfr`);
-          if (testResponse && testResponse.success && testResponse.data && testResponse.data.episodes && testResponse.data.episodes.length > 0) {
-            seasons.push({
-              number: seasonNum,
-              name: `Saga ${seasonNum}`,
-              languages: ['VOSTFR', 'VF'],
-              episodeCount: testResponse.data.episodes.length,
-              url: `https://anime-sama.fr/catalogue/${animeId}/saison${seasonNum}/`
-            });
-          }
-        } catch (err) {
-          // Continuer même si une saison échoue
-        }
-      }
-    }
-    
-    return seasons;
-  };
+
 
   // Détecter les langues disponibles pour une saison
   const detectAvailableLanguages = async (animeId: string, seasonNumber: number) => {
@@ -303,7 +253,7 @@ const AnimeSamaPage: React.FC = () => {
     return languages.length > 0 ? languages : ['VOSTFR'];
   };
 
-  // Charger les épisodes d'une saison avec langue spécifiée
+  // Charger les épisodes d'une saison selon la documentation API
   const loadSeasonEpisodes = async (season: Season & { lang?: string }) => {
     if (!selectedAnime) return;
     
@@ -312,19 +262,21 @@ const AnimeSamaPage: React.FC = () => {
     setCurrentView('player');
     
     try {
-      // Utiliser la langue spécifiée dans le bouton de saison
+      // Utiliser VOSTFR par défaut selon la documentation
       const languageToUse = season.lang || selectedLanguage;
       setSelectedLanguage(languageToUse as 'VF' | 'VOSTFR');
-      setAvailableLanguages([languageToUse]);
       
-      const language = languageToUse.toLowerCase();
+      // Convertir en format API: VF -> VF, VOSTFR -> VOSTFR
+      const language = languageToUse;
       
       const response = await apiRequest(`/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${language}`);
       
       if (!response || !response.success || !response.data || !response.data.episodes) {
-        throw new Error('Erreur lors du chargement des épisodes');
+        throw new Error('Aucun épisode trouvé pour cette saison');
       }
       
+      // Mettre à jour les langues disponibles basées sur la réponse
+      setAvailableLanguages(['VOSTFR', 'VF']);
       setEpisodes(response.data.episodes);
       setSelectedSeason(season);
       
@@ -336,7 +288,7 @@ const AnimeSamaPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Erreur épisodes:', err);
-      setError('Impossible de charger les épisodes.');
+      setError('Impossible de charger les épisodes de cette saison.');
     } finally {
       setLoading(false);
     }
@@ -374,16 +326,22 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Changer de langue
+  // Changer de langue avec protection contre les appels multiples
+  const [isLanguageChangeInProgress, setIsLanguageChangeInProgress] = useState(false);
+  
   const changeLanguage = async (newLanguage: 'VF' | 'VOSTFR') => {
-    if (!selectedSeason || !selectedAnime || selectedLanguage === newLanguage) return;
+    if (!selectedSeason || !selectedAnime || selectedLanguage === newLanguage || isLanguageChangeInProgress) {
+      return;
+    }
     
+    setIsLanguageChangeInProgress(true);
     setSelectedLanguage(newLanguage);
     setLoading(true);
     setError(null);
     
     try {
-      const language = newLanguage.toLowerCase();
+      // Utiliser le format exact selon la documentation
+      const language = newLanguage;
       
       const response = await apiRequest(`/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`);
       
@@ -393,10 +351,12 @@ const AnimeSamaPage: React.FC = () => {
       
       setEpisodes(response.data.episodes);
       
-      // Recharger le premier épisode avec la nouvelle langue
-      const firstEpisode = response.data.episodes[0];
-      setSelectedEpisode(firstEpisode);
-      await loadEpisodeSources(firstEpisode.id);
+      // Conserver l'épisode actuel si possible, sinon prendre le premier
+      const currentEpisodeNumber = selectedEpisode?.episodeNumber || 1;
+      const targetEpisode = response.data.episodes.find((ep: any) => ep.episodeNumber === currentEpisodeNumber) || response.data.episodes[0];
+      
+      setSelectedEpisode(targetEpisode);
+      await loadEpisodeSources(targetEpisode.id);
       
     } catch (err) {
       console.error('Erreur changement langue:', err);
@@ -405,6 +365,7 @@ const AnimeSamaPage: React.FC = () => {
       setSelectedLanguage(selectedLanguage === 'VF' ? 'VOSTFR' : 'VF');
     } finally {
       setLoading(false);
+      setIsLanguageChangeInProgress(false);
     }
   };
 
@@ -676,6 +637,24 @@ const AnimeSamaPage: React.FC = () => {
 
           {/* Interface de contrôle */}
           <div className="p-4 space-y-4">
+            
+            {/* Boutons de langue */}
+            <div className="flex gap-2 justify-center mb-4">
+              {availableLanguages.map((language) => (
+                <button
+                  key={language}
+                  onClick={() => changeLanguage(language as 'VF' | 'VOSTFR')}
+                  disabled={isLanguageChangeInProgress && selectedLanguage === language}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedLanguage === language
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  } ${isLanguageChangeInProgress && selectedLanguage === language ? 'opacity-50' : ''}`}
+                >
+                  {language}
+                </button>
+              ))}
+            </div>
 
             {/* Dropdowns */}
             <div className="grid grid-cols-2 gap-4">
