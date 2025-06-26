@@ -13,6 +13,7 @@ import Chat from "@/pages/chat";
 import EditProfile from "@/pages/edit-profile";
 import AuthPage from "@/pages/auth";
 import Admin from "@/pages/admin";
+import AnimeSama from "@/pages/anime-sama";
 
 
 import { ProtectedRoute } from "@/components/auth/protected-route";
@@ -64,7 +65,11 @@ function Router() {
           </ProtectedRoute>
         </Route>
 
-
+        <Route path="/anime-sama">
+          <ProtectedRoute>
+            <AnimeSama />
+          </ProtectedRoute>
+        </Route>
 
         <Route component={NotFound} />
       </Switch>

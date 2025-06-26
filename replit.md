@@ -1,12 +1,13 @@
 # Quiz & Chat Application
 
 ## Project Overview
-This is a quiz and chat application providing:
+This is a quiz, chat and anime streaming application providing:
 - Quiz system with user progression and XP
 - User authentication and profiles
 - Admin functionality for content management
 - Real-time chat system
 - Leaderboards and achievements
+- Anime streaming with search and playback functionality
 
 ## User Preferences
 - Language: French (primary interface)
@@ -21,9 +22,11 @@ This is a quiz and chat application providing:
 - **Database**: PostgreSQL (Neon)
 
 ### Recent Changes (Latest First)
+- **2025-06-26 01:30**: Added anime streaming functionality with full search and playback features
+- **2025-06-26 01:30**: Migrated successfully from Replit Agent to standard Replit environment
+- **2025-06-26 01:30**: Added anime-sama page with navigation integration
 - **2025-06-25 20:55**: Completely removed all manga functionality per user request
 - **2025-06-25 20:55**: Removed manga database tables, API routes, and frontend components
-- **2025-06-25 20:55**: Project is now pure quiz and chat application
 - **2025-06-25 20:50**: Successfully migrated from Replit Agent to standard Replit environment
 - **2025-06-25 20:50**: Completely removed all Anime-Sama functionality per user request
 - **2025-06-25 20:50**: Fixed TypeScript errors and removed mobile app components
@@ -35,6 +38,7 @@ This is a quiz and chat application providing:
 3. **Chat System**: Real-time messaging between users
 4. **Admin Panel**: Complete content and user management
 5. **Achievements**: User progression tracking and rewards system
+6. **Anime Streaming**: Full anime search, episode browsing, and video playback with server selection
 
 ### Technical Decisions
 - **Database**: PostgreSQL (Neon) for data persistence
