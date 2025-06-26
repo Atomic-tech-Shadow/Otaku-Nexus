@@ -6,64 +6,53 @@ interface SearchResult {
   id: string;
   title: string;
   url: string;
-  type: string;
-  status: string;
+  type?: string;
+  status?: string;
   image: string;
+  description?: string;
+  genres?: string[];
+  year?: string;
 }
 
 interface AnimeDetails {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   image: string;
-  genres: string[];
-  status: string;
-  year: string;
-  seasons: Season[];
-  url: string;
-}
-
-interface Season {
-  number: number;
-  name: string;
-  languages: string[];
-  episodeCount: number;
+  genres?: string[];
+  status?: string;
+  year?: string;
+  episodes?: Episode[];
   url: string;
 }
 
 interface Episode {
   id: string;
-  title: string;
+  title?: string;
   episodeNumber: number;
   url: string;
-  language: string;
-  available: boolean;
+  language?: string;
+  available?: boolean;
 }
 
 interface EpisodeDetails {
   id: string;
-  title: string;
-  animeTitle: string;
-  episodeNumber: number;
-  sources: VideoSource[];
-  availableServers: string[];
-  url: string;
+  title?: string;
+  animeTitle?: string;
+  episodeNumber?: number;
+  sources?: VideoSource[];
+  availableServers?: string[];
+  url?: string;
+  streamingUrl?: string;
 }
 
 interface VideoSource {
   url: string;
-  server: string;
-  quality: string;
-  language: string;
-  type: string;
-  serverIndex: number;
-}
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  timestamp: string;
-  meta?: any;
+  server?: string;
+  quality?: string;
+  language?: string;
+  type?: string;
+  serverIndex?: number;
 }
 
 const AnimeSamaPage: React.FC = () => {
@@ -98,19 +87,18 @@ const AnimeSamaPage: React.FC = () => {
   // Charger les animes populaires depuis l'API
   const loadPopularAnimes = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/trending`);
+      const response = await fetch(`${API_BASE}/api/trending`, {
+        method: 'GET',
+        headers: API_HEADERS,
+        mode: 'cors'
+      });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Erreur API: ${response.status}`);
       }
       
-      const apiResponse = await response.json();
-      
-      if (apiResponse.success && apiResponse.data) {
-        setPopularAnimes(apiResponse.data.slice(0, 12)); // Limiter à 12 animes
-      } else {
-        throw new Error('Invalid API response format');
-      }
+      const data = await response.json();
+      setPopularAnimes(Array.isArray(data) ? data.slice(0, 12) : []);
     } catch (err) {
       console.error('Error loading popular animes:', err);
       setError('Impossible de charger les animes populaires');
@@ -119,6 +107,13 @@ const AnimeSamaPage: React.FC = () => {
   };
 
   const API_BASE = 'https://api-anime-sama.onrender.com';
+
+  // Configuration des headers CORS requis
+  const API_HEADERS = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Origin': window.location.origin
+  };
 
   // Recherche d'animes
   const searchAnimes = async (query: string) => {
@@ -131,14 +126,18 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE}/api/search?query=${encodeURIComponent(query)}`);
-      const apiResponse: ApiResponse<SearchResult[]> = await response.json();
+      const response = await fetch(`${API_BASE}/api/search?query=${encodeURIComponent(query)}`, {
+        method: 'GET',
+        headers: API_HEADERS,
+        mode: 'cors'
+      });
       
-      if (!apiResponse.success) {
-        throw new Error('Erreur lors de la recherche');
+      if (!response.ok) {
+        throw new Error(`Erreur API: ${response.status}`);
       }
       
-      setSearchResults(apiResponse.data);
+      const data = await response.json();
+      setSearchResults(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Erreur recherche:', err);
       setError('Impossible de rechercher les animes.');
@@ -154,14 +153,22 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE}/api/anime/${animeId}`);
-      const apiResponse: ApiResponse<AnimeDetails> = await response.json();
+      const response = await fetch(`${API_BASE}/api/anime/${animeId}`, {
+        method: 'GET',
+        headers: API_HEADERS,
+        mode: 'cors'
+      });
       
-      if (!apiResponse.success) {
-        throw new Error('Erreur lors du chargement de l\'anime');
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Anime non trouvé');
+        } else {
+          throw new Error(`Erreur API: ${response.status}`);
+        }
       }
       
-      setSelectedAnime(apiResponse.data);
+      const data = await response.json();
+      setSelectedAnime(data);
       setCurrentView('anime');
       setSelectedSeason(null);
       setEpisodes([]);
@@ -173,76 +180,37 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Détecter les langues disponibles pour une saison
-  const detectAvailableLanguages = async (animeId: string, seasonNumber: number) => {
-    const languages = [];
-    
-    // Tester VF
-    try {
-      const vfResponse = await fetch(`${API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vf`);
-      const vfData = await vfResponse.json();
-      if (vfData.success && vfData.data.episodes.length > 0) {
-        languages.push('VF');
-      }
-    } catch (err) {
-      // VF non disponible
-    }
-    
-    // Tester VOSTFR
-    try {
-      const vostfrResponse = await fetch(`${API_BASE}/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=vostfr`);
-      const vostfrData = await vostfrResponse.json();
-      if (vostfrData.success && vostfrData.data.episodes.length > 0) {
-        languages.push('VOSTFR');
-      }
-    } catch (err) {
-      // VOSTFR non disponible
-    }
-    
-    return languages;
-  };
-
-  // Charger les épisodes d'une saison
-  const loadSeasonEpisodes = async (season: Season) => {
-    if (!selectedAnime) return;
-    
+  // Fonction simplifiée pour obtenir les épisodes d'un anime
+  const loadAnimeEpisodes = async (animeId: string) => {
     setLoading(true);
     setError(null);
     setCurrentView('player');
     
     try {
-      const availLangs = await detectAvailableLanguages(selectedAnime.id, season.number);
-      setAvailableLanguages(availLangs);
+      const response = await fetch(`${API_BASE}/api/anime/${animeId}`, {
+        method: 'GET',
+        headers: API_HEADERS,
+        mode: 'cors'
+      });
       
-      let languageToUse = selectedLanguage;
-      if (!availLangs.includes(selectedLanguage)) {
-        languageToUse = availLangs[0] as 'VF' | 'VOSTFR';
-        setSelectedLanguage(languageToUse);
+      if (!response.ok) {
+        throw new Error(`Erreur API: ${response.status}`);
       }
       
-      const language = languageToUse.toLowerCase();
+      const animeData = await response.json();
       
-      const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${season.number}&language=${language}`);
-      const apiResponse: ApiResponse<{
-        animeId: string;
-        season: number;
-        language: string;
-        episodes: Episode[];
-        episodeCount: number;
-      }> = await response.json();
-      
-      if (!apiResponse.success) {
-        throw new Error('Erreur lors du chargement des épisodes');
-      }
-      
-      setEpisodes(apiResponse.data.episodes);
-      setSelectedSeason(season);
-      
-      // Charger automatiquement le premier épisode
-      if (apiResponse.data.episodes.length > 0) {
-        const firstEpisode = apiResponse.data.episodes[0];
-        setSelectedEpisode(firstEpisode);
-        await loadEpisodeSources(firstEpisode.id);
+      // L'API retourne les épisodes dans les détails de l'anime
+      if (animeData.episodes && Array.isArray(animeData.episodes)) {
+        setEpisodes(animeData.episodes);
+        // Charger automatiquement le premier épisode
+        if (animeData.episodes.length > 0) {
+          const firstEpisode = animeData.episodes[0];
+          setSelectedEpisode(firstEpisode);
+          await loadEpisodeSources(firstEpisode.id);
+        }
+      } else {
+        setEpisodes([]);
+        setError('Aucun épisode disponible pour cet anime');
       }
     } catch (err) {
       console.error('Erreur épisodes:', err);
@@ -252,17 +220,27 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
+
+
   // Charger les sources d'un épisode
   const loadEpisodeSources = async (episodeId: string) => {
     try {
-      const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
-      const apiResponse: ApiResponse<EpisodeDetails> = await response.json();
+      const response = await fetch(`${API_BASE}/api/episode/${episodeId}`, {
+        method: 'GET',
+        headers: API_HEADERS,
+        mode: 'cors'
+      });
       
-      if (!apiResponse.success) {
-        throw new Error('Erreur lors du chargement des sources');
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Épisode non trouvé');
+        } else {
+          throw new Error(`Erreur API: ${response.status}`);
+        }
       }
       
-      setEpisodeDetails(apiResponse.data);
+      const data = await response.json();
+      setEpisodeDetails(data);
       setSelectedServer(0);
     } catch (err) {
       console.error('Erreur sources:', err);
@@ -285,46 +263,7 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Changer de langue
-  const changeLanguage = async (newLanguage: 'VF' | 'VOSTFR') => {
-    if (!selectedSeason || !selectedAnime || selectedLanguage === newLanguage) return;
-    
-    setSelectedLanguage(newLanguage);
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const language = newLanguage.toLowerCase();
-      
-      const response = await fetch(`${API_BASE}/api/seasons?animeId=${selectedAnime.id}&season=${selectedSeason.number}&language=${language}`);
-      const apiResponse: ApiResponse<{
-        animeId: string;
-        season: number;
-        language: string;
-        episodes: Episode[];
-        episodeCount: number;
-      }> = await response.json();
-      
-      if (!apiResponse.success || apiResponse.data.episodes.length === 0) {
-        throw new Error(`Aucun épisode ${newLanguage} disponible`);
-      }
-      
-      setEpisodes(apiResponse.data.episodes);
-      
-      // Recharger le premier épisode avec la nouvelle langue
-      const firstEpisode = apiResponse.data.episodes[0];
-      setSelectedEpisode(firstEpisode);
-      await loadEpisodeSources(firstEpisode.id);
-      
-    } catch (err) {
-      console.error('Erreur changement langue:', err);
-      setError(`Impossible de charger les épisodes ${newLanguage}.`);
-      // Revenir à la langue précédente si échec
-      setSelectedLanguage(selectedLanguage === 'VF' ? 'VOSTFR' : 'VF');
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   // Effet de recherche avec délai optimisé
   useEffect(() => {
@@ -540,21 +479,13 @@ const AnimeSamaPage: React.FC = () => {
                 </div>
                 
                 <div>
-                  <h3 className="text-white text-lg font-semibold mb-3">Saisons disponibles</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {selectedAnime.seasons.map((season) => (
-                      <button
-                        key={season.number}
-                        onClick={() => loadSeasonEpisodes(season)}
-                        className="bg-gray-800 hover:bg-gray-700 text-white p-4 rounded-lg transition-colors text-left"
-                      >
-                        <div className="font-medium">{season.name}</div>
-                        <div className="text-gray-400 text-sm mt-1">
-                          {season.episodeCount} épisodes
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+                  <h3 className="text-white text-lg font-semibold mb-3">Regarder l'anime</h3>
+                  <button
+                    onClick={() => loadAnimeEpisodes(selectedAnime.id)}
+                    className="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-3 rounded-lg transition-colors font-medium"
+                  >
+                    Commencer à regarder
+                  </button>
                 </div>
               </div>
             </div>
@@ -606,22 +537,11 @@ const AnimeSamaPage: React.FC = () => {
                       {selectedAnime.title} - Episode {selectedEpisode.episodeNumber}
                     </h2>
                     
-                    {/* Sélecteur de langue */}
-                    {availableLanguages.length > 1 && (
-                      <div className="flex gap-2 mb-4">
-                        {availableLanguages.map((lang) => (
-                          <button
-                            key={lang}
-                            onClick={() => changeLanguage(lang as 'VF' | 'VOSTFR')}
-                            className={`px-3 py-1 rounded text-sm transition-colors ${
-                              selectedLanguage === lang
-                                ? 'bg-cyan-600 text-white'
-                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                            }`}
-                          >
-                            {lang}
-                          </button>
-                        ))}
+                    {/* Information sur la langue */}
+                    {selectedLanguage && (
+                      <div className="mb-4">
+                        <span className="text-gray-400 text-sm">Langue: </span>
+                        <span className="text-cyan-400 text-sm">{selectedLanguage}</span>
                       </div>
                     )}
                     
@@ -669,7 +589,7 @@ const AnimeSamaPage: React.FC = () => {
               <div className="w-full lg:w-80">
                 <div className="bg-gray-800 rounded-lg p-4">
                   <h3 className="text-white text-lg font-semibold mb-4">
-                    {selectedSeason.name} ({selectedLanguage})
+                    Episodes ({selectedLanguage})
                   </h3>
                   
                   <div className="max-h-96 overflow-y-auto space-y-2">
