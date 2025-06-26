@@ -122,7 +122,7 @@ const AnimeSamaPage: React.FC = () => {
   };
 
   // Configuration API selon la documentation fournie
-  const API_BASE_URL = 'http://localhost:5000';
+  const API_BASE_URL = 'https://api-anime-sama.onrender.com';
   const API_HEADERS = {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
