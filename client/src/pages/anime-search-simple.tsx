@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ArrowLeft } from 'lucide-react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 
 interface SearchResult {
   id: string;
@@ -36,6 +36,7 @@ interface Episode {
 }
 
 const AnimeSamaSimplePage: React.FC = () => {
+  const [, setLocation] = useLocation();
   const [currentView, setCurrentView] = useState<'search' | 'anime' | 'player'>('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -116,28 +117,9 @@ const AnimeSamaSimplePage: React.FC = () => {
     }
   };
 
-  // Charger les détails d'un anime
-  const loadAnimeDetails = async (animeId: string) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await apiRequest(`/api/anime/${animeId}`);
-      
-      if (response && response.success && response.data) {
-        setSelectedAnime(response.data);
-        setCurrentView('anime');
-        setSelectedSeason(null);
-        setEpisodes([]);
-      } else {
-        throw new Error('Impossible de charger l\'anime');
-      }
-    } catch (err) {
-      console.error('Erreur anime:', err);
-      setError('Impossible de charger les détails de l\'anime.');
-    } finally {
-      setLoading(false);
-    }
+  // Naviguer vers la page de détails d'un anime
+  const navigateToAnime = (animeId: string) => {
+    setLocation(`/anime/${animeId}`);
   };
 
   // Charger les épisodes d'une saison avec serveurs multiples
@@ -283,7 +265,7 @@ const AnimeSamaSimplePage: React.FC = () => {
                 {trendingAnimes.map((anime, index) => (
                   <div
                     key={`trending-${anime.id}-${index}`}
-                    onClick={() => loadAnimeDetails(anime.id)}
+                    onClick={() => navigateToAnime(anime.id)}
                     className="rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform"
                     style={{ backgroundColor: '#1a1a1a' }}
                   >
@@ -312,7 +294,7 @@ const AnimeSamaSimplePage: React.FC = () => {
               {searchResults.map((anime, index) => (
                 <div
                   key={`search-${anime.id}-${index}`}
-                  onClick={() => loadAnimeDetails(anime.id)}
+                  onClick={() => navigateToAnime(anime.id)}
                   className="rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform"
                   style={{ backgroundColor: '#1a1a1a' }}
                 >

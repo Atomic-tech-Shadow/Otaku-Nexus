@@ -14,6 +14,7 @@ import EditProfile from "@/pages/edit-profile";
 import AuthPage from "@/pages/auth";
 import Admin from "@/pages/admin";
 import AnimeSamaSimplePage from "@/pages/anime-search-simple";
+import AnimePage from "@/pages/anime";
 
 
 import { ProtectedRoute } from "@/components/auth/protected-route";
@@ -68,6 +69,12 @@ function Router() {
         <Route path="/anime-sama">
           <ProtectedRoute>
             <AnimeSamaSimplePage />
+          </ProtectedRoute>
+        </Route>
+
+        <Route path="/anime/:id">
+          <ProtectedRoute>
+            <AnimePage />
           </ProtectedRoute>
         </Route>
 
