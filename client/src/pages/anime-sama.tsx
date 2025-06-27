@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowLeft, Download } from 'lucide-react';
-import { Link } from 'wouter';
+import { Search, ArrowLeft, Download, Play } from 'lucide-react';
+import { Link, useLocation } from 'wouter';
+import { motion } from 'framer-motion';
 
 interface SearchResult {
   id: string;
