@@ -399,7 +399,7 @@ const AnimePlayerPage: React.FC = () => {
           </div>
         )}
 
-        {/* Lecteur vidéo - Style anime-sama avec /api/embed/ */}
+        {/* ✅ CORRECTION: Lecteur vidéo avec endpoint embed direct */}
         {episodeDetails && episodeDetails.sources.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -408,7 +408,7 @@ const AnimePlayerPage: React.FC = () => {
           >
             <div className="aspect-video relative">
               <iframe
-                src={`/api/embed/?url=${encodeURIComponent(episodeDetails.sources[selectedPlayer]?.url)}`}
+                src={`${API_BASE}/api/embed/${episodeDetails.id}`}
                 className="w-full h-full"
                 allowFullScreen
                 frameBorder="0"
@@ -433,6 +433,16 @@ const AnimePlayerPage: React.FC = () => {
           <div className="text-center py-8">
             <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
             <div className="text-gray-400">Chargement des épisodes...</div>
+          </div>
+        )}
+
+        {/* Gestion des erreurs */}
+        {error && episodeDetails === null && (
+          <div className="text-center py-8">
+            <div className="text-red-500 text-lg">{error}</div>
+            <div className="text-gray-400 text-sm mt-2">
+              Essayez de changer d'épisode ou de langue
+            </div>
           </div>
         )}
       </div>
