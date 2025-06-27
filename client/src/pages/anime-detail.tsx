@@ -386,32 +386,118 @@ const AnimeDetailPage: React.FC = () => {
           </div>
         )}
 
-        {/* Liste des épisodes style anime-sama.fr */}
-        {selectedSeason && episodes.length > 0 && !episodeLoading && (
-          <div className="mb-6">
-            <h2 className="text-xl font-bold mb-4">
-              Épisodes - {selectedSeason.name} ({selectedLanguage})
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-              {episodes.map((episode) => (
-                <motion.button
-                  key={episode.id}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => loadEpisodeSources(episode)}
-                  className={`aspect-square rounded-lg border-2 flex items-center justify-center font-bold text-lg transition-all ${
-                    selectedEpisode?.id === episode.id
-                      ? 'border-cyan-500 bg-cyan-500 text-white shadow-lg shadow-cyan-500/30'
-                      : episode.available
-                      ? 'border-gray-600 bg-gray-800 text-gray-300 hover:border-gray-500 hover:bg-gray-700'
-                      : 'border-gray-700 bg-gray-900 text-gray-500 cursor-not-allowed'
-                  }`}
-                  disabled={!episode.available}
-                >
-                  {episode.episodeNumber}
-                </motion.button>
-              ))}
+        {/* Interface détaillée style anime-sama.fr exact */}
+        {selectedSeason && (
+          <div className="space-y-6">
+            {/* Titre de la saison avec indicateur langue */}
+            <div className="flex items-center space-x-4">
+              <h1 className="text-white text-2xl font-bold uppercase">{animeData.title}</h1>
             </div>
+            <h2 className="text-gray-400 text-xl uppercase tracking-wide">{selectedSeason.name}</h2>
+            
+            {/* Badge de langue style anime-sama */}
+            <div className="flex items-center space-x-3">
+              <div className={`w-12 h-8 rounded flex items-center justify-center text-white text-sm font-bold ${
+                selectedLanguage === 'VF' ? 'bg-red-600' : 'bg-blue-600'
+              }`}>
+                {selectedLanguage}
+              </div>
+            </div>
+
+            {/* Sélecteurs style anime-sama.fr */}
+            <div className="flex space-x-4">
+              {/* Sélecteur d'épisode */}
+              <div className="flex-1">
+                <select 
+                  className="w-full bg-gray-800/80 border border-cyan-400 text-white px-4 py-3 rounded text-lg font-medium appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  value={selectedEpisode?.episodeNumber || ''}
+                  onChange={(e) => {
+                    const episodeNum = parseInt(e.target.value);
+                    const episode = episodes.find(ep => ep.episodeNumber === episodeNum);
+                    if (episode) loadEpisodeSources(episode);
+                  }}
+                >
+                  <option value="">ÉPISODE 1089</option>
+                  {episodes.map((episode) => (
+                    <option key={episode.id} value={episode.episodeNumber}>
+                      ÉPISODE {episode.episodeNumber}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sélecteur de lecteur */}
+              <div className="flex-1">
+                <select 
+                  className="w-full bg-gray-800/80 border border-cyan-400 text-white px-4 py-3 rounded text-lg font-medium appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  value={selectedServer}
+                  onChange={(e) => setSelectedServer(parseInt(e.target.value))}
+                >
+                  <option value="0">LECTEUR 1</option>
+                  {episodeDetails?.sources.map((source, index) => (
+                    <option key={index} value={index}>
+                      LECTEUR {index + 1}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Dernière sélection */}
+            <div className="text-gray-400 text-sm">
+              <span className="font-medium">DERNIÈRE SÉLECTION :</span> ÉPISODE {selectedEpisode?.episodeNumber || 1089}
+            </div>
+
+            {/* Boutons de navigation */}
+            <div className="flex space-x-2">
+              <button className="w-16 h-16 bg-gray-800/80 border border-gray-600 rounded flex items-center justify-center text-white hover:bg-gray-700 transition-colors">
+                <ArrowLeft size={24} />
+              </button>
+              <button className="w-16 h-16 bg-gray-800/80 border border-gray-600 rounded flex items-center justify-center text-white hover:bg-gray-700 transition-colors">
+                <Play size={24} />
+              </button>
+              <button className="w-16 h-16 bg-gray-800/80 border border-gray-600 rounded flex items-center justify-center text-white hover:bg-gray-700 transition-colors">
+                <ArrowLeft size={24} className="rotate-180" />
+              </button>
+            </div>
+
+            {/* Message d'aide */}
+            <div className="text-center text-gray-400 text-sm">
+              <p className="italic">Pub insistante ou vidéo indisponible ?</p>
+              <p className="font-medium">Changez de lecteur.</p>
+            </div>
+
+            {/* Zone vidéo style anime-sama.fr */}
+            <div className="bg-gray-900/80 rounded-lg p-1 border border-gray-700">
+              <div className="relative bg-black rounded aspect-video flex items-center justify-center">
+                {showPlayer && episodeDetails?.sources[selectedServer] ? (
+                  <iframe
+                    src={episodeDetails.sources[selectedServer].url}
+                    className="w-full h-full rounded"
+                    frameBorder="0"
+                    allowFullScreen
+                    title={`${animeData.title} - Épisode ${selectedEpisode?.episodeNumber}`}
+                  />
+                ) : (
+                  <div className="text-center">
+                    <div className="w-20 h-20 bg-cyan-600/20 rounded-full flex items-center justify-center mb-4 mx-auto">
+                      <Play size={40} className="text-cyan-400 ml-1" />
+                    </div>
+                    <p className="text-gray-400">
+                      {selectedSeason ? 'Sélectionnez un épisode pour commencer' : 'Sélectionnez une saison'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Chargement des épisodes */}
+            {episodeLoading && (
+              <div className="text-center py-8">
+                <div className="animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                <div className="text-gray-400">Chargement des épisodes...</div>
+              </div>
+            )}
           </div>
         )}
 
