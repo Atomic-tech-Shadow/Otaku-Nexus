@@ -123,21 +123,15 @@ const AnimeDetailPage: React.FC = () => {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
-      const apiResponse: ApiResponse<{
-        animeId: string;
-        season: number;
-        language: string;
-        episodes: Episode[];
-        episodeCount: number;
-      }> = await response.json();
+      const apiResponse: ApiResponse<Episode[]> = await response.json();
       
       console.log('Données reçues:', apiResponse);
       
-      if (!apiResponse.success || !apiResponse.data.episodes) {
+      if (!apiResponse.success || !Array.isArray(apiResponse.data)) {
         throw new Error('Erreur lors du chargement des épisodes');
       }
       
-      setEpisodes(apiResponse.data.episodes);
+      setEpisodes(apiResponse.data);
       setSelectedSeason(season);
       setSelectedEpisode(null);
       setEpisodeDetails(null);
@@ -271,9 +265,24 @@ const AnimeDetailPage: React.FC = () => {
             ))}
           </div>
 
-          <p className="text-gray-300 text-sm md:text-base max-w-3xl">
+          <p className="text-gray-300 text-sm md:text-base max-w-3xl mb-6">
             {animeData.description}
           </p>
+
+          {/* Boutons d'action comme anime-sama.fr */}
+          <div className="flex flex-wrap gap-3">
+            <button className="flex items-center px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white font-medium transition-all">
+              <Star size={16} className="mr-2" />
+              Favoris
+            </button>
+            <button className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium transition-all">
+              <Clock size={16} className="mr-2" />
+              Watchlist
+            </button>
+            <button className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white font-medium transition-all">
+              ✓ Vu
+            </button>
+          </div>
         </div>
       </div>
 
@@ -285,62 +294,86 @@ const AnimeDetailPage: React.FC = () => {
           </div>
         )}
 
-        {/* Sélection de langue style anime-sama.fr */}
+        {/* Section ANIME avec sagas comme anime-sama.fr */}
         <div className="mb-6">
-          <h2 className="text-xl font-bold mb-4">Sélectionner la langue</h2>
-          <div className="flex gap-3">
-            <button
-              onClick={() => changeLanguage('VOSTFR')}
-              className={`px-6 py-3 rounded-lg font-medium transition-all ${
-                selectedLanguage === 'VOSTFR'
-                  ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30'
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              VOSTFR
-            </button>
-            <button
-              onClick={() => changeLanguage('VF')}
-              className={`px-6 py-3 rounded-lg font-medium transition-all ${
-                selectedLanguage === 'VF'
-                  ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30'
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              VF
-            </button>
-          </div>
-        </div>
-
-        {/* Sélection des saisons style anime-sama.fr */}
-        <div className="mb-6">
-          <h2 className="text-xl font-bold mb-4">Sélectionner une saison</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <h2 className="text-xl font-bold mb-4 text-white uppercase tracking-wide">ANIME</h2>
+          <div className="grid grid-cols-2 gap-4">
             {animeData.seasons.map((season) => (
-              <motion.button
-                key={season.number}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => loadSeasonEpisodes(season)}
-                disabled={episodeLoading}
-                className={`p-4 rounded-lg border-2 text-left transition-all ${
-                  selectedSeason?.number === season.number
-                    ? 'border-cyan-500 bg-cyan-500/10 text-cyan-400'
-                    : 'border-gray-700 bg-gray-800/50 hover:border-gray-600 text-gray-300'
-                } ${episodeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <div className="font-medium">{season.name}</div>
-                <div className="text-sm text-gray-400 mt-1">
-                  {season.episodeCount} épisodes
-                </div>
-                <div className="flex gap-1 mt-2">
-                  {season.languages.map((lang) => (
-                    <span key={lang} className="text-xs px-2 py-1 bg-gray-700 rounded">
-                      {lang}
-                    </span>
-                  ))}
-                </div>
-              </motion.button>
+              <div key={season.number} className="space-y-2">
+                {/* Version VOSTFR */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setSelectedLanguage('VOSTFR');
+                    loadSeasonEpisodes(season);
+                  }}
+                  disabled={episodeLoading}
+                  className={`relative rounded-lg overflow-hidden transition-all w-full ${
+                    episodeLoading ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <div className="relative aspect-[3/2]">
+                    <img 
+                      src={animeData.image} 
+                      alt={season.name}
+                      className="w-full h-full object-cover brightness-90"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = 'https://via.placeholder.com/300x200/1a1a1a/ffffff?text=Season+' + season.number;
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <h3 className="text-white font-bold text-base">
+                        {season.name} (VOSTFR)
+                      </h3>
+                    </div>
+                    {selectedSeason?.number === season.number && selectedLanguage === 'VOSTFR' && (
+                      <div className="absolute top-2 right-2">
+                        <div className="w-3 h-3 bg-cyan-500 rounded-full animate-pulse"></div>
+                      </div>
+                    )}
+                  </div>
+                </motion.button>
+
+                {/* Version VF */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setSelectedLanguage('VF');
+                    loadSeasonEpisodes(season);
+                  }}
+                  disabled={episodeLoading}
+                  className={`relative rounded-lg overflow-hidden transition-all w-full ${
+                    episodeLoading ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <div className="relative aspect-[3/2]">
+                    <img 
+                      src={animeData.image} 
+                      alt={season.name}
+                      className="w-full h-full object-cover brightness-75 sepia"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = 'https://via.placeholder.com/300x200/1a1a1a/ffffff?text=Season+' + season.number;
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <h3 className="text-white font-bold text-base">
+                        {season.name} (VF)
+                      </h3>
+                    </div>
+                    {selectedSeason?.number === season.number && selectedLanguage === 'VF' && (
+                      <div className="absolute top-2 right-2">
+                        <div className="w-3 h-3 bg-cyan-500 rounded-full animate-pulse"></div>
+                      </div>
+                    )}
+                  </div>
+                </motion.button>
+              </div>
             ))}
           </div>
         </div>
