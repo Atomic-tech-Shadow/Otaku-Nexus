@@ -145,20 +145,10 @@ const AnimePlayerPage: React.FC = () => {
       
       // Générer la liste des épisodes pour cette saison
       const episodesList: Episode[] = [];
-      
-      // Calculer l'offset des épisodes des saisons précédentes
-      let episodeOffset = 0;
-      for (let i = 0; i < season.number - 1; i++) {
-        if (animeData.seasons[i]) {
-          episodeOffset += animeData.seasons[i].episodeCount;
-        }
-      }
-      
       for (let i = 1; i <= season.episodeCount; i++) {
         const languageCode = selectedLanguage.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
-        const globalEpisodeNumber = episodeOffset + i;
         episodesList.push({
-          id: `${animeData.id}-${globalEpisodeNumber}-${languageCode}`,
+          id: `${animeData.id}-${i}-${languageCode}`,
           title: `Épisode ${i}`,
           episodeNumber: i,
           url: '',
@@ -182,7 +172,7 @@ const AnimePlayerPage: React.FC = () => {
         }
         
         setSelectedEpisode(episodeToSelect);
-        loadEpisodeSources(episodeToSelect.episodeNumber, selectedLanguage, season.number);
+        loadEpisodeSources(episodeToSelect.episodeNumber, selectedLanguage);
       }
     } catch (err) {
       console.error('Erreur génération épisodes:', err);
@@ -193,28 +183,15 @@ const AnimePlayerPage: React.FC = () => {
   };
 
   // Charger les sources d'un épisode
-  const loadEpisodeSources = async (episodeNumber: number, language: 'VF' | 'VOSTFR', seasonNumber?: number) => {
+  const loadEpisodeSources = async (episodeNumber: number, language: 'VF' | 'VOSTFR') => {
     if (!animeData) return;
     
     try {
       setEpisodeLoading(true);
       
-      // Construire l'ID selon le format anime-sama: {nom-anime}-{numéro-épisode}-{langue}
-      // L'API anime-sama utilise un index global d'épisodes, pas par saison
+      // Construire l'ID selon le format: {nom-anime}-{numéro-épisode}-{langue}
       const languageCode = language.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
-      const currentSeason = seasonNumber || selectedSeason?.number || 1;
-      
-      // Calculer l'index global d'épisode basé sur les saisons précédentes
-      let globalEpisodeNumber = episodeNumber;
-      if (animeData.seasons && currentSeason > 1) {
-        for (let i = 0; i < currentSeason - 1; i++) {
-          if (animeData.seasons[i]) {
-            globalEpisodeNumber += animeData.seasons[i].episodeCount;
-          }
-        }
-      }
-      
-      const episodeId = `${animeData.id}-${globalEpisodeNumber}-${languageCode}`;
+      const episodeId = `${animeData.id}-${episodeNumber}-${languageCode}`;
       
       console.log('Chargement épisode avec ID:', episodeId);
       
@@ -368,7 +345,7 @@ const AnimePlayerPage: React.FC = () => {
                   const episode = episodes.find(ep => ep.id === e.target.value);
                   if (episode) {
                     setSelectedEpisode(episode);
-                    loadEpisodeSources(episode.episodeNumber, selectedLanguage, selectedSeason?.number);
+                    loadEpisodeSources(episode.episodeNumber, selectedLanguage);
                   }
                 }}
                 className="w-full bg-gray-800 text-white px-4 py-3 rounded-lg appearance-none cursor-pointer border-2 border-blue-500 font-bold uppercase text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
