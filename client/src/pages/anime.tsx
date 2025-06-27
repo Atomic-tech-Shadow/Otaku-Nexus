@@ -317,14 +317,14 @@ const AnimePage: React.FC = () => {
         {/* Sélection des saisons */}
         <div>
           <h3 className="text-lg font-semibold mb-4">Saisons et Films</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             {animeData.seasons.map((season) => (
               <motion.button
                 key={season.number}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
                 onClick={() => loadSeasonEpisodes(season)}
-                className={`relative overflow-hidden rounded-2xl h-32 group transition-all duration-300 border-4 ${
+                className={`relative overflow-hidden rounded-2xl h-24 group transition-all duration-300 border-4 ${
                   selectedSeason?.number === season.number
                     ? 'border-blue-500 shadow-lg shadow-blue-500/25'
                     : 'border-blue-400 hover:border-blue-300 hover:shadow-lg'
