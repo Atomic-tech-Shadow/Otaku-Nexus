@@ -22,6 +22,7 @@ This is a quiz, chat and anime streaming application providing:
 - **Database**: PostgreSQL (Neon)
 
 ### Recent Changes (Latest First)
+- **2025-06-27 14:05**: Implémentation endpoint `/api/embed/` pour lecteur vidéo sécurisé dans pages anime avec page HTML intégrée
 - **2025-06-27 13:38**: Migration complète terminée - Page anime-sama redesignée pour navigation vers pages dédiées
 - **2025-06-27 13:25**: Correction API Anime-Sama (URLs relatives, paramètre query→q, erreurs TypeScript)
 - **2025-06-27 12:21**: Interface anime-detail redesignée avec sélecteurs exacts anime-sama.fr (épisodes, lecteurs, navigation)

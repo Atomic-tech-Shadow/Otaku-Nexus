@@ -424,7 +424,7 @@ const AnimePlayerPage: React.FC = () => {
           </div>
         )}
 
-        {/* Lecteur vidéo - Style anime-sama */}
+        {/* Lecteur vidéo - Style anime-sama avec /api/embed/ */}
         {episodeDetails && episodeDetails.sources.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -433,12 +433,13 @@ const AnimePlayerPage: React.FC = () => {
           >
             <div className="aspect-video relative">
               <iframe
-                src={episodeDetails.sources[selectedPlayer]?.url}
+                src={`/api/embed/?url=${encodeURIComponent(episodeDetails.sources[selectedPlayer]?.url)}`}
                 className="w-full h-full"
                 allowFullScreen
                 frameBorder="0"
                 title={`${episodeDetails?.title} - ${episodeDetails.sources[selectedPlayer]?.server}`}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
               />
               {/* Bouton play overlay pour style anime-sama */}
               <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none">

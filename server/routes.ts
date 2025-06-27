@@ -497,6 +497,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Embed endpoint pour intégrer les vidéos de manière sécurisée
+  app.get('/api/embed/', async (req, res) => {
+    try {
+      const { url } = req.query;
+      
+      if (!url || typeof url !== 'string') {
+        return res.status(400).send(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Erreur - URL manquante</title>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: Arial, sans-serif; background: #1a1a1a; color: white; text-align: center; padding: 50px; }
+              .error { color: #ef4444; font-size: 18px; }
+            </style>
+          </head>
+          <body>
+            <div class="error">URL requise pour l'intégration vidéo</div>
+          </body>
+          </html>
+        `);
+      }
+
+      // Décoder l'URL
+      const decodedUrl = decodeURIComponent(url);
+      
+      // Page HTML d'intégration avec le lecteur vidéo
+      const embedHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Lecteur Anime-Sama</title>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+              background: #000; 
+              overflow: hidden; 
+              font-family: Arial, sans-serif;
+            }
+            .container { 
+              width: 100vw; 
+              height: 100vh; 
+              position: relative; 
+            }
+            iframe { 
+              width: 100%; 
+              height: 100%; 
+              border: none; 
+              display: block;
+            }
+            .loading {
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              color: white;
+              font-size: 16px;
+              z-index: 10;
+            }
+            .spinner {
+              border: 3px solid #333;
+              border-top: 3px solid #007bff;
+              border-radius: 50%;
+              width: 40px;
+              height: 40px;
+              animation: spin 1s linear infinite;
+              margin: 0 auto 20px;
+            }
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="loading" id="loading">
+              <div class="spinner"></div>
+              <div>Chargement du lecteur...</div>
+            </div>
+            <iframe 
+              id="videoFrame"
+              src="${decodedUrl}"
+              allowfullscreen
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+              onload="document.getElementById('loading').style.display='none'"
+            ></iframe>
+          </div>
+          
+          <script>
+            // Masquer le loader après un délai maximum
+            setTimeout(() => {
+              document.getElementById('loading').style.display = 'none';
+            }, 5000);
+            
+            // Gestion des erreurs d'iframe
+            document.getElementById('videoFrame').onerror = function() {
+              document.getElementById('loading').innerHTML = 
+                '<div style="color: #ef4444;">Erreur de chargement du lecteur</div>';
+            };
+          </script>
+        </body>
+        </html>
+      `;
+
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+      res.setHeader('Content-Security-Policy', "frame-ancestors 'self'");
+      res.send(embedHtml);
+      
+    } catch (error) {
+      console.error("Error in embed endpoint:", error);
+      res.status(500).send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Erreur du lecteur</title>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; background: #1a1a1a; color: white; text-align: center; padding: 50px; }
+            .error { color: #ef4444; font-size: 18px; }
+          </style>
+        </head>
+        <body>
+          <div class="error">Erreur lors du chargement du lecteur vidéo</div>
+        </body>
+        </html>
+      `);
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
