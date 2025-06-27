@@ -212,23 +212,24 @@ const AnimePlayerPage: React.FC = () => {
       const languageCode = selectedLanguage.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
       
       // ✅ NOUVEAU : Utiliser l'API avec système universel et numérotation correcte
-      const response = await getSeasonEpisodes(animeData.id, season.number, languageCode.toUpperCase());
+      console.log('Chargement épisodes pour:', animeData.id, 'saison:', season.number, 'langue:', languageCode.toUpperCase());
+      const data = await getSeasonEpisodes(animeData.id, season.number, languageCode.toUpperCase());
+      console.log('Réponse épisodes:', data);
       
-      if (!response || !response.success) {
+      if (!data || !data.success) {
+        console.error('Erreur API épisodes:', data);
         throw new Error('Erreur lors du chargement des épisodes');
       }
       
-      const data = await response.json();
-      
-      if (data.success && data.data && data.data.episodes) {
-        setEpisodes(data.data.episodes);
+      if (data.success && data.data && Array.isArray(data.data)) {
+        setEpisodes(data.data);
         
         // Sélectionner l'épisode spécifié ou le premier
-        if (data.data.episodes.length > 0) {
-          let episodeToSelect = data.data.episodes[0];
+        if (data.data.length > 0) {
+          let episodeToSelect = data.data[0];
           
           if (targetEpisode) {
-            const requestedEpisode = data.data.episodes.find(
+            const requestedEpisode = data.data.find(
               (ep: any) => ep.episodeNumber === parseInt(targetEpisode)
             );
             if (requestedEpisode) {
@@ -238,7 +239,9 @@ const AnimePlayerPage: React.FC = () => {
           
           setSelectedEpisode(episodeToSelect);
           // ✅ Utiliser l'ID généré par l'API (avec numérotation globale correcte)
-          loadEpisodeSources(episodeToSelect.id);
+          if (autoLoadEpisode) {
+            loadEpisodeSources(episodeToSelect.id);
+          }
         }
       } else {
         setError('Aucun épisode trouvé pour cette saison');
