@@ -524,87 +524,175 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Décoder l'URL
       const decodedUrl = decodeURIComponent(url);
       
+      // Vérifier si l'URL provient d'anime-sama et ajuster le comportement
+      const isAnimeSamaUrl = decodedUrl.includes('anime-sama.fr');
+      
       // Page HTML d'intégration avec le lecteur vidéo
-      const embedHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Lecteur Anime-Sama</title>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              background: #000; 
-              overflow: hidden; 
-              font-family: Arial, sans-serif;
-            }
-            .container { 
-              width: 100vw; 
-              height: 100vh; 
-              position: relative; 
-            }
-            iframe { 
-              width: 100%; 
-              height: 100%; 
-              border: none; 
-              display: block;
-            }
-            .loading {
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
-              color: white;
-              font-size: 16px;
-              z-index: 10;
-            }
-            .spinner {
-              border: 3px solid #333;
-              border-top: 3px solid #007bff;
-              border-radius: 50%;
-              width: 40px;
-              height: 40px;
-              animation: spin 1s linear infinite;
-              margin: 0 auto 20px;
-            }
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="loading" id="loading">
-              <div class="spinner"></div>
-              <div>Chargement du lecteur...</div>
+      let embedHtml;
+      
+      if (isAnimeSamaUrl) {
+        // Pour les URLs d'anime-sama qui ne sont pas accessibles directement
+        embedHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Lecteur Anime-Sama</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body { 
+                background: #1a1a1a; 
+                color: white;
+                font-family: Arial, sans-serif;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                padding: 20px;
+              }
+              .message-container {
+                text-align: center;
+                max-width: 500px;
+              }
+              .icon {
+                font-size: 48px;
+                margin-bottom: 20px;
+              }
+              h2 {
+                color: #007bff;
+                margin-bottom: 15px;
+              }
+              p {
+                line-height: 1.6;
+                margin-bottom: 10px;
+                color: #ccc;
+              }
+              .url-info {
+                background: #333;
+                padding: 10px;
+                border-radius: 5px;
+                font-family: monospace;
+                font-size: 12px;
+                margin: 15px 0;
+                word-break: break-all;
+              }
+              .suggestion {
+                background: #2a2a2a;
+                padding: 15px;
+                border-radius: 5px;
+                margin-top: 20px;
+                border-left: 4px solid #007bff;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="message-container">
+              <div class="icon">🎬</div>
+              <h2>Lecteur Anime-Sama</h2>
+              <p>Cette vidéo provient d'Anime-Sama.fr et nécessite un accès direct au site pour fonctionner.</p>
+              
+              <div class="url-info">
+                URL: ${decodedUrl}
+              </div>
+              
+              <div class="suggestion">
+                <strong>💡 Solution recommandée :</strong><br>
+                Visitez directement <a href="https://anime-sama.fr" target="_blank" style="color: #007bff;">anime-sama.fr</a> 
+                pour regarder cet épisode avec leurs lecteurs externes optimisés.
+              </div>
+              
+              <p style="margin-top: 20px; font-size: 14px; color: #888;">
+                Les lecteurs vidéo d'Anime-Sama sont indépendants et externes pour une meilleure qualité de streaming.
+              </p>
             </div>
-            <iframe 
-              id="videoFrame"
-              src="${decodedUrl}"
-              allowfullscreen
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-              onload="document.getElementById('loading').style.display='none'"
-            ></iframe>
-          </div>
-          
-          <script>
-            // Masquer le loader après un délai maximum
-            setTimeout(() => {
-              document.getElementById('loading').style.display = 'none';
-            }, 5000);
+          </body>
+          </html>
+        `;
+      } else {
+        // Pour les autres URLs (lecteurs externes)
+        embedHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Lecteur Vidéo</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body { 
+                background: #000; 
+                overflow: hidden; 
+                font-family: Arial, sans-serif;
+              }
+              .container { 
+                width: 100vw; 
+                height: 100vh; 
+                position: relative; 
+              }
+              iframe { 
+                width: 100%; 
+                height: 100%; 
+                border: none; 
+                display: block;
+              }
+              .loading {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: white;
+                font-size: 16px;
+                z-index: 10;
+                text-align: center;
+              }
+              .spinner {
+                border: 3px solid #333;
+                border-top: 3px solid #007bff;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 20px;
+              }
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div>Chargement du lecteur...</div>
+              </div>
+              <iframe 
+                id="videoFrame"
+                src="${decodedUrl}"
+                allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+                onload="document.getElementById('loading').style.display='none'"
+              ></iframe>
+            </div>
             
-            // Gestion des erreurs d'iframe
-            document.getElementById('videoFrame').onerror = function() {
-              document.getElementById('loading').innerHTML = 
-                '<div style="color: #ef4444;">Erreur de chargement du lecteur</div>';
-            };
-          </script>
-        </body>
-        </html>
-      `;
+            <script>
+              // Masquer le loader après un délai maximum
+              setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+              }, 8000);
+              
+              // Gestion des erreurs d'iframe
+              document.getElementById('videoFrame').onerror = function() {
+                document.getElementById('loading').innerHTML = 
+                  '<div style="color: #ef4444;">Erreur de chargement du lecteur</div>';
+              };
+            </script>
+          </body>
+          </html>
+        `;
+      }
 
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader('X-Frame-Options', 'SAMEORIGIN');
