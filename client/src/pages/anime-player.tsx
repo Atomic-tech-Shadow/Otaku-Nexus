@@ -173,7 +173,11 @@ const AnimePlayerPage: React.FC = () => {
       const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
       const data = await response.json();
       
-      if (data.success && data.data) {
+      console.log('Réponse API épisode:', data);
+      console.log('Sources disponibles:', data.data?.sources);
+      
+      if (data.success && data.data && data.data.sources && data.data.sources.length > 0) {
+        console.log('Utilisation des vraies sources:', data.data.sources);
         setEpisodeDetails(data.data);
         setSelectedPlayer(0); // Réinitialiser au premier lecteur
       } else {
