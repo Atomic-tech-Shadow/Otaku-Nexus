@@ -62,37 +62,43 @@ const AnimeSamaPage: React.FC = () => {
   };
 
   // Configuration API selon la documentation fournie
-  const API_BASE_URL = '';
+  const API_BASE_URL = 'https://api-anime-sama.onrender.com';
   const API_HEADERS = {
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
+    'Accept': 'application/json',
+    'Origin': window.location.origin
   };
 
-  // Fonction utilitaire pour les requêtes API avec retry et cache
+  // Fonction utilitaire pour les requêtes API avec retry, timeout et cache selon documentation
   const apiRequest = async (endpoint: string, options = {}) => {
     const maxRetries = 3;
     let attempt = 0;
     
     while (attempt < maxRetries) {
       try {
-        const url = `${API_BASE_URL}${endpoint}`;
-        const response = await fetch(url, {
+        // Timeout de 30 secondes
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
           method: 'GET',
           headers: API_HEADERS,
+          signal: controller.signal,
           ...options
         });
         
+        clearTimeout(timeoutId);
+        
         if (!response.ok) {
-          throw new Error(`Erreur API: ${response.status}`);
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
         return await response.json();
       } catch (error) {
         attempt++;
-        if (attempt === maxRetries) {
-          console.error('Erreur requête API après', maxRetries, 'tentatives:', error);
-          const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-          throw new Error(`API Error: ${errorMessage}`);
+        if (attempt === maxRetries || (error instanceof Error && error.name === 'AbortError')) {
+          console.error('Erreur API après', maxRetries, 'tentatives:', error);
+          throw error;
         }
         // Attendre avant de réessayer
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt));

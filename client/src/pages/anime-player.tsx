@@ -77,21 +77,80 @@ const AnimePlayerPage: React.FC = () => {
   const [episodeLoading, setEpisodeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ CORRECTION: API Base URL configurée (production)
-  const API_BASE = 'https://api-anime-sama.onrender.com';
+  // ✅ CORRECTION: Configuration API selon documentation
+  const API_BASE_URL = 'https://api-anime-sama.onrender.com';
+  const API_HEADERS = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Origin': window.location.origin
+  };
 
-  // Fonction pour charger les saisons
-  const loadAnimeSeasons = async (animeId: string) => {
-    try {
-      const response = await fetch(`${API_BASE}/api/seasons/${animeId}`);
-      const data = await response.json();
-      
-      if (data.success && data.data && data.data.seasons) {
-        return data.data.seasons;
+  // Fonction robuste pour les requêtes API avec timeout et retry
+  const apiRequest = async (endpoint: string, options = {}) => {
+    const maxRetries = 3;
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+      try {
+        // Timeout de 30 secondes
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          method: 'GET',
+          headers: API_HEADERS,
+          signal: controller.signal,
+          ...options
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        attempt++;
+        if (attempt === maxRetries || (error instanceof Error && error.name === 'AbortError')) {
+          console.error('Erreur API après', maxRetries, 'tentatives:', error);
+          throw error;
+        }
+        // Attendre avant de réessayer
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
-      return null;
+    }
+  };
+
+  // Fonction pour charger les détails d'un anime avec système universel
+  const getAnimeDetails = async (animeId: string) => {
+    try {
+      const response = await apiRequest(`/api/anime/${animeId}`);
+      return response;
     } catch (error) {
-      console.error('Erreur chargement saisons:', error);
+      console.error('Erreur chargement anime:', error);
+      return null;
+    }
+  };
+
+  // Fonction pour charger les épisodes d'une saison avec système universel
+  const getSeasonEpisodes = async (animeId: string, seasonNumber: number, language = 'VOSTFR') => {
+    try {
+      const response = await apiRequest(`/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=${language}`);
+      return response;
+    } catch (error) {
+      console.error('Erreur chargement épisodes saison:', error);
+      return null;
+    }
+  };
+
+  // Fonction pour charger les sources d'un épisode
+  const getEpisodeSources = async (episodeId: string) => {
+    try {
+      const response = await apiRequest(`/api/episode/${episodeId}`);
+      return response;
+    } catch (error) {
+      console.error('Erreur chargement sources épisode:', error);
       return null;
     }
   };
@@ -104,28 +163,18 @@ const AnimePlayerPage: React.FC = () => {
       try {
         setLoading(true);
         
-        // Charger les données de base de l'anime
-        const animeResponse = await fetch(`${API_BASE}/api/anime/${id}`);
-        const animeData = await animeResponse.json();
+        // Charger les données de base de l'anime avec API robuste
+        const animeData = await getAnimeDetails(id);
         
-        if (animeData.success && animeData.data) {
+        if (animeData && animeData.success && animeData.data) {
           setAnimeData(animeData.data);
           
-          // ✅ Charger les vraies données de saisons
-          const seasonsData = await loadAnimeSeasons(id);
-          
-          if (seasonsData && seasonsData.length > 0) {
-            // Mettre à jour les saisons avec les vraies données
-            const updatedAnimeData = {
-              ...animeData.data,
-              seasons: seasonsData
-            };
-            setAnimeData(updatedAnimeData);
-            
+          // Utiliser les saisons des données de base
+          if (animeData.data.seasons && animeData.data.seasons.length > 0) {
             // Sélectionner la saison demandée
-            let seasonToSelect = seasonsData[0];
+            let seasonToSelect = animeData.data.seasons[0];
             if (targetSeason) {
-              const requestedSeason = seasonsData.find((s: any) => s.number === parseInt(targetSeason));
+              const requestedSeason = animeData.data.seasons.find((s: any) => s.number === parseInt(targetSeason));
               if (requestedSeason) {
                 seasonToSelect = requestedSeason;
               }
@@ -154,13 +203,11 @@ const AnimePlayerPage: React.FC = () => {
       setEpisodeLoading(true);
       const languageCode = selectedLanguage.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
       
-      // ✅ NOUVEAU : Utiliser l'API avec numérotation correcte
-      const response = await fetch(
-        `${API_BASE}/api/episodes/${animeData.id}?season=${season.number}&language=${languageCode}`
-      );
+      // ✅ NOUVEAU : Utiliser l'API avec système universel et numérotation correcte
+      const response = await getSeasonEpisodes(animeData.id, season.number, languageCode.toUpperCase());
       
-      if (!response.ok) {
-        throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+      if (!response || !response.success) {
+        throw new Error('Erreur lors du chargement des épisodes');
       }
       
       const data = await response.json();
@@ -204,10 +251,9 @@ const AnimePlayerPage: React.FC = () => {
       // ✅ Utiliser directement l'ID généré par l'API
       console.log('Chargement épisode avec ID:', episodeId);
       
-      const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
-      const data = await response.json();
+      const data = await getEpisodeSources(episodeId);
       
-      if (data.success && data.data && data.data.sources && data.data.sources.length > 0) {
+      if (data && data.success && data.data && data.data.sources && data.data.sources.length > 0) {
         setEpisodeDetails(data.data);
         setSelectedPlayer(0);
       } else {
