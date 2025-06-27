@@ -72,8 +72,8 @@ const AnimePage: React.FC = () => {
   const [episodeLoading, setEpisodeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // URL de l'API déployée pour récupérer les données d'anime
-  const API_BASE = 'https://api-anime-sama.onrender.com';
+  // Utiliser notre proxy local qui a une logique de fallback robuste
+  const API_BASE = '';
 
   // Charger les données de l'anime
   useEffect(() => {
@@ -82,7 +82,7 @@ const AnimePage: React.FC = () => {
     const loadAnimeData = async () => {
       try {
         console.log('Chargement données anime pour ID:', id);
-        const response = await fetch(`${API_BASE}/api/anime/${id}`);
+        const response = await fetch(`/api/anime/${id}`);
         console.log('Réponse anime status:', response.status);
         
         if (!response.ok) {
@@ -118,7 +118,7 @@ const AnimePage: React.FC = () => {
       const language = selectedLanguage.toLowerCase();
       console.log('Chargement épisodes pour:', { animeId: id, season: season.number, language });
       
-      const response = await fetch(`${API_BASE}/api/seasons?animeId=${id}&season=${season.number}&language=${language}`);
+      const response = await fetch(`/api/seasons?animeId=${id}&season=${season.number}&language=${language}`);
       console.log('Réponse status:', response.status);
       
       if (!response.ok) {
@@ -165,7 +165,7 @@ const AnimePage: React.FC = () => {
       
       console.log('Chargement épisode avec ID:', episodeId);
       
-      const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
+      const response = await fetch(`/api/episode/${episodeId}`);
       const apiResponse: ApiResponse<EpisodeDetails> = await response.json();
       
       if (!apiResponse.success) {
