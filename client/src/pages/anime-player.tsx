@@ -306,12 +306,25 @@ const AnimePlayerPage: React.FC = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => changeLanguage(lang as 'VF' | 'VOSTFR')}
-                className={`px-4 py-2 rounded-lg font-bold text-sm border-2 transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm border-2 transition-all ${
                   selectedLanguage === lang
                     ? 'bg-red-600 border-red-600 text-white'
                     : 'bg-transparent border-gray-600 text-gray-300 hover:border-gray-400'
                 }`}
               >
+                {/* Drapeau selon la langue */}
+                {lang === 'VF' ? (
+                  <div className="w-6 h-4 bg-white rounded border border-gray-300 flex">
+                    <div className="w-1/3 bg-blue-500 rounded-l"></div>
+                    <div className="w-1/3 bg-white"></div>
+                    <div className="w-1/3 bg-red-500 rounded-r"></div>
+                  </div>
+                ) : (
+                  <div className="w-6 h-4 bg-white rounded border border-gray-300 flex items-center justify-center relative overflow-hidden">
+                    <div className="w-4 h-4 bg-red-600 rounded-full absolute"></div>
+                    <div className="w-2 h-2 bg-white rounded-full absolute z-10"></div>
+                  </div>
+                )}
                 {lang}
               </motion.button>
             ))}
