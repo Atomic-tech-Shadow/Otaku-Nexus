@@ -26,8 +26,6 @@ const AnimeSearchPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const API_BASE = 'https://api-anime-sama.onrender.com';
-
   const searchAnime = async (query: string) => {
     if (query.trim().length < 2) {
       setSearchResults([]);
@@ -38,8 +36,15 @@ const AnimeSearchPage: React.FC = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE}/api/search?query=${encodeURIComponent(query)}`);
+      console.log('Recherche anime:', query);
+      const response = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
+      
+      if (!response.ok) {
+        throw new Error(`Erreur ${response.status}`);
+      }
+      
       const apiResponse: ApiResponse<SearchResult[]> = await response.json();
+      console.log('Résultats recherche:', apiResponse);
       
       if (!apiResponse.success) {
         throw new Error('Erreur lors de la recherche');
