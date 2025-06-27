@@ -56,10 +56,18 @@ const AnimePlayerPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   
+  // Récupérer les paramètres de l'URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const targetSeason = urlParams.get('season');
+  const targetEpisode = urlParams.get('episode');
+  const targetLang = urlParams.get('lang');
+  
   // États pour les données
   const [animeData, setAnimeData] = useState<AnimeData | null>(null);
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState<'VF' | 'VOSTFR'>('VOSTFR');
+  const [selectedLanguage, setSelectedLanguage] = useState<'VF' | 'VOSTFR'>(
+    targetLang === 'vf' ? 'VF' : 'VOSTFR'
+  );
   const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<number>(0);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
@@ -92,11 +100,20 @@ const AnimePlayerPage: React.FC = () => {
         
         if (data.success && data.data) {
           setAnimeData(data.data);
-          // Sélectionner automatiquement la première saison
+          // Sélectionner la saison spécifiée dans l'URL ou la première par défaut
           if (data.data.seasons && data.data.seasons.length > 0) {
-            const firstSeason = data.data.seasons[0];
-            setSelectedSeason(firstSeason);
-            loadSeasonEpisodes(firstSeason);
+            let seasonToSelect = data.data.seasons[0];
+            
+            // Si une saison spécifique est demandée via l'URL
+            if (targetSeason) {
+              const requestedSeason = data.data.seasons.find((s: Season) => s.number === parseInt(targetSeason));
+              if (requestedSeason) {
+                seasonToSelect = requestedSeason;
+              }
+            }
+            
+            setSelectedSeason(seasonToSelect);
+            loadSeasonEpisodes(seasonToSelect);
           }
         } else {
           setError('Données anime non trouvées');
@@ -140,11 +157,20 @@ const AnimePlayerPage: React.FC = () => {
       
       setEpisodes(episodesList);
       
-      // Sélectionner automatiquement le premier épisode
+      // Sélectionner l'épisode spécifié dans l'URL ou le premier par défaut
       if (episodesList.length > 0) {
-        const firstEpisode = episodesList[0];
-        setSelectedEpisode(firstEpisode);
-        loadEpisodeSources(firstEpisode.episodeNumber, selectedLanguage);
+        let episodeToSelect = episodesList[0];
+        
+        // Si un épisode spécifique est demandé via l'URL
+        if (targetEpisode) {
+          const requestedEpisode = episodesList.find(ep => ep.episodeNumber === parseInt(targetEpisode));
+          if (requestedEpisode) {
+            episodeToSelect = requestedEpisode;
+          }
+        }
+        
+        setSelectedEpisode(episodeToSelect);
+        loadEpisodeSources(episodeToSelect.episodeNumber, selectedLanguage);
       }
     } catch (err) {
       console.error('Erreur génération épisodes:', err);

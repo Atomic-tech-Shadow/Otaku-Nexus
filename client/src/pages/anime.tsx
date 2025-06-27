@@ -102,10 +102,11 @@ const AnimePage: React.FC = () => {
     loadAnimeData();
   }, [id]);
 
-  // Navigation vers la page de lecteur
+  // Navigation vers la page de lecteur avec auto-play du premier épisode
   const goToPlayer = (season: Season) => {
     if (!id) return;
-    navigate(`/anime/${id}/player`);
+    // Naviguer vers le lecteur avec les paramètres de la saison sélectionnée
+    navigate(`/anime/${id}/player?season=${season.number}&episode=1&lang=vostfr`);
   };
 
 
