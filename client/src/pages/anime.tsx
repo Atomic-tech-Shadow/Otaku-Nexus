@@ -72,8 +72,8 @@ const AnimePage: React.FC = () => {
   const [episodeLoading, setEpisodeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // URL de base de votre API hébergée sur Render
-  const API_BASE = 'https://api-anime-sama.onrender.com';
+  // Utiliser notre proxy local au lieu de l'API externe directement
+  const API_BASE = '';
 
   // Charger les données de l'anime
   useEffect(() => {
@@ -81,8 +81,16 @@ const AnimePage: React.FC = () => {
     
     const loadAnimeData = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/anime/${id}`);
+        console.log('Chargement données anime pour ID:', id);
+        const response = await fetch(`/api/anime/${id}`);
+        console.log('Réponse anime status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const apiResponse: ApiResponse<AnimeData> = await response.json();
+        console.log('Données anime reçues:', apiResponse);
         
         if (!apiResponse.success) {
           throw new Error('Erreur lors du chargement de l\'anime');
@@ -92,7 +100,7 @@ const AnimePage: React.FC = () => {
         setLoading(false);
       } catch (err) {
         console.error('Erreur API:', err);
-        setError('Impossible de charger les données de l\'anime. Vérifiez votre connexion.');
+        setError(`Impossible de charger les données de l'anime: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
         setLoading(false);
       }
     };
@@ -105,9 +113,18 @@ const AnimePage: React.FC = () => {
     if (!id) return;
     
     setEpisodeLoading(true);
+    setError(null);
     try {
       const language = selectedLanguage.toLowerCase();
-      const response = await fetch(`${API_BASE}/api/seasons?animeId=${id}&season=${season.number}&language=${language}`);
+      console.log('Chargement épisodes pour:', { animeId: id, season: season.number, language });
+      
+      const response = await fetch(`/api/seasons?animeId=${id}&season=${season.number}&language=${language}`);
+      console.log('Réponse status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       const apiResponse: ApiResponse<{
         animeId: string;
         season: number;
@@ -115,6 +132,8 @@ const AnimePage: React.FC = () => {
         episodes: Episode[];
         episodeCount: number;
       }> = await response.json();
+      
+      console.log('Données reçues:', apiResponse);
       
       if (!apiResponse.success) {
         throw new Error('Erreur lors du chargement des épisodes');
@@ -131,7 +150,7 @@ const AnimePage: React.FC = () => {
       }
     } catch (err) {
       console.error('Erreur chargement épisodes:', err);
-      setError('Impossible de charger les épisodes de cette saison.');
+      setError(`Impossible de charger les épisodes de cette saison: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
     } finally {
       setEpisodeLoading(false);
     }
