@@ -61,6 +61,7 @@ const AnimePlayerPage: React.FC = () => {
   const targetSeason = urlParams.get('season');
   const targetEpisode = urlParams.get('episode');
   const targetLang = urlParams.get('lang');
+  const isDirectLink = !!(targetSeason && targetEpisode && targetLang);
   
   // États pour les données
   const [animeData, setAnimeData] = useState<AnimeData | null>(null);
@@ -300,7 +301,7 @@ const AnimePlayerPage: React.FC = () => {
         </div>
 
         {/* Sélecteur de langue - Style anime-sama - masqué si vient d'URL directe */}
-        {selectedSeason && selectedSeason.languages.length > 1 && !targetSeason && (
+        {selectedSeason && selectedSeason.languages.length > 1 && !isDirectLink && (
           <div className="flex gap-2">
             {selectedSeason.languages.map((lang) => (
               <motion.button
