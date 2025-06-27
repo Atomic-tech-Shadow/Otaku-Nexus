@@ -416,15 +416,7 @@ const AnimePlayerPage: React.FC = () => {
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
               />
-              {/* Bouton play overlay pour style anime-sama */}
-              <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                <motion.div
-                  whileHover={{ scale: 1.1 }}
-                  className="w-16 h-16 bg-blue-600/80 rounded-full flex items-center justify-center cursor-pointer pointer-events-auto"
-                >
-                  <Play size={32} className="text-white ml-1" />
-                </motion.div>
-              </div>
+
             </div>
           </motion.div>
         )}
