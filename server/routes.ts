@@ -276,7 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Query parameter is required" });
       }
 
-      const response = await fetch(`${ANIME_API_BASE}/api/search?query=${encodeURIComponent(query)}`);
+      const response = await fetch(`${ANIME_API_BASE}/api/search?q=${encodeURIComponent(query)}`);
       if (!response.ok) {
         throw new Error(`API responded with status: ${response.status}`);
       }
@@ -356,7 +356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.json({
               success: true,
               data: data.data.map((episode: any) => ({
-                id: episode.id || `${animeId}-episode-${episode.episodeNumber}-${language.toLowerCase()}`,
+                id: episode.id || `${animeId}-episode-${episode.episodeNumber}-${String(language).toLowerCase()}`,
                 title: episode.title || `Épisode ${episode.episodeNumber}`,
                 episodeNumber: episode.episodeNumber,
                 url: episode.url || `https://anime-sama.fr/catalogue/${animeId}/`,
@@ -383,7 +383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const episodes = [];
       for (let i = 1; i <= episodeCount; i++) {
         episodes.push({
-          id: `${animeId}-episode-${i}-${language.toLowerCase()}`,
+          id: `${animeId}-episode-${i}-${String(language).toLowerCase()}`,
           title: `Épisode ${i}`,
           episodeNumber: i,
           url: `https://anime-sama.fr/catalogue/${animeId}/`,
