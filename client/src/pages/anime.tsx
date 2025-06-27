@@ -210,7 +210,7 @@ const AnimePage: React.FC = () => {
         {/* Sélection des saisons */}
         <div>
           <h3 className="text-lg font-semibold mb-4">Saisons et Films</h3>
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             {animeData.seasons.map((season) => (
               <motion.button
                 key={season.number}
