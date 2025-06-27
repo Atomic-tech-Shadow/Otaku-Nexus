@@ -27,15 +27,3 @@ Le système génère les IDs d'épisodes avec le format `{anime-id}-{episode-num
 **Fonctions affectées:**
 - `loadSeasonEpisodes()` - ligne ~147-158 (génération IDs épisodes)
 - `loadEpisodeSources()` - ligne ~186-207 (construction ID pour API)
-
-### Solution Requise
-Calculer l'index global d'épisode en additionnant les épisodes de toutes les saisons précédentes:
-- Saison 1, Épisode 1 = Index global 1
-- Saison 2, Épisode 1 = Index global 14 (13 + 1)
-- Saison 3, Épisode 1 = Index global 39 (13 + 25 + 1)
-
-### Statut
-🔴 **Non corrigé** - Bug documenté mais correction annulée à la demande de l'utilisateur
-
-### Date d'identification
-2025-06-27 22:08
