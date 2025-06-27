@@ -317,20 +317,47 @@ const AnimePage: React.FC = () => {
         {/* Sélection des saisons */}
         <div>
           <h3 className="text-lg font-semibold mb-3">Saisons et Films</h3>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {animeData.seasons.map((season) => (
               <motion.button
                 key={season.number}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => loadSeasonEpisodes(season)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors min-h-[44px] text-center ${
+                className={`relative overflow-hidden rounded-lg h-24 group transition-all duration-300 ${
                   selectedSeason?.number === season.number
-                    ? 'bg-cyan-500 text-white'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    ? 'ring-2 ring-cyan-400 shadow-lg shadow-cyan-400/25'
+                    : 'hover:ring-2 hover:ring-gray-400 hover:shadow-lg'
                 }`}
               >
-                <div className="text-sm">{season.name}</div>
+                {/* Image de fond */}
+                <div 
+                  className="absolute inset-0 bg-cover bg-center transform group-hover:scale-105 transition-transform duration-300"
+                  style={{
+                    backgroundImage: `url(${animeData.image})`,
+                  }}
+                />
+                {/* Overlay avec gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+                {/* Overlay hover */}
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                
+                {/* Contenu */}
+                <div className="absolute inset-0 flex flex-col justify-end p-3">
+                  <div className="text-left">
+                    <div className="text-white font-semibold text-sm mb-1">
+                      {season.name}
+                    </div>
+                    <div className="text-gray-300 text-xs">
+                      {season.episodeCount} épisodes
+                    </div>
+                  </div>
+                </div>
+
+                {/* Indicateur de sélection */}
+                {selectedSeason?.number === season.number && (
+                  <div className="absolute top-2 right-2 w-3 h-3 bg-cyan-400 rounded-full"></div>
+                )}
               </motion.button>
             ))}
           </div>
