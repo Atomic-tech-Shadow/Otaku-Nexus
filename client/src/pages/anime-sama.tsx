@@ -69,16 +69,18 @@ const AnimeSamaPage: React.FC = () => {
     'Origin': window.location.origin
   };
 
-  // Fonction utilitaire pour les requêtes API avec retry, timeout et cache selon documentation
+  // Fonction utilitaire pour les requêtes API avec retry et timeout optimisé
   const apiRequest = async (endpoint: string, options = {}) => {
-    const maxRetries = 3;
+    const maxRetries = 2;
     let attempt = 0;
     
     while (attempt < maxRetries) {
       try {
-        // Timeout de 30 secondes
+        // Timeout plus long pour API externe (60 secondes)
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+        }, 60000);
         
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
           method: 'GET',
@@ -90,18 +92,24 @@ const AnimeSamaPage: React.FC = () => {
         clearTimeout(timeoutId);
         
         if (!response.ok) {
+          if (response.status === 503 || response.status === 502) {
+            throw new Error('Service temporairement indisponible');
+          }
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
         return await response.json();
       } catch (error) {
         attempt++;
-        if (attempt === maxRetries || (error instanceof Error && error.name === 'AbortError')) {
+        console.log(`Tentative ${attempt}/${maxRetries} échouée:`, error);
+        
+        if (attempt >= maxRetries) {
           console.error('Erreur API après', maxRetries, 'tentatives:', error);
           throw error;
         }
-        // Attendre avant de réessayer
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        
+        // Attendre plus longtemps entre les tentatives
+        await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
       }
     }
   };
