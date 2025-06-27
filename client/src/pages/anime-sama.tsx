@@ -46,7 +46,7 @@ const AnimeSamaPage: React.FC = () => {
       if (response && response.success && Array.isArray(response.data)) {
         const animesWithImages = response.data.map((anime: any) => ({
           ...anime,
-          image: anime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`,
+          image: `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`,
           status: anime.status || 'Disponible',
           type: anime.type || 'Anime'
         }));
@@ -117,7 +117,7 @@ const AnimeSamaPage: React.FC = () => {
         // Ajouter des propriétés manquantes pour l'affichage
         const animesWithImages = response.data.map((anime: any) => ({
           ...anime,
-          image: anime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`,
+          image: `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`,
           status: anime.status || 'Disponible',
           type: anime.type || 'Anime'
         }));
