@@ -300,8 +300,8 @@ const AnimePlayerPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Sélecteur de langue - Style anime-sama - masqué si vient d'URL directe */}
-        {selectedSeason && selectedSeason.languages.length > 1 && !isDirectLink && (
+        {/* Sélecteur de langue - Style anime-sama */}
+        {selectedSeason && selectedSeason.languages.length > 1 && (
           <div className="flex gap-2">
             {selectedSeason.languages.map((lang) => (
               <motion.button

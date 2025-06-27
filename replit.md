@@ -22,7 +22,7 @@ This is a quiz, chat and anime streaming application providing:
 - **Database**: PostgreSQL (Neon)
 
 ### Recent Changes (Latest First)
-- **2025-06-27 21:59**: Correction finale auto-lecture - sélecteur langue masqué complètement pour liens directs, épisode VOSTFR lance immédiatement
+- **2025-06-27 22:00**: Correction finale - sélecteur langue remis (style anime-sama), auto-lecture VOSTFR fonctionnelle avec possibilité changement langue
 - **2025-06-27 21:56**: Correction auto-lecture immédiate - premier épisode VOSTFR se lance automatiquement sans attendre sélection langue
 - **2025-06-27 21:53**: Implémentation auto-lecture premier épisode VOSTFR lors clic saison - navigation avec paramètres URL automatiques
 - **2025-06-27 21:50**: Modification affichage saisons en deux colonnes (style anime-sama.fr) et suppression bouton play overlay lecteur vidéo
