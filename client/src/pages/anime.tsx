@@ -127,7 +127,7 @@ const AnimePage: React.FC = () => {
       if (apiResponse.data.episodes.length > 0) {
         const firstEpisode = apiResponse.data.episodes[0];
         setSelectedEpisode(firstEpisode);
-        await loadEpisodeSources(firstEpisode.id);
+        await loadEpisodeSources(firstEpisode.episodeNumber, selectedLanguage);
       }
     } catch (err) {
       console.error('Erreur chargement épisodes:', err);
@@ -137,10 +137,16 @@ const AnimePage: React.FC = () => {
     }
   };
 
-  // Charger les sources vidéo d'un épisode
-  const loadEpisodeSources = async (episodeId: string) => {
+  // Charger les sources vidéo d'un épisode avec le nouveau format d'ID
+  const loadEpisodeSources = async (episodeNumber: number, language: string) => {
     try {
-      const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
+      // Construire l'ID selon le format: {nom-anime}-{numéro-épisode}-{langue}
+      const languageCode = language.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
+      const episodeId = `${id}-${episodeNumber}-${languageCode}`;
+      
+      console.log('Chargement épisode avec ID:', episodeId);
+      
+      const response = await fetch(`/api/episode/${episodeId}`);
       const apiResponse: ApiResponse<EpisodeDetails> = await response.json();
       
       if (!apiResponse.success) {
@@ -181,7 +187,7 @@ const AnimePage: React.FC = () => {
     if (newIndex >= 0 && newIndex < filteredEpisodes.length) {
       const newEpisode = filteredEpisodes[newIndex];
       setSelectedEpisode(newEpisode);
-      await loadEpisodeSources(newEpisode.id);
+      await loadEpisodeSources(newEpisode.episodeNumber, selectedLanguage);
     }
   };
 
@@ -360,7 +366,7 @@ const AnimePage: React.FC = () => {
                           const episode = filteredEpisodes.find(ep => ep.id === e.target.value);
                           if (episode) {
                             setSelectedEpisode(episode);
-                            loadEpisodeSources(episode.id);
+                            loadEpisodeSources(episode.episodeNumber, selectedLanguage);
                           }
                         }}
                         className="w-full bg-gray-800 text-white px-4 py-3 rounded-lg appearance-none cursor-pointer min-h-[44px] pr-10 focus:outline-none focus:ring-2 focus:ring-cyan-500"
