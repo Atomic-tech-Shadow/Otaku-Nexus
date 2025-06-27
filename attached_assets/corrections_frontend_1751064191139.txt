@@ -1,0 +1,219 @@
+CORRECTIONS FRONTEND POUR RÉSOUDRE LE BUG DE SÉLECTION DE SAISON
+
+=================================================================
+
+1. REMPLACER LA GÉNÉRATION MANUELLE D'ÉPISODES
+=================================================================
+
+Dans votre anime-player.tsx, remplacez la fonction loadSeasonEpisodes actuelle par :
+
+const loadSeasonEpisodes = async (season: Season, autoLoadEpisode = false) => {
+  if (!animeData) return;
+  
+  try {
+    setEpisodeLoading(true);
+    const languageCode = selectedLanguage.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
+    
+    // ✅ NOUVEAU : Utiliser l'API avec numérotation correcte
+    const response = await fetch(
+      `${API_BASE}/api/episodes/${animeData.id}?season=${season.number}&language=${languageCode}`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.success && data.data && data.data.episodes) {
+      setEpisodes(data.data.episodes);
+      
+      // Sélectionner l'épisode spécifié ou le premier
+      if (data.data.episodes.length > 0) {
+        let episodeToSelect = data.data.episodes[0];
+        
+        if (targetEpisode) {
+          const requestedEpisode = data.data.episodes.find(
+            ep => ep.episodeNumber === parseInt(targetEpisode)
+          );
+          if (requestedEpisode) {
+            episodeToSelect = requestedEpisode;
+          }
+        }
+        
+        setSelectedEpisode(episodeToSelect);
+        // ✅ Utiliser l'ID généré par l'API (avec numérotation globale correcte)
+        loadEpisodeSources(episodeToSelect.id);
+      }
+    } else {
+      setError('Aucun épisode trouvé pour cette saison');
+    }
+  } catch (err) {
+    console.error('Erreur chargement épisodes:', err);
+    setError('Erreur lors du chargement des épisodes');
+  } finally {
+    setEpisodeLoading(false);
+  }
+};
+
+=================================================================
+
+2. MODIFIER LOADEPISODESOURCES POUR UTILISER L'ID COMPLET
+=================================================================
+
+const loadEpisodeSources = async (episodeId: string) => {
+  try {
+    setEpisodeLoading(true);
+    
+    // ✅ Utiliser directement l'ID généré par l'API
+    console.log('Chargement épisode avec ID:', episodeId);
+    
+    const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
+    const data = await response.json();
+    
+    if (data.success && data.data && data.data.sources && data.data.sources.length > 0) {
+      setEpisodeDetails(data.data);
+      setSelectedPlayer(0);
+    } else {
+      setError('Aucune source vidéo disponible pour cet épisode');
+    }
+  } catch (err) {
+    console.error('Erreur chargement sources:', err);
+    setError('Erreur lors du chargement des sources vidéo');
+  } finally {
+    setEpisodeLoading(false);
+  }
+};
+
+=================================================================
+
+3. AJOUTER UNE FONCTION POUR CHARGER LES SAISONS
+=================================================================
+
+const loadAnimeSeasons = async (animeId: string) => {
+  try {
+    const response = await fetch(`${API_BASE}/api/seasons/${animeId}`);
+    const data = await response.json();
+    
+    if (data.success && data.data && data.data.seasons) {
+      return data.data.seasons;
+    }
+    return null;
+  } catch (error) {
+    console.error('Erreur chargement saisons:', error);
+    return null;
+  }
+};
+
+=================================================================
+
+4. METTRE À JOUR USEEFFECT POUR UTILISER LES NOUVELLES API
+=================================================================
+
+useEffect(() => {
+  if (!id) return;
+  
+  const loadAnimeData = async () => {
+    try {
+      setLoading(true);
+      
+      // Charger les données de base de l'anime
+      const animeResponse = await fetch(`${API_BASE}/api/anime/${id}`);
+      const animeData = await animeResponse.json();
+      
+      if (animeData.success && animeData.data) {
+        setAnimeData(animeData.data);
+        
+        // ✅ Charger les vraies données de saisons
+        const seasonsData = await loadAnimeSeasons(id);
+        
+        if (seasonsData && seasonsData.length > 0) {
+          // Mettre à jour les saisons avec les vraies données
+          const updatedAnimeData = {
+            ...animeData.data,
+            seasons: seasonsData
+          };
+          setAnimeData(updatedAnimeData);
+          
+          // Sélectionner la saison demandée
+          let seasonToSelect = seasonsData[0];
+          if (targetSeason) {
+            const requestedSeason = seasonsData.find(s => s.number === parseInt(targetSeason));
+            if (requestedSeason) {
+              seasonToSelect = requestedSeason;
+            }
+          }
+          
+          setSelectedSeason(seasonToSelect);
+          await loadSeasonEpisodes(seasonToSelect, true);
+        }
+      }
+    } catch (err) {
+      console.error('Erreur chargement anime:', err);
+      setError('Erreur lors du chargement de l\'anime');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadAnimeData();
+}, [id]);
+
+=================================================================
+
+5. CORRIGER LA NAVIGATION ENTRE ÉPISODES
+=================================================================
+
+const navigateEpisode = async (direction: 'prev' | 'next') => {
+  if (!selectedEpisode) return;
+  
+  const currentIndex = episodes.findIndex(ep => ep.id === selectedEpisode.id);
+  let newIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
+  
+  if (newIndex >= 0 && newIndex < episodes.length) {
+    const newEpisode = episodes[newIndex];
+    setSelectedEpisode(newEpisode);
+    // ✅ Utiliser l'ID complet de l'épisode
+    await loadEpisodeSources(newEpisode.id);
+  }
+};
+
+=================================================================
+
+6. CORRIGER LE CHANGEMENT DE LANGUE
+=================================================================
+
+const changeLanguage = (newLanguage: 'VF' | 'VOSTFR') => {
+  setSelectedLanguage(newLanguage);
+  if (selectedSeason) {
+    // ✅ Recharger les épisodes avec la nouvelle langue
+    loadSeasonEpisodes(selectedSeason);
+  }
+};
+
+=================================================================
+
+RÉSUMÉ DES CORRECTIONS APPLIQUÉES
+=================================================================
+
+✅ AVANT (PROBLÉMATIQUE) :
+- Génération manuelle : my-hero-academia-1-vostfr pour Saison 2 Episode 1
+- Numérotation incorrecte dans toutes les saisons autres que la première
+
+✅ APRÈS (CORRIGÉ) :
+- API génère automatiquement : my-hero-academia-14-vostfr pour Saison 2 Episode 1
+- Numérotation globale correcte pour tous les animes supportés
+
+ANIMES TESTÉS ET FONCTIONNELS :
+- My Hero Academia (7 saisons)
+- One Piece (11 sagas) 
+- Attack on Titan (4 saisons)
+- Naruto + Shippuden (2 parties)
+- Demon Slayer (2 saisons)
+- Jujutsu Kaisen (1 saison)
+
+NOUVEAUX ENDPOINTS À UTILISER :
+- /api/seasons/[animeId] : Données de saisons avec numérotation correcte
+- /api/episodes/[animeId]?season=X&language=Y : Episodes avec IDs globaux corrects
+
+=================================================================

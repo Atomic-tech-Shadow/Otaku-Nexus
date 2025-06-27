@@ -80,6 +80,22 @@ const AnimePlayerPage: React.FC = () => {
   // ✅ CORRECTION: API Base URL configurée (production)
   const API_BASE = 'https://api-anime-sama.onrender.com';
 
+  // Fonction pour charger les saisons
+  const loadAnimeSeasons = async (animeId: string) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/seasons/${animeId}`);
+      const data = await response.json();
+      
+      if (data.success && data.data && data.data.seasons) {
+        return data.data.seasons;
+      }
+      return null;
+    } catch (error) {
+      console.error('Erreur chargement saisons:', error);
+      return null;
+    }
+  };
+
   // Charger les données de l'anime
   useEffect(() => {
     if (!id) return;
@@ -87,38 +103,37 @@ const AnimePlayerPage: React.FC = () => {
     const loadAnimeData = async () => {
       try {
         setLoading(true);
-        console.log('Chargement données anime pour ID:', id);
         
-        const response = await fetch(`${API_BASE}/api/anime/${id}`);
-        console.log('Réponse anime status:', response.status);
+        // Charger les données de base de l'anime
+        const animeResponse = await fetch(`${API_BASE}/api/anime/${id}`);
+        const animeData = await animeResponse.json();
         
-        if (!response.ok) {
-          throw new Error(`Erreur ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log('Données anime reçues:', data);
-        
-        if (data.success && data.data) {
-          setAnimeData(data.data);
-          // Sélectionner la saison spécifiée dans l'URL ou la première par défaut
-          if (data.data.seasons && data.data.seasons.length > 0) {
-            let seasonToSelect = data.data.seasons[0];
+        if (animeData.success && animeData.data) {
+          setAnimeData(animeData.data);
+          
+          // ✅ Charger les vraies données de saisons
+          const seasonsData = await loadAnimeSeasons(id);
+          
+          if (seasonsData && seasonsData.length > 0) {
+            // Mettre à jour les saisons avec les vraies données
+            const updatedAnimeData = {
+              ...animeData.data,
+              seasons: seasonsData
+            };
+            setAnimeData(updatedAnimeData);
             
-            // Si une saison spécifique est demandée via l'URL
+            // Sélectionner la saison demandée
+            let seasonToSelect = seasonsData[0];
             if (targetSeason) {
-              const requestedSeason = data.data.seasons.find((s: Season) => s.number === parseInt(targetSeason));
+              const requestedSeason = seasonsData.find((s: any) => s.number === parseInt(targetSeason));
               if (requestedSeason) {
                 seasonToSelect = requestedSeason;
               }
             }
             
             setSelectedSeason(seasonToSelect);
-            // Charger immédiatement les épisodes si on vient d'un lien direct
             await loadSeasonEpisodes(seasonToSelect, true);
           }
-        } else {
-          setError('Données anime non trouvées');
         }
       } catch (err) {
         console.error('Erreur chargement anime:', err);
@@ -137,78 +152,66 @@ const AnimePlayerPage: React.FC = () => {
     
     try {
       setEpisodeLoading(true);
-      console.log('Génération épisodes pour:', { 
-        animeId: animeData.id, 
-        season: season.number, 
-        language: selectedLanguage.toLowerCase() 
-      });
+      const languageCode = selectedLanguage.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
       
-      // Générer la liste des épisodes pour cette saison
-      const episodesList: Episode[] = [];
-      for (let i = 1; i <= season.episodeCount; i++) {
-        const languageCode = selectedLanguage.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
-        episodesList.push({
-          id: `${animeData.id}-${i}-${languageCode}`,
-          title: `Épisode ${i}`,
-          episodeNumber: i,
-          url: '',
-          language: languageCode,
-          available: true
-        });
+      // ✅ NOUVEAU : Utiliser l'API avec numérotation correcte
+      const response = await fetch(
+        `${API_BASE}/api/episodes/${animeData.id}?season=${season.number}&language=${languageCode}`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`);
       }
       
-      setEpisodes(episodesList);
+      const data = await response.json();
       
-      // Sélectionner l'épisode spécifié dans l'URL ou le premier par défaut
-      if (episodesList.length > 0) {
-        let episodeToSelect = episodesList[0];
+      if (data.success && data.data && data.data.episodes) {
+        setEpisodes(data.data.episodes);
         
-        // Si un épisode spécifique est demandé via l'URL
-        if (targetEpisode) {
-          const requestedEpisode = episodesList.find(ep => ep.episodeNumber === parseInt(targetEpisode));
-          if (requestedEpisode) {
-            episodeToSelect = requestedEpisode;
+        // Sélectionner l'épisode spécifié ou le premier
+        if (data.data.episodes.length > 0) {
+          let episodeToSelect = data.data.episodes[0];
+          
+          if (targetEpisode) {
+            const requestedEpisode = data.data.episodes.find(
+              (ep: any) => ep.episodeNumber === parseInt(targetEpisode)
+            );
+            if (requestedEpisode) {
+              episodeToSelect = requestedEpisode;
+            }
           }
+          
+          setSelectedEpisode(episodeToSelect);
+          // ✅ Utiliser l'ID généré par l'API (avec numérotation globale correcte)
+          loadEpisodeSources(episodeToSelect.id);
         }
-        
-        setSelectedEpisode(episodeToSelect);
-        loadEpisodeSources(episodeToSelect.episodeNumber, selectedLanguage);
+      } else {
+        setError('Aucun épisode trouvé pour cette saison');
       }
     } catch (err) {
-      console.error('Erreur génération épisodes:', err);
-      setError('Erreur lors de la génération des épisodes');
+      console.error('Erreur chargement épisodes:', err);
+      setError('Erreur lors du chargement des épisodes');
     } finally {
       setEpisodeLoading(false);
     }
   };
 
   // Charger les sources d'un épisode
-  const loadEpisodeSources = async (episodeNumber: number, language: 'VF' | 'VOSTFR') => {
-    if (!animeData) return;
-    
+  const loadEpisodeSources = async (episodeId: string) => {
     try {
       setEpisodeLoading(true);
       
-      // Construire l'ID selon le format: {nom-anime}-{numéro-épisode}-{langue}
-      const languageCode = language.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
-      const episodeId = `${animeData.id}-${episodeNumber}-${languageCode}`;
-      
+      // ✅ Utiliser directement l'ID généré par l'API
       console.log('Chargement épisode avec ID:', episodeId);
       
       const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
       const data = await response.json();
       
-      console.log('Réponse API épisode:', data);
-      console.log('Sources disponibles:', data.data?.sources);
-      
       if (data.success && data.data && data.data.sources && data.data.sources.length > 0) {
-        console.log('Utilisation des vraies sources:', data.data.sources);
         setEpisodeDetails(data.data);
-        setSelectedPlayer(0); // Réinitialiser au premier lecteur
+        setSelectedPlayer(0);
       } else {
-        console.log('Pas de sources disponibles pour cet épisode');
         setError('Aucune source vidéo disponible pour cet épisode');
-        setEpisodeDetails(null);
       }
     } catch (err) {
       console.error('Erreur chargement sources:', err);
@@ -228,7 +231,8 @@ const AnimePlayerPage: React.FC = () => {
     if (newIndex >= 0 && newIndex < episodes.length) {
       const newEpisode = episodes[newIndex];
       setSelectedEpisode(newEpisode);
-      await loadEpisodeSources(newEpisode.episodeNumber, selectedLanguage);
+      // ✅ Utiliser l'ID complet de l'épisode
+      await loadEpisodeSources(newEpisode.id);
     }
   };
 
@@ -236,6 +240,7 @@ const AnimePlayerPage: React.FC = () => {
   const changeLanguage = (newLanguage: 'VF' | 'VOSTFR') => {
     setSelectedLanguage(newLanguage);
     if (selectedSeason) {
+      // ✅ Recharger les épisodes avec la nouvelle langue
       loadSeasonEpisodes(selectedSeason);
     }
   };
@@ -345,7 +350,7 @@ const AnimePlayerPage: React.FC = () => {
                   const episode = episodes.find(ep => ep.id === e.target.value);
                   if (episode) {
                     setSelectedEpisode(episode);
-                    loadEpisodeSources(episode.episodeNumber, selectedLanguage);
+                    loadEpisodeSources(episode.id);
                   }
                 }}
                 className="w-full bg-gray-800 text-white px-4 py-3 rounded-lg appearance-none cursor-pointer border-2 border-blue-500 font-bold uppercase text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
