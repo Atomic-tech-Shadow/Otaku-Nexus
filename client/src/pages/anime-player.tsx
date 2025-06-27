@@ -320,7 +320,7 @@ const AnimePlayerPage: React.FC = () => {
 
         {/* Sélecteurs - Style anime-sama */}
         {episodes.length > 0 && (
-          <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
             {/* Sélecteur d'épisode */}
             <div className="relative">
               <select
