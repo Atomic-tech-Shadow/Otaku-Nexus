@@ -181,9 +181,9 @@ const AnimePage: React.FC = () => {
   };
 
   // Filtrer les épisodes par langue
-  const filteredEpisodes = episodes.filter(episode => 
+  const filteredEpisodes = Array.isArray(episodes) ? episodes.filter(episode => 
     episode.language.toUpperCase() === selectedLanguage
-  );
+  ) : [];
 
   // Obtenir les sources du lecteur sélectionné
   const getCurrentSources = () => {

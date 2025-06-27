@@ -22,6 +22,7 @@ This is a quiz, chat and anime streaming application providing:
 - **Database**: PostgreSQL (Neon)
 
 ### Recent Changes (Latest First)
+- **2025-06-27 12:02**: Création interface anime inspirée d'anime-sama.fr avec navigation par saisons et épisodes
 - **2025-06-27 11:49**: Implémentation nouveau format ID épisode: {nom-anime}-{numéro-épisode}-{langue} (ex: naruto-1-vf)
 - **2025-06-27 11:40**: Migration complète réussie de Replit Agent vers environnement Replit standard
 - **2025-06-26 19:28**: Correction erreur API Anime-Sama - suppression appel /api/seasons, utilisation directe saisons depuis /api/anime/{id}
