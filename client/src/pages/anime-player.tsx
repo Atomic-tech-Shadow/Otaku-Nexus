@@ -399,7 +399,7 @@ const AnimePlayerPage: React.FC = () => {
           </div>
         )}
 
-        {/* ✅ CORRECTION: Lecteur vidéo avec endpoint embed direct */}
+        {/* ✅ CORRECTION: Lecteur vidéo direct avec URL de streaming */}
         {episodeDetails && episodeDetails.sources.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -408,7 +408,7 @@ const AnimePlayerPage: React.FC = () => {
           >
             <div className="aspect-video relative">
               <iframe
-                src={`${API_BASE}/api/embed/${episodeDetails.id}`}
+                src={episodeDetails.sources[selectedPlayer]?.url}
                 className="w-full h-full"
                 allowFullScreen
                 frameBorder="0"
