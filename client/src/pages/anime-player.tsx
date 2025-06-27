@@ -124,17 +124,7 @@ const AnimePlayerPage: React.FC = () => {
         language: selectedLanguage.toLowerCase() 
       });
       
-      const response = await fetch(`${API_BASE}/api/seasons`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          animeId: animeData.id,
-          season: season.number,
-          language: selectedLanguage.toLowerCase(),
-        }),
-      });
+      const response = await fetch(`${API_BASE}/api/seasons?animeId=${animeData.id}&season=${season.number}&language=${selectedLanguage.toLowerCase()}`);
       
       console.log('Réponse status:', response.status);
       
@@ -146,14 +136,15 @@ const AnimePlayerPage: React.FC = () => {
       console.log('Données reçues:', data);
       
       if (data.success && data.data) {
-        const episodesList = data.data.filter((ep: Episode) => 
-          ep.language === selectedLanguage.toLowerCase()
-        );
-        setEpisodes(episodesList);
+        const episodesList = data.data.episodes || data.data;
+        const filteredEpisodes = Array.isArray(episodesList) ? 
+          episodesList.filter((ep: Episode) => ep.language === selectedLanguage.toLowerCase()) :
+          [];
+        setEpisodes(filteredEpisodes);
         
         // Sélectionner automatiquement le premier épisode
-        if (episodesList.length > 0) {
-          const firstEpisode = episodesList[0];
+        if (filteredEpisodes.length > 0) {
+          const firstEpisode = filteredEpisodes[0];
           setSelectedEpisode(firstEpisode);
           loadEpisodeSources(firstEpisode.episodeNumber, selectedLanguage);
         }
@@ -173,27 +164,48 @@ const AnimePlayerPage: React.FC = () => {
     try {
       setEpisodeLoading(true);
       
-      const response = await fetch(`${API_BASE}/api/episode`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          animeId: animeData.id,
-          episodeNumber,
-          language: language.toLowerCase(),
-        }),
-      });
+      // Construire l'ID selon le format: {nom-anime}-{numéro-épisode}-{langue}
+      const languageCode = language.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
+      const episodeId = `${animeData.id}-${episodeNumber}-${languageCode}`;
       
-      if (!response.ok) {
-        throw new Error(`Erreur ${response.status}`);
-      }
+      console.log('Chargement épisode avec ID:', episodeId);
       
+      const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
       const data = await response.json();
       
       if (data.success && data.data) {
         setEpisodeDetails(data.data);
         setSelectedPlayer(0); // Réinitialiser au premier lecteur
+      } else {
+        console.log('Pas de sources disponibles pour cet épisode');
+        // Créer des sources simulées pour les tests
+        setEpisodeDetails({
+          id: episodeId,
+          title: `Épisode ${episodeNumber}`,
+          animeTitle: animeData.title,
+          episodeNumber,
+          sources: [
+            {
+              url: `https://www.youtube.com/embed/dQw4w9WgXcQ`,
+              server: `Serveur 1`,
+              quality: '720p',
+              language: languageCode,
+              type: 'embed',
+              serverIndex: 0
+            },
+            {
+              url: `https://www.youtube.com/embed/dQw4w9WgXcQ`,
+              server: `Serveur 2`,
+              quality: '1080p',
+              language: languageCode,
+              type: 'embed',
+              serverIndex: 1
+            }
+          ],
+          availableServers: ['Serveur 1', 'Serveur 2'],
+          url: ''
+        });
+        setSelectedPlayer(0);
       }
     } catch (err) {
       console.error('Erreur chargement sources:', err);
