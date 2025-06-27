@@ -334,6 +334,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get seasons for specific anime
+  app.get('/api/seasons/:animeId', async (req, res) => {
+    try {
+      const animeId = req.params.animeId;
+      const response = await fetch(`${ANIME_API_BASE}/api/seasons/${animeId}`);
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching anime seasons:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch anime seasons",
+        data: null
+      });
+    }
+  });
+
+  // Get episodes for specific anime and season
+  app.get('/api/episodes/:animeId', async (req, res) => {
+    try {
+      const animeId = req.params.animeId;
+      const { season, language } = req.query;
+      
+      if (!season || !language) {
+        return res.status(400).json({ 
+          success: false,
+          message: "season and language parameters are required" 
+        });
+      }
+      
+      const response = await fetch(`${ANIME_API_BASE}/api/episodes/${animeId}?season=${season}&language=${language}`);
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching anime episodes:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch anime episodes",
+        data: null
+      });
+    }
+  });
+
+  // Get specific episode details
+  app.get('/api/episode/:episodeId', async (req, res) => {
+    try {
+      const episodeId = req.params.episodeId;
+      const response = await fetch(`${ANIME_API_BASE}/api/episode/${episodeId}`);
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching episode details:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch episode details",
+        data: null
+      });
+    }
+  });
+
   // Get season episodes avec serveurs multiples configurés
   app.get('/api/seasons', async (req, res) => {
     try {
