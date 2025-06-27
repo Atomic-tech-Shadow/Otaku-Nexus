@@ -331,9 +331,6 @@ const AnimePage: React.FC = () => {
                 }`}
               >
                 <div className="text-sm">{season.name}</div>
-                <div className="text-xs opacity-75">
-                  {season.languages.join(' / ')}
-                </div>
               </motion.button>
             ))}
           </div>
