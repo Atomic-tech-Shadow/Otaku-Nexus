@@ -113,7 +113,8 @@ const AnimePlayerPage: React.FC = () => {
             }
             
             setSelectedSeason(seasonToSelect);
-            loadSeasonEpisodes(seasonToSelect);
+            // Charger immédiatement les épisodes si on vient d'un lien direct
+            await loadSeasonEpisodes(seasonToSelect, true);
           }
         } else {
           setError('Données anime non trouvées');
@@ -130,7 +131,7 @@ const AnimePlayerPage: React.FC = () => {
   }, [id]);
 
   // ✅ CORRECTION: Génération des épisodes depuis les données de saison
-  const loadSeasonEpisodes = async (season: Season) => {
+  const loadSeasonEpisodes = async (season: Season, autoLoadEpisode = false) => {
     if (!animeData) return;
     
     try {
@@ -298,8 +299,8 @@ const AnimePlayerPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Sélecteur de langue - Style anime-sama */}
-        {selectedSeason && selectedSeason.languages.length > 1 && (
+        {/* Sélecteur de langue - Style anime-sama - masqué si vient d'URL directe */}
+        {selectedSeason && selectedSeason.languages.length > 1 && !targetSeason && (
           <div className="flex gap-2">
             {selectedSeason.languages.map((lang) => (
               <motion.button
