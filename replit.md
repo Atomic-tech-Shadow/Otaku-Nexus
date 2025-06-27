@@ -22,6 +22,7 @@ This is a quiz, chat and anime streaming application providing:
 - **Database**: PostgreSQL (Neon)
 
 ### Recent Changes (Latest First)
+- **2025-06-27 22:06**: Correction majeure bug saisons - système calcule maintenant index global épisodes correct selon saisons précédentes
 - **2025-06-27 22:00**: Correction finale - sélecteur langue remis (style anime-sama), auto-lecture VOSTFR fonctionnelle avec possibilité changement langue
 - **2025-06-27 21:56**: Correction auto-lecture immédiate - premier épisode VOSTFR se lance automatiquement sans attendre sélection langue
 - **2025-06-27 21:53**: Implémentation auto-lecture premier épisode VOSTFR lors clic saison - navigation avec paramètres URL automatiques
