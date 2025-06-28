@@ -399,32 +399,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const data = await response.json();
       
-      // ✅ CORRECTION: Détecter et corriger l'URL de saison incorrecte
+      // ✅ CORRECTION UNIVERSELLE: Détecter et corriger l'URL de saison incorrecte pour tous les animes
       if (data.success && data.data) {
         const episodeNumber = data.data.episodeNumber;
+        const currentUrl = data.data.url || '';
         
-        // Mapping précis pour My Hero Academia
-        if (episodeId.includes('my-hero-academia')) {
-          let correctSeason = 1;
-          
-          if (episodeNumber >= 1 && episodeNumber <= 13) correctSeason = 1;
-          else if (episodeNumber >= 14 && episodeNumber <= 38) correctSeason = 2;
-          else if (episodeNumber >= 39 && episodeNumber <= 63) correctSeason = 3;
-          else if (episodeNumber >= 64 && episodeNumber <= 88) correctSeason = 4;
-          else if (episodeNumber >= 89 && episodeNumber <= 113) correctSeason = 5;
-          else if (episodeNumber >= 114 && episodeNumber <= 138) correctSeason = 6;
-          else if (episodeNumber >= 139 && episodeNumber <= 159) correctSeason = 7;
-          
-          // Corriger l'URL selon la vraie saison
-          const currentUrl = data.data.url || '';
-          const baseUrl = `https://anime-sama.fr/catalogue/my-hero-academia/saison${correctSeason}/vostfr`;
-          
-          if (!currentUrl.includes(`saison${correctSeason}`)) {
-            data.data.url = baseUrl;
-            data.data.correctedSeason = correctSeason;
-            data.data.originalUrl = currentUrl;
-            console.log(`🔧 Correction URL: Episode ${episodeNumber} -> Saison ${correctSeason}`);
+        // Extraire l'animeId de l'URL ou de l'ID d'épisode
+        const animeIdMatch = episodeId.match(/^([a-z0-9-]+)-\d+-(vf|vostfr)$/);
+        const animeId = animeIdMatch ? animeIdMatch[1] : episodeId.split('-')[0];
+        
+        // Faire un appel pour récupérer les données de l'anime et calculer la vraie saison
+        try {
+          const animeResponse = await fetch(`${ANIME_API_BASE}/api/anime/${animeId}`);
+          if (animeResponse.ok) {
+            const animeData = await animeResponse.json();
+            if (animeData.success && animeData.data && animeData.data.seasons) {
+              
+              // Calculer la saison correcte basée sur le numéro d'épisode
+              let correctSeason = 1;
+              let episodeCount = 0;
+              
+              for (const season of animeData.data.seasons) {
+                const seasonEpisodeCount = season.episodeCount || 25; // Fallback par défaut
+                if (episodeNumber <= episodeCount + seasonEpisodeCount) {
+                  correctSeason = season.number;
+                  break;
+                }
+                episodeCount += seasonEpisodeCount;
+              }
+              
+              // Vérifier si l'URL contient déjà la bonne saison
+              const expectedSeasonInUrl = `saison${correctSeason}`;
+              if (!currentUrl.includes(expectedSeasonInUrl)) {
+                // Corriger l'URL avec la vraie saison
+                const language = data.data.language?.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
+                const correctedUrl = `https://anime-sama.fr/catalogue/${animeId}/saison${correctSeason}/${language}`;
+                
+                data.data.url = correctedUrl;
+                data.data.correctedSeason = correctSeason;
+                data.data.originalUrl = currentUrl;
+                console.log(`🔧 Correction URL universelle: ${animeId} Episode ${episodeNumber} -> Saison ${correctSeason}`);
+              }
+            }
           }
+        } catch (urlCorrectionError: any) {
+          console.log(`⚠️ Impossible de corriger l'URL pour ${animeId}:`, urlCorrectionError?.message || 'Erreur inconnue');
         }
       }
       
