@@ -43,8 +43,8 @@ const AnimeSamaPage: React.FC = () => {
     try {
       const response = await apiRequest('/api/trending');
       
-      if (response && response.success && Array.isArray(response.data)) {
-        const animesWithImages = response.data.map((anime: any) => ({
+      if (response && response.success && Array.isArray(response.results)) {
+        const animesWithImages = response.results.map((anime: any) => ({
           ...anime,
           image: `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`,
           status: anime.status || 'Disponible',
@@ -127,9 +127,9 @@ const AnimeSamaPage: React.FC = () => {
     try {
       const response = await apiRequest(`/api/search?query=${encodeURIComponent(query)}`);
       
-      if (response && response.success && Array.isArray(response.data)) {
+      if (response && response.success && Array.isArray(response.results)) {
         // Ajouter des propriétés manquantes pour l'affichage
-        const animesWithImages = response.data.map((anime: any) => ({
+        const animesWithImages = response.results.map((anime: any) => ({
           ...anime,
           image: `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`,
           status: anime.status || 'Disponible',
