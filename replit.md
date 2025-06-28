@@ -22,6 +22,7 @@ This is a quiz, chat and anime streaming application providing:
 - **Database**: PostgreSQL (Neon)
 
 ### Recent Changes (Latest First)
+- **2025-06-28 00:05**: Correction bug sélection saison critique - Configuration API_BASE_URL manquante dans server/routes.ts ajoutée, saison 7 My Hero Academia charge maintenant épisodes 139-159 correctement
 - **2025-06-27 23:50**: Migration complète finalisée avec corrections critiques API Anime-Sama - Configuration API_BASE_URL (était vide), timeout optimisé (60s), système universel numérotation épisodes fonctionnel
 - **2025-06-27 22:46**: Migration complète réussie de Replit Agent vers environnement Replit standard - Corrections appliquées pour bug sélection saison avec nouveaux endpoints API
 - **2025-06-27 22:08**: Documentation bug saisons identifié - système charge toujours épisodes saison 1 au lieu de la saison sélectionnée

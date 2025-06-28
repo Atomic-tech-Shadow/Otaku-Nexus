@@ -13,6 +13,9 @@ import {
 } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
 
+// Configuration API Anime-Sama
+const ANIME_API_BASE = 'https://api-anime-sama.onrender.com';
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint pour Render
   app.get('/api/health', (req, res) => {
