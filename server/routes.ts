@@ -14,7 +14,7 @@ import {
 import { setupAuth, isAuthenticated } from "./auth";
 
 // Configuration API Anime-Sama
-const ANIME_API_BASE = 'https://anime-sama-scraper.vercel.app/api';
+const ANIME_API_BASE = 'https://anime-sama-scraper.vercel.app';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint pour Render
