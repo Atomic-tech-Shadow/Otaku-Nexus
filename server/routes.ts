@@ -388,7 +388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get specific episode details
+  // Get specific episode details avec correction URL saison
   app.get('/api/episode/:episodeId', async (req, res) => {
     try {
       const episodeId = req.params.episodeId;
@@ -398,6 +398,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const data = await response.json();
+      
+      // ✅ CORRECTION: Détecter et corriger l'URL de saison incorrecte
+      if (data.success && data.data) {
+        const episodeNumber = data.data.episodeNumber;
+        
+        // Mapping précis pour My Hero Academia
+        if (episodeId.includes('my-hero-academia')) {
+          let correctSeason = 1;
+          
+          if (episodeNumber >= 1 && episodeNumber <= 13) correctSeason = 1;
+          else if (episodeNumber >= 14 && episodeNumber <= 38) correctSeason = 2;
+          else if (episodeNumber >= 39 && episodeNumber <= 63) correctSeason = 3;
+          else if (episodeNumber >= 64 && episodeNumber <= 88) correctSeason = 4;
+          else if (episodeNumber >= 89 && episodeNumber <= 113) correctSeason = 5;
+          else if (episodeNumber >= 114 && episodeNumber <= 138) correctSeason = 6;
+          else if (episodeNumber >= 139 && episodeNumber <= 159) correctSeason = 7;
+          
+          // Corriger l'URL selon la vraie saison
+          const currentUrl = data.data.url || '';
+          const baseUrl = `https://anime-sama.fr/catalogue/my-hero-academia/saison${correctSeason}/vostfr`;
+          
+          if (!currentUrl.includes(`saison${correctSeason}`)) {
+            data.data.url = baseUrl;
+            data.data.correctedSeason = correctSeason;
+            data.data.originalUrl = currentUrl;
+            console.log(`🔧 Correction URL: Episode ${episodeNumber} -> Saison ${correctSeason}`);
+          }
+        }
+      }
+      
       res.json(data);
     } catch (error) {
       console.error("Error fetching episode details:", error);
