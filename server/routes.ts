@@ -412,7 +412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get season episodes avec serveurs multiples configurés
+  // Get season episodes - API externe uniquement
   app.get('/api/seasons', async (req, res) => {
     try {
       const { animeId, season, language, server } = req.query;
@@ -424,87 +424,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      try {
-        const response = await fetch(`${ANIME_API_BASE}/api/seasons?animeId=${animeId}&season=${season}&language=${language}`);
-        if (response.ok) {
-          const data = await response.json();
-          
-          // Si l'API externe fonctionne, utiliser ses données
-          if (data.success && data.data && Array.isArray(data.data)) {
-            return res.json({
-              success: true,
-              data: data.data.map((episode: any) => ({
-                id: episode.id || `${animeId}-episode-${episode.episodeNumber}-${String(language).toLowerCase()}`,
-                title: episode.title || `Épisode ${episode.episodeNumber}`,
-                episodeNumber: episode.episodeNumber,
-                url: episode.url || `https://anime-sama.fr/catalogue/${animeId}/`,
-                language: episode.language || language,
-                available: episode.available !== false
-              })),
-              meta: {
-                animeId,
-                seasonNumber: parseInt(season as string),
-                language,
-                source: "anime-sama.fr"
-              }
-            });
-          }
-        }
-      } catch (apiError) {
-        console.log("API externe indisponible, utilisation du fallback local");
-      }
-
-      // Fallback local : générer des épisodes basiques
-      const seasonNumber = parseInt(season as string);
-      const episodeCount = getEpisodeCountForAnime(animeId as string, seasonNumber);
-      
-      const episodes = [];
-      for (let i = 1; i <= episodeCount; i++) {
-        episodes.push({
-          id: `${animeId}-episode-${i}-${String(language).toLowerCase()}`,
-          title: `Épisode ${i}`,
-          episodeNumber: i,
-          url: `https://anime-sama.fr/catalogue/${animeId}/`,
-          language: language as string,
-          available: true
-        });
+      const response = await fetch(`${ANIME_API_BASE}/api/seasons?animeId=${animeId}&season=${season}&language=${language}`);
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
       }
       
-      res.json({
-        success: true,
-        data: episodes,
-        meta: {
-          animeId,
-          seasonNumber,
-          language,
-          totalEpisodes: episodeCount,
-          source: "fallback-local"
-        }
-      });
+      const data = await response.json();
+      res.json(data);
       
     } catch (error) {
       console.error("Error fetching season episodes:", error);
       res.status(500).json({ 
         success: false, 
-        message: "Failed to fetch episodes",
+        message: "Failed to fetch episodes from API",
         data: []
       });
     }
   });
 
-  // Fonction helper pour déterminer le nombre d'épisodes par anime
-  function getEpisodeCountForAnime(animeId: string, season: number): number {
-    const animeEpisodeCounts: { [key: string]: { [season: number]: number } } = {
-      'chainsaw-man': { 1: 12 },
-      'demon-slayer': { 1: 26, 2: 11, 3: 11 },
-      'naruto': { 1: 220 },
-      'one-piece': { 1: 1000 },
-      'attack-on-titan': { 1: 25, 2: 12, 3: 22, 4: 16 },
-      'my-hero-academia': { 1: 13, 2: 25, 3: 25, 4: 25, 5: 25, 6: 25 }
-    };
-    
-    return animeEpisodeCounts[animeId]?.[season] || 12; // 12 épisodes par défaut
-  }
+
 
   // Get episode sources with multiple servers
   app.get('/api/episode/:animeId/:seasonNumber/:episodeNumber', async (req, res) => {
