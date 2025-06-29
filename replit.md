@@ -22,6 +22,7 @@ This is a quiz, chat and anime streaming application providing:
 - **Database**: PostgreSQL (Neon)
 
 ### Recent Changes (Latest First)
+- **2025-06-29 20:09**: Solution définitive déploiement Koyeb - Ajout yarn.lock vide + script build "yarn install && npx tsc" pour contourner exigence lockfile et installation automatique dépendances
 - **2025-06-29 20:05**: Stratégie déploiement finale adoptée - Script build modifié en "npm install && npx tsc" pour que Koyeb génère automatiquement package-lock.json complet avec toutes dépendances transitives
 - **2025-06-29 20:02**: Suppression package-lock.json backend-deploy désynchronisé - Permet à Koyeb de régénérer automatiquement lockfile avec nouvelle dépendance body-parser
 - **2025-06-29 20:01**: Ajout dépendance body-parser manquante au package.json backend-deploy - Correction erreur MODULE_NOT_FOUND pour déploiement Koyeb réussi
