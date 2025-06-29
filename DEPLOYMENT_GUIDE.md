@@ -22,6 +22,7 @@ Votre application Quiz & Chat est maintenant préparée pour un déploiement sé
 
 4. **Build Settings** :
    - Framework Preset: Vite
+   - Root Directory: `frontend` (IMPORTANT!)
    - Build Command: `npm run build`
    - Output Directory: `dist`
 
