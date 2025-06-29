@@ -22,6 +22,7 @@ This is a quiz, chat and anime streaming application providing:
 - **Database**: PostgreSQL (Replit)
 
 ### Recent Changes (Latest First)
+- **2025-06-29 22:04**: Configuration base PostgreSQL Replit directement dans le code - Suppression variables d'environnement selon préférence utilisateur, connexion intégrée dans server/db.ts
 - **2025-06-29 21:59**: Migration complète réussie de Replit Agent vers environnement Replit standard - Base de données PostgreSQL Replit configurée pour remplacer Neon (quota dépassé), application fonctionnelle sur port 5000
 - **2025-06-29 20:09**: Solution définitive déploiement Koyeb - Ajout yarn.lock vide + script build "yarn install && npx tsc" pour contourner exigence lockfile et installation automatique dépendances
 - **2025-06-29 20:05**: Stratégie déploiement finale adoptée - Script build modifié en "npm install && npx tsc" pour que Koyeb génère automatiquement package-lock.json complet avec toutes dépendances transitives
