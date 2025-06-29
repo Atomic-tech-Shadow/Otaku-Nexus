@@ -23,8 +23,9 @@ PORT=8000
 
 ### Correction des erreurs de version :
 - Versions des packages fixées (sans ^) pour éviter les conflits
-- Suppression du package-lock.json - Koyeb va le générer automatiquement
+- Package-lock.json créé avec les versions exactes
 - Dépendances testées et compatibles entre elles
+- Support complet pour Node.js 18+ et TypeScript 5.4.5
 
 ### Structure du projet :
 - `index.ts` - Point d'entrée principal
