@@ -22,6 +22,7 @@ This is a quiz, chat and anime streaming application providing:
 - **Database**: PostgreSQL (Replit)
 
 ### Recent Changes (Latest First)
+- **2025-06-29 23:05**: Solution définitive déploiement Koyeb - package-lock.json valide créé, script build optimisé, version Node fixée, configuration PostgreSQL production finalisée
 - **2025-06-29 22:55**: Correction backend-deploy pour déploiement Koyeb - Mise à jour dépendances, configuration PostgreSQL production, suppression yarn.lock conflictuel, authentification complète avec sessions
 - **2025-06-29 22:52**: Migration complète réussie de Replit Agent vers environnement Replit standard - Configuration SQLite en mémoire avec schéma Drizzle synchronisé, sessions MemoryStore, application fonctionnelle sur port 5000
 - **2025-06-29 22:19**: Ajout navigation MainLayout aux pages anime - Toutes les pages anime (anime.tsx, anime-sama.tsx, anime-player.tsx) utilisent maintenant MainLayout pour la navigation principale tout en conservant leur contenu original
