@@ -27,10 +27,11 @@ PORT=8000
 - `tsconfig.json` : configuration TypeScript
 - Tous les fichiers `.ts` du backend
 
-### Correction des erreurs de version :
+### Correction des erreurs de build :
+- Script build corrigé : `./node_modules/.bin/tsc` au lieu de `npx tsc`
 - Versions des packages fixées (sans ^) pour éviter les conflits
 - Package-lock.json créé avec les versions exactes
-- Dépendances testées et compatibles entre elles
+- Configuration TypeScript optimisée pour production
 - Support complet pour Node.js 18+ et TypeScript 5.4.5
 
 ### Structure du projet :
