@@ -85,49 +85,45 @@ export default function Chat() {
       });
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        throw new Error(errorData.message || "Failed to send message");
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText || 'Erreur réseau' };
+        }
+        console.error('Send message error:', response.status, errorData);
+        throw new Error(errorData.message || `Erreur ${response.status}`);
       }
-      return response.json();
+      
+      const result = await response.json();
+      console.log('Message sent successfully:', result);
+      return result;
     },
     onMutate: async (newMessageContent) => {
       await queryClient.cancelQueries({ queryKey: ["/api/chat/messages"] });
       const previousMessages = queryClient.getQueryData(["/api/chat/messages"]);
       
-      const optimisticMessage = {
-        id: `temp-${Date.now()}`,
-        content: newMessageContent,
-        userId: user?.id || '',
-        userFirstName: user?.firstName,
-        userLastName: user?.lastName,
-        userProfileImageUrl: user?.profileImageUrl,
-        isAdmin: user?.isAdmin,
-        timestamp: new Date().toISOString(),
-        isOwn: true
-      };
-
-      queryClient.setQueryData(["/api/chat/messages"], (old: any) => {
-        return [...(old || []), optimisticMessage];
-      });
-
       setNewMessage("");
       return { previousMessages };
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["/api/chat/messages"], (old: any) => {
-        const messages = old || [];
-        const filteredMessages = messages.filter((msg: any) => !msg.id.startsWith('temp-'));
-        return [...filteredMessages, data];
+      console.log('Message mutation success:', data);
+      // Force refresh of messages after successful send
+      queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
+      
+      toast({
+        title: "Message envoyé",
+        description: "Votre message a été envoyé avec succès",
+        variant: "default",
       });
     },
     onError: (error, variables, context) => {
-      if (context?.previousMessages) {
-        queryClient.setQueryData(["/api/chat/messages"], context.previousMessages);
-      }
+      console.error('Message mutation error:', error);
       setNewMessage(variables);
       toast({
         title: "Erreur",
-        description: "Impossible d'envoyer le message",
+        description: error.message || "Impossible d'envoyer le message",
         variant: "destructive",
       });
     }
