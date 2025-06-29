@@ -22,7 +22,7 @@ This is a quiz, chat and anime streaming application providing:
 - **Database**: PostgreSQL (Neon)
 
 ### Recent Changes (Latest First)
-- **2025-06-29 08:56**: Intégration endpoint /api/embed JSON - Lecteur utilise URLs streaming directes extraites depuis anime-sama.fr, plus de page HTML complète, sources authentiques Sibnet/Vidmoly/SendVid
+- **2025-06-29 09:00**: Sélecteur langue VF/VOSTFR rétabli - Interface identique à anime-sama.fr, chargement stable 52 épisodes One Piece saison 11, lecteur vidéo /api/embed fonctionnel
 - **2025-06-29 08:50**: Correction définitive lecteur anime - Problème timing résolu, 52 épisodes One Piece saison 11 (Egghead) se chargent automatiquement avec sources streaming multiples (Sibnet, Server 2, SendVid)
 - **2025-06-29 08:37**: Migration Replit Agent terminée avec succès - Problème lecteur anime résolu, API externe fonctionnelle, saison 11 One Piece (Egghead) charge 52 épisodes avec sources streaming multiples
 - **2025-06-29 08:01**: Correction page player anime réussie - Problème clés React dupliquées résolu, filtrage saisons amélioré, épisodes se chargent correctement avec sources streaming

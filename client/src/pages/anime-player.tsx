@@ -319,10 +319,18 @@ const AnimePlayerPage: React.FC = () => {
           console.log('Épisode sélectionné:', episodeToSelect.title);
           setSelectedEpisode(episodeToSelect);
           
-          // Auto-charger l'épisode avec les URLs directes
-          if (autoLoadEpisode) {
-            console.log('Auto-chargement épisode avec URLs directes:', episodeToSelect.title);
-            await loadEpisodeSourcesDirectly(episodeToSelect, animeDataObj);
+          // Auto-charger l'épisode avec ses sources
+          if (autoLoadEpisode && episodeToSelect.streamingSources.length > 0) {
+            setEpisodeDetails({
+              id: episodeToSelect.id,
+              title: episodeToSelect.title,
+              animeTitle: animeDataObj.title,
+              episodeNumber: episodeToSelect.episodeNumber,
+              sources: episodeToSelect.streamingSources,
+              availableServers: episodeToSelect.streamingSources.map((s: any) => s.server),
+              url: episodeToSelect.url
+            });
+            console.log('Détails épisode chargés:', episodeToSelect.title);
           }
         }
       } else {
@@ -416,93 +424,16 @@ const AnimePlayerPage: React.FC = () => {
     }
   };
 
-  // Charger les sources directement pour l'auto-chargement initial
-  const loadEpisodeSourcesDirectly = async (episode: Episode, animeDataObj: any) => {
-    try {
-      setEpisodeLoading(true);
-      
-      console.log('Chargement sources directes auto pour épisode:', episode.episodeNumber);
-      
-      // Récupérer les URLs directes depuis le nouvel endpoint /api/embed
-      const directUrlsResponse = await fetch(`/api/embed?url=${encodeURIComponent(episode.url)}`);
-      const directUrlsData = await directUrlsResponse.json();
-      
-      console.log('URLs directes auto reçues:', directUrlsData);
-      
-      if (directUrlsData.success && directUrlsData.sources && directUrlsData.sources.length > 0) {
-        // Utiliser les URLs directes récupérées
-        setEpisodeDetails({
-          id: episode.id,
-          title: episode.title,
-          animeTitle: animeDataObj.title,
-          episodeNumber: episode.episodeNumber,
-          sources: directUrlsData.sources,
-          availableServers: directUrlsData.sources.map((s: any) => s.server),
-          url: episode.url
-        });
-        console.log('Sources directes auto chargées:', directUrlsData.sources.length);
-      } else if (episode.streamingSources && episode.streamingSources.length > 0) {
-        // Fallback vers les sources originales
-        setEpisodeDetails({
-          id: episode.id,
-          title: episode.title,
-          animeTitle: animeDataObj.title,
-          episodeNumber: episode.episodeNumber,
-          sources: episode.streamingSources,
-          availableServers: episode.streamingSources.map((s: any) => s.server),
-          url: episode.url
-        });
-      }
-    } catch (err) {
-      console.error('Erreur chargement sources directes auto:', err);
-      // Fallback vers les sources originales
-      if (episode.streamingSources && episode.streamingSources.length > 0) {
-        setEpisodeDetails({
-          id: episode.id,
-          title: episode.title,
-          animeTitle: animeDataObj.title,
-          episodeNumber: episode.episodeNumber,
-          sources: episode.streamingSources,
-          availableServers: episode.streamingSources.map((s: any) => s.server),
-          url: episode.url
-        });
-      }
-    } finally {
-      setEpisodeLoading(false);
-    }
-  };
-
-  // Charger les sources d'un épisode en récupérant les URLs directes
-  const loadEpisodeSources = async (episode: Episode) => {
+  // Charger les sources d'un épisode depuis les données déjà disponibles
+  const loadEpisodeSources = (episode: Episode) => {
     if (!episode || !animeData) return;
     
     try {
       setEpisodeLoading(true);
       
-      console.log('Chargement sources directes pour épisode:', episode.episodeNumber);
+      console.log('Chargement sources pour épisode:', episode.episodeNumber, episode.streamingSources);
       
-      // Récupérer les URLs directes depuis le nouvel endpoint /api/embed
-      const directUrlsResponse = await fetch(`/api/embed?url=${encodeURIComponent(episode.url)}`);
-      const directUrlsData = await directUrlsResponse.json();
-      
-      console.log('URLs directes reçues:', directUrlsData);
-      
-      if (directUrlsData.success && directUrlsData.sources && directUrlsData.sources.length > 0) {
-        // Utiliser les URLs directes récupérées
-        setEpisodeDetails({
-          id: episode.id,
-          title: episode.title,
-          animeTitle: animeData.title,
-          episodeNumber: episode.episodeNumber,
-          sources: directUrlsData.sources,
-          availableServers: directUrlsData.sources.map((s: any) => s.server),
-          url: episode.url
-        });
-        setSelectedPlayer(0);
-        console.log('Sources directes chargées:', directUrlsData.sources.length);
-      } else if (episode.streamingSources && episode.streamingSources.length > 0) {
-        // Fallback vers les sources originales si l'API embed échoue
-        console.log('Fallback vers sources originales');
+      if (episode.streamingSources && episode.streamingSources.length > 0) {
         setEpisodeDetails({
           id: episode.id,
           title: episode.title,
@@ -517,22 +448,8 @@ const AnimePlayerPage: React.FC = () => {
         setError('Aucune source vidéo disponible pour cet épisode');
       }
     } catch (err) {
-      console.error('Erreur chargement sources directes:', err);
-      // Fallback vers les sources originales en cas d'erreur
-      if (episode.streamingSources && episode.streamingSources.length > 0) {
-        setEpisodeDetails({
-          id: episode.id,
-          title: episode.title,
-          animeTitle: animeData.title,
-          episodeNumber: episode.episodeNumber,
-          sources: episode.streamingSources,
-          availableServers: episode.streamingSources.map((s: any) => s.server),
-          url: episode.url
-        });
-        setSelectedPlayer(0);
-      } else {
-        setError('Erreur lors du chargement des sources vidéo');
-      }
+      console.error('Erreur chargement sources:', err);
+      setError('Erreur lors du chargement des sources vidéo');
     } finally {
       setEpisodeLoading(false);
     }
@@ -622,10 +539,10 @@ const AnimePlayerPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Sélecteur de langue - Style anime-sama */}
-        {selectedSeason && selectedSeason.languages.length > 1 && (
+        {/* Sélecteur de langue - Style anime-sama (toujours affiché) */}
+        {selectedSeason && (
           <div className="flex gap-2">
-            {selectedSeason.languages.map((lang) => (
+            {['VF', 'VOSTFR'].map((lang) => (
               <motion.button
                 key={lang}
                 whileHover={{ scale: 1.05 }}
@@ -749,7 +666,7 @@ const AnimePlayerPage: React.FC = () => {
           </div>
         )}
 
-        {/* Lecteur vidéo - URLs directes via /api/embed JSON */}
+        {/* Lecteur vidéo - Style anime-sama avec /api/embed/ */}
         {episodeDetails && episodeDetails.sources.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -758,26 +675,14 @@ const AnimePlayerPage: React.FC = () => {
           >
             <div className="aspect-video relative">
               <iframe
-                key={`player-${selectedPlayer}-${selectedEpisode?.id}`}
-                src={episodeDetails.sources[selectedPlayer]?.url}
+                src={`/api/embed/?url=${encodeURIComponent(episodeDetails.sources[selectedPlayer]?.url)}`}
                 className="w-full h-full"
                 allowFullScreen
                 frameBorder="0"
                 title={`${episodeDetails?.title} - ${episodeDetails.sources[selectedPlayer]?.server}`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation allow-top-navigation"
-                referrerPolicy="no-referrer-when-downgrade"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
               />
-              
-              {/* Overlay avec informations de l'épisode */}
-              <div className="absolute top-4 left-4 bg-black/70 rounded-lg px-3 py-2">
-                <div className="text-white text-sm font-bold">
-                  {episodeDetails.animeTitle}
-                </div>
-                <div className="text-gray-300 text-xs">
-                  Épisode {episodeDetails.episodeNumber} • {episodeDetails.sources[selectedPlayer]?.server} • {episodeDetails.sources[selectedPlayer]?.quality}
-                </div>
-              </div>
             </div>
           </motion.div>
         )}
