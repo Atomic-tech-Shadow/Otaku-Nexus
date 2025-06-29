@@ -6,7 +6,28 @@ Votre application Quiz & Chat est maintenant préparée pour un déploiement sé
 - **Frontend** → Vercel
 - **Backend** → Koyeb
 
-## 🚀 1. Déploiement Backend sur Koyeb
+## 🌐 1. Déploiement Frontend sur Vercel (EN PREMIER)
+
+### Étapes :
+
+1. **Créer un compte Vercel** sur https://vercel.com
+
+2. **Connecter votre repository** :
+   - Créez un nouveau repository Git avec le dossier `frontend/`
+   - Importez-le dans Vercel
+
+3. **Configuration temporaire** :
+   - Ne configurez PAS encore `VITE_API_URL`
+   - Laissez vide pour le moment
+
+4. **Build Settings** :
+   - Framework Preset: Vite
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+
+5. **Déployer** et **NOTER L'URL VERCEL** (ex: `https://votre-app.vercel.app`)
+
+## 🚀 2. Déploiement Backend sur Koyeb (APRÈS VERCEL)
 
 ### Étapes :
 
@@ -23,8 +44,9 @@ Votre application Quiz & Chat est maintenant préparée pour un déploiement sé
    SESSION_SECRET=votre-session-secret-key-aleatoire
    NODE_ENV=production
    PORT=5000
-   CORS_ORIGIN=https://votre-app.vercel.app
+   CORS_ORIGIN=https://VOTRE-URL-VERCEL-ICI.vercel.app
    ```
+   ⚠️ **Remplacez `VOTRE-URL-VERCEL-ICI` par l'URL obtenue à l'étape 1**
 
 4. **Build Settings** :
    - Build Command: `npm run build`
@@ -33,38 +55,22 @@ Votre application Quiz & Chat est maintenant préparée pour un déploiement sé
 
 5. **Déployer** et noter l'URL Koyeb (ex: `https://votre-app.koyeb.app`)
 
-## 🌐 2. Déploiement Frontend sur Vercel
+## 🔧 3. Configuration finale (CONNECTER LES DEUX)
 
-### Étapes :
+### Étape 3A - Mettre à jour Frontend avec URL Koyeb :
+1. Dans Vercel, allez dans Settings > Environment Variables
+2. Ajoutez/modifiez : `VITE_API_URL=https://votre-url-koyeb.app`
+3. Redéployez le frontend
 
-1. **Créer un compte Vercel** sur https://vercel.com
-
-2. **Connecter votre repository** :
-   - Créez un nouveau repository Git avec le dossier `frontend/`
-   - Importez-le dans Vercel
-
-3. **Configuration des variables d'environnement** :
-   ```
-   VITE_API_URL=https://votre-backend.koyeb.app
-   ```
-
-4. **Build Settings** :
-   - Framework Preset: Vite
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
-   - Root Directory: `.` (racine du repo frontend)
-
-5. **Déployer**
-
-## 🔧 3. Configuration finale
-
-### Mettre à jour CORS_ORIGIN :
-Retournez dans Koyeb et mettez à jour la variable `CORS_ORIGIN` avec l'URL Vercel finale.
+### Étape 3B - Vérifier CORS Backend :
+1. Dans Koyeb, vérifiez que `CORS_ORIGIN` contient bien votre URL Vercel
+2. Redémarrez si nécessaire
 
 ### Tester la connexion :
 1. Ouvrez votre app Vercel
-2. Essayez de vous connecter
-3. Vérifiez que toutes les fonctionnalités marchent
+2. Ouvrez les Developer Tools (F12) 
+3. Essayez de vous connecter
+4. Vérifiez qu'il n'y a pas d'erreurs CORS dans la console
 
 ## 📁 Structure des repositories
 
