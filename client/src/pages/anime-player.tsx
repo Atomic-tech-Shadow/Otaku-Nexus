@@ -241,6 +241,9 @@ const AnimePlayerPage: React.FC = () => {
             
             // Sélectionner la saison demandée
             let seasonToSelect = validSeasons.length > 0 ? validSeasons[0] : animeData.data.seasons[0];
+            console.log('Saisons valides trouvées:', validSeasons.length);
+            console.log('Première saison valide:', seasonToSelect);
+            
             if (targetSeason) {
               const requestedSeason = validSeasons.find((s: any) => s.value === targetSeason);
               if (requestedSeason) {
@@ -248,7 +251,9 @@ const AnimePlayerPage: React.FC = () => {
               }
             }
             
+            console.log('Saison sélectionnée:', seasonToSelect);
             setSelectedSeason(seasonToSelect);
+            console.log('Début chargement épisodes pour saison:', seasonToSelect?.name);
             await loadSeasonEpisodes(seasonToSelect, true);
           }
         }
