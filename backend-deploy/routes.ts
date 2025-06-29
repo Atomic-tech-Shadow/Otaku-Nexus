@@ -1,5 +1,5 @@
-import express, { type Express, type Request, type Response, type NextFunction } from "express";
-import { createServer, type Server } from "http";
+import express from "express";
+import { createServer } from "http";
 import { storage } from "./storage";
 
 import {
@@ -15,9 +15,9 @@ import {
 } from "./shared/schema";
 import { setupAuth, isAuthenticated, generateToken, hashPassword, comparePassword } from "./auth";
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: any) {
   // Health check endpoint
-  app.get('/api/health', (req: Request, res: Response) => {
+  app.get('/api/health', (req: any, res: any) => {
     res.status(200).json({ 
       status: 'healthy', 
       timestamp: new Date().toISOString(),
@@ -27,7 +27,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // CORS headers for production
-  app.use((req: Request, res: Response, next: NextFunction) => {
+  app.use((req: any, res: any, next: any) => {
     res.header('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:5173');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
@@ -44,7 +44,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
   // Auth routes
-  app.post('/api/auth/register', async (req: Request, res: Response) => {
+  app.post('/api/auth/register', async (req: any, res: any) => {
     try {
       const result = registerSchema.safeParse(req.body);
       
@@ -89,7 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/auth/login', async (req: Request, res: Response) => {
+  app.post('/api/auth/login', async (req: any, res: any) => {
     try {
       const result = loginSchema.safeParse(req.body);
       
@@ -128,7 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res: Response) => {
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res: any) => {
     try {
       const user = await storage.getUser(req.user.userId);
       if (!user) {
@@ -153,7 +153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Quiz routes
-  app.post('/api/quizzes', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/quizzes', isAuthenticated, async (req: any, res: any) => {
     try {
       const result = insertQuizSchema.safeParse(req.body);
       
@@ -169,7 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/quizzes', async (req: Request, res: Response) => {
+  app.get('/api/quizzes', async (req: any, res: any) => {
     try {
       const quizzes = await storage.getQuizzes();
       res.json(quizzes);
@@ -179,7 +179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/quizzes/featured', async (req: Request, res: Response) => {
+  app.get('/api/quizzes/featured', async (req: any, res: any) => {
     try {
       const featuredQuiz = await storage.getFeaturedQuiz();
       if (!featuredQuiz) {
@@ -192,7 +192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/quizzes/:id', async (req: Request, res: Response) => {
+  app.get('/api/quizzes/:id', async (req: any, res: any) => {
     try {
       const quizId = parseInt(req.params.id);
       if (isNaN(quizId)) {
@@ -211,7 +211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/quizzes/:id', isAuthenticated, async (req: any, res: Response) => {
+  app.put('/api/quizzes/:id', isAuthenticated, async (req: any, res: any) => {
     try {
       const quizId = parseInt(req.params.id);
       if (isNaN(quizId)) {
@@ -232,7 +232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Quiz results routes
-  app.get('/api/quiz-results', isAuthenticated, async (req: any, res: Response) => {
+  app.get('/api/quiz-results', isAuthenticated, async (req: any, res: any) => {
     try {
       const results = await storage.getUserQuizResults(req.user.userId);
       res.json(results);
@@ -242,7 +242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/quiz-results/:quizId', isAuthenticated, async (req: any, res: Response) => {
+  app.get('/api/quiz-results/:quizId', isAuthenticated, async (req: any, res: any) => {
     try {
       const quizId = parseInt(req.params.quizId);
       if (isNaN(quizId)) {
@@ -259,7 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/user/stats', isAuthenticated, async (req: any, res: Response) => {
+  app.get('/api/user/stats', isAuthenticated, async (req: any, res: any) => {
     try {
       const stats = await storage.getUserStats(req.user.userId);
       res.json(stats);
@@ -269,7 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/quiz-results', isAuthenticated, async (req: any, res: Response) => {
+  app.post('/api/quiz-results', isAuthenticated, async (req: any, res: any) => {
     try {
       const result = insertQuizResultSchema.safeParse({
         ...req.body,
@@ -295,7 +295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Leaderboard route
-  app.get('/api/users/leaderboard', async (req: Request, res: Response) => {
+  app.get('/api/users/leaderboard', async (req: any, res: any) => {
     try {
       const leaderboard = await storage.getLeaderboard(10);
       res.json(leaderboard);
@@ -305,7 +305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/users/:userId/quiz-results', async (req: Request, res: Response) => {
+  app.get('/api/users/:userId/quiz-results', async (req: any, res: any) => {
     try {
       const { userId } = req.params;
       const results = await storage.getUserQuizResults(userId);
@@ -317,7 +317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Profile routes
-  app.put('/api/user/profile', isAuthenticated, async (req: any, res: Response) => {
+  app.put('/api/user/profile', isAuthenticated, async (req: any, res: any) => {
     try {
       const result = updateUserProfileSchema.safeParse(req.body);
       
@@ -334,7 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Chat routes
-  app.get('/api/chat/rooms', isAuthenticated, async (req: any, res: Response) => {
+  app.get('/api/chat/rooms', isAuthenticated, async (req: any, res: any) => {
     try {
       const rooms = await storage.getChatRooms(req.user.userId);
       res.json(rooms);
@@ -344,7 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/chat/rooms/:id', async (req: Request, res: Response) => {
+  app.get('/api/chat/rooms/:id', async (req: any, res: any) => {
     try {
       const roomId = parseInt(req.params.id);
       if (isNaN(roomId)) {
@@ -363,7 +363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/chat/rooms/:id/messages', async (req: Request, res: Response) => {
+  app.get('/api/chat/rooms/:id/messages', async (req: any, res: any) => {
     try {
       const roomId = parseInt(req.params.id);
       if (isNaN(roomId)) {
@@ -378,7 +378,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/chat/rooms/:id/messages', isAuthenticated, async (req: any, res: Response) => {
+  app.post('/api/chat/rooms/:id/messages', isAuthenticated, async (req: any, res: any) => {
     try {
       const roomId = parseInt(req.params.id);
       if (isNaN(roomId)) {
@@ -404,7 +404,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin routes
-  app.get('/api/admin/posts', isAuthenticated, async (req: any, res: Response) => {
+  app.get('/api/admin/posts', isAuthenticated, async (req: any, res: any) => {
     try {
       const published = req.query.published === 'true';
       const posts = await storage.getAdminPosts(published);
@@ -415,7 +415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/posts', isAuthenticated, async (req: any, res: Response) => {
+  app.post('/api/admin/posts', isAuthenticated, async (req: any, res: any) => {
     try {
       const result = insertAdminPostSchema.safeParse({
         ...req.body,
@@ -435,7 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Public posts route
-  app.get('/api/posts', async (req: Request, res: Response) => {
+  app.get('/api/posts', async (req: any, res: any) => {
     try {
       const posts = await storage.getPublishedPosts();
       res.json(posts);

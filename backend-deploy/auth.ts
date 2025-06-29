@@ -47,7 +47,7 @@ export async function setupAuth(app: any) {
   console.log('Auth configured for production');
 }
 
-export const isAuthenticated: RequestHandler = async (req: any, res, next) => {
+export const isAuthenticated: RequestHandler = async (req: any, res: any, next: any) => {
   try {
     const authHeader = req.headers.authorization;
     
