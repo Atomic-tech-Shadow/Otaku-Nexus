@@ -22,6 +22,7 @@ This is a quiz, chat and anime streaming application providing:
 - **Database**: PostgreSQL (Neon)
 
 ### Recent Changes (Latest First)
+- **2025-06-29 20:01**: Ajout dépendance body-parser manquante au package.json backend-deploy - Correction erreur MODULE_NOT_FOUND pour déploiement Koyeb réussi
 - **2025-06-29 19:57**: Correction finale erreurs déploiement Koyeb terminée - Tous fichiers TypeScript backend-deploy corrigés (auth.ts, index.ts, routes.ts), utilisation types 'any' pour compatibilité déploiement, compilation réussie sans erreurs
 - **2025-06-29 19:53**: Migration Replit Agent vers Replit standard terminée - Correction complète des erreurs TypeScript dans backend-deploy/routes.ts, suppression fichier routes_temp.ts conflictuel, backend compile parfaitement pour déploiement Koyeb
 - **2025-06-29 17:10**: Réécriture complète routes.ts backend-deploy - Fichier entièrement reconstruit avec types TypeScript corrects, toutes les erreurs de compilation résolues
