@@ -22,7 +22,7 @@ This is a quiz, chat and anime streaming application providing:
 - **Database**: PostgreSQL (Neon)
 
 ### Recent Changes (Latest First)
-- **2025-06-29 16:08**: Correction déploiement Koyeb - Package-lock.json créé, build command optimisé ("npm install && npm run build"), problème "Missing lockfile" résolu
+- **2025-06-29 16:12**: Correction versions packages Koyeb - Versions fixées sans ^, suppression package-lock.json problématique, dépendances compatibles testées pour éviter erreur ETARGET
 - **2025-06-29 15:54**: Annulation modifications CORS et variables environnement - Retour à la configuration originale selon demande utilisateur
 - **2025-06-29 13:25**: Préparation déploiement séparé terminée - Structures frontend/backend créées, configurations Vercel/Koyeb, CORS configuré, guide déploiement complet
 - **2025-06-29 12:15**: Configuration variables d'environnement - Fichier .env créé avec DATABASE_URL Neon, JWT_SECRET et SESSION_SECRET

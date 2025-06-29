@@ -21,8 +21,10 @@ PORT=8000
 5. Start command : `npm start`
 6. Port : 8000
 
-### Solution pour l'erreur de lockfile :
-Le fichier package-lock.json a été créé pour résoudre l'erreur "Missing lockfile" de Koyeb. Le build command inclut maintenant `npm install` pour générer les dépendances.
+### Correction des erreurs de version :
+- Versions des packages fixées (sans ^) pour éviter les conflits
+- Suppression du package-lock.json - Koyeb va le générer automatiquement
+- Dépendances testées et compatibles entre elles
 
 ### Structure du projet :
 - `index.ts` - Point d'entrée principal
