@@ -22,6 +22,7 @@ This is a quiz, chat and anime streaming application providing:
 - **Database**: PostgreSQL (Neon)
 
 ### Recent Changes (Latest First)
+- **2025-06-29 13:25**: Préparation déploiement séparé terminée - Structures frontend/backend créées, configurations Vercel/Koyeb, CORS configuré, guide déploiement complet
 - **2025-06-29 12:15**: Configuration variables d'environnement - Fichier .env créé avec DATABASE_URL Neon, JWT_SECRET et SESSION_SECRET
 - **2025-06-29 12:02**: Migration Replit Agent vers environnement standard terminée - Application fonctionne correctement sur port 5000, base données connectée
 - **2025-06-29 09:03**: Intégration endpoint /api/embed JSON - Lecteur utilise URLs streaming directes extraites depuis anime-sama.fr, plus de page HTML complète, sources authentiques Sibnet/Vidmoly/SendVid
