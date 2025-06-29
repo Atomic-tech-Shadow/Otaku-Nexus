@@ -1,6 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "";
+const BASE_URL = "";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -41,8 +41,7 @@ export async function apiRequest(
   console.log(`API ${method} ${url}:`, body || {});
 
   try {
-    const fullUrl = url.startsWith('http') ? url : `${BASE_URL}${url}`;
-    const response = await fetch(fullUrl, config);
+    const response = await fetch(url, config);
 
     // Log response data for debugging
     const clonedResponse = response.clone();
@@ -72,9 +71,7 @@ export const getQueryFn: <T>(options: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
 
-    const url = queryKey[0] as string;
-    const fullUrl = url.startsWith('http') ? url : `${BASE_URL}${url}`;
-    const res = await fetch(fullUrl, {
+    const res = await fetch(queryKey[0] as string, {
       headers,
       credentials: "include",
     });
