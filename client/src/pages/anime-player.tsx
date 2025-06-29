@@ -77,24 +77,37 @@ const AnimePlayerPage: React.FC = () => {
   const [episodeLoading, setEpisodeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Configuration API interne
+  // Configuration API externe
+  const API_BASE_URL = 'https://anime-sama-scraper.vercel.app';
 
-  // Fonction pour les requêtes API internes
+  // Fonction pour les requêtes API externes
   const apiRequest = async (endpoint: string, options = {}) => {
-    try {
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        ...options
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    const maxRetries = 2;
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+      try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          method: 'GET',
+          ...options
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        attempt++;
+        console.log(`Tentative ${attempt}/${maxRetries} échouée:`, error);
+        
+        if (attempt >= maxRetries) {
+          console.error('Erreur API après', maxRetries, 'tentatives:', error);
+          throw error;
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Erreur API:', error);
-      throw error;
     }
   };
 

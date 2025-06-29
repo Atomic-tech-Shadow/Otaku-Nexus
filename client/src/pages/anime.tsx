@@ -66,8 +66,8 @@ const AnimePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Utiliser notre proxy local qui a une logique de fallback robuste
-  const API_BASE = '';
+  // Configuration API externe
+  const API_BASE_URL = 'https://anime-sama-scraper.vercel.app';
 
   // Charger les données de l'anime
   useEffect(() => {
@@ -76,7 +76,7 @@ const AnimePage: React.FC = () => {
     const loadAnimeData = async () => {
       try {
         console.log('Chargement données anime pour ID:', id);
-        const response = await fetch(`/api/anime/${id}`);
+        const response = await fetch(`${API_BASE_URL}/api/anime/${id}`);
         console.log('Réponse anime status:', response.status);
         
         if (!response.ok) {

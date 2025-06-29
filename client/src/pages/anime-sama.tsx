@@ -63,24 +63,37 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Configuration API interne
+  // Configuration API externe
+  const API_BASE_URL = 'https://anime-sama-scraper.vercel.app';
 
-  // Fonction utilitaire pour les requêtes API internes
+  // Fonction utilitaire pour les requêtes API externes
   const apiRequest = async (endpoint: string, options = {}) => {
-    try {
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        ...options
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    const maxRetries = 2;
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+      try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          method: 'GET',
+          ...options
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        attempt++;
+        console.log(`Tentative ${attempt}/${maxRetries} échouée:`, error);
+        
+        if (attempt >= maxRetries) {
+          console.error('Erreur API après', maxRetries, 'tentatives:', error);
+          throw error;
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Erreur API:', error);
-      throw error;
     }
   };
 
@@ -95,7 +108,7 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      const response = await apiRequest(`/api/search?query=${encodeURIComponent(query)}`);
+      const response = await apiRequest(`/api/search?q=${encodeURIComponent(query)}`);
       
       if (response && response.success && Array.isArray(response.results)) {
         // Filtrer seulement les animes (pas les mangas) et ajouter des propriétés manquantes
