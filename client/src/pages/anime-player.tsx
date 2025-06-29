@@ -58,31 +58,6 @@ interface EpisodeDetails {
 const AnimePlayerPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
-
-  // Fonction pour détecter si une URL peut être lue directement
-  const isDirectVideoUrl = (url: string): boolean => {
-    if (!url) return false;
-    
-    // Extensions vidéo supportées par HTML5
-    const videoExtensions = ['.mp4', '.webm', '.ogg', '.m3u8'];
-    const lowercaseUrl = url.toLowerCase();
-    
-    // Vérifier les extensions directes
-    if (videoExtensions.some(ext => lowercaseUrl.includes(ext))) {
-      return true;
-    }
-    
-    // Serveurs connus pour les liens directs
-    const directServers = [
-      'googleapis.com',
-      'googlevideo.com', 
-      'cloudflare.com',
-      'aws.amazon.com',
-      'vimeo.com/progressive_redirect'
-    ];
-    
-    return directServers.some(server => lowercaseUrl.includes(server));
-  };
   
   // Récupérer les paramètres de l'URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -607,7 +582,7 @@ const AnimePlayerPage: React.FC = () => {
           </div>
         )}
 
-        {/* Lecteur vidéo - Direct streaming */}
+        {/* Lecteur vidéo - Style anime-sama avec /api/embed/ */}
         {episodeDetails && episodeDetails.sources.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -615,49 +590,15 @@ const AnimePlayerPage: React.FC = () => {
             className="bg-gray-900 rounded-lg overflow-hidden border-2 border-gray-700"
           >
             <div className="aspect-video relative">
-              {/* Essayer d'abord un lecteur vidéo direct si l'URL est compatible */}
-              {isDirectVideoUrl(episodeDetails.sources[selectedPlayer]?.url) ? (
-                <video
-                  key={`video-${selectedPlayer}-${selectedEpisode?.id}`}
-                  className="w-full h-full"
-                  controls
-                  autoPlay
-                  preload="metadata"
-                  onError={(e) => {
-                    console.error('Erreur lecteur vidéo direct:', e);
-                  }}
-                >
-                  <source 
-                    src={episodeDetails.sources[selectedPlayer]?.url} 
-                    type="video/mp4"
-                  />
-                  <track kind="captions" src="" label="Français" default />
-                  Votre navigateur ne supporte pas la lecture vidéo HTML5.
-                </video>
-              ) : (
-                /* Fallback vers iframe pour les serveurs externes */
-                <iframe
-                  key={`iframe-${selectedPlayer}-${selectedEpisode?.id}`}
-                  src={episodeDetails.sources[selectedPlayer]?.url}
-                  className="w-full h-full"
-                  allowFullScreen
-                  frameBorder="0"
-                  title={`${episodeDetails?.title} - ${episodeDetails.sources[selectedPlayer]?.server}`}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation allow-top-navigation"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-              )}
-              
-              {/* Overlay avec informations de l'épisode */}
-              <div className="absolute top-4 left-4 bg-black/70 rounded-lg px-3 py-2">
-                <div className="text-white text-sm font-bold">
-                  {episodeDetails.animeTitle}
-                </div>
-                <div className="text-gray-300 text-xs">
-                  Épisode {episodeDetails.episodeNumber} • {episodeDetails.sources[selectedPlayer]?.server}
-                </div>
-              </div>
+              <iframe
+                src={`/api/embed/?url=${encodeURIComponent(episodeDetails.sources[selectedPlayer]?.url)}`}
+                className="w-full h-full"
+                allowFullScreen
+                frameBorder="0"
+                title={`${episodeDetails?.title} - ${episodeDetails.sources[selectedPlayer]?.server}`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+              />
             </div>
           </motion.div>
         )}
