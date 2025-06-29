@@ -21,6 +21,12 @@ PORT=8000
 5. Start command : `npm start`
 6. Port : 8000
 
+### Fichiers requis pour le déploiement :
+- `package.json` : dépendances et scripts
+- `package-lock.json` : versions verrouillées
+- `tsconfig.json` : configuration TypeScript
+- Tous les fichiers `.ts` du backend
+
 ### Correction des erreurs de version :
 - Versions des packages fixées (sans ^) pour éviter les conflits
 - Package-lock.json créé avec les versions exactes
