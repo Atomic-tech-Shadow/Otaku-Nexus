@@ -26,9 +26,11 @@ interface VideoSource {
 interface Season {
   number: number;
   name: string;
+  value: string;
   languages: string[];
   episodeCount: number;
   url: string;
+  available: boolean;
 }
 
 interface AnimeData {
@@ -124,9 +126,9 @@ const AnimePlayerPage: React.FC = () => {
   };
 
   // Fonction pour charger les épisodes d'une saison selon la documentation API
-  const getSeasonEpisodes = async (animeId: string, seasonNumber: number, language = 'VOSTFR') => {
+  const getSeasonEpisodes = async (animeId: string, seasonValue: string, language = 'VOSTFR') => {
     try {
-      const response = await apiRequest(`/api/episodes/${animeId}?season=${seasonNumber}&language=${language}`);
+      const response = await apiRequest(`/api/episodes/${animeId}?season=${seasonValue}&language=${language}`);
       return response;
     } catch (error) {
       console.error('Erreur chargement épisodes saison:', error);
@@ -169,7 +171,7 @@ const AnimePlayerPage: React.FC = () => {
             // Sélectionner la saison demandée
             let seasonToSelect = validSeasons.length > 0 ? validSeasons[0] : animeData.data.seasons[0];
             if (targetSeason) {
-              const requestedSeason = validSeasons.find((s: any) => s.number === parseInt(targetSeason));
+              const requestedSeason = validSeasons.find((s: any) => s.value === targetSeason);
               if (requestedSeason) {
                 seasonToSelect = requestedSeason;
               }
@@ -199,8 +201,10 @@ const AnimePlayerPage: React.FC = () => {
       const languageCode = selectedLanguage.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
       
       // ✅ NOUVEAU : Utiliser l'API avec système universel et numérotation correcte
-      console.log('Chargement épisodes pour:', animeData.id, 'saison:', season.number, 'langue:', languageCode.toUpperCase());
-      const data = await getSeasonEpisodes(animeData.id, season.number, languageCode.toUpperCase());
+      // L'API attend un numéro de saison, pas la valeur string
+      const seasonNumber = season.value.includes('saison') ? season.value.replace('saison', '') : season.number.toString();
+      console.log('Chargement épisodes pour:', animeData.id, 'saison:', seasonNumber, 'langue:', languageCode.toUpperCase());
+      const data = await getSeasonEpisodes(animeData.id, seasonNumber, languageCode.toUpperCase());
       console.log('Réponse épisodes:', data);
       
       if (!data || !data.success) {
@@ -211,7 +215,7 @@ const AnimePlayerPage: React.FC = () => {
       if (data.success && data.episodes && Array.isArray(data.episodes)) {
         // Convertir les épisodes au format attendu par le composant
         const formattedEpisodes = data.episodes.map((ep: any, index: number) => ({
-          id: `${animeData.id}-s${season.number}-ep${ep.number}-${languageCode}-${index}`,
+          id: `${animeData.id}-s${seasonNumber}-ep${ep.number}-${languageCode}-${index}`,
           title: ep.title || `Épisode ${ep.number}`,
           episodeNumber: ep.number,
           url: ep.url,

@@ -25,9 +25,11 @@ interface VideoSource {
 interface Season {
   number: number;
   name: string;
+  value: string;
   languages: string[];
   episodeCount: number;
   url: string;
+  available: boolean;
 }
 
 interface AnimeData {
@@ -105,8 +107,8 @@ const AnimePage: React.FC = () => {
   // Navigation vers la page de lecteur avec auto-play du premier épisode
   const goToPlayer = (season: Season) => {
     if (!id) return;
-    // Naviguer vers le lecteur avec les paramètres de la saison sélectionnée
-    navigate(`/anime/${id}/player?season=${season.number}&episode=1&lang=vostfr`);
+    // Naviguer vers le lecteur avec les paramètres de la saison sélectionnée - utiliser season.value pas season.number
+    navigate(`/anime/${id}/player?season=${season.value}&episode=1&lang=vostfr`);
   };
 
 
@@ -212,9 +214,9 @@ const AnimePage: React.FC = () => {
         <div>
           <h3 className="text-lg font-semibold mb-4">Saisons et Films</h3>
           <div className="grid grid-cols-2 gap-4">
-            {animeData.seasons.map((season) => (
+            {animeData.seasons.map((season, index) => (
               <motion.button
-                key={season.number}
+                key={`season-${index}-${season.name}`}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
                 onClick={() => goToPlayer(season)}
