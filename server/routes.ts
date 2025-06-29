@@ -320,12 +320,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/anime/:id', async (req, res) => {
     try {
       const animeId = req.params.id;
+      console.log(`Fetching anime details for: ${animeId}`);
+      
       const response = await fetch(`${ANIME_API_BASE}/api/anime/${animeId}`);
+      
       if (!response.ok) {
+        const responseText = await response.text();
+        console.error(`API responded with status: ${response.status} for anime: ${animeId}`);
+        console.error(`Response text: ${responseText}`);
         throw new Error(`API responded with status: ${response.status}`);
       }
       
       const data = await response.json();
+      console.log(`Successfully fetched anime details for: ${animeId}`);
       res.json(data);
     } catch (error) {
       console.error("Error fetching anime details:", error);
