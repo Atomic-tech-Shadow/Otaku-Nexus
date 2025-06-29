@@ -43,9 +43,9 @@ const AnimeSamaPage: React.FC = () => {
     try {
       const response = await apiRequest('/api/trending');
       
-      if (response && response.success && Array.isArray(response.trending)) {
-        // Utiliser les données trending directement
-        const animesWithImages = response.trending.map((anime: any) => ({
+      if (response && response.success && Array.isArray(response.results)) {
+        // Utiliser les données results directement
+        const animesWithImages = response.results.map((anime: any) => ({
           ...anime,
           image: anime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`,
           status: anime.status || 'Disponible',
