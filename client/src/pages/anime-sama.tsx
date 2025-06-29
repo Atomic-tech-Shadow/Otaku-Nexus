@@ -63,56 +63,24 @@ const AnimeSamaPage: React.FC = () => {
     }
   };
 
-  // Configuration API selon la documentation fournie
-  const API_BASE_URL = 'https://anime-sama-scraper.vercel.app';
-  const API_HEADERS = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'Origin': window.location.origin
-  };
+  // Configuration API interne
 
-  // Fonction utilitaire pour les requêtes API avec retry et timeout optimisé
+  // Fonction utilitaire pour les requêtes API internes
   const apiRequest = async (endpoint: string, options = {}) => {
-    const maxRetries = 2;
-    let attempt = 0;
-    
-    while (attempt < maxRetries) {
-      try {
-        // Timeout plus long pour API externe (60 secondes)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-          controller.abort();
-        }, 60000);
-        
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-          method: 'GET',
-          headers: API_HEADERS,
-          signal: controller.signal,
-          ...options
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-          if (response.status === 503 || response.status === 502) {
-            throw new Error('Service temporairement indisponible');
-          }
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        return await response.json();
-      } catch (error) {
-        attempt++;
-        console.log(`Tentative ${attempt}/${maxRetries} échouée:`, error);
-        
-        if (attempt >= maxRetries) {
-          console.error('Erreur API après', maxRetries, 'tentatives:', error);
-          throw error;
-        }
-        
-        // Attendre plus longtemps entre les tentatives
-        await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+    try {
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        ...options
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Erreur API:', error);
+      throw error;
     }
   };
 
