@@ -1,4 +1,4 @@
-import type { Express, Request, Response, NextFunction } from "express";
+import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 
@@ -151,251 +151,248 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/auth/logout', (req, res) => {
-    res.json({ message: "Déconnexion réussie" });
-  });
-
-  // User routes
-  app.get('/api/user/stats', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.userId;
-      const stats = await storage.getUserStats(userId);
-      res.json(stats);
-    } catch (error) {
-      console.error("Error fetching user stats:", error);
-      res.status(500).json({ message: "Failed to fetch user stats" });
-    }
-  });
-
-  // Leaderboard endpoint
-  app.get('/api/users/leaderboard', async (req, res) => {
-    try {
-      const limit = parseInt(req.query.limit as string) || 10;
-      const leaderboard = await storage.getLeaderboard(limit);
-      res.json(leaderboard);
-    } catch (error) {
-      console.error("Error fetching leaderboard:", error);
-      res.status(500).json({ message: "Failed to fetch leaderboard" });
-    }
-  });
-
-  // User profile update endpoint
-  app.put('/api/user/profile', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.userId;
-      const profileData = updateUserProfileSchema.parse(req.body);
-      const updatedUser = await storage.updateUserProfile(userId, profileData);
-      res.json(updatedUser);
-    } catch (error) {
-      console.error("Error updating user profile:", error);
-      res.status(500).json({ message: "Failed to update user profile" });
-    }
-  });
-
   // Quiz routes
-  app.get('/api/quizzes', async (req, res) => {
+  app.post('/api/quizzes', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const quizData = insertQuizSchema.parse(req.body);
+      const quiz = await storage.createQuiz(quizData);
+      res.json(quiz);
+    } catch (error) {
+      console.error("Quiz creation error:", error);
+      res.status(400).json({ error: "Données invalides" });
+    }
+  });
+
+  app.get('/api/quizzes', async (req: Request, res: Response) => {
     try {
       const quizzes = await storage.getQuizzes();
       res.json(quizzes);
     } catch (error) {
-      console.error("Error fetching quizzes:", error);
-      res.status(500).json({ message: "Failed to fetch quizzes" });
+      console.error("Quizzes fetch error:", error);
+      res.status(500).json({ error: "Erreur serveur" });
     }
   });
 
-  app.get('/api/quizzes/featured', async (req, res) => {
+  app.get('/api/quizzes/featured', async (req: Request, res: Response) => {
     try {
       const quiz = await storage.getFeaturedQuiz();
       res.json(quiz);
     } catch (error) {
-      console.error("Error fetching featured quiz:", error);
-      res.status(500).json({ message: "Failed to fetch featured quiz" });
+      console.error("Featured quiz fetch error:", error);
+      res.status(500).json({ error: "Erreur serveur" });
     }
   });
 
-  app.get('/api/quizzes/:id', async (req, res) => {
+  app.get('/api/quizzes/:id', async (req: Request, res: Response) => {
     try {
-      const quizId = parseInt(req.params.id);
-      if (isNaN(quizId)) {
-        return res.status(400).json({ message: "Invalid quiz ID" });
-      }
-      
-      const quiz = await storage.getQuiz(quizId);
+      const id = parseInt(req.params.id);
+      const quiz = await storage.getQuiz(id);
       if (!quiz) {
-        return res.status(404).json({ message: "Quiz not found" });
+        return res.status(404).json({ error: "Quiz non trouvé" });
       }
-      
       res.json(quiz);
     } catch (error) {
-      console.error("Error fetching quiz:", error);
-      res.status(500).json({ message: "Failed to fetch quiz" });
+      console.error("Quiz fetch error:", error);
+      res.status(500).json({ error: "Erreur serveur" });
     }
   });
 
-  app.post('/api/quizzes/:id/submit', isAuthenticated, async (req: any, res) => {
+  app.put('/api/quizzes/:id', isAuthenticated, async (req: any, res: Response) => {
     try {
-      const quizId = parseInt(req.params.id);
-      const userId = req.user.userId;
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const quiz = await storage.updateQuiz(id, updates);
+      res.json(quiz);
+    } catch (error) {
+      console.error("Quiz update error:", error);
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  });
+
+  // Quiz results routes
+  app.get('/api/quiz-results', isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const results = await storage.getUserQuizResults(req.user.userId);
+      res.json(results);
+    } catch (error) {
+      console.error("Quiz results fetch error:", error);
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  });
+
+  app.get('/api/quiz-results/:quizId', isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const quizId = parseInt(req.params.quizId);
+      const results = await storage.getUserQuizResults(req.user.userId);
+      const quizResults = results.filter(r => r.quizId === quizId);
+      res.json(quizResults);
+    } catch (error) {
+      console.error("Quiz results fetch error:", error);
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  });
+
+  app.get('/api/user/stats', isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const stats = await storage.getUserStats(req.user.userId);
+      res.json(stats);
+    } catch (error) {
+      console.error("User stats fetch error:", error);
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  });
+
+  app.post('/api/quiz-results', isAuthenticated, async (req: any, res: Response) => {
+    try {
       const resultData = insertQuizResultSchema.parse({
         ...req.body,
-        userId,
-        quizId,
+        userId: req.user.userId,
       });
-      
+
       const result = await storage.createQuizResult(resultData);
+      
+      // Update user XP
+      await storage.updateUserXP(req.user.userId, resultData.score * 10);
+
       res.json(result);
     } catch (error) {
-      console.error("Error submitting quiz result:", error);
-      res.status(500).json({ message: "Failed to submit quiz result" });
+      console.error("Quiz result creation error:", error);
+      res.status(400).json({ error: "Données invalides" });
     }
   });
 
-  app.get('/api/user/quiz-results', isAuthenticated, async (req: any, res) => {
+  app.get('/api/users/leaderboard', async (req: Request, res: Response) => {
     try {
-      const userId = req.user.userId;
+      const leaderboard = await storage.getLeaderboard(10);
+      res.json(leaderboard);
+    } catch (error) {
+      console.error("Leaderboard fetch error:", error);
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  });
+
+  app.get('/api/users/:userId/quiz-results', async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
       const results = await storage.getUserQuizResults(userId);
       res.json(results);
     } catch (error) {
-      console.error("Error fetching quiz results:", error);
-      res.status(500).json({ message: "Failed to fetch quiz results" });
+      console.error("User quiz results fetch error:", error);
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  });
+
+  // Profile routes
+  app.put('/api/user/profile', isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const profileData = updateUserProfileSchema.parse(req.body);
+      const user = await storage.updateUserProfile(req.user.userId, profileData);
+      res.json(user);
+    } catch (error) {
+      console.error("Profile update error:", error);
+      res.status(400).json({ error: "Données invalides" });
     }
   });
 
   // Chat routes
-  app.get('/api/chat/rooms', isAuthenticated, async (req: any, res) => {
+  app.get('/api/chat/rooms', isAuthenticated, async (req: any, res: Response) => {
     try {
-      const userId = req.user.userId;
-      const rooms = await storage.getChatRooms(userId);
+      const rooms = await storage.getUserChatRooms(req.user.userId);
       res.json(rooms);
     } catch (error) {
-      console.error("Error fetching chat rooms:", error);
-      res.status(500).json({ message: "Failed to fetch chat rooms" });
+      console.error("Chat rooms fetch error:", error);
+      res.status(500).json({ error: "Erreur serveur" });
     }
   });
 
-  app.get('/api/chat/rooms/:id', isAuthenticated, async (req, res) => {
+  app.get('/api/chat/rooms/:id', async (req: Request, res: Response) => {
     try {
-      const roomId = parseInt(req.params.id);
-      const room = await storage.getChatRoom(roomId);
+      const id = parseInt(req.params.id);
+      const room = await storage.getChatRoom(id);
       if (!room) {
-        return res.status(404).json({ message: "Chat room not found" });
+        return res.status(404).json({ error: "Salon non trouvé" });
       }
       res.json(room);
     } catch (error) {
-      console.error("Error fetching chat room:", error);
-      res.status(500).json({ message: "Failed to fetch chat room" });
+      console.error("Chat room fetch error:", error);
+      res.status(500).json({ error: "Erreur serveur" });
     }
   });
 
-  app.get('/api/chat/rooms/:id/messages', isAuthenticated, async (req, res) => {
+  app.get('/api/chat/rooms/:id/messages', async (req: Request, res: Response) => {
     try {
       const roomId = parseInt(req.params.id);
-      const limit = parseInt(req.query.limit as string) || 100;
-      const messages = await storage.getChatMessages(roomId, limit);
+      const messages = await storage.getChatMessages(roomId);
       res.json(messages);
     } catch (error) {
-      console.error("Error fetching messages:", error);
-      res.status(500).json({ message: "Failed to fetch messages" });
+      console.error("Chat messages fetch error:", error);
+      res.status(500).json({ error: "Erreur serveur" });
     }
   });
 
-  app.post('/api/chat/rooms/:id/messages', isAuthenticated, async (req: any, res) => {
+  app.post('/api/chat/rooms/:id/messages', isAuthenticated, async (req: any, res: Response) => {
     try {
       const roomId = parseInt(req.params.id);
-      const userId = req.user.userId;
       const messageData = insertChatMessageSchema.parse({
         ...req.body,
         roomId,
-        userId,
+        userId: req.user.userId,
       });
-      
+
       const message = await storage.sendChatMessage(messageData);
       res.json(message);
     } catch (error) {
-      console.error("Error sending message:", error);
-      res.status(500).json({ message: "Failed to send message" });
-    }
-  });
-
-  app.post('/api/chat/rooms/:id/join', isAuthenticated, async (req: any, res) => {
-    try {
-      const roomId = parseInt(req.params.id);
-      const userId = req.user.userId;
-      const membership = await storage.joinChatRoom({ roomId, userId });
-      res.json(membership);
-    } catch (error) {
-      console.error("Error joining chat room:", error);
-      res.status(500).json({ message: "Failed to join chat room" });
-    }
-  });
-
-  // Posts routes
-  app.get('/api/posts', async (req, res) => {
-    try {
-      const posts = await storage.getPublishedPosts();
-      res.json(posts);
-    } catch (error) {
-      console.error("Error fetching posts:", error);
-      res.status(500).json({ message: "Failed to fetch posts" });
-    }
-  });
-
-  app.get('/api/posts/:id', async (req, res) => {
-    try {
-      const postId = parseInt(req.params.id);
-      const post = await storage.getPost(postId);
-      if (!post || !post.isPublished) {
-        return res.status(404).json({ message: "Post not found" });
-      }
-      res.json(post);
-    } catch (error) {
-      console.error("Error fetching post:", error);
-      res.status(500).json({ message: "Failed to fetch post" });
+      console.error("Chat message creation error:", error);
+      res.status(400).json({ error: "Données invalides" });
     }
   });
 
   // Admin routes
-  app.get('/api/admin/posts', isAuthenticated, async (req: any, res) => {
+  app.get('/api/admin/posts', isAuthenticated, async (req: any, res: Response) => {
     try {
-      const user = await storage.getUser(req.user.userId);
-      if (!user?.isAdmin) {
-        return res.status(403).json({ message: "Access denied" });
+      if (!req.user.isAdmin) {
+        return res.status(403).json({ error: "Accès refusé" });
       }
-      
-      const published = req.query.published === 'true' ? true : 
-                       req.query.published === 'false' ? false : undefined;
-      const posts = await storage.getAdminPosts(published);
+      const posts = await storage.getAdminPosts();
       res.json(posts);
     } catch (error) {
-      console.error("Error fetching admin posts:", error);
-      res.status(500).json({ message: "Failed to fetch admin posts" });
+      console.error("Admin posts fetch error:", error);
+      res.status(500).json({ error: "Erreur serveur" });
     }
   });
 
-  app.post('/api/admin/posts', isAuthenticated, async (req: any, res) => {
+  app.post('/api/admin/posts', isAuthenticated, async (req: any, res: Response) => {
     try {
-      const user = await storage.getUser(req.user.userId);
-      if (!user?.isAdmin) {
-        return res.status(403).json({ message: "Access denied" });
+      if (!req.user.isAdmin) {
+        return res.status(403).json({ error: "Accès refusé" });
       }
-      
       const postData = insertAdminPostSchema.parse({
         ...req.body,
-        author: req.user.userId,
+        authorId: req.user.userId,
       });
-      
+
       const post = await storage.createAdminPost(postData);
       res.json(post);
     } catch (error) {
-      console.error("Error creating admin post:", error);
-      res.status(500).json({ message: "Failed to create admin post" });
+      console.error("Admin post creation error:", error);
+      res.status(400).json({ error: "Données invalides" });
     }
   });
 
-  // Initialize default data
+  // Posts routes for frontend
+  app.get('/api/posts', async (req: Request, res: Response) => {
+    try {
+      const posts = await storage.getPublishedPosts();
+      res.json(posts);
+    } catch (error) {
+      console.error("Posts fetch error:", error);
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  });
+
+  // Initialize database
   await storage.ensureAdminUser();
   await storage.ensureDefaultChatRoom();
 
-  const server = createServer(app);
-  return server;
+  return createServer(app);
 }
