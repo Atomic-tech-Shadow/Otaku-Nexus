@@ -28,8 +28,9 @@ PORT=8000
 - Tous les fichiers `.ts` du backend
 
 ### Correction des erreurs de déploiement :
-- Package-lock.json compatible avec `npm ci` (lockfileVersion 3)
-- Checksums d'intégrité ajoutés pour tous les packages
+- Package-lock.json complet avec toutes les dépendances transitives
+- Checksums d'intégrité pour tous les packages (principales + transitives)
+- Compatibilité totale avec `npm ci` (lockfileVersion 3)
 - Script build corrigé : `./node_modules/.bin/tsc`
 - Versions des packages fixées (sans ^) pour éviter les conflits
 - Configuration TypeScript optimisée pour production
