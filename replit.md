@@ -22,6 +22,7 @@ This is a quiz, chat and anime streaming application providing:
 - **Database**: PostgreSQL (Replit)
 
 ### Recent Changes (Latest First)
+- **2025-06-29 22:19**: Ajout navigation MainLayout aux pages anime - Toutes les pages anime (anime.tsx, anime-sama.tsx, anime-player.tsx) utilisent maintenant MainLayout pour la navigation principale tout en conservant leur contenu original
 - **2025-06-29 22:07**: Correction système chat - Problème gestion erreurs frontend résolu, suppression optimistic update conflictuel, messages s'envoient correctement avec notifications succès
 - **2025-06-29 22:04**: Configuration base PostgreSQL Replit directement dans le code - Suppression variables d'environnement selon préférence utilisateur, connexion intégrée dans server/db.ts
 - **2025-06-29 21:59**: Migration complète réussie de Replit Agent vers environnement Replit standard - Base de données PostgreSQL Replit configurée pour remplacer Neon (quota dépassé), application fonctionnelle sur port 5000

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, ArrowLeft } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { motion } from 'framer-motion';
+import MainLayout from '@/components/layout/main-layout';
 
 interface SearchResult {
   id: string;
@@ -150,7 +151,8 @@ const AnimeSamaPage: React.FC = () => {
   }, [searchQuery]);
 
   return (
-    <div className="min-h-screen text-white" style={{ backgroundColor: '#0a0a0a' }}>
+    <MainLayout>
+      <div className="min-h-screen text-white" style={{ backgroundColor: '#0a0a0a' }}>
       {/* Header avec barre de recherche */}
       <div 
         className="sticky top-0 z-50 p-4 border-b border-gray-800"
@@ -339,7 +341,8 @@ const AnimeSamaPage: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </MainLayout>
   );
 };
 

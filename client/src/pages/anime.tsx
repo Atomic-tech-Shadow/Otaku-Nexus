@@ -3,6 +3,7 @@ import { useParams } from 'wouter';
 import { ChevronLeft, ChevronRight, ChevronDown, Play, AlertCircle, ArrowLeft, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'wouter';
+import MainLayout from '@/components/layout/main-layout';
 
 interface Episode {
   id: string;
@@ -143,7 +144,8 @@ const AnimePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <MainLayout>
+      <div className="min-h-screen bg-gray-900 text-white">
       {/* Header avec bouton retour */}
       <div className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800">
         <div className="flex items-center p-4">
@@ -247,7 +249,8 @@ const AnimePage: React.FC = () => {
 
 
       </div>
-    </div>
+      </div>
+    </MainLayout>
   );
 };
 
