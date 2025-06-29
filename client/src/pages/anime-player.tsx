@@ -254,7 +254,12 @@ const AnimePlayerPage: React.FC = () => {
             console.log('Saison sélectionnée:', seasonToSelect);
             setSelectedSeason(seasonToSelect);
             console.log('Début chargement épisodes pour saison:', seasonToSelect?.name);
-            await loadSeasonEpisodes(seasonToSelect, true);
+            
+            // Charger les épisodes directement avec les données anime disponibles
+            if (seasonToSelect) {
+              console.log('Chargement immédiat des épisodes...');
+              await loadSeasonEpisodesDirectly(animeData.data, seasonToSelect, true);
+            }
           }
         }
       } catch (err) {
@@ -268,9 +273,83 @@ const AnimePlayerPage: React.FC = () => {
     loadAnimeData();
   }, [id]);
 
+  // Fonction pour charger les épisodes avec données anime déjà disponibles
+  const loadSeasonEpisodesDirectly = async (animeDataObj: any, season: Season, autoLoadEpisode = false) => {
+    try {
+      setEpisodeLoading(true);
+      const languageCode = selectedLanguage.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
+      
+      console.log('Chargement épisodes pour:', animeDataObj.id, 'saison:', season.value, 'langue:', selectedLanguage);
+      const data = await apiRequest(`/api/episodes/${animeDataObj.id}?season=${season.value}&language=${selectedLanguage}`);
+      console.log('Épisodes reçus de l\'API:', data);
+      
+      if (!data || !data.success) {
+        console.error('Erreur API épisodes:', data);
+        throw new Error('Erreur lors du chargement des épisodes');
+      }
+      
+      if (data.success && data.episodes && Array.isArray(data.episodes)) {
+        // Adapter les données de l'API au format attendu
+        const formattedEpisodes = data.episodes.map((ep: any, index: number) => ({
+          id: `${animeDataObj.id}-${season.value}-ep${ep.episodeNumber || (index + 1)}-${languageCode}`,
+          title: ep.title || `Épisode ${ep.episodeNumber || (index + 1)}`,
+          episodeNumber: ep.episodeNumber || (index + 1),
+          url: ep.url || `https://anime-sama.fr/catalogue/${animeDataObj.id}/${season.value}/${languageCode}`,
+          language: selectedLanguage,
+          available: true,
+          streamingSources: ep.streamingSources || []
+        }));
+        
+        console.log('Épisodes formatés:', formattedEpisodes.length);
+        setEpisodes(formattedEpisodes);
+        
+        // Sélectionner l'épisode spécifié ou le premier
+        if (formattedEpisodes.length > 0) {
+          let episodeToSelect = formattedEpisodes[0];
+          
+          if (targetEpisode) {
+            const requestedEpisode = formattedEpisodes.find(
+              (ep: any) => ep.episodeNumber === parseInt(targetEpisode)
+            );
+            if (requestedEpisode) {
+              episodeToSelect = requestedEpisode;
+            }
+          }
+          
+          console.log('Épisode sélectionné:', episodeToSelect.title);
+          setSelectedEpisode(episodeToSelect);
+          
+          // Auto-charger l'épisode avec ses sources
+          if (autoLoadEpisode && episodeToSelect.streamingSources.length > 0) {
+            setEpisodeDetails({
+              id: episodeToSelect.id,
+              title: episodeToSelect.title,
+              animeTitle: animeDataObj.title,
+              episodeNumber: episodeToSelect.episodeNumber,
+              sources: episodeToSelect.streamingSources,
+              availableServers: episodeToSelect.streamingSources.map((s: any) => s.server),
+              url: episodeToSelect.url
+            });
+            console.log('Détails épisode chargés:', episodeToSelect.title);
+          }
+        }
+      } else {
+        setError('Aucun épisode trouvé pour cette saison');
+      }
+    } catch (err) {
+      console.error('Erreur chargement épisodes direct:', err);
+      setError('Erreur lors du chargement des épisodes');
+    } finally {
+      setEpisodeLoading(false);
+    }
+  };
+
   // ✅ CORRECTION: Génération des épisodes depuis les données de saison
   const loadSeasonEpisodes = async (season: Season, autoLoadEpisode = false) => {
-    if (!animeData) return;
+    if (!animeData) {
+      console.log('Pas de données anime disponibles pour charger les épisodes');
+      return;
+    }
     
     try {
       setEpisodeLoading(true);
