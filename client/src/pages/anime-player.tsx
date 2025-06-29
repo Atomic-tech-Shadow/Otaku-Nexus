@@ -233,7 +233,10 @@ const AnimePlayerPage: React.FC = () => {
           if (animeData.data.seasons && animeData.data.seasons.length > 0) {
             // Filtrer les saisons pour éviter les doublons et garder seulement les vraies saisons
             const validSeasons = animeData.data.seasons.filter((s: any) => 
-              s.name && s.name !== 'nom' && s.name.toLowerCase().includes('saison')
+              s.name && 
+              s.name !== 'nom' && 
+              s.value !== 'url' && 
+              (s.name.toLowerCase().includes('saison') || s.name.toLowerCase().includes('saga'))
             );
             
             // Sélectionner la saison demandée
@@ -268,26 +271,33 @@ const AnimePlayerPage: React.FC = () => {
       setEpisodeLoading(true);
       const languageCode = selectedLanguage.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
       
-      // ✅ NOUVEAU : Utiliser la génération d'épisodes basée sur les données disponibles
-      console.log('Génération épisodes pour:', animeData.id, 'saison:', season.value, 'langue:', selectedLanguage);
-      const data = generateSeasonEpisodes(animeData.id, season, selectedLanguage);
-      console.log('Épisodes générés:', data);
+      // ✅ NOUVEAU : Utiliser l'API qui fonctionne maintenant
+      console.log('Chargement épisodes pour:', animeData.id, 'saison:', season.value, 'langue:', selectedLanguage);
+      const data = await apiRequest(`/api/episodes/${animeData.id}?season=${season.value}&language=${selectedLanguage}`);
+      console.log('Épisodes reçus de l\'API:', data);
       
       if (!data || !data.success) {
-        console.error('Erreur génération épisodes:', data);
-        throw new Error('Erreur lors de la génération des épisodes');
+        console.error('Erreur API épisodes:', data);
+        throw new Error('Erreur lors du chargement des épisodes');
       }
       
       if (data.success && data.episodes && Array.isArray(data.episodes)) {
-        // Les épisodes sont déjà au bon format
+        // Adapter les données de l'API au format attendu
         const formattedEpisodes = data.episodes.map((ep: any, index: number) => ({
-          id: ep.id,
-          title: ep.title,
-          episodeNumber: ep.episodeNumber,
-          url: ep.url,
+          id: `${animeData.id}-${season.value}-ep${ep.episodeNumber || (index + 1)}-${languageCode}`,
+          title: ep.title || `Épisode ${ep.episodeNumber || (index + 1)}`,
+          episodeNumber: ep.episodeNumber || (index + 1),
+          url: ep.url || `https://anime-sama.fr/catalogue/${animeData.id}/${season.value}/${languageCode}`,
           language: selectedLanguage,
           available: true,
-          streamingSources: ep.streamingSources || []
+          streamingSources: ep.streamingSources || [{
+            url: ep.url || `https://anime-sama.fr/catalogue/${animeData.id}/${season.value}/${languageCode}`,
+            server: 'Anime-Sama',
+            quality: 'HD',
+            language: selectedLanguage,
+            type: 'streaming',
+            serverIndex: 0
+          }]
         }));
         
         setEpisodes(formattedEpisodes);
