@@ -22,6 +22,7 @@ This is a quiz, chat and anime streaming application providing:
 - **Database**: PostgreSQL (Neon)
 
 ### Recent Changes (Latest First)
+- **2025-06-29 07:36**: Migration Replit Agent terminée - Suppression complète et définitive de toute l'API interne anime, routes serveur proxy, et fichiers documentation. Application utilise exclusivement API externe https://anime-sama-scraper.vercel.app
 - **2025-06-29 00:10**: Suppression complète API interne et retour exclusif API externe - Configuration finale avec https://anime-sama-scraper.vercel.app, suppression routes serveur proxy, appels directs frontend vers API externe
 - **2025-06-28 00:13**: Suppression système correction saison universel à la demande utilisateur - Retour au comportement API original sans modifications URL côté serveur
 - **2025-06-28 00:05**: Correction bug sélection saison critique - Configuration API_BASE_URL manquante dans server/routes.ts ajoutée, saison 7 My Hero Academia charge maintenant épisodes 139-159 correctement
