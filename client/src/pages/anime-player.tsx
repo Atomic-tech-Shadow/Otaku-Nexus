@@ -161,10 +161,15 @@ const AnimePlayerPage: React.FC = () => {
           
           // Utiliser les saisons des données de base
           if (animeData.data.seasons && animeData.data.seasons.length > 0) {
+            // Filtrer les saisons pour éviter les doublons et garder seulement les vraies saisons
+            const validSeasons = animeData.data.seasons.filter((s: any) => 
+              s.name && s.name !== 'nom' && s.name.toLowerCase().includes('saison')
+            );
+            
             // Sélectionner la saison demandée
-            let seasonToSelect = animeData.data.seasons[0];
+            let seasonToSelect = validSeasons.length > 0 ? validSeasons[0] : animeData.data.seasons[0];
             if (targetSeason) {
-              const requestedSeason = animeData.data.seasons.find((s: any) => s.number === parseInt(targetSeason));
+              const requestedSeason = validSeasons.find((s: any) => s.number === parseInt(targetSeason));
               if (requestedSeason) {
                 seasonToSelect = requestedSeason;
               }
@@ -206,7 +211,7 @@ const AnimePlayerPage: React.FC = () => {
       if (data.success && data.episodes && Array.isArray(data.episodes)) {
         // Convertir les épisodes au format attendu par le composant
         const formattedEpisodes = data.episodes.map((ep: any, index: number) => ({
-          id: `${animeData.id}-episode-${ep.number}-${languageCode}`,
+          id: `${animeData.id}-s${season.number}-ep${ep.number}-${languageCode}-${index}`,
           title: ep.title || `Épisode ${ep.number}`,
           episodeNumber: ep.number,
           url: ep.url,
@@ -438,7 +443,7 @@ const AnimePlayerPage: React.FC = () => {
                   className="w-full bg-gray-800 text-white px-4 py-3 rounded-lg appearance-none cursor-pointer border-2 border-blue-500 font-bold uppercase text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
                   {episodeDetails.sources.map((source, index) => (
-                    <option key={index} value={index}>
+                    <option key={`server-${index}-${source.server}`} value={index}>
                       {source.server} ({source.quality})
                     </option>
                   ))}

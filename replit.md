@@ -22,6 +22,7 @@ This is a quiz, chat and anime streaming application providing:
 - **Database**: PostgreSQL (Neon)
 
 ### Recent Changes (Latest First)
+- **2025-06-29 08:01**: Correction page player anime réussie - Problème clés React dupliquées résolu, filtrage saisons amélioré, épisodes se chargent correctement avec sources streaming
 - **2025-06-29 07:44**: Tests API finaux réussis - Tous les endpoints API externes fonctionnels (trending, search, anime details, seasons, episodes). Configuration corrigée selon réponses réelles de l'API.
 - **2025-06-29 07:36**: Migration Replit Agent terminée - Suppression complète et définitive de toute l'API interne anime, routes serveur proxy, et fichiers documentation. Application utilise exclusivement API externe https://anime-sama-scraper.vercel.app
 - **2025-06-29 00:10**: Suppression complète API interne et retour exclusif API externe - Configuration finale avec https://anime-sama-scraper.vercel.app, suppression routes serveur proxy, appels directs frontend vers API externe
