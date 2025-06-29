@@ -19,9 +19,10 @@ This is a quiz, chat and anime streaming application providing:
 ### Core Components
 - **Frontend**: React with TypeScript, Tailwind CSS
 - **Backend**: Express.js with TypeScript
-- **Database**: PostgreSQL (Neon)
+- **Database**: PostgreSQL (Replit)
 
 ### Recent Changes (Latest First)
+- **2025-06-29 21:59**: Migration complète réussie de Replit Agent vers environnement Replit standard - Base de données PostgreSQL Replit configurée pour remplacer Neon (quota dépassé), application fonctionnelle sur port 5000
 - **2025-06-29 20:09**: Solution définitive déploiement Koyeb - Ajout yarn.lock vide + script build "yarn install && npx tsc" pour contourner exigence lockfile et installation automatique dépendances
 - **2025-06-29 20:05**: Stratégie déploiement finale adoptée - Script build modifié en "npm install && npx tsc" pour que Koyeb génère automatiquement package-lock.json complet avec toutes dépendances transitives
 - **2025-06-29 20:02**: Suppression package-lock.json backend-deploy désynchronisé - Permet à Koyeb de régénérer automatiquement lockfile avec nouvelle dépendance body-parser
@@ -89,7 +90,7 @@ This is a quiz, chat and anime streaming application providing:
 6. **Anime Streaming**: Full anime search, episode browsing, and video playback with server selection
 
 ### Technical Decisions
-- **Database**: PostgreSQL (Neon) for data persistence
+- **Database**: PostgreSQL (Replit) for data persistence
 - **Authentication**: JWT-based session management with Replit Auth integration
 - **Frontend**: React with TypeScript, Tailwind CSS for styling
 - **Backend**: Express.js with TypeScript for API endpoints
