@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 
@@ -17,7 +17,7 @@ import { setupAuth, isAuthenticated, generateToken, hashPassword, comparePasswor
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint
-  app.get('/api/health', (req, res) => {
+  app.get('/api/health', (req: Request, res: Response) => {
     res.status(200).json({ 
       status: 'healthy', 
       timestamp: new Date().toISOString(),
@@ -27,7 +27,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // CORS headers for production
-  app.use((req, res, next) => {
+  app.use((req: Request, res: Response, next: NextFunction) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -44,7 +44,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
   // Auth routes
-  app.post('/api/auth/register', async (req, res) => {
+  app.post('/api/auth/register', async (req: Request, res: Response) => {
     try {
       const userData = registerSchema.parse(req.body);
       
@@ -90,7 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/auth/login', async (req, res) => {
+  app.post('/api/auth/login', async (req: Request, res: Response) => {
     try {
       const { email, password } = loginSchema.parse(req.body);
       
@@ -128,7 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res: Response) => {
     try {
       const user = await storage.getUser(req.user.userId);
       if (!user) {

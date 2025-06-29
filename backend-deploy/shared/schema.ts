@@ -47,7 +47,9 @@ export const sessions = pgTable(
     sess: jsonb("sess").notNull(),
     expire: timestamp("expire").notNull(),
   },
-  (table) => [index("IDX_session_expire").on(table.expire)],
+  (table) => ({
+    expireIdx: index("IDX_session_expire").on(table.expire),
+  }),
 );
 
 // Users table
@@ -165,9 +167,9 @@ export const chatRoomMembers = pgTable("chat_room_members", {
   roomId: integer("room_id").notNull().references(() => chatRooms.id, { onDelete: "cascade" }),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   joinedAt: timestamp("joined_at").defaultNow().notNull(),
-}, (table) => [
-  unique().on(table.roomId, table.userId),
-]);
+}, (table) => ({
+  uniqueRoomUser: unique().on(table.roomId, table.userId),
+}));
 
 export const insertChatRoomMemberSchema = createInsertSchema(chatRoomMembers);
 export type ChatRoomMember = typeof chatRoomMembers.$inferSelect;
