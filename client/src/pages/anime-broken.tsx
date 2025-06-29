@@ -51,15 +51,16 @@ interface EpisodeDetails {
   title: string;
   animeTitle: string;
   episodeNumber: number;
-  language: string;
+  sources: VideoSource[];
+  availableServers: string[];
   url: string;
-  servers: VideoSource[];
 }
 
 interface ApiResponse<T> {
   success: boolean;
   data: T;
   timestamp: string;
+  meta?: any;
 }
 
 const AnimePage: React.FC = () => {
@@ -112,6 +113,10 @@ const AnimePage: React.FC = () => {
     navigate(`/anime/${id}/player?season=${season.value}&episode=1&lang=vostfr`);
   };
 
+
+
+
+
   if (loading) {
     return (
       <MainLayout>
@@ -159,76 +164,89 @@ const AnimePage: React.FC = () => {
           </Link>
         </div>
 
-        {/* Banner de l'anime */}
-        <div className="relative mb-6">
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/70 to-transparent z-10" />
-          <img 
-            src={animeData.image}
-            alt={animeData.title}
-            className="w-full h-64 object-cover rounded-2xl"
-          />
-          <div className="absolute bottom-4 left-4 z-20">
-            <h2 className="text-2xl font-bold text-white drop-shadow-lg">{animeData.title}</h2>
-            <p className="text-gray-200 text-sm mt-1">{animeData.status} • {animeData.year}</p>
+      {/* Banner de l'anime */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/70 to-transparent z-10" />
+        <img 
+          src={animeData.image} 
+          alt={animeData.title}
+          className="w-full h-48 sm:h-64 object-cover"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = 'https://via.placeholder.com/800x400/1a1a1a/ffffff?text=Image+Non+Disponible';
+          }}
+        />
+        <div className="absolute bottom-0 left-0 right-0 p-4 z-20">
+          <h2 className="text-xl sm:text-2xl font-bold">{animeData.title}</h2>
+          <p className="text-gray-300 text-sm mt-1">{animeData.description}</p>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {animeData.genres.map((genre, index) => (
+              <span key={index} className="px-2 py-1 bg-gray-800/80 rounded text-xs">
+                {genre}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 space-y-6">
+        {/* Message d'erreur/info */}
+        {error && (
+          <div className="bg-yellow-600/20 border border-yellow-600/30 rounded-lg p-3">
+            <p className="text-yellow-200 text-sm flex items-center">
+              <AlertCircle className="mr-2 flex-shrink-0" size={16} />
+              {error}
+            </p>
+          </div>
+        )}
+
+        {/* Informations de l'anime */}
+        <div className="bg-gray-800/50 rounded-lg p-4">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-gray-400">Statut:</span>
+              <span className="ml-2 text-white">{animeData.status}</span>
+            </div>
+            <div>
+              <span className="text-gray-400">Année:</span>
+              <span className="ml-2 text-white">{animeData.year}</span>
+            </div>
           </div>
         </div>
 
-        {/* Description */}
-        <div className="glass-morphism rounded-2xl p-6 mb-6">
-          <h3 className="text-xl font-semibold text-nexus-cyan mb-3">Description</h3>
-          <p className="text-gray-300 leading-relaxed">{animeData.description || 'Aucune description disponible.'}</p>
-          
-          {animeData.genres && animeData.genres.length > 0 && (
-            <div className="mt-4">
-              <h4 className="text-sm font-medium text-gray-400 mb-2">Genres:</h4>
-              <div className="flex flex-wrap gap-2">
-                {animeData.genres.map((genre, index) => (
-                  <span key={index} className="px-3 py-1 bg-nexus-cyan/20 text-nexus-cyan rounded-full text-sm">
-                    {genre}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Saisons */}
-        <div className="glass-morphism rounded-2xl p-6">
-          <h3 className="text-xl font-semibold text-nexus-cyan mb-6">Saisons disponibles</h3>
-          
-          {animeData.seasons.length === 0 ? (
-            <p className="text-gray-400 text-center py-8">Aucune saison disponible</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {animeData.seasons.map((season, index) => (
-                <motion.button
-                  key={`${season.value}-${index}`}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => goToPlayer(season)}
-                  className="relative overflow-hidden rounded-lg bg-gradient-to-br from-gray-800 to-gray-900 p-6 text-left hover:from-nexus-cyan/20 hover:to-gray-800 transition-all duration-300 border border-gray-700 hover:border-nexus-cyan/50"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-lg font-semibold text-white mb-1">{season.name}</h4>
-                      <p className="text-gray-400 text-sm">
-                        {season.episodeCount} épisodes • {season.languages.join(', ')}
-                      </p>
-                    </div>
-                    <Play className="w-8 h-8 text-nexus-cyan" />
-                  </div>
-                  
-                  <div className="absolute inset-0 flex items-center justify-center p-4">
-                    <div className="text-center">
-                      <div className="text-white font-bold text-lg drop-shadow-lg">
-                        {season.name}
-                      </div>
+        {/* Sélection des saisons */}
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Saisons et Films</h3>
+          <div className="grid grid-cols-2 gap-4">
+            {animeData.seasons.map((season, index) => (
+              <motion.button
+                key={`season-${index}-${season.name}`}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                onClick={() => goToPlayer(season)}
+                className="relative overflow-hidden rounded-2xl h-24 group transition-all duration-300 border-4 border-blue-400 hover:border-blue-300 hover:shadow-lg"
+              >
+                {/* Image de fond */}
+                <div 
+                  className="absolute inset-0 bg-cover bg-center transform group-hover:scale-105 transition-transform duration-300"
+                  style={{
+                    backgroundImage: `url(${animeData.image})`,
+                  }}
+                />
+                {/* Overlay avec gradient sombre */}
+                <div className="absolute inset-0 bg-black/60" />
+                
+                {/* Contenu centré */}
+                <div className="absolute inset-0 flex items-center justify-center p-4">
+                  <div className="text-center">
+                    <div className="text-white font-bold text-lg drop-shadow-lg">
+                      {season.name}
                     </div>
                   </div>
-                </motion.button>
-              ))}
-            </div>
-          )}
+                </div>
+              </motion.button>
+            ))}
+          </div>
         </div>
       </div>
     </MainLayout>
