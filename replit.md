@@ -22,6 +22,8 @@ This is a quiz, chat and anime streaming application providing:
 - **Database**: PostgreSQL (Neon)
 
 ### Recent Changes (Latest First)
+- **2025-06-29 11:51**: Configuration déploiement Vercel ajoutée - Fichiers vercel.json, api/index.ts et documentation VERCEL_DEPLOYMENT.md créés pour déploiement serverless
+- **2025-06-29 11:50**: Migration Replit Agent vers environnement standard terminée - Application fonctionne correctement sur port 5000, base données connectée
 - **2025-06-29 09:03**: Intégration endpoint /api/embed JSON - Lecteur utilise URLs streaming directes extraites depuis anime-sama.fr, plus de page HTML complète, sources authentiques Sibnet/Vidmoly/SendVid
 - **2025-06-29 08:50**: Correction définitive lecteur anime - Problème timing résolu, 52 épisodes One Piece saison 11 (Egghead) se chargent automatiquement avec sources streaming multiples (Sibnet, Server 2, SendVid)
 - **2025-06-29 08:37**: Migration Replit Agent terminée avec succès - Problème lecteur anime résolu, API externe fonctionnelle, saison 11 One Piece (Egghead) charge 52 épisodes avec sources streaming multiples
