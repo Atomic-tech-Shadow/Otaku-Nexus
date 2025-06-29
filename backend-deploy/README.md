@@ -17,23 +17,22 @@ PORT=8000
 1. Connectez votre repository GitHub
 2. Sélectionnez ce dossier `backend-deploy/` comme répertoire racine
 3. Runtime : Node.js
-4. Build command : `npm install && npm run build`
+4. Build command : `npm run build`
 5. Start command : `npm start`
 6. Port : 8000
 
 ### Fichiers requis pour le déploiement :
 - `package.json` : dépendances et scripts
-- `package-lock.json` : versions verrouillées
 - `tsconfig.json` : configuration TypeScript
 - Tous les fichiers `.ts` du backend
+- Note : package-lock.json sera généré automatiquement par Koyeb
 
-### Correction des erreurs de déploiement :
-- Package-lock.json complet avec toutes les dépendances transitives
-- Checksums d'intégrité pour tous les packages (principales + transitives)
-- Compatibilité totale avec `npm ci` (lockfileVersion 3)
-- Script build corrigé : `./node_modules/.bin/tsc`
-- Versions des packages fixées (sans ^) pour éviter les conflits
+### Stratégie de déploiement simplifiée :
+- Suppression du package-lock.json problématique
+- Build command intégré dans le script : `npm install && npx tsc`
+- Koyeb génèrera automatiquement le lockfile lors du déploiement
 - Configuration TypeScript optimisée pour production
+- Versions des packages fixées (sans ^) pour éviter les conflits
 - Support complet pour Node.js 18+ et TypeScript 5.4.5
 
 ### Structure du projet :
