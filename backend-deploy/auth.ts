@@ -80,7 +80,7 @@ export async function setupAuth(app: Express) {
       const user = await storage.createUser({
         id: userId,
         email,
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         firstName,
         lastName,
         isAdmin,
@@ -120,7 +120,7 @@ export async function setupAuth(app: Express) {
       }
 
       // Verify password
-      const isValidPassword = await comparePassword(password, user.password);
+      const isValidPassword = await comparePassword(password, user.passwordHash || '');
       if (!isValidPassword) {
         return res.status(400).json({ message: "Email ou mot de passe incorrect" });
       }
@@ -171,7 +171,7 @@ export async function setupAuth(app: Express) {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        profileImageUrl: user.profileImageUrl,
+        avatar: user.avatar,
         bio: user.bio,
         isAdmin: user.isAdmin,
         level: user.level,
