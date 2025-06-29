@@ -12,7 +12,9 @@ export function useAuth() {
       const token = localStorage.getItem("auth_token");
       if (!token) throw new Error("No token");
       
-      const response = await fetch("/api/auth/user", {
+      const apiUrl = import.meta.env.VITE_API_URL || "";
+      const fullUrl = `${apiUrl}/api/auth/user`;
+      const response = await fetch(fullUrl, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

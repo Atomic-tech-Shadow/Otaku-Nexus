@@ -15,7 +15,13 @@ Pas besoin de configurer "Root Directory" car les fichiers sont déjà à la rac
 
 ## Variables d'environnement
 
-Après déploiement backend :
+Configuration actuelle pour backend Replit :
 ```
-VITE_API_URL=https://votre-backend.koyeb.app
+VITE_API_URL=https://rest-express.replit.app
 ```
+
+Dans Vercel, ajoutez cette variable dans les paramètres du projet :
+1. Allez dans les Settings de votre projet Vercel
+2. Section "Environment Variables"
+3. Ajoutez : `VITE_API_URL` = `https://rest-express.replit.app`
+4. Redéployez le projet
