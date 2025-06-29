@@ -11,6 +11,7 @@ interface Episode {
   url: string;
   language: string;
   available: boolean;
+  streamingSources?: VideoSource[];
 }
 
 interface VideoSource {
@@ -122,10 +123,10 @@ const AnimePlayerPage: React.FC = () => {
     }
   };
 
-  // Fonction pour charger les épisodes d'une saison avec système universel
+  // Fonction pour charger les épisodes d'une saison selon la documentation API
   const getSeasonEpisodes = async (animeId: string, seasonNumber: number, language = 'VOSTFR') => {
     try {
-      const response = await apiRequest(`/api/seasons?animeId=${animeId}&season=${seasonNumber}&language=${language}`);
+      const response = await apiRequest(`/api/episodes/${animeId}?season=${seasonNumber}&language=${language}`);
       return response;
     } catch (error) {
       console.error('Erreur chargement épisodes saison:', error);
@@ -133,13 +134,13 @@ const AnimePlayerPage: React.FC = () => {
     }
   };
 
-  // Fonction pour charger les sources d'un épisode
-  const getEpisodeSources = async (episodeId: string) => {
+  // Fonction pour charger les saisons d'un anime selon la documentation API
+  const getAnimeSeasons = async (animeId: string) => {
     try {
-      const response = await apiRequest(`/api/episode/${episodeId}`);
+      const response = await apiRequest(`/api/seasons/${animeId}`);
       return response;
     } catch (error) {
-      console.error('Erreur chargement sources épisode:', error);
+      console.error('Erreur chargement saisons:', error);
       return null;
     }
   };
@@ -202,15 +203,26 @@ const AnimePlayerPage: React.FC = () => {
         throw new Error('Erreur lors du chargement des épisodes');
       }
       
-      if (data.success && data.data && Array.isArray(data.data)) {
-        setEpisodes(data.data);
+      if (data.success && data.episodes && Array.isArray(data.episodes)) {
+        // Convertir les épisodes au format attendu par le composant
+        const formattedEpisodes = data.episodes.map((ep: any, index: number) => ({
+          id: `${animeData.id}-episode-${ep.number}-${languageCode}`,
+          title: ep.title || `Épisode ${ep.number}`,
+          episodeNumber: ep.number,
+          url: ep.url,
+          language: selectedLanguage,
+          available: true,
+          streamingSources: ep.streamingSources || []
+        }));
+        
+        setEpisodes(formattedEpisodes);
         
         // Sélectionner l'épisode spécifié ou le premier
-        if (data.data.length > 0) {
-          let episodeToSelect = data.data[0];
+        if (formattedEpisodes.length > 0) {
+          let episodeToSelect = formattedEpisodes[0];
           
           if (targetEpisode) {
-            const requestedEpisode = data.data.find(
+            const requestedEpisode = formattedEpisodes.find(
               (ep: any) => ep.episodeNumber === parseInt(targetEpisode)
             );
             if (requestedEpisode) {
@@ -219,9 +231,17 @@ const AnimePlayerPage: React.FC = () => {
           }
           
           setSelectedEpisode(episodeToSelect);
-          // ✅ Utiliser l'ID généré par l'API (avec numérotation globale correcte)
-          if (autoLoadEpisode) {
-            loadEpisodeSources(episodeToSelect.id);
+          // Auto-charger l'épisode avec ses sources
+          if (autoLoadEpisode && episodeToSelect.streamingSources.length > 0) {
+            setEpisodeDetails({
+              id: episodeToSelect.id,
+              title: episodeToSelect.title,
+              animeTitle: animeData.title,
+              episodeNumber: episodeToSelect.episodeNumber,
+              sources: episodeToSelect.streamingSources,
+              availableServers: episodeToSelect.streamingSources.map((s: any) => s.server),
+              url: episodeToSelect.url
+            });
           }
         }
       } else {
@@ -235,18 +255,25 @@ const AnimePlayerPage: React.FC = () => {
     }
   };
 
-  // Charger les sources d'un épisode
-  const loadEpisodeSources = async (episodeId: string) => {
+  // Charger les sources d'un épisode depuis les données déjà disponibles
+  const loadEpisodeSources = (episode: Episode) => {
+    if (!episode || !animeData) return;
+    
     try {
       setEpisodeLoading(true);
       
-      // ✅ Utiliser directement l'ID généré par l'API
-      console.log('Chargement épisode avec ID:', episodeId);
+      console.log('Chargement sources pour épisode:', episode.episodeNumber, episode.streamingSources);
       
-      const data = await getEpisodeSources(episodeId);
-      
-      if (data && data.success && data.data && data.data.sources && data.data.sources.length > 0) {
-        setEpisodeDetails(data.data);
+      if (episode.streamingSources && episode.streamingSources.length > 0) {
+        setEpisodeDetails({
+          id: episode.id,
+          title: episode.title,
+          animeTitle: animeData.title,
+          episodeNumber: episode.episodeNumber,
+          sources: episode.streamingSources,
+          availableServers: episode.streamingSources.map((s: any) => s.server),
+          url: episode.url
+        });
         setSelectedPlayer(0);
       } else {
         setError('Aucune source vidéo disponible pour cet épisode');
@@ -270,7 +297,7 @@ const AnimePlayerPage: React.FC = () => {
       const newEpisode = episodes[newIndex];
       setSelectedEpisode(newEpisode);
       // ✅ Utiliser l'ID complet de l'épisode
-      await loadEpisodeSources(newEpisode.id);
+      loadEpisodeSources(newEpisode);
     }
   };
 
@@ -388,7 +415,7 @@ const AnimePlayerPage: React.FC = () => {
                   const episode = episodes.find(ep => ep.id === e.target.value);
                   if (episode) {
                     setSelectedEpisode(episode);
-                    loadEpisodeSources(episode.id);
+                    loadEpisodeSources(episode);
                   }
                 }}
                 className="w-full bg-gray-800 text-white px-4 py-3 rounded-lg appearance-none cursor-pointer border-2 border-blue-500 font-bold uppercase text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"

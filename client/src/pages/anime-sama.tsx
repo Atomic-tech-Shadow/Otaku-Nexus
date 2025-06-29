@@ -43,12 +43,11 @@ const AnimeSamaPage: React.FC = () => {
     try {
       const response = await apiRequest('/api/trending');
       
-      if (response && response.success && Array.isArray(response.results)) {
-        // Filtrer seulement les animes (pas les mangas)
-        const animeOnly = response.results.filter((item: any) => item.type === 'anime');
-        const animesWithImages = animeOnly.map((anime: any) => ({
+      if (response && response.success && Array.isArray(response.trending)) {
+        // Utiliser les données trending directement
+        const animesWithImages = response.trending.map((anime: any) => ({
           ...anime,
-          image: `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`,
+          image: anime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`,
           status: anime.status || 'Disponible',
           type: anime.type || 'Anime'
         }));
@@ -108,14 +107,14 @@ const AnimeSamaPage: React.FC = () => {
     setError(null);
     
     try {
-      const response = await apiRequest(`/api/search?q=${encodeURIComponent(query)}`);
+      const response = await apiRequest(`/api/search?query=${encodeURIComponent(query)}`);
       
       if (response && response.success && Array.isArray(response.results)) {
         // Filtrer seulement les animes (pas les mangas) et ajouter des propriétés manquantes
         const animeOnly = response.results.filter((item: any) => item.type !== 'manga');
         const animesWithImages = animeOnly.map((anime: any) => ({
           ...anime,
-          image: `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`,
+          image: anime.image || `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${anime.id}.jpg`,
           status: anime.status || 'Disponible',
           type: anime.type || 'Anime'
         }));
