@@ -539,10 +539,10 @@ const AnimePlayerPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Sélecteur de langue - Style anime-sama (toujours affiché) */}
-        {selectedSeason && (
+        {/* Sélecteur de langue - Style anime-sama */}
+        {selectedSeason && selectedSeason.languages.length > 1 && (
           <div className="flex gap-2">
-            {['VF', 'VOSTFR'].map((lang) => (
+            {selectedSeason.languages.map((lang) => (
               <motion.button
                 key={lang}
                 whileHover={{ scale: 1.05 }}
